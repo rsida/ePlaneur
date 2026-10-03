@@ -1,0 +1,13 @@
+{#
+    Page section: full-width background (theme) + centered container.
+    theme: light | paper | dark | primary | accent (see tokens.css).
+    <twig:Layout:Section theme="dark" id="vols">...</twig:Layout:Section>
+#}
+{% props theme = 'light', tag = 'section', container = true %}
+<{{ tag }} {{ attributes.defaults({class: 'l-section t-' ~ theme}) }}>
+    {% if container %}
+        <div class="l-container">{% block content %}{% endblock %}</div>
+    {% else %}
+        {{ block('content') }}
+    {% endif %}
+</{{ tag }}>

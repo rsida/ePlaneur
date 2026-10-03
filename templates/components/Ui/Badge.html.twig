@@ -1,0 +1,3 @@
+{# Solid label laid over a picture. size: default | small #}
+{% props size = 'default' %}
+<span {{ attributes.defaults({class: html_classes('c-badge', {'c-badge--small': size == 'small'})}) }}>{% block content %}{% endblock %}</span>

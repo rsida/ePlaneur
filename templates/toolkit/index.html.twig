@@ -1,0 +1,110 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Toolkit{% endblock %}
+
+{#
+    Living style guide: every toolkit component on every surface theme.
+    Dev only (/_toolkit). Add each new component here.
+#}
+{% set colors = {
+    'primary': '--color-primary', 'accent': '--color-accent', 'dark': '--color-dark',
+    'tint-warm': '--color-tint-warm', 'tint-cool': '--color-tint-cool', 'paper': '--color-paper',
+    'cream': '--palette-cream', 'slate': '--palette-slate', 'mist': '--palette-mist', 'line': '--palette-line',
+} %}
+{% block body %}
+    <twig:Layout:Section theme="paper">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="Design system" title="Toolkit ePlaneur"
+                lead="Tokens et composants réutilisables. Modifier un token dans assets/styles/tokens.css met à jour tout le site." />
+
+            <twig:Ui:Heading level="2" size="h2">Couleurs</twig:Ui:Heading>
+            <div class="l-grid l-grid--4 l-grid--tight u-full">
+                {% for name, token in colors %}
+                    <div class="c-card c-card--outlined">
+                        <div style="height: 4rem; background: var({{ token }})"></div>
+                        <div class="c-card__body"><strong>{{ name }}</strong><code class="u-note">{{ token }}</code></div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <twig:Ui:Heading level="2" size="h2">Typographie</twig:Ui:Heading>
+            <div class="l-stack">
+                <p class="c-display">Display</p>
+                <p class="c-display c-display--sm">Display small</p>
+                <twig:Ui:Heading level="3" size="h1">Heading h1 — Barlow</twig:Ui:Heading>
+                <twig:Ui:Heading level="3" size="h2">Heading h2</twig:Ui:Heading>
+                <twig:Ui:Heading level="3" size="h3">Heading h3</twig:Ui:Heading>
+                <twig:Ui:Heading level="3" size="h4">Heading h4</twig:Ui:Heading>
+                <p class="c-tagline">Tagline</p>
+                <twig:Ui:Eyebrow>Eyebrow</twig:Ui:Eyebrow>
+                <p class="u-lead">Lead — Inter 17px, interligne 1.65.</p>
+                <p>Body — Inter 15px.</p>
+                <p class="u-note">Note — Inter 13px.</p>
+                <p class="c-motto">Motto between rules.</p>
+            </div>
+        </div>
+    </twig:Layout:Section>
+
+    {% for theme in ['light', 'paper', 'dark', 'primary', 'accent'] %}
+        <twig:Layout:Section theme="{{ theme }}">
+            <div class="l-stack l-stack--lg">
+                <twig:Layout:SectionHeader eyebrow="Thème t-{{ theme }}" title="Composants sur fond {{ theme }}" lead="Les composants lisent les variables du thème de leur section.">
+                    <twig:block name="aside"><twig:Ui:Link href="#">Lien de section</twig:Ui:Link></twig:block>
+                </twig:Layout:SectionHeader>
+                <div class="l-cluster">
+                    <twig:Ui:Button>Primary</twig:Ui:Button>
+                    <twig:Ui:Button variant="dark">Dark</twig:Ui:Button>
+                    <twig:Ui:Button variant="accent">Accent</twig:Ui:Button>
+                    <twig:Ui:Button variant="outline">Outline</twig:Ui:Button>
+                    <twig:Ui:Button variant="primary" :icon="false">Sans icône</twig:Ui:Button>
+                    <twig:Ui:Link href="#">Lien fléché</twig:Ui:Link>
+                </div>
+                <div class="l-cluster l-cluster--tight">
+                    <twig:Ui:Tag>Default</twig:Ui:Tag>
+                    <twig:Ui:Tag variant="muted">Muted</twig:Ui:Tag>
+                    <twig:Ui:Tag variant="soft">Soft</twig:Ui:Tag>
+                    <twig:Ui:Tag :pressed="true">Filtre actif</twig:Ui:Tag>
+                    <twig:Ui:Tag :pressed="false">Filtre inactif</twig:Ui:Tag>
+                    <twig:Ui:Badge>Badge</twig:Ui:Badge>
+                    <twig:Ui:Badge size="small">Badge small</twig:Ui:Badge>
+                </div>
+                <div class="l-cluster">
+                    <twig:Ui:Date day="08" :meta="['Oct.', '2026']" />
+                    <twig:Ui:Profile icon="discover" title="Profile" text="Icône, titre et texte." />
+                </div>
+            </div>
+        </twig:Layout:Section>
+    {% endfor %}
+
+    <twig:Layout:Section theme="light">
+        <div class="l-stack l-stack--lg">
+            <twig:Ui:Heading level="2" size="h2">Cartes</twig:Ui:Heading>
+            <div class="l-grid l-grid--3 u-full">
+                <twig:Card:Feature icon="discover" title="Feature warm" text="Carte teintée chaude." />
+                <twig:Card:Feature icon="progress" tone="cool" title="Feature cool" text="Carte teintée froide." />
+                <twig:Card:Step number="01" title="Step" text="Étape numérotée d’un parcours." linkLabel="Lien" />
+            </div>
+            <div class="l-rail">
+                <twig:Card:Session day="08" month="Oct." year="2026" version="Condor 3" schedule="Jeudi · 20:30 · heure de Paris"
+                    title="Session" level="Débutant" text="Carte de vol en réseau." />
+                <twig:Card:News eyebrow="Rubrique" title="News avec image" text="Carte éditoriale." image="{{ asset('images/home/news-cockpit.jpg') }}" />
+                <twig:Card:News featured poster="2025" posterLabel="Poster" eyebrow="À la une" title="News à la une" text="Variante mise en avant." />
+            </div>
+            <div class="l-grid l-grid--2 u-full">
+                <twig:Card:Guide eyebrow="Guide" title="Guide" text="Carte avec chapitres."
+                    :chapters="[{label: 'Chapitre un'}, {label: 'Chapitre deux'}]" ctaLabel="Action" />
+                <div class="l-stack">
+                    <twig:Ui:Figure src="{{ asset('images/home/cockpit.jpg') }}" badge="Badge sur image" caption="Légende de la figure" />
+                    <twig:Ui:Dropzone title="Dropzone" hint="Zone de dépôt de fichier." />
+                    <div class="l-grid l-grid--tight p-logbook__stats u-full">
+                        <twig:Ui:Stat label="Distance" value="145,8" unit="km" />
+                        <twig:Ui:Stat label="Durée" value="2 h 18" unit="en vol" />
+                    </div>
+                    <twig:Ui:Meter label="Meter highlight" value="96 %" :percent="96" highlight />
+                    <twig:Ui:Meter label="Meter" value="60 %" :percent="60" />
+                    <div class="c-callout u-full"><p class="u-note">Callout : message et action.</p><twig:Ui:Link href="#">Action</twig:Ui:Link></div>
+                </div>
+            </div>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

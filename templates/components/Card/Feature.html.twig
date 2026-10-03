@@ -1,0 +1,15 @@
+{#
+    Tinted card with an icon tile, a title and a short text.
+    tone: warm | cool
+    <twig:Card:Feature icon="discover" title="Je découvre" text="..." tone="warm" />
+#}
+{% props icon, title, text = null, tone = 'warm' %}
+<article {{ attributes.defaults({class: 'c-card c-card--' ~ tone}) }}>
+    <div class="c-card__body">
+        <span class="c-icon-tile"><twig:ux:icon name="{{ icon }}" /></span>
+        <div class="c-card__group">
+            <twig:Ui:Heading level="3" size="h4">{{ title }}</twig:Ui:Heading>
+            {% if text %}<p class="c-card__text">{{ text }}</p>{% endif %}
+        </div>
+    </div>
+</article>

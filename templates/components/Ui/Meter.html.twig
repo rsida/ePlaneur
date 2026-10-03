@@ -1,0 +1,14 @@
+{#
+    Labelled horizontal bar. percent: 0-100. highlight: primary color instead of accent.
+    <twig:Ui:Meter label="Votre vol" value="145,8 km" :percent="96" highlight />
+#}
+{% props label, value = null, percent = 0, highlight = false %}
+<div {{ attributes.defaults({class: html_classes('c-meter', {'c-meter--highlight': highlight})}) }}>
+    <div class="c-meter__row">
+        <span class="c-meter__label">{{ label }}</span>
+        {% if value %}<span class="c-meter__value">{{ value }}</span>{% endif %}
+    </div>
+    <div class="c-meter__track" role="presentation">
+        <div class="c-meter__bar" style="width: {{ max(0, min(100, percent)) }}%"></div>
+    </div>
+</div>

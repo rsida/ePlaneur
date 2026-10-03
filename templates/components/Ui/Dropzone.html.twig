@@ -1,0 +1,13 @@
+{#
+    File drop area (visual only for now). Wraps a real file input for accessibility.
+    <twig:Ui:Dropzone name="trace" title="Glissez votre fichier ici" hint="..." />
+#}
+{% props name = 'file', title, hint = null, accept = null %}
+<label {{ attributes.defaults({class: 'c-dropzone'}) }}>
+    <twig:ux:icon name="upload" class="c-dropzone__icon" />
+    <span>
+        <span class="c-dropzone__title">{{ title }}</span><br>
+        {% if hint %}<span class="c-dropzone__hint">{{ hint }}</span>{% endif %}
+    </span>
+    <input class="u-visually-hidden" type="file" name="{{ name }}"{% if accept %} accept="{{ accept }}"{% endif %}>
+</label>

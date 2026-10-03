@@ -1,0 +1,88 @@
+/* Text components: eyebrow, headings, display titles, taglines. Colors come from the surface theme. */
+
+.c-eyebrow {
+    font-family: var(--font-body);
+    font-size: var(--text-eyebrow);
+    font-weight: 700;
+    line-height: var(--leading-normal);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--eyebrow);
+}
+
+.c-heading {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    line-height: var(--leading-tight);
+    color: var(--heading-color, var(--on-surface));
+}
+
+.c-heading--h1 { font-size: var(--text-h1); }
+.c-heading--h2 { font-size: var(--text-h2); }
+.c-heading--h3 { font-size: var(--text-h3); font-weight: 700; line-height: 1.12; }
+.c-heading--h4 { font-size: var(--text-h4); font-weight: 700; line-height: var(--leading-snug); }
+
+.c-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-display);
+    line-height: 1.02;
+    text-transform: uppercase;
+    color: var(--display-color, var(--on-surface));
+}
+
+.c-display--sm {
+    font-size: var(--text-display-sm);
+    line-height: 1.04;
+}
+
+.c-tagline {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-tagline);
+    line-height: var(--leading-snug);
+    color: var(--tagline-color, var(--eyebrow));
+}
+
+.c-tagline--plain {
+    color: var(--on-surface);
+}
+
+/* Quote-like line between two rules */
+.c-motto {
+    width: 100%;
+    padding-block: var(--space-3);
+    border-block: 1px solid var(--rule);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+    line-height: var(--leading-snug);
+}
+
+/* Section header: eyebrow + title + lead, with an optional aside (link) */
+.c-section-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.c-section-header__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-width: 66rem;
+}
+
+@media (min-width: 64em) {
+    .c-section-header--with-aside {
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: var(--space-6);
+    }
+
+    .c-section-header__aside {
+        flex-shrink: 0;
+        width: var(--section-aside-width, auto);
+    }
+}

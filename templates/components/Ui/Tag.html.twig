@@ -1,0 +1,12 @@
+{#
+    Small label. variant: default | muted | soft.
+    With `pressed` set (true/false) it renders a toggle <button> (filters).
+    <twig:Ui:Tag variant="soft">Distance parcourue</twig:Ui:Tag>
+#}
+{% props variant = 'default', pressed = null %}
+{% set classes = html_classes('c-tag', {('c-tag--' ~ variant): variant != 'default'}) %}
+{% if pressed is not null %}
+    <button type="button" aria-pressed="{{ pressed ? 'true' : 'false' }}" {{ attributes.defaults({class: classes}) }}>{% block content %}{% endblock %}</button>
+{% else %}
+    <span {{ attributes.defaults({class: classes}) }}>{{ block('content') }}</span>
+{% endif %}

@@ -1,0 +1,25 @@
+{#
+    Editorial card. With `image` it shows a picture on top; with `poster` (e.g. a year) it becomes the
+    featured variant on a dark poster.
+    <twig:Card:News eyebrow="Formation" title="..." text="..." image="{{ asset('...') }}" href="#" />
+    <twig:Card:News featured poster="2025" posterLabel="Championnat de France ePlaneur" ... />
+#}
+{% props eyebrow = null, title, text = null, image = null, imageAlt = '', poster = null, posterLabel = null, featured = false, href = '#', linkLabel = 'Lire la suite' %}
+<article {{ attributes.defaults({class: html_classes('c-card c-news', featured ? 'c-news--featured t-primary' : 'c-card--outlined t-paper')}) }}>
+    {% if poster %}
+        <div class="c-news__poster">
+            {% if posterLabel %}<p class="c-eyebrow c-news__poster-label">{{ posterLabel }}</p>{% endif %}
+            <p class="c-news__poster-year">{{ poster }}</p>
+        </div>
+    {% elseif image %}
+        <img class="c-news__media" src="{{ image }}" alt="{{ imageAlt }}" loading="lazy">
+    {% endif %}
+    <div class="c-card__body">
+        {% if eyebrow %}<twig:Ui:Eyebrow>{{ eyebrow }}</twig:Ui:Eyebrow>{% endif %}
+        <twig:Ui:Heading level="3" size="{{ featured ? 'h2' : 'h3' }}" class="c-news__title">{{ title }}</twig:Ui:Heading>
+        {% if text %}<p class="c-card__text c-card__text--lead">{{ text }}</p>{% endif %}
+        <div class="c-card__footer">
+            <twig:Ui:Link href="{{ href }}">{{ linkLabel }}</twig:Ui:Link>
+        </div>
+    </div>
+</article>

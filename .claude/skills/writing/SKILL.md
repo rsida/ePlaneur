@@ -61,6 +61,7 @@ file in the same change:
 |---|---|
 | Docker, env variables, Makefile targets | `doc/installation.md`, `doc/configuration.md`, `doc/development.md`, `doc/production.md` |
 | Tests or quality tooling | `doc/tests.md` |
+| Design tokens, Twig components, icons | `doc/design-system.md` + the `/_toolkit` style guide |
 | Functional knowledge about the club or site | `doc/project/*.md` |
 | Working rules for Claude | `CLAUDE.md` |
 | Entry points / quick start | `README.md` |

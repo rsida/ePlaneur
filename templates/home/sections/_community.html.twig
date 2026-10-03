@@ -1,0 +1,19 @@
+<twig:Layout:Section theme="dark" id="communaute">
+    <div class="l-split l-split--aside-lg">
+        <div class="l-stack l-stack--md">
+            <twig:Ui:Eyebrow>07 / Le meilleur du vol ? Les autres.</twig:Ui:Eyebrow>
+            <twig:Ui:Heading level="2" size="h1">On vient pour voler. On reste pour le club.</twig:Ui:Heading>
+            <p class="u-lead">Des curieux, des passionnés, des débutants et des pilotes expérimentés. Tous les âges se retrouvent autour de la même envie : apprendre, s’entraider et partager le ciel.</p>
+            <twig:Ui:Button href="#" variant="accent">Voir la liste des membres</twig:Ui:Button>
+            <twig:Ui:Link href="#">Contacter le club</twig:Ui:Link>
+        </div>
+        <div class="l-stack l-stack--sm">
+            <twig:Ui:Figure src="{{ asset('images/home/community.jpg') }}" class="p-community__media"
+                badge="Des horizons différents. Le même ciel." badgeSize="small"
+                caption="Vol illustré · Ni capture de Condor, ni vol réel des membres" />
+            <twig:Ui:Profile class="u-full" icon="discover" title="Je découvre le planeur" text="Les bases, les bons repères et le plaisir d’essayer." />
+            <twig:Ui:Profile class="u-full" icon="progress" title="Je veux progresser" text="Des échanges pour affiner mon pilotage, à mon rythme." />
+            <twig:Ui:Profile class="u-full" icon="share" title="J’ai envie de partager" text="Des vols en réseau et des expériences qui se croisent." />
+        </div>
+    </div>
+</twig:Layout:Section>

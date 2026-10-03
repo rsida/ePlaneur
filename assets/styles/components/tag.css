@@ -1,0 +1,69 @@
+/* Tags / chips: filters, version labels, small markers. */
+
+:root {
+    --tag-bg: var(--color-primary);
+    --tag-fg: var(--color-on-primary);
+    --tag-muted-bg: var(--palette-ink-soft);
+    --tag-muted-fg: var(--palette-white);
+    --tag-soft-bg: var(--color-tint-cool);
+    --tag-soft-fg: var(--color-primary);
+}
+
+.c-tag {
+    --_bg: var(--tag-bg);
+    --_fg: var(--tag-fg);
+
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background-color: var(--_bg);
+    color: var(--_fg);
+    font-family: var(--font-body);
+    font-size: var(--text-eyebrow);
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
+.c-tag--muted {
+    --_bg: var(--tag-muted-bg);
+    --_fg: var(--tag-muted-fg);
+}
+
+.c-tag--soft {
+    --_bg: var(--tag-soft-bg);
+    --_fg: var(--tag-soft-fg);
+}
+
+/* Interactive tags (filters) */
+button.c-tag {
+    cursor: pointer;
+}
+
+button.c-tag[aria-pressed='false'] {
+    --_bg: var(--tag-muted-bg);
+    --_fg: var(--tag-muted-fg);
+}
+
+/* Label over an image (motto, badge) */
+.c-badge {
+    display: inline-block;
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--badge-bg, var(--color-primary));
+    color: var(--badge-fg, var(--color-on-primary));
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+    line-height: 1.2;
+}
+
+.c-badge--small {
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-body);
+    font-size: var(--text-micro);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}

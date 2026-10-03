@@ -1,0 +1,35 @@
+{% set sessions = [
+    {day: '08', version: 'Condor 3', schedule: 'Jeudi · 20:30 · heure de Paris', title: 'Premières ailes en réseau', level: 'Débutant',
+        text: 'Prendre ses repères, préparer sa connexion et découvrir le vol à plusieurs, tranquillement.'},
+    {day: '10', version: 'Condor 2', schedule: 'Samedi · 14:00 · heure de Paris', title: 'Balade au-dessus des Alpes', level: 'Tous niveaux',
+        text: 'Une navigation accessible entre vallées et sommets. Le temps de regarder, et de progresser ensemble.'},
+    {day: '13', version: 'Condor 3', schedule: 'Mardi · 20:30 · heure de Paris', title: 'À la recherche des thermiques', level: 'Intermédiaire',
+        text: 'Lire le ciel, exploiter les ascendances et échanger nos conseils. Un défi à partager, sans pression.'},
+] %}
+<twig:Layout:Section theme="dark" id="vols">
+    <div class="l-stack l-stack--lg">
+        <twig:Layout:SectionHeader eyebrow="02 / Les prochains vols" title="On se retrouve là-haut."
+            lead="Un vol découverte, une balade ou un défi ? Choisissez votre prochaine sortie." class="u-full p-flights__header">
+            <twig:block name="aside"><twig:Ui:Link href="#">Tous les vols en réseau</twig:Ui:Link></twig:block>
+        </twig:Layout:SectionHeader>
+
+        <div class="l-cluster l-cluster--tight" role="group" aria-label="Filtrer par version">
+            <twig:Ui:Tag :pressed="true">Tous les vols</twig:Ui:Tag>
+            <twig:Ui:Tag :pressed="false">Condor 2</twig:Ui:Tag>
+            <twig:Ui:Tag :pressed="false">Condor 3</twig:Ui:Tag>
+        </div>
+        <p class="u-note">Sessions illustratives d’octobre 2026 · Exemples, pas le calendrier officiel du club.</p>
+
+        <div class="l-rail">
+            {% for session in sessions %}
+                <twig:Card:Session day="{{ session.day }}" month="Oct." year="2026" version="{{ session.version }}"
+                    schedule="{{ session.schedule }}" title="{{ session.title }}" level="{{ session.level }}" text="{{ session.text }}" />
+            {% endfor %}
+        </div>
+
+        <div class="c-callout u-full">
+            <p class="u-note">Premier vol en réseau ? On vous aide à vérifier les prérequis et à préparer votre connexion.</p>
+            <div class="p-flights__tip-link"><twig:Ui:Link href="#">Préparer mon vol</twig:Ui:Link></div>
+        </div>
+    </div>
+</twig:Layout:Section>

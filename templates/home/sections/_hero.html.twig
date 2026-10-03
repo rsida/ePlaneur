@@ -1,0 +1,41 @@
+<section class="p-hero t-dark" aria-labelledby="hero-title">
+    {# Background video planned: replace the <img> with a <video> once available. #}
+    <div class="p-hero__media">
+        <img src="{{ asset('images/home/hero.jpg') }}" alt="" fetchpriority="high">
+    </div>
+    <div class="p-hero__veil" aria-hidden="true"></div>
+
+    <div class="l-container">
+        <div class="l-stack p-hero__content">
+        <twig:Ui:Eyebrow class="p-hero__eyebrow">Le club du planeur virtuel</twig:Ui:Eyebrow>
+        <h1 id="hero-title" class="c-display">Prenez le large.<br>Ensemble.</h1>
+        <p class="c-tagline">On se fait un vol ?</p>
+        <p class="p-hero__text">Du premier virage à la grande traversée, volez avec une communauté qui vous accompagne. Sur Condor 2 et Condor 3, à votre rythme.</p>
+        <div class="l-cluster">
+            <twig:Ui:Button href="#rejoindre">Rejoindre le club</twig:Ui:Button>
+            <twig:Ui:Button href="#club" variant="outline">Découvrir ePlaneur</twig:Ui:Button>
+        </div>
+        <p class="u-note u-inherit-color">Tous les âges. Tous les niveaux. La même envie de ciel.</p>
+        </div>
+    </div>
+
+    <div class="l-container p-hero__foot">
+        <div class="p-hero__legend">
+            <p class="c-tagline c-tagline--plain">L’horizon n’attend que vous.</p>
+            <p class="u-note">Image d’ambiance · Pas une capture de Condor</p>
+        </div>
+    </div>
+</section>
+
+<section class="p-next-flight t-primary" aria-label="Prochain vol en réseau">
+    <div class="l-container p-next-flight__inner">
+        <twig:Ui:Date day="08" :meta="['Oct. 2026 · Exemple']">
+            <span class="p-next-flight__time">Jeudi · 20:30 · Paris</span>
+        </twig:Ui:Date>
+        <div class="p-next-flight__session">
+            <p class="p-next-flight__title">Premières ailes en réseau</p>
+            <p class="u-note">Condor 3 · Débutant · Session illustrative</p>
+        </div>
+        <div class="p-next-flight__link"><twig:Ui:Link href="#vols">Voir les prochains vols</twig:Ui:Link></div>
+    </div>
+</section>

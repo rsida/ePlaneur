@@ -1,0 +1,21 @@
+<twig:Layout:Section theme="light" id="club" class="p-intro">
+    <div class="l-stack l-stack--lg">
+        <div class="l-split">
+            <div class="l-stack l-stack--md">
+                <twig:Ui:Eyebrow>01 / Bienvenue à bord</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="2" size="h1">Un vrai club. Pas besoin d’être un as.</twig:Ui:Heading>
+                <p class="u-lead">ePlaneur, c’est le plaisir d’apprendre et de piloter ensemble dans des environnements simulés réalistes. Débutant curieux ou pilote expérimenté, vous avez votre place.</p>
+                <p class="c-motto">Chacun son rythme. Le même plaisir.</p>
+                <twig:Ui:Link href="#">Faire connaissance avec le club</twig:Ui:Link>
+            </div>
+            <twig:Ui:Figure class="p-intro__media" src="{{ asset('images/home/cockpit.jpg') }}"
+                badge="Le ciel se partage." caption="Visuel d’ambiance · Pas une capture de Condor" />
+        </div>
+
+        <div class="l-grid l-grid--3 l-grid--tight u-full">
+            <twig:Card:Feature icon="discover" tone="warm" title="Je découvre" text="Pas besoin de tout savoir : on commence par les bases." />
+            <twig:Card:Feature icon="progress" tone="cool" title="Je progresse" text="Des conseils, des exercices et des vols pour prendre confiance." />
+            <twig:Card:Feature icon="share" tone="warm" title="Je partage" text="Une passion commune, des expériences et des générations différentes." />
+        </div>
+    </div>
+</twig:Layout:Section>

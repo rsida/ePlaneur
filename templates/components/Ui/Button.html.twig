@@ -1,0 +1,18 @@
+{#
+    Call-to-action button. Renders a link when `href` is set, a <button> otherwise.
+    variant: primary | dark | accent | outline — colors come from the --button-* tokens.
+    <twig:Ui:Button href="#" variant="accent">Rejoindre le club</twig:Ui:Button>
+#}
+{% props href = null, variant = 'primary', icon = 'arrow-right', type = 'button', block = false %}
+{% set classes = html_classes('c-button', 'c-button--' ~ variant, {'c-button--block': block}) %}
+{% if href %}
+    <a href="{{ href }}" {{ attributes.defaults({class: classes}) }}>
+        <span>{% block content %}{% endblock %}</span>
+        {% if icon %}<twig:ux:icon name="{{ icon }}" class="c-button__icon" />{% endif %}
+    </a>
+{% else %}
+    <button type="{{ type }}" {{ attributes.defaults({class: classes}) }}>
+        <span>{{ block('content') }}</span>
+        {% if icon %}<twig:ux:icon name="{{ icon }}" class="c-button__icon" />{% endif %}
+    </button>
+{% endif %}

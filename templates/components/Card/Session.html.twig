@@ -1,0 +1,21 @@
+{#
+    Network flight session.
+    <twig:Card:Session day="08" month="Oct." year="2026" version="Condor 3" schedule="Jeudi · 20:30 · heure de Paris"
+        title="Premières ailes en réseau" level="Débutant" text="..." href="#" />
+#}
+{% props day, month, year, version, schedule, title, level = null, text = null, href = '#', linkLabel = 'Voir les détails du vol' %}
+<article {{ attributes.defaults({class: 'c-card c-session t-light'}) }}>
+    <div class="c-session__head">
+        <twig:Ui:Date day="{{ day }}" :meta="[month, year]" />
+        <twig:Ui:Tag>{{ version }}</twig:Ui:Tag>
+    </div>
+    <div class="c-card__body">
+        <p class="u-note">{{ schedule }}</p>
+        <twig:Ui:Heading level="3" size="h3" class="c-session__title">{{ title }}</twig:Ui:Heading>
+        {% if level %}<p class="c-session__level">{{ level }}</p>{% endif %}
+        {% if text %}<p class="c-card__text c-card__text--lead">{{ text }}</p>{% endif %}
+        <div class="c-card__footer">
+            <twig:Ui:Link href="{{ href }}">{{ linkLabel }}</twig:Ui:Link>
+        </div>
+    </div>
+</article>

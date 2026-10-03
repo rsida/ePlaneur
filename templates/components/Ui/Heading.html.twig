@@ -1,0 +1,8 @@
+{#
+    Semantic heading decoupled from its visual size.
+    level: 1-6 (HTML tag), size: h1 | h2 | h3 | h4 (visual style, defaults to the level).
+    <twig:Ui:Heading level="2" size="h1">Ça bouge au club.</twig:Ui:Heading>
+#}
+{% props level = 2, size = null %}
+{% set tag = 'h' ~ level %}
+<{{ tag }} {{ attributes.defaults({class: 'c-heading c-heading--' ~ (size ?? ('h' ~ level))}) }}>{% block content %}{% endblock %}</{{ tag }}>

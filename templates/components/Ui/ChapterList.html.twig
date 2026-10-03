@@ -1,0 +1,16 @@
+{#
+    Numbered list of links.
+    <twig:Ui:ChapterList :items="[{label: 'Installer Condor', href: '#'}]" />
+#}
+{% props items = [] %}
+<ol role="list" {{ attributes.defaults({class: 'c-chapter-list'}) }}>
+    {% for item in items %}
+        <li class="c-chapter-list__item">
+            <a class="c-chapter-list__link" href="{{ item.href ?? '#' }}">
+                <span class="c-chapter-list__number">{{ '%02d'|format(loop.index) }}</span>
+                <span class="c-chapter-list__label">{{ item.label }}</span>
+                <twig:ux:icon name="chevron-right" class="c-chapter-list__icon" />
+            </a>
+        </li>
+    {% endfor %}
+</ol>

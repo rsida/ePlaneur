@@ -1,0 +1,18 @@
+{#
+    Eyebrow + title + lead, with an optional aside (usually a Ui:Link) aligned right on desktop.
+    <twig:Layout:SectionHeader eyebrow="02 / Les prochains vols" title="On se retrouve là-haut." lead="...">
+        <twig:block name="aside"><twig:Ui:Link href="#">Tous les vols</twig:Ui:Link></twig:block>
+    </twig:Layout:SectionHeader>
+#}
+{% props eyebrow = null, title, lead = null, level = 2 %}
+{% set has_aside = block('aside') is defined %}
+<header {{ attributes.defaults({class: html_classes('c-section-header', {'c-section-header--with-aside': has_aside})}) }}>
+    <div class="c-section-header__text">
+        {% if eyebrow %}<twig:Ui:Eyebrow>{{ eyebrow }}</twig:Ui:Eyebrow>{% endif %}
+        <twig:Ui:Heading level="{{ level }}" size="h1">{{ title }}</twig:Ui:Heading>
+        {% if lead %}<p class="u-lead">{{ lead }}</p>{% endif %}
+    </div>
+    {% if has_aside %}
+        <div class="c-section-header__aside">{{ block('aside') }}</div>
+    {% endif %}
+</header>

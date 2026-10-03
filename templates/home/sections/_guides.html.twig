@@ -1,0 +1,25 @@
+{% set chapters = [
+    {label: 'Installer votre version de Condor'},
+    {label: 'Configurer le joystick et les commandes'},
+    {label: 'Régler l’affichage et les paysages'},
+    {label: 'Préparer la connexion en réseau'},
+] %}
+<twig:Layout:Section theme="light" id="guides">
+    <div class="l-stack l-stack--lg">
+        <twig:Layout:SectionHeader eyebrow="04 / La technique, en clair" title="Moins de réglages. Plus de virages."
+            lead="Deux versions, deux guides. Suivez celui qui correspond à votre simulateur." />
+        <div class="l-grid l-grid--2 u-full">
+            {% for version in ['Condor 2', 'Condor 3'] %}
+                <twig:Card:Guide eyebrow="Installation / Configuration" title="{{ version }}"
+                    text="De l’installation au premier vol en réseau : les bons réglages, sans prise de tête."
+                    :chapters="chapters" ctaLabel="Ouvrir le guide {{ version }}" />
+            {% endfor %}
+        </div>
+        <nav class="l-grid l-grid--4 u-full c-link-bar" aria-label="Ressources complémentaires">
+            <twig:Ui:Link href="#">Vidéos pédagogiques</twig:Ui:Link>
+            <twig:Ui:Link href="#">Bonnes pratiques</twig:Ui:Link>
+            <twig:Ui:Link href="#">Prérequis pour voler</twig:Ui:Link>
+            <twig:Ui:Link href="#">Toute la formation</twig:Ui:Link>
+        </nav>
+    </div>
+</twig:Layout:Section>

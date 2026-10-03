@@ -1,0 +1,301 @@
+/* Home page compositions. Only layout specific to the home page lives here; visuals come from components. */
+
+/* ---------- Hero ---------- */
+.p-hero {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-8);
+    min-height: min(49.375rem, 100svh - var(--header-height));
+    padding-block: var(--space-9) var(--space-7);
+    overflow: hidden;
+    --on-surface-muted: var(--palette-mist);
+    --tagline-color: var(--color-accent);
+}
+
+.p-hero__media,
+.p-hero__media img,
+.p-hero__veil {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+}
+
+.p-hero__media img,
+.p-hero__media video {
+    object-fit: cover;
+    object-position: 65% center;
+}
+
+/* Mobile: veil from the bottom; desktop: from the left (Figma) */
+.p-hero__veil {
+    background:
+        linear-gradient(180deg, rgb(25 38 48 / 55%) 0%, rgb(25 38 48 / 80%) 55%, rgb(25 38 48 / 95%) 100%);
+}
+
+@media (min-width: 64em) {
+    .p-hero {
+        padding-block: 3.25rem var(--space-7);
+    }
+
+    .p-hero__veil {
+        background:
+            linear-gradient(180deg, rgb(25 38 48 / 0%) 75%, rgb(25 38 48 / 85%) 100%),
+            linear-gradient(90deg, rgb(25 38 48 / 93%) 0%, rgb(25 38 48 / 78%) 36%, rgb(25 38 48 / 19%) 63%, rgb(25 38 48 / 4%) 100%);
+    }
+}
+
+.p-hero__content {
+    --stack-gap: 1.375rem;
+    max-width: 33.5rem;
+}
+
+.p-hero__eyebrow {
+    color: var(--color-accent);
+    font-weight: 800;
+    line-height: normal;
+}
+
+.p-hero .c-tagline {
+    line-height: normal;
+}
+
+.p-hero__text {
+    font-size: var(--text-lead);
+    line-height: var(--leading-relaxed);
+}
+
+.p-hero__legend {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: 30rem;
+}
+
+/* Desktop: the legend sits in the bottom-right corner, level with the content (Figma) */
+@media (min-width: 64em) {
+    .p-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .p-hero > .l-container {
+        grid-area: 1 / 1;
+    }
+
+    .p-hero__foot {
+        align-self: end;
+    }
+
+    .p-hero__legend {
+        margin-left: auto;
+    }
+}
+
+/* ---------- Next flight banner ---------- */
+.p-next-flight {
+    padding-block: 1.625rem;
+    --date-day-color: var(--color-accent);
+    --date-day-size: 2.5rem;
+    --date-gap: var(--space-4);
+}
+
+.p-next-flight__inner {
+    display: grid;
+    gap: var(--space-4) var(--space-7);
+    align-items: center;
+}
+
+.p-next-flight .c-date__meta {
+    gap: 0.3125rem;
+    line-height: normal;
+    color: var(--on-surface);
+}
+
+.p-next-flight__session {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3125rem;
+}
+
+.p-next-flight__time {
+    font-size: var(--text-body);
+    font-weight: 400;
+    text-transform: none;
+}
+
+.p-next-flight__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5625rem);
+    line-height: normal;
+}
+
+@media (min-width: 64em) {
+    .p-next-flight__link { width: 16.5625rem; }  /* 265 */
+}
+
+@media (min-width: 48em) {
+    .p-next-flight__inner {
+        grid-template-columns: auto 1fr auto;
+    }
+}
+
+/* ---------- Upcoming flights ---------- */
+/* Asides keep the Figma column width, their link aligned left inside */
+.p-flights__header { --section-aside-width: 15rem; }      /* 240 */
+
+@media (min-width: 48em) {
+    .p-flights__tip-link { width: 12.5rem; }               /* 200 */
+}
+
+/* ---------- Club intro ---------- */
+.p-intro__media {
+    --figure-height: clamp(15rem, 10rem + 18vw, 22.5rem);
+}
+
+@media (min-width: 64em) {
+    .p-intro .l-split {
+        --split-aside: 37rem;
+    }
+}
+
+/* ---------- Logbook preview ---------- */
+.p-logbook__header { --section-aside-width: 12.5rem; }    /* 200 */
+
+.p-logbook__panel {
+    --card-padding: clamp(var(--space-5), 1rem + 1vw, 1.75rem);
+    gap: var(--space-6);
+    padding: var(--card-padding);
+}
+
+.p-logbook__head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+@media (min-width: 48em) {
+    .p-logbook__head {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.p-logbook__analysis {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-7);
+}
+
+@media (min-width: 64em) {
+    .p-logbook__analysis {
+        grid-template-columns: minmax(0, 1fr) 21.5rem;
+    }
+}
+
+.p-logbook__map {
+    position: relative;
+    aspect-ratio: 868 / 285;
+    min-height: 12rem;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-cool);
+    color: var(--palette-mist);
+}
+
+.p-logbook__map > img {
+    position: absolute;
+}
+
+.p-logbook__relief { inset: 0; width: 100%; height: 100%; }
+.p-logbook__trace { left: 8%; right: 8%; top: 26%; width: 84%; height: 60%; }
+
+.p-logbook__map-label {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-4);
+    color: var(--color-primary);
+    font-size: var(--text-eyebrow);
+    font-weight: 700;
+}
+
+.p-logbook__map-start {
+    position: absolute;
+    bottom: var(--space-3);
+    left: var(--space-4);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--on-surface);
+    font-size: 0.625rem;
+}
+
+.p-logbook__legend {
+    display: flex;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+    font-size: var(--text-eyebrow);
+    line-height: normal;
+}
+
+.p-logbook__legend-own { color: var(--color-primary); font-weight: 600; }
+
+.p-logbook__stats {
+    --grid-gap: var(--space-3);
+    margin-top: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+}
+
+.p-logbook__compare {
+    --stack-gap: 1.125rem;
+}
+
+.p-logbook__title { font-size: var(--text-h2-lg); }
+.p-logbook__compare-title { font-size: var(--text-h3-xs); }
+
+/* Two help links sharing the row equally (Figma) */
+.p-logbook__help {
+    display: grid;
+    gap: var(--space-4) var(--space-5);
+}
+
+@media (min-width: 48em) {
+    .p-logbook__help { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---------- News ---------- */
+.p-news__header { --section-aside-width: 15.625rem; }     /* 250 */
+
+/* Featured story wider than the two resources (Figma 552 / 348 / 348) */
+.p-news__rail {
+    --rail-columns: minmax(0, 552fr) repeat(2, minmax(0, 348fr));
+}
+
+/* ---------- Community ---------- */
+.p-community__media {
+    --figure-height: 14.6875rem;  /* 235 */
+    gap: 1.125rem;
+}
+
+/* ---------- Join ---------- */
+.p-join__tagline {
+    font-size: var(--text-h2-lg);
+    line-height: normal;
+}
+
+.p-join__next {
+    --stack-gap: var(--space-6);
+}
+
+@media (min-width: 64em) {
+    .p-join__split {
+        --split-aside: 28.125rem;  /* 450 */
+    }
+}

@@ -69,5 +69,10 @@ make qa                           # lint + php-cs-fixer + phpstan + tests
 - **Behat 4**: PHP config only (`behat.dist.php`, YAML is ignored), steps declared with
   `#[Given/When/Then]` attributes from `Behat\Step`. Contexts in `tests/Behat/` are services and use
   `KernelBrowser` (`test.client`); the Mink extension is not Symfony 8 compatible.
+- **Front-end**: design tokens and components follow `doc/design-system.md` (Figma source). Never
+  hard-code a color, font or size in a component: add or reuse a token in `assets/styles/tokens.css`.
+  Reusable UI = anonymous Twig component in `templates/components/` (`<twig:Ui:Button>`...) + its CSS
+  in `assets/styles/components/` + an entry in the `/_toolkit` style guide. Mobile first.
+  Icons: SVG in `assets/icons/` using `currentColor`, rendered with `<twig:ux:icon>`.
 - **Prod deploys** are tag-based: `make release TAG=vX` locally, `make deploy-prod TAG=vX` on the server
   (APP_ENV=prod in the server's `.env.local`).

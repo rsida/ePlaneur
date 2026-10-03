@@ -1,0 +1,6 @@
+{# Club logo (glider mark + name). Mark color: --logo-mark-color. #}
+{% props href = path('app_home') %}
+<a href="{{ href }}" {{ attributes.defaults({class: 'c-logo'}) }}>
+    <twig:ux:icon name="glider" class="c-logo__mark" />
+    <span>ePlaneur</span>
+</a>

@@ -1,0 +1,9 @@
+{# Icon + title + text line. <twig:Ui:Profile icon="discover" title="Je découvre" text="..." /> #}
+{% props icon, title, text = null %}
+<div {{ attributes.defaults({class: 'c-profile'}) }}>
+    <twig:ux:icon name="{{ icon }}" class="c-profile__icon" />
+    <div>
+        <p class="c-profile__title">{{ title }}</p>
+        {% if text %}<p class="c-profile__text">{{ text }}</p>{% endif %}
+    </div>
+</div>

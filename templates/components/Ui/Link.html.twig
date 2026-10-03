@@ -1,0 +1,9 @@
+{#
+    Text link followed by an arrow. Color follows the surface theme (--link).
+    <twig:Ui:Link href="#">Voir les prochains vols</twig:Ui:Link>
+#}
+{% props href = '#', icon = 'arrow-right' %}
+<a href="{{ href }}" {{ attributes.defaults({class: 'c-link'}) }}>
+    <span>{% block content %}{% endblock %}</span>
+    {% if icon %}<twig:ux:icon name="{{ icon }}" class="c-link__icon" />{% endif %}
+</a>

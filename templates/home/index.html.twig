@@ -1,7 +1,19 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}ePlaneur{% endblock %}
+{% block title %}Accueil{% endblock %}
 
+{#
+    Home page (Figma "Grand air adouci · Version 6"). Content is placeholder: every section will
+    later receive real data (sessions, news...) from the controller.
+#}
 {% block body %}
-    <h1>ePlaneur</h1>
+    {{ include('home/sections/_hero.html.twig') }}
+    {{ include('home/sections/_intro.html.twig') }}
+    {{ include('home/sections/_flights.html.twig') }}
+    {{ include('home/sections/_first_flight.html.twig') }}
+    {{ include('home/sections/_guides.html.twig') }}
+    {{ include('home/sections/_logbook.html.twig') }}
+    {{ include('home/sections/_news.html.twig') }}
+    {{ include('home/sections/_community.html.twig') }}
+    {{ include('home/sections/_join.html.twig') }}
 {% endblock %}

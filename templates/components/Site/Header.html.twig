@@ -1,0 +1,35 @@
+{#
+    Sticky site header. Below 64em the navigation collapses into a panel toggled by the
+    `menu` Stimulus controller.
+#}
+{% set nav = [
+    {label: 'Accueil', route: 'app_home'},
+    {label: 'Formation', href: '#formation'},
+    {label: 'Voler', href: '#vols'},
+    {label: 'Le Club', href: '#club'},
+    {label: 'Actualités', href: '#actualites'},
+] %}
+<header {{ attributes.defaults({class: 'c-header t-light'}) }} data-controller="menu" data-action="keydown.esc@window->menu#close">
+    <div class="l-container c-header__bar">
+        <twig:Ui:Logo />
+        <button type="button" class="c-header__toggle" aria-controls="site-menu" aria-expanded="false"
+                data-menu-target="toggle" data-action="menu#toggle">
+            <span class="c-header__burger" aria-hidden="true"></span>
+            <span class="u-visually-hidden">Menu</span>
+        </button>
+        <div class="c-header__panel" id="site-menu">
+            <nav aria-label="Navigation principale">
+                <ul class="c-nav" role="list">
+                    {% for item in nav %}
+                        {% set current = item.route is defined and app.current_route == item.route %}
+                        <li>
+                            <a class="c-nav__link" href="{{ item.route is defined ? path(item.route) : item.href }}"
+                               {% if current %}aria-current="page"{% endif %} data-action="menu#close">{{ item.label }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            <twig:Ui:Button href="#" variant="dark">Espace membre</twig:Ui:Button>
+        </div>
+    </div>
+</header>

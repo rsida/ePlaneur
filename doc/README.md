@@ -3,6 +3,7 @@
 | Document | Content |
 |---|---|
 | [Project (functional reference)](project/README.md) | Purpose of the site, the club, training, network flights, ecosystem, current site, glossary |
+| [Design system](design-system.md) | Tokens, surface themes, layout primitives, Twig components, icons |
 | [Installation (development)](installation.md) | Prerequisites and first setup of the local environment |
 | [Configuration](configuration.md) | `.env` files, load order, every variable |
 | [Daily development](development.md) | Makefile commands, database, assets, mails, Xdebug |

@@ -1,0 +1,7 @@
+{# Key figure tile. <twig:Ui:Stat label="Distance" value="145,8" unit="km" /> #}
+{% props label, value, unit = null %}
+<div {{ attributes.defaults({class: 'c-stat'}) }}>
+    <span class="c-stat__label">{{ label }}</span>
+    <strong class="c-stat__value">{{ value }}</strong>
+    {% if unit %}<span class="c-stat__unit">{{ unit }}</span>{% endif %}
+</div>

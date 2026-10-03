@@ -1,0 +1,32 @@
+{# Site footer: identity, link columns, legal line. Placeholder links for now. #}
+{% set columns = {
+    'Formation': ['Installer Condor 2', 'Installer Condor 3', 'Parcours guidé', 'Vidéos pédagogiques', 'Bonnes pratiques'],
+    'Voler': ['Vols en réseau', 'Participer à un vol', 'Prérequis pour voler', 'Déposer une trace', 'Créer mon carnet'],
+    'Le Club': ['Présentation du club', 'Liste des membres', 'Actualités', 'Rejoindre le club', 'Contacter le club'],
+} %}
+<footer {{ attributes.defaults({class: 'l-section c-footer t-dark'}) }}>
+    <div class="l-container">
+        <div class="c-footer__top">
+            <div class="c-footer__intro">
+                <twig:Ui:Logo />
+                <p class="u-lead">Le plaisir du planeur en réseau. Une communauté pour apprendre, pratiquer et partager sur Condor 2 et Condor 3.</p>
+                <twig:Ui:Link href="#">Espace membre / Connexion</twig:Ui:Link>
+            </div>
+            <nav class="c-footer__columns" aria-label="Liens utiles">
+                {% for title, links in columns %}
+                    <div>
+                        <p class="c-footer__title">{{ title }}</p>
+                        <ul class="c-footer__links" role="list">
+                            {% for label in links %}<li><a href="#">{{ label }}</a></li>{% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </nav>
+        </div>
+        <div class="c-footer__legal">
+            <p class="c-footer__copyright">© {{ 'now'|date('Y') }} ePlaneur · Le ciel se partage.</p>
+            <a href="#">Mentions légales</a>
+            <a href="#">Confidentialité</a>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,105 @@
+/*
+ * Buttons and arrow links.
+ * Every variant reads its colors from --button-* tokens below: change them here (or the semantic
+ * tokens they point to) and every button of the site follows.
+ */
+
+:root {
+    --button-primary-bg: var(--color-primary);
+    --button-primary-fg: var(--color-on-primary);
+    --button-dark-bg: var(--color-dark);
+    --button-dark-fg: var(--color-on-dark);
+    --button-accent-bg: var(--color-accent);
+    --button-accent-fg: var(--color-on-accent);
+    --button-radius: var(--radius-sm);
+    --button-min-height: 3.375rem; /* 54 */
+}
+
+.c-button {
+    --_bg: var(--button-primary-bg);
+    --_fg: var(--button-primary-fg);
+    --_border: transparent;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    min-height: var(--button-min-height);
+    padding: 0.9375rem var(--space-5);
+    border: 1px solid var(--_border);
+    border-radius: var(--button-radius);
+    background-color: var(--_bg);
+    color: var(--_fg);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    transition: filter var(--transition), background-color var(--transition), color var(--transition);
+}
+
+.c-button:hover {
+    filter: brightness(1.12);
+}
+
+.c-button--dark {
+    --_bg: var(--button-dark-bg);
+    --_fg: var(--button-dark-fg);
+}
+
+.c-button--accent {
+    --_bg: var(--button-accent-bg);
+    --_fg: var(--button-accent-fg);
+}
+
+/* Transparent, takes the text color of its surface */
+.c-button--outline {
+    --_bg: transparent;
+    --_fg: var(--on-surface);
+    --_border: currentColor;
+}
+
+.c-button--outline:hover {
+    --_bg: var(--on-surface);
+    --_fg: var(--surface);
+    filter: none;
+}
+
+.c-button--block {
+    width: 100%;
+}
+
+@media (min-width: 40em) {
+    .c-button--block {
+        width: auto;
+    }
+}
+
+.c-button__icon,
+.c-link__icon {
+    flex-shrink: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    transition: transform var(--transition);
+}
+
+.c-button:hover .c-button__icon,
+.c-link:hover .c-link__icon {
+    transform: translateX(3px);
+}
+
+/* Text link with arrow */
+.c-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--link-color, var(--link));
+    font-size: var(--text-body);
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.c-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}

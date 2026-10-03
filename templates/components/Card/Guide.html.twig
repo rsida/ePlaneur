@@ -1,0 +1,20 @@
+{#
+    Guide card with numbered chapters and a main action.
+    <twig:Card:Guide eyebrow="Installation / Configuration" title="Condor 2" text="..."
+        :chapters="[{label: '...', href: '#'}]" ctaLabel="Ouvrir le guide Condor 2" ctaHref="#" />
+#}
+{% props eyebrow = null, title, text = null, icon = 'settings', chapters = [], ctaLabel = null, ctaHref = '#' %}
+<article {{ attributes.defaults({class: 'c-card c-card--outlined c-guide t-paper'}) }}>
+    <div class="c-card__body">
+        <div class="c-guide__head">
+            <div class="c-card__group">
+                {% if eyebrow %}<twig:Ui:Eyebrow>{{ eyebrow }}</twig:Ui:Eyebrow>{% endif %}
+                <twig:Ui:Heading level="3" size="h2" class="c-guide__title">{{ title }}</twig:Ui:Heading>
+            </div>
+            {% if icon %}<twig:ux:icon name="{{ icon }}" class="c-guide__icon" />{% endif %}
+        </div>
+        {% if text %}<p class="c-card__text c-card__text--lead">{{ text }}</p>{% endif %}
+        <twig:Ui:ChapterList :items="chapters" />
+        {% if ctaLabel %}<twig:Ui:Button href="{{ ctaHref }}" block>{{ ctaLabel }}</twig:Ui:Button>{% endif %}
+    </div>
+</article>

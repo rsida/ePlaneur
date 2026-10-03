@@ -14,6 +14,7 @@ final class HomeControllerTest extends WebTestCase
         $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'ePlaneur');
+        self::assertSelectorTextContains('h1', 'Prenez le large');
+        self::assertSelectorExists('header nav a[aria-current="page"]');
     }
 }

@@ -1,0 +1,12 @@
+{#
+    Big day number with month/year (or any meta lines) next to it.
+    <twig:Ui:Date day="08" :meta="['Oct.', '2026']" />
+#}
+{% props day, meta = [] %}
+<div {{ attributes.defaults({class: 'c-date'}) }}>
+    <span class="c-date__day">{{ day }}</span>
+    <span class="c-date__meta">
+        {% for line in meta %}<span>{{ line }}</span>{% endfor %}
+        {% block content %}{% endblock %}
+    </span>
+</div>

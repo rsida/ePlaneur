@@ -1,0 +1,36 @@
+/* Pictures with an optional badge overlaid and a caption below. */
+
+.c-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    width: 100%;
+}
+
+.c-figure__frame {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: var(--figure-height, 15rem);
+    overflow: hidden;
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    background-color: var(--palette-ink);
+}
+
+.c-figure__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.c-figure__badge {
+    position: relative;
+}
+
+.c-figure__caption {
+    font-size: var(--text-xs);
+    color: var(--on-surface-muted);
+}

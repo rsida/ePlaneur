@@ -1,0 +1,150 @@
+/* Layout primitives (l-*) and utilities (u-*). Mobile first; breakpoints: 40em, 64em. */
+
+.l-container {
+    width: 100%;
+    max-width: calc(var(--container-max) + 2 * var(--gutter));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+}
+
+.l-section {
+    padding-block: var(--section-padding);
+}
+
+/* Vertical rhythm: children separated by --stack-gap */
+.l-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--stack-gap, var(--space-6));
+}
+
+.l-stack > :not(.l-rail) {
+    max-width: 100%;
+}
+
+.l-stack--xs { --stack-gap: var(--space-3); }
+.l-stack--sm { --stack-gap: 1.125rem; }
+.l-stack--md { --stack-gap: 1.375rem; }
+.l-stack--lg { --stack-gap: var(--space-7); }
+
+/* Inline group that wraps */
+.l-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--cluster-gap, var(--space-3));
+}
+
+.l-cluster--tight { --cluster-gap: var(--space-2); }
+.l-cluster--spread { justify-content: space-between; --cluster-gap: var(--space-4) var(--space-5); }
+
+/* Responsive grid: 1 column on mobile, --grid-cols columns from 64em */
+.l-grid {
+    display: grid;
+    gap: var(--grid-gap, var(--space-6));
+    grid-template-columns: 1fr;
+}
+
+.l-grid--tight { --grid-gap: var(--space-4); }
+.l-grid--loose { --grid-gap: var(--space-8); }
+
+@media (min-width: 40em) {
+    .l-grid--2,
+    .l-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 64em) {
+    .l-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .l-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/*
+ * Rail: horizontal swipe list on mobile (scroll snap), regular grid from 64em.
+ * Use for card collections (sessions, news...).
+ */
+.l-rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(17rem, 85%);
+    gap: var(--rail-gap, var(--space-4));
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    width: calc(100% + 2 * var(--gutter));
+    max-width: none;
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+    scroll-padding-inline: var(--gutter);
+    padding-bottom: var(--space-2);
+    scrollbar-width: thin;
+}
+
+.l-rail > * {
+    scroll-snap-align: start;
+}
+
+@media (min-width: 64em) {
+    .l-rail {
+        grid-auto-flow: row;
+        grid-template-columns: var(--rail-columns, repeat(3, minmax(0, 1fr)));
+        gap: var(--rail-gap, var(--space-6));
+        overflow: visible;
+        width: 100%;
+        margin-inline: 0;
+        padding: 0;
+    }
+}
+
+/* Two blocks side by side from 64em; --split-aside sets the second column width */
+.l-split {
+    display: grid;
+    gap: var(--split-gap, var(--space-8));
+    align-items: var(--split-align, center);
+}
+
+@media (min-width: 64em) {
+    .l-split {
+        grid-template-columns: minmax(0, 1fr) var(--split-aside, minmax(0, 1fr));
+        gap: var(--split-gap-lg, var(--space-9));
+    }
+
+    .l-split--aside-md { --split-aside: 28rem; --split-gap-lg: 4.5rem; }
+    .l-split--aside-lg { --split-aside: 35rem; --split-gap-lg: var(--space-10); }
+}
+
+/* Utilities */
+.u-visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.u-muted { color: var(--on-surface-muted); }
+.u-note { font-size: var(--text-xs); color: var(--on-surface-muted); }
+.u-lead { font-size: var(--text-lead); line-height: var(--leading-relaxed); color: var(--on-surface-muted); }
+.u-full { width: 100%; }
+.u-strong { font-weight: 600; }
+.u-inherit-color { color: inherit; }
+
+/* Skip link: hidden until focused */
+.u-skip-link:not(:focus) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.u-skip-link:focus {
+    position: fixed;
+    top: var(--space-2);
+    left: var(--space-2);
+    z-index: 100;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-dark);
+    color: var(--color-on-dark);
+}

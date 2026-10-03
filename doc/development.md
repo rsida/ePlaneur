@@ -56,6 +56,11 @@ AssetMapper, no Node.js. Files in `assets/` are served directly in dev, nothing 
 | `make assets` | Download the importmap packages (`assets/vendor/`, git-ignored) |
 | `make assets-build` | Compile into `public/assets/` (prod images do it themselves). Delete `public/assets/` afterwards in dev, otherwise the compiled files take precedence |
 
+## Front-end toolkit
+
+Styles and Twig components follow the [design system](design-system.md). The living style guide is
+available in dev at https://eplaneur.local/_toolkit.
+
 ## Mails
 
 Every e-mail sent in dev is caught by Mailpit: http://localhost:8025. Messenger is synchronous in dev,

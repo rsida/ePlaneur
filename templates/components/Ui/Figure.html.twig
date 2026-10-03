@@ -1,0 +1,12 @@
+{#
+    Picture in a rounded frame, optional badge overlaid (bottom-left) and caption below.
+    <twig:Ui:Figure src="{{ asset('images/home/cockpit.jpg') }}" alt="" badge="Le ciel se partage." caption="..." />
+#}
+{% props src, alt = '', badge = null, badgeSize = 'default', caption = null %}
+<figure {{ attributes.defaults({class: 'c-figure'}) }}>
+    <div class="c-figure__frame">
+        <img class="c-figure__img" src="{{ src }}" alt="{{ alt }}" loading="lazy">
+        {% if badge %}<twig:Ui:Badge class="c-figure__badge" size="{{ badgeSize }}">{{ badge }}</twig:Ui:Badge>{% endif %}
+    </div>
+    {% if caption %}<figcaption class="c-figure__caption">{{ caption }}</figcaption>{% endif %}
+</figure>

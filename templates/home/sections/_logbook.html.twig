@@ -1,0 +1,60 @@
+<twig:Layout:Section theme="primary" id="carnet">
+    <div class="l-stack l-stack--lg">
+        <twig:Layout:SectionHeader eyebrow="05 / L’aventure continue au sol" title="Ce vol mérite une petite trace."
+            lead="Déposez votre trace, revivez votre trajet et comparez vos vols avec ceux des membres. Pour le plaisir de progresser, pas seulement pour le score." class="u-full p-logbook__header">
+            <twig:block name="aside"><twig:Ui:Link href="#">Ouvrir mon carnet</twig:Ui:Link></twig:block>
+        </twig:Layout:SectionHeader>
+
+        <article class="c-card c-card--raised t-paper p-logbook__panel u-full">
+            <div class="p-logbook__head">
+                <div class="c-card__group">
+                    <twig:Ui:Eyebrow>Mon carnet / Exemple de vol</twig:Ui:Eyebrow>
+                    <twig:Ui:Heading level="3" size="h2" class="p-logbook__title">Mon vol au-dessus des Alpes</twig:Ui:Heading>
+                    <p class="u-note">Condor 3 · 10 octobre 2026 · Exemple de vol</p>
+                </div>
+                <twig:Ui:Button href="#">Déposer une trace</twig:Ui:Button>
+            </div>
+
+            <twig:Ui:Dropzone name="trace" title="Glissez votre fichier de trace ici, ou choisissez un fichier"
+                hint="Retrouvez votre parcours après l’atterrissage." />
+
+            <div class="p-logbook__analysis">
+                <div>
+                    <div class="p-logbook__map">
+                        <img class="p-logbook__relief" src="{{ asset('images/home/logbook/relief.svg') }}" alt="">
+                        <img class="p-logbook__trace" src="{{ asset('images/home/logbook/trace-compared.png') }}" alt="">
+                        <img class="p-logbook__trace" src="{{ asset('images/home/logbook/trace-own.svg') }}" alt="Tracé illustratif du vol">
+                        <span class="p-logbook__map-label">Parcours illustratif · Alpes</span>
+                        <span class="p-logbook__map-start">Départ / arrivée</span>
+                    </div>
+                    <p class="p-logbook__legend">
+                        <span class="p-logbook__legend-own">— Votre vol</span>
+                        <span class="u-muted">– – Membre A</span>
+                    </p>
+                    <div class="l-grid p-logbook__stats">
+                        <twig:Ui:Stat label="Distance" value="145,8" unit="km" />
+                        <twig:Ui:Stat label="Durée" value="2 h 18" unit="en vol" />
+                        <twig:Ui:Stat label="Altitude max." value="2 480" unit="m" />
+                    </div>
+                </div>
+
+                <div class="l-stack p-logbook__compare">
+                    <twig:Ui:Heading level="4" size="h2" class="p-logbook__compare-title">Même ciel, plusieurs parcours.</twig:Ui:Heading>
+                    <p class="u-note">Comparez les distances et échangez sur vos choix de vol. Exemples fictifs.</p>
+                    <twig:Ui:Tag variant="soft">Distance parcourue</twig:Ui:Tag>
+                    <twig:Ui:Meter label="Votre vol" value="145,8 km" :percent="95.7" highlight />
+                    <twig:Ui:Meter label="Membre A" value="152,4 km" :percent="100" />
+                    <twig:Ui:Meter label="Membre B" value="138,2 km" :percent="90.7" />
+                    <twig:Ui:Link href="#">Comparer avec les membres</twig:Ui:Link>
+                </div>
+            </div>
+
+            <div class="p-logbook__help">
+                <twig:Ui:Link href="#">Comprendre ma trace</twig:Ui:Link>
+                <twig:Ui:Link href="#">Créer mon carnet de vol</twig:Ui:Link>
+            </div>
+        </article>
+
+        <p class="u-note">Trajet, statistiques et comparaisons fictifs, non issus des vols des membres. Proposition visuelle, sans dépôt de fichier actif.</p>
+    </div>
+</twig:Layout:Section>
