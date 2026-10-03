@@ -1,0 +1,75 @@
+# Production environment: docker compose -f compose.yaml -f compose.prod.yaml
+# Use `make deploy-prod TAG=vX.Y.Z` rather than calling this file directly.
+
+x-php-prod: &php-prod
+  image: ${COMPOSE_PROJECT_NAME:-eplaneur}-php:${APP_VERSION:-latest}
+  restart: unless-stopped
+  environment:
+    APP_ENV: prod
+    APP_SECRET: ${APP_SECRET:?APP_SECRET must be set in .env.local}
+    DEFAULT_URI: https://${SERVER_NAME:?}
+    MAILER_DSN: ${MAILER_DSN:?}
+    MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?}
+    TRUSTED_PROXIES: ${TRUSTED_PROXIES:?}
+    DATABASE_HOST: database
+    DATABASE_PORT: 3306
+    MARIADB_VERSION: ${MARIADB_VERSION:?}
+    MARIADB_DATABASE: ${MARIADB_DATABASE:?}
+    MARIADB_USER: ${MARIADB_USER:?}
+    MARIADB_PASSWORD: ${MARIADB_PASSWORD:?}
+  depends_on:
+    database:
+      condition: service_healthy
+
+services:
+  traefik:
+    image: traefik:${TRAEFIK_VERSION:-v3.6}
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL must be set in .env.local}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+
+  php:
+    <<: *php-prod
+    build:
+      target: php_prod
+
+  worker:
+    <<: *php-prod
+    command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "--memory-limit=256M"]
+    user: www-data
+    # Same image as the php service, which builds it
+    pull_policy: never
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: nginx_prod
+      args:
+        NGINX_VERSION: ${NGINX_VERSION:-1.28}
+    image: ${COMPOSE_PROJECT_NAME:-eplaneur}-nginx:${APP_VERSION:-latest}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.rule=Host(`${SERVER_NAME:?}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.tls.certresolver=letsencrypt
+      - traefik.http.services.${COMPOSE_PROJECT_NAME:-eplaneur}.loadbalancer.server.port=80
+
+volumes:
+  traefik_letsencrypt:

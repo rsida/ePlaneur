@@ -1,0 +1,17 @@
+parameters:
+    level: 6
+    paths:
+        - bin/
+        - config/
+        - public/
+        - src/
+        - tests/
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+    doctrine:
+        objectManagerLoader: tests/object-manager.php
+    ignoreErrors:
+        # Called by MicroKernelTrait to validate APP_ENV
+        -
+            identifier: method.unused
+            path: src/Kernel.php

@@ -1,0 +1,18 @@
+# TLS is terminated by Traefik, nginx only speaks plain HTTP on the internal network.
+server {
+    listen 80;
+    server_name _;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # AssetMapper files are versioned: cache them forever
+    location /assets/ {
+        expires max;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+        try_files $uri =404;
+    }
+
+    include /etc/nginx/symfony.conf;
+}

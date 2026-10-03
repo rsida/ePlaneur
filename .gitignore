@@ -18,3 +18,19 @@
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
+
+###> docker ###
+/docker/certs/*
+!/docker/certs/.gitkeep
+/backups/
+/.app-version
+###< docker ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> friends-of-behat/symfony-extension ###
+/behat.php
+###< friends-of-behat/symfony-extension ###

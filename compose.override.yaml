@@ -1,17 +1,49 @@
-
+# Development environment (merged automatically with compose.yaml)
 services:
+  php:
+    build:
+      target: php_dev
+    image: ${COMPOSE_PROJECT_NAME:-eplaneur}-php:dev
+    # Run as the host user so files created in the container (cache, migrations,
+    # make:* output) belong to you
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - ./:/app
+    environment:
+      XDEBUG_MODE: ${XDEBUG_MODE:-off}
+      XDEBUG_CONFIG: client_host=${XDEBUG_CLIENT_HOST:-host.docker.internal}
+      PHP_IDE_CONFIG: serverName=${SERVER_NAME:?}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  nginx:
+    image: nginx:${NGINX_VERSION:-1.28}-alpine
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    environment:
+      SERVER_NAME: ${SERVER_NAME:?}
+      HTTPS_PORT: ${HTTPS_PORT:-443}
+    volumes:
+      - ./public:/app/public:ro
+      - ./docker/nginx/symfony.conf:/etc/nginx/symfony.conf:ro
+      - ./docker/nginx/dev.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./docker/certs:/etc/nginx/certs:ro
+
 ###> doctrine/doctrine-bundle ###
   database:
     ports:
-      - "5432"
+      - "${MARIADB_HOST_PORT:-3307}:3306"
+    volumes:
+      - ./docker/mariadb/init:/docker-entrypoint-initdb.d:ro
 ###< doctrine/doctrine-bundle ###
 
 ###> symfony/mailer ###
   mailer:
     image: axllent/mailpit
+    restart: unless-stopped
     ports:
-      - "1025"
-      - "8025"
+      - "${MAILPIT_PORT:-8025}:8025"
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
