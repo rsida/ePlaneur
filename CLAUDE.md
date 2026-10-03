@@ -4,6 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 @AGENTS.md
 
+## Project purpose
+
+Rebuild with Symfony the website of the **Club ePlaneur** (https://club.eplaneur.fr, WordPress today):
+a French association, run entirely online, that trains people to fly gliders on the Condor simulator
+and organises weekly multiplayer "network flights". The site presents the activity, publishes the
+8-step training path, organises flights, manages accounts and membership, and hosts association
+content (official documents, governance, news, restricted committee pages).
+
+Before any functional work, read `doc/project/` — it is the reference for the domain:
+`club.md` (association, membership, access levels), `training.md`, `flights.md`, `ecosystem.md`
+(what eplaneur.fr, Condor Club, Yapla... already do — do not rebuild them without a decision),
+`current-site.md` (site map and features to carry over) and `glossary.md`.
+
+Key domain constraints:
+- User-facing content is in **French**; times are metropolitan France time (many members are in
+  La Réunion).
+- Access levels: visitor, registered user (free account), member (paid via Yapla, validated by the
+  club), committee, admin.
+- "Simulator, not game": features support structured progression (steps, qualifications), not just fun.
+
+## Writing
+
+Use the project skill `writing` (`.claude/skills/writing/SKILL.md`) for every writing task: replies to
+the user in French, every written artifact (docs, comments, commits, skills) in English unless the user
+asks otherwise, site content in French.
+
 ## Project-specific overrides of AGENTS.md
 
 - Never run `php`, `composer` or `symfony` on the host (host PHP is 8.3, the project needs 8.4+).
@@ -11,8 +37,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   `make console c="..."`, `make composer c="..."`, `make bash`. Do not use `symfony serve`.
 - The Makefile feeds Docker Compose the same env files as Symfony (`.env < .env.local < .env.$ENV <
   .env.$ENV.local`). Calling `docker compose` directly only reads `.env`: prefer `make`.
-- Full documentation lives in `doc/` (installation, configuration, development, tests, production):
-  keep it in sync when changing Docker, env variables or Makefile targets.
+- Full documentation lives in `doc/` (project/functional reference, installation, configuration,
+  development, tests, production). Keep it in sync when changing Docker, env variables, Makefile
+  targets or the functional scope.
 
 ## Commands
 
