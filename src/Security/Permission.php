@@ -16,6 +16,12 @@ enum Permission: string
     case AdminAccess = 'ADMIN_ACCESS';
     case UserManage = 'USER_MANAGE';
     case GroupManage = 'GROUP_MANAGE';
+    case PostCreate = 'POST_CREATE';
+    case PostEdit = 'POST_EDIT';
+    case PostPublish = 'POST_PUBLISH';
+    case PostDelete = 'POST_DELETE';
+    case CategoryManage = 'CATEGORY_MANAGE';
+    case MediaManage = 'MEDIA_MANAGE';
 
     public function label(): string
     {
@@ -23,6 +29,12 @@ enum Permission: string
             self::AdminAccess => 'Accéder à l’administration',
             self::UserManage => 'Gérer les comptes',
             self::GroupManage => 'Gérer les groupes et leurs droits',
+            self::PostCreate => 'Écrire des articles',
+            self::PostEdit => 'Modifier tous les articles et voir les brouillons',
+            self::PostPublish => 'Publier ou dépublier des articles',
+            self::PostDelete => 'Supprimer des articles',
+            self::CategoryManage => 'Gérer les catégories d’articles',
+            self::MediaManage => 'Gérer la médiathèque (images, documents)',
         };
     }
 }

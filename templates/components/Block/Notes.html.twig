@@ -1,0 +1,11 @@
+{% props placed %}
+{% set data = placed.block %}
+<section class="c-notes" aria-labelledby="{{ placed.key }}-title">
+    <h3 class="c-block-heading" id="{{ placed.key }}-title">{{ data.title }}</h3>
+    <dl class="c-notes__rows">
+        {% for row in data.rows %}
+            <div class="c-notes__row"><dt>{{ row.label }}</dt><dd>{{ row.text }}</dd></div>
+        {% endfor %}
+    </dl>
+    {% if data.note %}<p class="u-note">{{ data.note }}</p>{% endif %}
+</section>

@@ -49,6 +49,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /** Author profile: role shown under the name, e.g. "Rédactrice". */
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
+    private ?string $jobTitle = null;
+
+    /** Author profile: short presentation shown under articles. */
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $bio = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    private ?Media $avatar = null;
+
     /** @var Collection<int, Group> */
     #[ORM\ManyToMany(targetEntity: Group::class, inversedBy: 'users')]
     #[ORM\JoinTable(name: 'app_user_group')]
@@ -134,6 +147,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function getJobTitle(): ?string
+    {
+        return $this->jobTitle;
+    }
+
+    public function setJobTitle(?string $jobTitle): static
+    {
+        $this->jobTitle = $jobTitle;
+
+        return $this;
+    }
+
+    public function getBio(): ?string
+    {
+        return $this->bio;
+    }
+
+    public function setBio(?string $bio): static
+    {
+        $this->bio = $bio;
+
+        return $this;
+    }
+
+    public function getAvatar(): ?Media
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?Media $avatar): static
+    {
+        $this->avatar = $avatar;
+
+        return $this;
+    }
+
+    /** Two-letter initials, used when there is no avatar. */
+    public function getInitials(): string
+    {
+        $words = preg_split('/[\s\-]+/u', $this->displayName, -1, \PREG_SPLIT_NO_EMPTY) ?: [];
+        $initials = '';
+        foreach (\array_slice($words, 0, 2) as $word) {
+            $initials .= mb_strtoupper(mb_substr($word, 0, 1));
+        }
+
+        return $initials;
     }
 
     /**

@@ -1,0 +1,22 @@
+framework:
+    html_sanitizer:
+        sanitizers:
+            # Rich text inside content blocks: paragraphs, emphasis, links and lists only.
+            # Used with the Twig filter `|sanitize_html('app.rich_text')`.
+            app.rich_text:
+                allow_elements:
+                    p: []
+                    br: []
+                    strong: []
+                    b: []
+                    em: []
+                    i: []
+                    code: []
+                    ul: []
+                    ol: []
+                    li: []
+                    a: ['href', 'title']
+                allowed_link_schemes: ['http', 'https', 'mailto']
+                allow_relative_links: true
+                force_https_urls: false
+                max_input_length: 50000

@@ -1,0 +1,18 @@
+{#
+    Share actions: copy the link, send by e-mail, native share sheet (shown only where supported).
+    <twig:Content:Share :url="url('app_post_show', {slug: post.slug})" :title="post.title" />
+#}
+{% props url, title %}
+<div class="c-share" data-controller="share" data-share-url-value="{{ url }}" data-share-title-value="{{ title }}">
+    <span class="c-share__label">Partager</span>
+    <button type="button" class="c-share__button" data-action="share#copy" title="Copier le lien">
+        <twig:ux:icon name="link" /><span class="u-visually-hidden">Copier le lien</span>
+    </button>
+    <a class="c-share__button" href="mailto:?subject={{ title|url_encode }}&amp;body={{ url|url_encode }}" title="Envoyer par e-mail">
+        <twig:ux:icon name="mail" /><span class="u-visually-hidden">Envoyer par e-mail</span>
+    </a>
+    <button type="button" class="c-share__button" data-action="share#native" data-share-target="native" hidden title="Partager…">
+        <twig:ux:icon name="share-2" /><span class="u-visually-hidden">Partager…</span>
+    </button>
+    <span class="c-share__status" role="status" data-share-target="status"></span>
+</div>

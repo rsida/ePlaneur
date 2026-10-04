@@ -1,0 +1,12 @@
+{% props placed %}
+<ol class="c-steps" role="list">
+    {% for step in placed.block.steps %}
+        <li class="c-steps__item">
+            <span class="c-steps__number" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
+            <div class="c-steps__content">
+                <p class="c-steps__title">{{ step.title }}</p>
+                {% if step.text %}<p class="c-steps__text">{{ step.text }}</p>{% endif %}
+            </div>
+        </li>
+    {% endfor %}
+</ol>

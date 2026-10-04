@@ -136,6 +136,29 @@
                     </dl>
                 </div>
             </div>
+
+            <twig:Ui:Heading level="2" size="h2">Blocs de contenu</twig:Ui:Heading>
+            <p class="u-lead u-full">Chaque type de bloc d’article (App\Content\Block\BlockType). Images, carrousel, vidéo, PDF et téléchargements : voir l’article de démonstration <a href="{{ path('app_post_show', {slug: 'votre-premier-vol'}) }}">Votre premier vol</a> (fixtures).</p>
+            <div class="p-article__body u-full">
+                <twig:Content:Blocks :blocks="blocks|filter(b => b.block.type.value != 'takeaways')" />
+            </div>
+        </div>
+    </twig:Layout:Section>
+    <twig:Content:Blocks :blocks="blocks|filter(b => b.block.type.value == 'takeaways')" />
+    <twig:Layout:Section theme="light">
+        <div class="l-stack l-stack--lg">
+            <twig:Ui:Heading level="2" size="h2">Composants d’article</twig:Ui:Heading>
+            <twig:Ui:Breadcrumb class="u-full" :items="[{label: 'Accueil', href: '#'}, {label: 'Rubrique', href: '#'}, {label: 'Page courante'}]" />
+            <div class="l-grid l-grid--2 u-full">
+                <twig:Content:Toc :entries="[{number: '01', title: 'Entrée du sommaire', anchor: 'toolkit-0'}, {number: '02', title: 'Autre entrée', anchor: 'toolkit-1'}]" />
+                <div class="l-stack">
+                    <twig:Content:Share url="https://club.eplaneur.fr" title="ePlaneur" />
+                    <p class="l-cluster"><span class="c-level-badge">Badge de niveau</span><span class="c-keyword">Mot-clé</span><span class="c-avatar">CL</span></p>
+                    <p class="u-note">À venir (non branchés, voir doc/roadmap.md) :</p>
+                    <twig:Content:Comment initials="ML" author="Marc L." date="5 octobre 2026" text="Commentaire d’un lecteur." />
+                    <twig:Content:Feedback question="Cet article vous a donné des repères ?" />
+                </div>
+            </div>
         </div>
     </twig:Layout:Section>
 {% endblock %}

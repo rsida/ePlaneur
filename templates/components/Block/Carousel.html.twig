@@ -1,0 +1,46 @@
+{# Gallery driven by the `carousel` Stimulus controller; without JS every slide stays reachable through the thumbnails. #}
+{% props placed %}
+{% set data = placed.block %}
+{% set slides = data.slides|filter(slide => media(slide.mediaId)) %}
+{% set count = slides|length %}
+{% if count > 0 %}
+<section class="c-carousel" data-controller="carousel" aria-roledescription="carrousel"{% if data.title %} aria-labelledby="{{ placed.key }}-title"{% else %} aria-label="Galerie d’images"{% endif %}>
+    {% if data.title %}<h3 class="c-block-heading" id="{{ placed.key }}-title">{{ data.title }}</h3>{% endif %}
+    <div class="c-carousel__stage">
+        {% for slide in slides %}
+            {% set image = media(slide.mediaId) %}
+            <img class="c-carousel__slide" src="{{ media_url(image) }}" alt="{{ image.alt ?: slide.label }}" width="{{ image.width }}" height="{{ image.height }}"
+                 loading="lazy" data-carousel-target="slide"{% if not loop.first %} hidden{% endif %}>
+        {% endfor %}
+        <p class="c-carousel__counter" aria-live="polite"><span data-carousel-target="current">01</span> / {{ '%02d'|format(count) }}</p>
+        {% if count > 1 %}
+            <button type="button" class="c-carousel__nav c-carousel__nav--prev" data-action="carousel#previous" aria-label="Image précédente">
+                <twig:ux:icon name="chevron-left" />
+            </button>
+            <button type="button" class="c-carousel__nav c-carousel__nav--next" data-action="carousel#next" aria-label="Image suivante">
+                <twig:ux:icon name="chevron-right" />
+            </button>
+        {% endif %}
+    </div>
+    {% if count > 1 %}
+        <ul class="c-carousel__thumbs" role="list">
+            {% for slide in slides %}
+                {% set image = media(slide.mediaId) %}
+                <li>
+                    <button type="button" class="c-carousel__thumb" data-carousel-target="thumb" data-action="carousel#show"
+                            data-carousel-index-param="{{ loop.index0 }}"{% if loop.first %} aria-current="true"{% endif %}>
+                        <img src="{{ media_url(image) }}" alt="" loading="lazy">
+                        <span>{{ slide.label }}</span>
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% for slide in slides %}
+        {% set image = media(slide.mediaId) %}
+        <p class="c-block-figure__caption" data-carousel-target="caption"{% if not loop.first %} hidden{% endif %}>
+            {{ '%02d'|format(loop.index) }} · {{ slide.caption ?: slide.label }}{% if image.credit %} {{ image.credit }}{% endif %}
+        </p>
+    {% endfor %}
+</section>
+{% endif %}

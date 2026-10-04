@@ -1,0 +1,14 @@
+{# Author presentation under an article. #}
+{% props author %}
+<section {{ attributes.defaults({class: 'c-author-card'}) }} aria-label="À propos de l’auteur">
+    {% if author.avatar %}
+        <img class="c-avatar c-avatar--lg" src="{{ media_url(author.avatar) }}" alt="" width="84" height="84" loading="lazy">
+    {% else %}
+        <span class="c-avatar c-avatar--lg" aria-hidden="true">{{ author.initials }}</span>
+    {% endif %}
+    <div class="c-author-card__profile">
+        <p class="c-eyebrow">À propos de l’auteur</p>
+        <p class="c-author-card__name">{{ author.displayName }}</p>
+        {% if author.bio %}<p class="c-author-card__bio">{{ author.bio }}</p>{% endif %}
+    </div>
+</section>

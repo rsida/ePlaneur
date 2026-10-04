@@ -39,8 +39,10 @@ final class AppFixtures extends Fixture
             $group = (new Group($default->value, $default->label()))
                 ->setDescription($default->description())
                 ->setAllPermissions($default->hasAllPermissions())
+                ->setPermissions($default->defaultPermissions())
                 ->setSystem(true);
             $manager->persist($group);
+            $this->addReference('group-'.$default->value, $group);
             $groups[$default->value] = $group;
         }
 

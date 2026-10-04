@@ -1,10 +1,11 @@
 {#
     Call-to-action button. Renders a link when `href` is set, a <button> otherwise.
     variant: primary | dark | accent | outline — colors come from the --button-* tokens.
+    size: md (54px, default) | sm (compact, inside cards and panels).
     <twig:Ui:Button href="#" variant="accent">Rejoindre le club</twig:Ui:Button>
 #}
-{% props href = null, variant = 'primary', icon = 'arrow-right', type = 'button', block = false %}
-{% set classes = html_classes('c-button', 'c-button--' ~ variant, {'c-button--block': block}) %}
+{% props href = null, variant = 'primary', icon = 'arrow-right', type = 'button', block = false, size = 'md' %}
+{% set classes = html_classes('c-button', 'c-button--' ~ variant, {'c-button--block': block, 'c-button--sm': size == 'sm'}) %}
 {% if href %}
     <a href="{{ href }}" {{ attributes.defaults({class: classes}) }}>
         <span>{% block content %}{% endblock %}</span>

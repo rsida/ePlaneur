@@ -1,0 +1,15 @@
+{% props placed %}
+<ul class="c-link-list" role="list">
+    {% for link in placed.block.links %}
+        {% set external = link.url starts with 'http' %}
+        <li>
+            <a class="c-link-list__item" href="{{ link.url }}"{% if external %} rel="noopener"{% endif %}>
+                <span class="c-link-list__text">
+                    <span class="c-link-list__title">{{ link.title }}</span>
+                    {% if link.description %}<span class="c-link-list__description">{{ link.description }}</span>{% endif %}
+                </span>
+                <twig:ux:icon name="arrow-up-right" class="c-link-list__icon" />
+            </a>
+        </li>
+    {% endfor %}
+</ul>

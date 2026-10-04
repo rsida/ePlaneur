@@ -31,7 +31,7 @@ export APP_VERSION ?= $(shell cat .app-version 2>/dev/null || echo latest)
 .DEFAULT_GOAL := help
 .PHONY: help urls install deploy-dev certs build up down restart ps logs bash bash-root \
 	console sf composer cc db db-root sql db-create db-migrate migration db-reset fixtures \
-	db-dump db-restore assets assets-build importmap-require xdebug-on xdebug-off \
+	db-dump db-restore media-dump assets assets-build importmap-require xdebug-on xdebug-off \
 	test test-unit test-behat test-db cs cs-fix phpstan lint qa \
 	release deploy-prod prod-check
 
@@ -127,6 +127,11 @@ db-dump: ## Dump the database into backups/
 	@mkdir -p backups
 	$(DC) exec -T database sh -c 'mariadb-dump -u"$$MARIADB_USER" -p"$$MARIADB_PASSWORD" --single-transaction --routines "$$MARIADB_DATABASE"' | gzip > backups/$(ENV)-$$(date +%Y%m%d-%H%M%S).sql.gz
 	@ls -t backups/*.sql.gz | head -1
+
+media-dump: ## Archive the uploaded media (var/uploads) into backups/
+	@mkdir -p backups
+	$(DC) exec -T php tar -czf - -C var uploads > backups/$(ENV)-media-$$(date +%Y%m%d-%H%M%S).tar.gz
+	@ls -t backups/*-media-*.tar.gz | head -1
 
 db-restore: ## Restore a dump: make db-restore file=backups/xxx.sql.gz
 	@test -n "$(file)" || (echo "Usage: make db-restore file=backups/xxx.sql.gz" && exit 1)

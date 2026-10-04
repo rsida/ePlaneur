@@ -1,0 +1,25 @@
+{# PDF read in the page with the browser's own viewer; name, size and download link above it. #}
+{% props placed %}
+{% set data = placed.block %}
+{% set file = media(data.mediaId) %}
+{% if file %}
+    {% set url = media_url(file) %}
+    <section class="c-pdf" aria-label="Document : {{ data.title ?: file.originalName }}">
+        <div class="c-pdf__bar">
+            <twig:ux:icon name="file-text" class="c-pdf__icon" />
+            <p class="c-pdf__name">{{ data.title ?: file.originalName }}</p>
+            <p class="c-pdf__meta">{{ file.format }}{% if file.pages %} · {{ file.pages }} page{{ file.pages > 1 ? 's' }}{% endif %} · {{ file.size|file_size }}</p>
+        </div>
+        <div class="c-pdf__tools">
+            <a class="c-pdf__tool" href="{{ url }}" target="_blank" rel="noopener">
+                <twig:ux:icon name="printer" /><span>Ouvrir pour imprimer</span>
+            </a>
+            <a class="c-pdf__tool" href="{{ media_url(file, true) }}" download>
+                <twig:ux:icon name="download" /><span>Télécharger</span>
+            </a>
+        </div>
+        <div class="c-pdf__viewer">
+            <iframe src="{{ url }}#view=FitH" title="{{ data.title ?: file.originalName }}" loading="lazy"></iframe>
+        </div>
+    </section>
+{% endif %}

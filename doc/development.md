@@ -36,7 +36,7 @@ The Symfony web debug toolbar and the profiler (`/_profiler`) are enabled in dev
 | `make sql q="SELECT ..."` | One-shot query |
 | `make migration` | Generate a migration from the entity changes |
 | `make db-migrate` | Run the migrations |
-| `make fixtures` | Load `src/DataFixtures` (purges the dev database): default groups and one account per access level, see [accounts](accounts.md#development-accounts) |
+| `make fixtures` | Load `src/DataFixtures` (purges the dev database): default groups, one account per access level (see [accounts](accounts.md#development-accounts)) and demo posts with their media, among them the Figma article at `/actualites/votre-premier-vol` |
 | `make db-reset` | Drop, create, migrate and load the fixtures |
 | `make db-dump` | Gzipped dump into `backups/` |
 | `make db-restore file=backups/xxx.sql.gz` | Restore a dump |

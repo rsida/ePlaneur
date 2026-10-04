@@ -21,6 +21,7 @@
         "symfony/flex": "^2",
         "symfony/form": "8.1.*",
         "symfony/framework-bundle": "8.1.*",
+        "symfony/html-sanitizer": "8.1.*",
         "symfony/http-client": "8.1.*",
         "symfony/intl": "8.1.*",
         "symfony/mailer": "8.1.*",
@@ -46,7 +47,9 @@
         "symfony/yaml": "8.1.*",
         "symfonycasts/reset-password-bundle": "^1.25",
         "symfonycasts/verify-email-bundle": "^1.18",
-        "twig/extra-bundle": "^2.12|^3.0",
+        "twig/extra-bundle": "^3.29",
+        "twig/intl-extra": "^3.30",
+        "twig/string-extra": "^3.24",
         "twig/twig": "^2.12|^3.0"
     },
     "config": {

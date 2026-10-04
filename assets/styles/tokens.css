@@ -60,7 +60,17 @@
     --text-h3-xs: clamp(1.375rem, 1.2rem + 0.55vw, 1.6875rem); /* 22 → 27 */
     --text-h4: clamp(1.25rem, 1.1rem + 0.5vw, 1.625rem);     /* 20 → 26 */
     --text-tagline: clamp(1.375rem, 1.2rem + 0.8vw, 1.875rem); /* 22 → 30 */
+    /* Articles (Figma "Article desktop") */
+    --text-article-title: clamp(2.5rem, 1.6rem + 3.9vw, 4.75rem);   /* 40 → 76, Oswald */
+    --text-article-lead: clamp(1.1875rem, 1rem + 0.6vw, 1.5625rem); /* 19 → 25, Barlow */
+    --text-section-title: clamp(1.875rem, 1.5rem + 1.2vw, 2.625rem); /* 30 → 42, Oswald */
+    --text-band-title: clamp(2rem, 1.5rem + 1.6vw, 3rem);           /* 32 → 48, Oswald */
+    --text-quote: clamp(1.5rem, 1.2rem + 0.9vw, 2rem);              /* 24 → 32 */
+    --text-title-md: clamp(1.25rem, 1.1rem + 0.5vw, 1.5625rem);     /* 20 → 25 */
+    --text-title-sm: clamp(1.25rem, 1.15rem + 0.3vw, 1.4375rem);    /* 20 → 23 */
+    --text-title-xs: 1.375rem;                                       /* 22 */
     --text-lead: 1.0625rem;  /* 17 */
+    --text-md: 1rem;         /* 16 */
     --text-body: 0.9375rem;  /* 15 */
     --text-sm: 0.875rem;     /* 14 */
     --text-xs: 0.8125rem;    /* 13 */
@@ -71,6 +81,7 @@
     --leading-snug: 1.25;
     --leading-normal: 1.5;
     --leading-relaxed: 1.65;
+    --leading-reading: 1.8; /* article body text */
 
     /* ---------- 2. Semantic: spacing, shape, depth ---------- */
     --space-1: 0.25rem;  /* 4 */
@@ -87,6 +98,9 @@
     --gutter: clamp(1.25rem, 0.5rem + 3.6vw, 4.5rem);        /* page side padding 20 → 72 */
     --section-padding: clamp(3.5rem, 2.5rem + 3vw, 5rem);    /* 56 → 80 */
     --container-max: 81rem;                                   /* 1296 content width */
+    --article-sidebar: 15.5rem;                               /* 248 article table of contents */
+    --article-gap: 4rem;                                      /* 64 */
+    --article-column: 51.25rem;                               /* 820 article reading column */
 
     --radius-sm: 4px;
     --radius-md: 8px;
@@ -153,7 +167,16 @@
     --rule: var(--palette-ink);
 }
 
-.t-light, .t-paper, .t-dark, .t-primary, .t-accent {
+.t-warm {
+    --surface: var(--color-tint-warm);
+    --on-surface: var(--palette-ink);
+    --on-surface-muted: var(--palette-slate);
+    --eyebrow: var(--color-primary);
+    --link: var(--color-primary);
+    --rule: var(--palette-line);
+}
+
+.t-light, .t-paper, .t-dark, .t-primary, .t-accent, .t-warm {
     background-color: var(--surface);
     color: var(--on-surface);
 }

@@ -1,0 +1,18 @@
+{# Native <details> accordion: works without JavaScript. #}
+{% props placed %}
+{% set data = placed.block %}
+<section class="c-faq"{% if data.title %} aria-labelledby="{{ placed.key }}-title"{% endif %}>
+    {% if data.title %}<h3 class="c-block-heading" id="{{ placed.key }}-title">{{ data.title }}</h3>{% endif %}
+    <div class="c-faq__list">
+        {% for item in data.items %}
+            <details class="c-faq__item"{% if loop.first and data.openFirst %} open{% endif %}>
+                <summary class="c-faq__question">
+                    <span>{{ item.question }}</span>
+                    <twig:ux:icon name="plus" class="c-faq__icon c-faq__icon--closed" />
+                    <twig:ux:icon name="minus" class="c-faq__icon c-faq__icon--open" />
+                </summary>
+                <div class="c-rich-text c-rich-text--sm c-faq__answer">{{ item.answer|sanitize_html('app.rich_text') }}</div>
+            </details>
+        {% endfor %}
+    </div>
+</section>

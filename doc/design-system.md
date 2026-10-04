@@ -53,6 +53,7 @@ add to their size. Heading sizes beyond the four levels (`--text-h2-lg` 32px, `-
 | `t-dark` | ink | white / mist | sand / white |
 | `t-primary` | navy | white | sand / white |
 | `t-accent` | sand | ink | navy |
+| `t-warm` | sand-soft | ink | navy |
 
 ## Files
 
@@ -91,7 +92,7 @@ usage example.
 
 | Component | Purpose | Main props |
 |---|---|---|
-| `Ui:Button` | Call to action (`<a>` or `<button>`) | `href`, `variant` (primary, dark, accent, outline), `icon`, `block` |
+| `Ui:Button` | Call to action (`<a>` or `<button>`) | `href`, `variant` (primary, dark, accent, outline), `icon`, `block`, `size` (md, sm) |
 | `Ui:Link` | Text link with arrow | `href`, `icon` |
 | `Ui:Eyebrow` | Uppercase label above titles | — |
 | `Ui:Heading` | Heading with independent tag and size | `level`, `size` (h1–h4) |
@@ -105,6 +106,7 @@ usage example.
 | `Ui:Dropzone` | File drop area (real file input) | `name`, `title`, `hint`, `accept` |
 | `Ui:Figure` | Rounded picture with badge and caption | `src`, `alt`, `badge`, `caption` |
 | `Ui:Profile` | Icon + title + text line | `icon`, `title`, `text` |
+| `Ui:Breadcrumb` | Breadcrumb trail, last item = current page | `items` ({label, href}) |
 | `Layout:Section` | Themed full-width section with container | `theme`, `tag`, `container` |
 | `Layout:SectionHeader` | Eyebrow + title + lead + optional `aside` block | `eyebrow`, `title`, `lead`, `level` |
 | `Card:Feature` | Tinted card with icon tile | `icon`, `title`, `text`, `tone` (warm, cool) |
@@ -112,11 +114,23 @@ usage example.
 | `Card:Guide` | Guide with chapters and CTA | `eyebrow`, `title`, `text`, `chapters`, `ctaLabel`, `ctaHref` |
 | `Card:News` | Editorial card, image or featured poster | `eyebrow`, `title`, `text`, `image`, `featured`, `poster`, `posterLabel`, `href`, `linkLabel` |
 | `Card:Step` | Numbered step of a path | `number`, `title`, `text`, `linkLabel`, `href` |
+| `Card:Post` | Article card: picture, category, title, excerpt, reading time | `post`, `readingMinutes` |
+| `Content:Blocks` | Renders a list of content blocks with their `Block:*` components (see [content](content.md)) | `blocks` |
+| `Content:Toc` | Article table of contents with reading progress (`toc` controller) | `entries` |
+| `Content:Share` | Copy link, e-mail, native share (`share` controller) | `url`, `title` |
+| `Content:AuthorCard` | Author presentation | `author` |
+| `Content:Comment`, `Content:Feedback` | Comment and "was it useful?" (visual only, not wired yet) | see files |
 | `Site:Header` | Sticky header, burger menu below 64em (`menu` Stimulus controller) | — |
 | `Site:Footer` | Footer with link columns and legal line | — |
 
 Other CSS-only components: `c-display`, `c-tagline`, `c-motto`, `c-callout`, `c-link-bar`,
-`c-icon-tile`, `c-definition-list`.
+`c-icon-tile`, `c-definition-list`, `c-level-badge`, `c-keyword`, `c-avatar`.
+
+Content blocks (`Block:*` components, one per block type, styles in `components/content.css`) are
+described in [content](content.md). Article typography tokens: `--text-article-title`,
+`--text-article-lead`, `--text-section-title`, `--text-band-title`, `--text-quote`,
+`--text-title-md/sm/xs`, `--leading-reading`; layout tokens `--article-sidebar`, `--article-gap`,
+`--article-column`.
 
 Forms: Symfony forms are rendered by the site form theme `templates/form/theme.html.twig`
 (registered in `config/packages/twig.yaml`), which outputs `c-field` rows (`c-field__label`, `c-input`,
@@ -143,7 +157,9 @@ Example:
 SVG files in `assets/icons/`, exported from Figma and normalised to `currentColor` (they take the
 text color). Render them with `<twig:ux:icon name="arrow-right" />` (size `1em` by default, set
 `font-size` or `width/height` to resize). Available: `arrow-right`, `chevron-right`, `glider`,
-`settings`, `upload`, `discover`, `progress`, `share`.
+`settings`, `upload`, `discover`, `progress`, `share`, and for articles `arrow-up-right`, `check`,
+`chevron-left`, `clock`, `download`, `file-text`, `info`, `lightbulb`, `link`, `mail`,
+`message-circle`, `minus`, `play`, `plus`, `printer`, `share-2`, `thumbs-up`, `triangle-alert`.
 
 ## Adding or changing something
 

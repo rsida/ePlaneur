@@ -1,0 +1,19 @@
+{#
+    Breadcrumb trail; the last item is the current page.
+    <twig:Ui:Breadcrumb :items="[{label: 'Accueil', href: path('app_home')}, {label: 'Votre premier vol'}]" />
+#}
+{% props items = [] %}
+<nav {{ attributes.defaults({class: 'c-breadcrumb', 'aria-label': 'Fil d’Ariane'}) }}>
+    <ol class="c-breadcrumb__list" role="list">
+        {% for item in items %}
+            <li class="c-breadcrumb__item">
+                {% if loop.last %}
+                    <span aria-current="page">{{ item.label }}</span>
+                {% else %}
+                    <a href="{{ item.href }}">{{ item.label }}</a>
+                    <twig:ux:icon name="chevron-right" class="c-breadcrumb__separator" aria-hidden="true" />
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ol>
+</nav>

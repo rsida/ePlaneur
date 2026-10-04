@@ -1,0 +1,22 @@
+{% props placed %}
+{% set data = placed.block %}
+<div class="c-downloads">
+    <ul class="c-downloads__list" role="list">
+        {% for item in data.files %}
+            {% set file = media(item.mediaId) %}
+            {% if file %}
+                <li class="c-download">
+                    <span class="c-download__format" aria-hidden="true">{{ file.format }}</span>
+                    <div class="c-download__info">
+                        <p class="c-download__title">{{ item.title }}</p>
+                        <p class="c-download__meta">{{ file.format }}{% if file.pages %} · {{ file.pages }} page{{ file.pages > 1 ? 's' }}{% endif %} · {{ file.size|file_size }}{% if item.description %} · {{ item.description }}{% endif %}</p>
+                        <a class="c-download__link" href="{{ media_url(file, true) }}" download>
+                            Télécharger<span class="u-visually-hidden"> « {{ item.title }} »</span> <span aria-hidden="true">↓</span>
+                        </a>
+                    </div>
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    {% if data.note %}<p class="c-block-figure__caption">{{ data.note }}</p>{% endif %}
+</div>

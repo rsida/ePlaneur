@@ -1,0 +1,128 @@
+{% extends 'base.html.twig' %}
+
+{#
+    Article page (Figma "Article desktop", node 29-4356): editorial header, cover, table of contents
+    with the sidebar blocks, body blocks, closing blocks, author and related posts.
+#}
+{% set post = article.post %}
+
+{% block title %}{{ post.title }}{% endblock %}
+{% block description %}{{ post.excerpt|u.truncate(160, '…', false) }}{% endblock %}
+
+{% block body %}
+    {% if preview %}
+        <p class="p-article__preview" role="status">
+            Aperçu : cet article n’est pas publié{% if post.publishedAt %} (publication prévue le {{ post.publishedAt|format_datetime('long', 'short', locale: 'fr') }}){% endif %}.
+        </p>
+    {% endif %}
+
+    <article class="p-article">
+        <header class="l-container p-article__header">
+            <twig:Ui:Breadcrumb :items="[
+                {label: 'Accueil', href: path('app_home')},
+                {label: 'Actualités', href: path('app_home') ~ '#actualites'},
+                {label: post.title},
+            ]" />
+
+            <div class="p-article__intro">
+                <div class="p-article__promise">
+                    {% if post.kicker or post.badge %}
+                        <p class="p-article__kicker">
+                            {% if post.kicker %}<span class="c-eyebrow">{{ post.kicker }}</span>{% endif %}
+                            {% if post.badge %}<span class="c-level-badge">{{ post.badge }}</span>{% endif %}
+                        </p>
+                    {% endif %}
+                    <h1 class="p-article__title">{{ post.title }}</h1>
+                    <p class="p-article__lead">{{ post.excerpt }}</p>
+                </div>
+                {% if post.highlight %}
+                    <div class="p-article__highlight">
+                        <p class="p-article__highlight-text">{{ post.highlight|nl2br }}</p>
+                        {% if post.highlightNote %}<p class="u-note">{{ post.highlightNote|nl2br }}</p>{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="p-article__meta">
+                {% if post.author %}
+                    <div class="p-article__author">
+                        {% if post.author.avatar %}
+                            <img class="c-avatar" src="{{ media_url(post.author.avatar) }}" alt="" width="48" height="48">
+                        {% else %}
+                            <span class="c-avatar" aria-hidden="true">{{ post.author.initials }}</span>
+                        {% endif %}
+                        <p>
+                            <strong>{{ post.author.displayName }}</strong>
+                            {% if post.author.jobTitle %}<span class="u-note">{{ post.author.jobTitle }}</span>{% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+                <p class="p-article__dates">
+                    {% if post.publishedAt %}<span>Publié le <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|format_date('long', locale: 'fr') }}</time></span>{% endif %}
+                    {% if post.wasUpdatedAfterPublication %}<strong>Mis à jour le <time datetime="{{ post.updatedAt|date('c') }}">{{ post.updatedAt|format_date('long', locale: 'fr') }}</time></strong>{% endif %}
+                </p>
+                <p class="p-article__reading">
+                    <twig:ux:icon name="clock" />{{ article.readingMinutes }} min de lecture
+                </p>
+                <twig:Content:Share :url="url('app_post_show', {slug: post.slug})" :title="post.title" />
+            </div>
+        </header>
+
+        {% if post.cover %}
+            <figure class="p-article__cover">
+                <img src="{{ media_url(post.cover) }}" alt="{{ post.cover.alt }}" width="{{ post.cover.width }}" height="{{ post.cover.height }}" fetchpriority="high">
+                {% if post.coverCaption or post.cover.credit %}
+                    <figcaption class="l-container p-article__cover-caption">
+                        {% if post.coverCaption %}<span class="p-article__cover-title">{{ post.coverCaption }}</span>{% endif %}
+                        {% if post.cover.credit %}<span>{{ post.cover.credit }}</span>{% endif %}
+                    </figcaption>
+                {% endif %}
+            </figure>
+        {% endif %}
+
+        <div class="l-container p-article__reading-layout">
+            <aside class="p-article__sidebar">
+                {% if article.toc is not empty %}<twig:Content:Toc :entries="article.toc" />{% endif %}
+                <twig:Content:Blocks :blocks="article.aside" />
+            </aside>
+            <div class="p-article__body" data-toc-content>
+                <twig:Content:Blocks :blocks="article.body" />
+            </div>
+        </div>
+
+        <twig:Content:Blocks :blocks="article.outro" />
+
+        {% if post.keywords is not empty or post.author %}
+            <div class="l-container p-article__reading-layout">
+                <div class="p-article__body p-article__closing">
+                    {% if post.keywords is not empty %}
+                        <p class="p-article__keywords">
+                            <span class="u-note">À retrouver dans</span>
+                            {% for keyword in post.keywords %}<span class="c-keyword">{{ keyword }}</span>{% endfor %}
+                        </p>
+                    {% endif %}
+                    {% if post.author and post.author.bio %}<twig:Content:AuthorCard :author="post.author" />{% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </article>
+
+    {% if article.related is not empty %}
+        <twig:Layout:Section theme="warm" class="p-article__related" aria-labelledby="related-title">
+            <div class="l-stack l-stack--lg">
+                <header class="c-section-header c-section-header--with-aside u-full">
+                    <div class="c-section-header__text">
+                        <twig:Ui:Eyebrow>À lire entre deux vols</twig:Ui:Eyebrow>
+                        <h2 class="c-heading c-heading--h2 p-article__related-title" id="related-title">Gardez l’envie de découvrir.</h2>
+                    </div>
+                    <div class="c-section-header__aside"><twig:Ui:Link href="{{ path('app_home') }}#actualites">Tous les articles</twig:Ui:Link></div>
+                </header>
+                <div class="l-rail">
+                    {% for related in article.related %}
+                        <twig:Card:Post :post="related" :readingMinutes="reading_minutes(related)" />
+                    {% endfor %}
+                </div>
+            </div>
+        </twig:Layout:Section>
+    {% endif %}
+{% endblock %}

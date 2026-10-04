@@ -1,0 +1,24 @@
+{#
+    Table of contents with reading progress (`toc` controller: progress bar and current section).
+    Collapsible below 64em, sticky in the sidebar above.
+#}
+{% props entries = [] %}
+<details class="c-toc" data-controller="toc" open>
+    <summary class="c-toc__title">Dans cet article</summary>
+    <div class="c-toc__progress" aria-hidden="true">
+        <div class="c-toc__track"><div class="c-toc__bar" data-toc-target="bar"></div></div>
+        <p class="c-toc__percent">Votre lecture · <span data-toc-target="percent">0</span> %</p>
+    </div>
+    <nav aria-label="Sommaire de l’article">
+        <ol class="c-toc__list" role="list">
+            {% for entry in entries %}
+                <li>
+                    <a class="c-toc__link" href="#{{ entry.anchor }}" data-toc-target="link" data-action="toc#close">
+                        <span class="c-toc__number">{{ entry.number }}</span>
+                        <span>{{ entry.title }}</span>
+                    </a>
+                </li>
+            {% endfor %}
+        </ol>
+    </nav>
+</details>

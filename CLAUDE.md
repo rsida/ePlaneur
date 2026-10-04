@@ -80,5 +80,8 @@ make qa                           # lint + php-cs-fixer + phpstan + tests
 - **Security**: rights are permissions (`App\Security\Permission`) held by groups in database, checked
   with voters (`is_granted('USER_MANAGE')`, `is_granted('CONTENT_VIEW', content)`); every account only
   has `ROLE_USER`. See `doc/accounts.md` before adding a protected feature.
+- **Content**: post bodies are lists of typed blocks stored as JSON (`App\Content\Block`), rendered by
+  `Block:*` Twig components; media are served by `MediaController` with access control. See
+  `doc/content.md` before adding a block type.
 - **Prod deploys** are tag-based: `make release TAG=vX` locally, `make deploy-prod TAG=vX` on the server
   (APP_ENV=prod in the server's `.env.local`).

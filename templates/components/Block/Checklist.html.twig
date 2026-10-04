@@ -1,0 +1,17 @@
+{# Real checkboxes; the `checklist` controller counts them and keeps the ticks in the reader's browser (per page and block). #}
+{% props placed %}
+{% set data = placed.block %}
+<fieldset class="c-checklist" data-controller="checklist" data-checklist-key-value="{{ placed.key }}">
+    <legend class="u-visually-hidden">{{ data.title }}</legend>
+    <div class="c-checklist__head" aria-hidden="true">
+        <p class="c-checklist__title">{{ data.title }}</p>
+        <p class="c-checklist__count"><span data-checklist-target="count">0</span> / {{ data.items|length }} vérifications</p>
+    </div>
+    {% for item in data.items %}
+        <label class="c-checklist__item">
+            <input type="checkbox" data-checklist-target="box" data-action="checklist#update">
+            <span>{{ item }}</span>
+        </label>
+    {% endfor %}
+    {% if data.note %}<p class="u-note">{{ data.note }}</p>{% endif %}
+</fieldset>

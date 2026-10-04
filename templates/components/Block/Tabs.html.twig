@@ -1,0 +1,29 @@
+{# Accessible tabs (`tabs` controller: click, arrow keys, Home/End). Without JS every panel is shown. #}
+{% props placed %}
+{% set id = placed.key %}
+<div class="c-tabs" data-controller="tabs">
+    <div class="c-tabs__list" role="tablist" data-tabs-target="list">
+        {% for tab in placed.block.tabs %}
+            <button type="button" class="c-tabs__tab" role="tab" id="{{ id }}-tab-{{ loop.index }}" aria-controls="{{ id }}-panel-{{ loop.index }}"
+                    aria-selected="{{ loop.first ? 'true' : 'false' }}" tabindex="{{ loop.first ? 0 : -1 }}"
+                    data-tabs-target="tab" data-action="tabs#select keydown->tabs#navigate">{{ tab.label }}</button>
+        {% endfor %}
+    </div>
+    {% for tab in placed.block.tabs %}
+        <div class="c-tabs__panel" role="tabpanel" id="{{ id }}-panel-{{ loop.index }}" aria-labelledby="{{ id }}-tab-{{ loop.index }}"
+             tabindex="0" data-tabs-target="panel">
+            <h3 class="c-tabs__title">{{ tab.title }}</h3>
+            {% if tab.html %}<div class="c-rich-text c-rich-text--muted">{{ tab.html|sanitize_html('app.rich_text') }}</div>{% endif %}
+            {% if tab.facts is not empty %}
+                <dl class="c-tabs__facts">
+                    {% for fact in tab.facts %}
+                        <div><dt>{{ fact.label }}</dt><dd>{{ fact.text }}</dd></div>
+                    {% endfor %}
+                </dl>
+            {% endif %}
+            {% if tab.linkLabel and tab.linkUrl %}
+                <twig:Ui:Button href="{{ tab.linkUrl }}" size="sm">{{ tab.linkLabel }}</twig:Ui:Button>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>

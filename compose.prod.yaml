@@ -17,6 +17,9 @@ x-php-prod: &php-prod
     MARIADB_DATABASE: ${MARIADB_DATABASE:?}
     MARIADB_USER: ${MARIADB_USER:?}
     MARIADB_PASSWORD: ${MARIADB_PASSWORD:?}
+  volumes:
+    # Uploaded media (images, PDF...): must survive deployments, back it up with the database
+    - uploads:/app/var/uploads
   depends_on:
     database:
       condition: service_healthy
@@ -73,3 +76,4 @@ services:
 
 volumes:
   traefik_letsencrypt:
+  uploads:

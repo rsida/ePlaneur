@@ -10,7 +10,7 @@ levels of the club) is in [project/club.md](project/club.md).
 | **User** (`App\Entity\User`) | Table `app_user`: e-mail (login), display name, password hash, `verified`, creation date | The user (registration, password) and administrators |
 | **Group** (`App\Entity\Group`) | Table `app_group`: code, name, description, permissions, "all permissions" flag, "system" flag | Administrators (admin screens come with roadmap step 3; console commands meanwhile) |
 | **Membership** | Table `app_user_group`: a user belongs to **any number** of groups; rights add up | Administrators |
-| **Permission** (`App\Security\Permission`) | PHP enum: the fixed catalogue of actions (`ADMIN_ACCESS`, `USER_MANAGE`, `GROUP_MANAGE`...) | Developers: add a case when a feature needs a new right |
+| **Permission** (`App\Security\Permission`) | PHP enum: the fixed catalogue of actions (`ADMIN_ACCESS`, `USER_MANAGE`, `GROUP_MANAGE`, post permissions listed in [content](content.md#permissions)...) | Developers: add a case when a feature needs a new right |
 | **Visibility** (`App\Security\Visibility`) | On each restricted content: `public`, `authenticated` or `groups` (+ the allowed groups) | Content editors |
 
 Default groups, created by the first migration and by the dev fixtures (`App\Security\DefaultGroup`):
@@ -18,7 +18,7 @@ Default groups, created by the first migration and by the dev fixtures (`App\Sec
 | Code | Name | Permissions |
 |---|---|---|
 | `member` | Membre | none yet |
-| `committee` | Comité | none yet |
+| `committee` | Comité | `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE` |
 | `admin` | Administrateur | all (`all_permissions` flag: includes permissions added later, and sees every content) |
 
 Administrators can create other groups (Rédacteur, Bienfaiteur, Bénévole...) and change which
@@ -104,3 +104,4 @@ On the production server, `make console c="..."` runs them the same way (see [pr
 | `comite@eplaneur.test` | Membre, Comité |
 | `membre@eplaneur.test` | Membre |
 | `inscrit@eplaneur.test` | none (free account) |
+| `camille@eplaneur.test` | Comité (author of the demo posts) |

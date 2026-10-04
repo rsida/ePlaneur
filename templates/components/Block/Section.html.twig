@@ -1,0 +1,8 @@
+{# Numbered section title; its anchor is the target of the table of contents. #}
+{% props placed %}
+{% set data = placed.block %}
+<header class="c-block-section" id="{{ placed.toc.anchor }}">
+    <p class="c-eyebrow">{{ placed.toc.number }}{% if data.eyebrow %} / {{ data.eyebrow }}{% endif %}</p>
+    <h2 class="c-block-section__title">{{ data.title }}</h2>
+    {% if data.intro %}<p class="c-block-section__intro">{{ data.intro }}</p>{% endif %}
+</header>

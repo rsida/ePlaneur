@@ -1,0 +1,14 @@
+{% props placed %}
+{% set data = placed.block %}
+{% set image = media(data.mediaId) %}
+{% if image %}
+    <figure class="c-block-figure">
+        <img class="c-block-figure__img" src="{{ media_url(image) }}" alt="{{ image.alt }}" width="{{ image.width }}" height="{{ image.height }}" loading="lazy">
+        {% if data.caption or image.credit %}
+            <figcaption class="c-block-figure__caption">
+                {% if data.caption %}<span>{{ data.caption }}</span>{% endif %}
+                {% if image.credit %}<span>{{ image.credit }}</span>{% endif %}
+            </figcaption>
+        {% endif %}
+    </figure>
+{% endif %}

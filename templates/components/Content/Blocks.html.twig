@@ -1,0 +1,8 @@
+{#
+    Renders a list of placed blocks (App\Content\PlacedBlock) with their own components.
+    <twig:Content:Blocks :blocks="article.body" />
+#}
+{% props blocks = [] %}
+{% for placed in blocks %}
+    {{ component(placed.component, {placed: placed}) }}
+{% endfor %}

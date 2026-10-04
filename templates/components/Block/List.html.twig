@@ -1,0 +1,8 @@
+{% props placed %}
+{% set data = placed.block %}
+{% set tag = data.ordered ? 'ol' : 'ul' %}
+<{{ tag }} class="c-block-list{{ data.ordered ? ' c-block-list--ordered' }}" role="list">
+    {% for item in data.items %}
+        <li class="c-block-list__item">{{ item|sanitize_html('app.rich_text') }}</li>
+    {% endfor %}
+</{{ tag }}>

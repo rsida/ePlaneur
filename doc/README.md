@@ -5,6 +5,7 @@
 | [Roadmap](roadmap.md) | Planned order of work, status, decisions and open questions |
 | [Project (functional reference)](project/README.md) | Purpose of the site, the club, training, network flights, ecosystem, current site, glossary |
 | [Accounts and permissions](accounts.md) | Registration, login, groups, permissions, content visibility, console commands, dev accounts |
+| [Content: posts, blocks, media](content.md) | Post model, block types and how to add one, media storage and access, post permissions |
 | [Design system](design-system.md) | Tokens, surface themes, layout primitives, Twig components, icons |
 | [Installation (development)](installation.md) | Prerequisites and first setup of the local environment |
 | [Configuration](configuration.md) | `.env` files, load order, every variable |

@@ -4,10 +4,10 @@
 #}
 {% set nav = [
     {label: 'Accueil', route: 'app_home'},
-    {label: 'Formation', href: '#formation'},
-    {label: 'Voler', href: '#vols'},
-    {label: 'Le Club', href: '#club'},
-    {label: 'Actualités', href: '#actualites'},
+    {label: 'Formation', href: '/#formation'},
+    {label: 'Voler', href: '/#vols'},
+    {label: 'Le Club', href: '/#club'},
+    {label: 'Actualités', href: '/#actualites', activeRoutes: ['app_post_show']},
 ] %}
 <header {{ attributes.defaults({class: 'c-header t-light'}) }} data-controller="menu" data-action="keydown.esc@window->menu#close">
     <div class="l-container c-header__bar">
@@ -21,7 +21,7 @@
             <nav aria-label="Navigation principale">
                 <ul class="c-nav" role="list">
                     {% for item in nav %}
-                        {% set current = item.route is defined and app.current_route == item.route %}
+                        {% set current = (item.route is defined and app.current_route == item.route) or app.current_route in (item.activeRoutes ?? []) %}
                         <li>
                             <a class="c-nav__link" href="{{ item.route is defined ? path(item.route) : item.href }}"
                                {% if current %}aria-current="page"{% endif %} data-action="menu#close">{{ item.label }}</a>

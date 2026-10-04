@@ -1,0 +1,9 @@
+MA CHECKLIST DE VOL — ePlaneur (exemple)
+
+[ ] Version du simulateur et paysage vérifiés
+[ ] Joystick calibré et aérofreins repérés
+[ ] Casque et micro testés
+[ ] Briefing et plan de vol lus
+[ ] Créneau libre et objectif personnel choisis
+
+Pour une simulation, pas pour un vol réel.

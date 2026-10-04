@@ -101,6 +101,7 @@ Every command below is run on the server, in the project directory.
 | `make bash` | Shell in the PHP container (`www-data`) |
 | `make db` / `make sql q="..."` | MariaDB shell / query |
 | `make db-dump` | Gzipped dump into `backups/prod-<date>.sql.gz` |
+| `make media-dump` | Archive of the uploaded media (Docker volume `uploads`, mounted on `var/uploads`) into `backups/prod-media-<date>.tar.gz` |
 | `make db-restore file=...` | Restore a dump |
 | `make console c="messenger:failed:show"` | Messages that failed after 3 retries |
 | `make console c="messenger:failed:retry"` | Retry them |
@@ -108,7 +109,7 @@ Every command below is run on the server, in the project directory.
 Backups are not scheduled automatically, for instance with cron:
 
 ```cron
-0 3 * * * cd /path/to/ePlaneur && make db-dump >/dev/null 2>&1 && find backups -name '*.sql.gz' -mtime +14 -delete
+0 3 * * * cd /path/to/ePlaneur && make db-dump media-dump >/dev/null 2>&1 && find backups \( -name '*.sql.gz' -o -name '*.tar.gz' \) -mtime +14 -delete
 ```
 
 The `worker` restarts every hour (`--time-limit=3600`) to release memory; Docker restarts it

@@ -34,6 +34,19 @@ enum DefaultGroup: string
         };
     }
 
+    /**
+     * Permissions given when the group is created (the migration does the same).
+     *
+     * @return list<Permission>
+     */
+    public function defaultPermissions(): array
+    {
+        return match ($this) {
+            self::Committee => [Permission::PostCreate, Permission::PostEdit, Permission::PostPublish, Permission::CategoryManage, Permission::MediaManage],
+            default => [],
+        };
+    }
+
     public function hasAllPermissions(): bool
     {
         return self::Admin === $this;

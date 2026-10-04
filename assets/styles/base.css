@@ -41,6 +41,11 @@ img {
     height: auto;
 }
 
+/* The hidden attribute always wins over component display rules (tabs, carousel...) */
+[hidden] {
+    display: none !important;
+}
+
 a {
     color: inherit;
     text-decoration: none;

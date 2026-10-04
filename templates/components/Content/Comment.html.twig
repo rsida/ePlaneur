@@ -1,0 +1,12 @@
+{#
+    Comment of a discussion (visual only for now: comments come in a later step, see doc/roadmap.md).
+    <twig:Content:Comment initials="ML" author="Marc L." date="5 octobre 2026" text="..." />
+#}
+{% props initials, author, date, text %}
+<article {{ attributes.defaults({class: 'c-comment'}) }}>
+    <span class="c-avatar" aria-hidden="true">{{ initials }}</span>
+    <div class="c-comment__body">
+        <p class="c-comment__meta"><strong>{{ author }}</strong><span>{{ date }}</span></p>
+        <p class="c-comment__text">{{ text }}</p>
+    </div>
+</article>

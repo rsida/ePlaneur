@@ -1,0 +1,12 @@
+{#
+    "Was this useful?" question (visual only for now, see doc/roadmap.md).
+    <twig:Content:Feedback question="Cet article vous a donné des repères ?" />
+#}
+{% props question %}
+<section {{ attributes.defaults({class: 'c-feedback'}) }}>
+    <p class="c-feedback__question">{{ question }}</p>
+    <div class="c-feedback__answers">
+        <twig:Ui:Button size="sm" icon="thumbs-up">Oui, merci</twig:Ui:Button>
+        <twig:Ui:Button size="sm" variant="outline" icon="message-circle">À compléter</twig:Ui:Button>
+    </div>
+</section>
