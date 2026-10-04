@@ -17,3 +17,10 @@ framework:
         # Namespaced pools use the above "app" backend by default
         #pools:
             #my.dedicated.cache: null
+
+when@test:
+    framework:
+        cache:
+            # In-memory cache: rate limiters (login throttling, e-mail requests) start fresh on
+            # every request instead of carrying over from one test run to the next
+            app: cache.adapter.array

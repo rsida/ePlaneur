@@ -23,6 +23,11 @@
     --palette-slate: #586772;
     --palette-mist: #ced8df;
     --palette-line: #d8ddd9;
+    /* Feedback colors: not in the Figma file yet, chosen to sit with the palette */
+    --palette-red: #a8322d;
+    --palette-red-soft: #f6e2df;
+    --palette-green: #2f6b4f;
+    --palette-green-soft: #e1eee6;
 
     --font-display: 'Oswald', 'Arial Narrow', sans-serif;
     --font-heading: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
@@ -38,6 +43,10 @@
     --color-tint-warm: var(--palette-sand-soft);
     --color-tint-cool: var(--palette-sky-soft);
     --color-paper: var(--palette-white);
+    --color-danger: var(--palette-red);
+    --color-danger-soft: var(--palette-red-soft);
+    --color-success: var(--palette-green);
+    --color-success-soft: var(--palette-green-soft);
 
     /* ---------- 2. Semantic: typography ---------- */
     /* Fluid sizes: mobile value → desktop value (Figma desktop = 1440px). */

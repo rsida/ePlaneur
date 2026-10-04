@@ -1,0 +1,29 @@
+{% extends 'layout/form_page.html.twig' %}
+
+{% block title %}Mon compte{% endblock %}
+{% block heading %}Bonjour {{ app.user.displayName }}{% endblock %}
+
+{% block content %}
+    {% set user = app.user %}
+    <dl class="c-definition-list">
+        <dt>Adresse e-mail</dt>
+        <dd>{{ user.email }}</dd>
+        <dt>Compte créé le</dt>
+        <dd>{{ user.createdAt|date('d/m/Y') }}</dd>
+        <dt>Groupes</dt>
+        <dd>
+            {% if user.groups is empty %}
+                Compte inscrit, sans groupe. L’adhésion au club ajoute le groupe « Membre ».
+            {% else %}
+                <span class="l-cluster">
+                    {% for group in user.groups %}<twig:Ui:Tag variant="soft">{{ group.name }}</twig:Ui:Tag>{% endfor %}
+                </span>
+            {% endif %}
+        </dd>
+    </dl>
+    <twig:Ui:Button href="{{ path('app_logout') }}" variant="outline" icon="">Se déconnecter</twig:Ui:Button>
+{% endblock %}
+
+{% block aside %}
+    <twig:Ui:Link href="{{ path('app_forgot_password_request') }}">Changer de mot de passe</twig:Ui:Link>
+{% endblock %}

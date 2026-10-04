@@ -1,0 +1,8 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block content %}
+    <p>Bonjour {{ user.displayName }},</p>
+    <p>Bienvenue sur le site du Club ePlaneur ! Confirmez votre adresse e-mail pour activer votre compte :</p>
+    <p style="margin:24px 0;"><a href="{{ signedUrl }}" style="display:inline-block;padding:14px 20px;border-radius:4px;background:#3e5d83;color:#ffffff;font-weight:700;text-decoration:none;">Confirmer mon adresse</a></p>
+    <p style="font-size:13px;color:#586772;">Ce lien est valable jusqu’au {{ expiresAt|date('d/m/Y à H:i', 'Europe/Paris') }} (heure de Paris). Si vous n’avez pas créé de compte, ignorez ce message.</p>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'layout/form_page.html.twig' %}
+
+{% block title %}Vérifiez vos e-mails{% endblock %}
+{% block heading %}Vérifiez vos e-mails{% endblock %}
+
+{% block content %}
+    <p>Si un compte correspond à cette adresse, un e-mail contenant un lien de réinitialisation vient d’être envoyé. Le lien est valable {{ (resetToken.expiresAt.timestamp - 'now'|date('U')) // 60 }} minutes.</p>
+    <p class="u-note">Rien reçu ? Regardez dans les courriers indésirables. Un nouveau lien peut être demandé toutes les 15 minutes.</p>
+{% endblock %}
+
+{% block aside %}
+    <twig:Ui:Link href="{{ path('app_forgot_password_request') }}">Faire une nouvelle demande</twig:Ui:Link>
+{% endblock %}

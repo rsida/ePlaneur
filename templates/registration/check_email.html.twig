@@ -1,0 +1,14 @@
+{% extends 'layout/form_page.html.twig' %}
+
+{% block title %}Vérifiez vos e-mails{% endblock %}
+{% block heading %}Vérifiez vos e-mails{% endblock %}
+
+{% block content %}
+    <p>Si un compte en attente de confirmation correspond à cette adresse, un e-mail contenant un lien de confirmation vient d’être envoyé. Le lien est valable 24 heures.</p>
+    <p class="u-note">Rien reçu ? Regardez dans les courriers indésirables, puis demandez un nouveau lien.</p>
+{% endblock %}
+
+{% block aside %}
+    <twig:Ui:Link href="{{ path('app_register_resend') }}">Recevoir un nouveau lien</twig:Ui:Link>
+    <twig:Ui:Link href="{{ path('app_login') }}">Se connecter</twig:Ui:Link>
+{% endblock %}

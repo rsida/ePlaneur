@@ -1,0 +1,11 @@
+{% extends 'layout/form_page.html.twig' %}
+
+{% block title %}Nouveau mot de passe{% endblock %}
+{% block heading %}Nouveau mot de passe{% endblock %}
+
+{% block content %}
+    {{ form_start(form, {attr: {class: 'c-form', novalidate: 'novalidate'}}) }}
+        {{ form_rest(form) }}
+        <twig:Ui:Button type="submit" block>Enregistrer le mot de passe</twig:Ui:Button>
+    {{ form_end(form) }}
+{% endblock %}

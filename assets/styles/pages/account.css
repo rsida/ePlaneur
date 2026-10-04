@@ -1,0 +1,6 @@
+/* Account pages (login, registration, password reset, my account): one narrow centered card. */
+
+.p-form-page__inner {
+    max-width: 30rem;
+    margin-inline: auto;
+}

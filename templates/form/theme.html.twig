@@ -1,0 +1,48 @@
+{#
+    Form theme of the site (registered in config/packages/twig.yaml): maps Symfony form rows to the
+    design system classes (assets/styles/components/form.css). Accessibility attributes
+    (aria-describedby, aria-invalid) come from the parent theme.
+#}
+{% extends 'form_div_layout.html.twig' %}
+
+{%- block form_row_render -%}
+    {%- set row_attr = row_attr|merge({class: html_classes('c-field', row_attr.class|default(''), {'c-field--invalid': errors|length > 0})}) -%}
+    <div{% with {attr: row_attr} %}{{ block('attributes') }}{% endwith %}>
+        {{- form_label(form, null, {label_attr: label_attr|merge({class: 'c-field__label'})}) -}}
+        {{- form_widget(form, widget_attr) -}}
+        {{- form_help(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock form_row_render -%}
+
+{# Repeated fields (password + confirmation): one row per child, no wrapper #}
+{%- block repeated_row -%}
+    {{- block('form_rows') -}}
+{%- endblock repeated_row -%}
+
+{%- block form_widget_simple -%}
+    {%- set attr = attr|merge({class: html_classes('c-input', attr.class|default(''))}) -%}
+    {{- parent() -}}
+{%- endblock form_widget_simple -%}
+
+{% block form_help -%}
+    {%- if help -%}
+        <p id="{{ id }}_help" class="c-field__help">{{- block('form_help_content') -}}</p>
+    {%- endif -%}
+{%- endblock form_help %}
+
+{%- block form_errors -%}
+    {%- if errors|length > 0 -%}
+        {%- if compound -%}
+            <div class="c-alert c-alert--error" role="alert">
+                {%- for error in errors -%}<p>{{ error.message }}</p>{%- endfor -%}
+            </div>
+        {%- else -%}
+            <ul class="c-field__errors" role="list">
+                {%- for error in errors -%}
+                    <li id="{{ id ~ '_error' ~ loop.index }}">{{ error.message }}</li>
+                {%- endfor -%}
+            </ul>
+        {%- endif -%}
+    {%- endif -%}
+{%- endblock form_errors -%}

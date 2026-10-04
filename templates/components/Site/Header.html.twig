@@ -29,7 +29,11 @@
                     {% endfor %}
                 </ul>
             </nav>
-            <twig:Ui:Button href="#" variant="dark">Espace membre</twig:Ui:Button>
+            {% if app.user %}
+                <twig:Ui:Button href="{{ path('app_account') }}" variant="dark">Mon compte</twig:Ui:Button>
+            {% else %}
+                <twig:Ui:Button href="{{ path('app_login') }}" variant="dark">Espace membre</twig:Ui:Button>
+            {% endif %}
         </div>
     </div>
 </header>

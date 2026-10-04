@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{#
+    Narrow page with a single card: login, registration, password reset...
+    Child templates define: heading, and optionally eyebrow, intro, content (form), aside (links
+    under the card). Blocks are read with block() because a component body cannot hold them.
+#}
+{% block eyebrow %}Espace membre{% endblock %}
+{% block intro %}{% endblock %}
+{% block aside %}{% endblock %}
+
+{% block body %}
+    {% set eyebrow = block('eyebrow') %}
+    {% set heading = block('heading') %}
+    {% set intro = block('intro')|trim %}
+    {% set content = block('content') %}
+    {% set aside = block('aside')|trim %}
+    <twig:Layout:Section theme="light" class="p-form-page">
+        <div class="l-stack l-stack--md p-form-page__inner">
+            <div class="c-card c-card--raised t-paper">
+                <div class="c-card__body l-stack">
+                    <twig:Ui:Eyebrow>{{ eyebrow }}</twig:Ui:Eyebrow>
+                    <twig:Ui:Heading level="1" size="h2">{{ heading }}</twig:Ui:Heading>
+                    {% if intro is not empty %}<p class="u-note">{{ intro }}</p>{% endif %}
+
+                    {% for type, messages in app.flashes(['success', 'error']) %}
+                        {% for message in messages %}
+                            <div class="c-alert c-alert--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endfor %}
+
+                    {{ content|raw }}
+                </div>
+            </div>
+            {% if aside is not empty %}<div class="l-stack l-stack--sm">{{ aside|raw }}</div>{% endif %}
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{#
+    Minimal HTML layout for transactional e-mails. Inline styles: e-mail clients ignore the site CSS.
+    Colors mirror tokens.css (ink, navy, cream).
+#}
+<!DOCTYPE html>
+<html lang="fr">
+<body style="margin:0;padding:24px;background:#f7f5ef;font-family:Arial,Helvetica,sans-serif;color:#192630;font-size:15px;line-height:1.5;">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
+        <p style="margin:0 0 24px;font-size:22px;font-weight:800;">ePlaneur</p>
+        {% block content %}{% endblock %}
+        <p style="margin:32px 0 0;font-size:13px;color:#586772;">Club ePlaneur · Le club du planeur virtuel<br>Vous recevez ce message suite à une action sur votre compte {{ url('app_home') }}.</p>
+    </div>
+</body>
+</html>

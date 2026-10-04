@@ -12,6 +12,8 @@
 @import url('./components/card.css');
 @import url('./components/data.css');
 @import url('./components/media.css');
+@import url('./components/form.css');
 @import url('./components/site.css');
 
 @import url('./pages/home.css');
+@import url('./pages/account.css');

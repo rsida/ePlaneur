@@ -1,0 +1,17 @@
+{% extends 'layout/form_page.html.twig' %}
+
+{% block title %}Créer un compte{% endblock %}
+{% block heading %}Créer un compte{% endblock %}
+{% block intro %}Le compte est gratuit. Il donne accès aux contenus réservés aux inscrits et constitue la première étape pour adhérer au club.{% endblock %}
+
+{% block content %}
+    {{ form_start(form, {attr: {class: 'c-form', novalidate: 'novalidate'}}) }}
+        {{ form_errors(form) }}
+        {{ form_rest(form) }}
+        <twig:Ui:Button type="submit" block>Créer mon compte</twig:Ui:Button>
+    {{ form_end(form) }}
+{% endblock %}
+
+{% block aside %}
+    <twig:Ui:Link href="{{ path('app_login') }}">Déjà un compte ? Se connecter</twig:Ui:Link>
+{% endblock %}

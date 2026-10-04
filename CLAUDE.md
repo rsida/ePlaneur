@@ -77,5 +77,8 @@ make qa                           # lint + php-cs-fixer + phpstan + tests
   Reusable UI = anonymous Twig component in `templates/components/` (`<twig:Ui:Button>`...) + its CSS
   in `assets/styles/components/` + an entry in the `/_toolkit` style guide. Mobile first.
   Icons: SVG in `assets/icons/` using `currentColor`, rendered with `<twig:ux:icon>`.
+- **Security**: rights are permissions (`App\Security\Permission`) held by groups in database, checked
+  with voters (`is_granted('USER_MANAGE')`, `is_granted('CONTENT_VIEW', content)`); every account only
+  has `ROLE_USER`. See `doc/accounts.md` before adding a protected feature.
 - **Prod deploys** are tag-based: `make release TAG=vX` locally, `make deploy-prod TAG=vX` on the server
   (APP_ENV=prod in the server's `.env.local`).

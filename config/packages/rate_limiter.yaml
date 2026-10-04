@@ -1,0 +1,7 @@
+framework:
+    rate_limiter:
+        # Pages that send an e-mail on request (new confirmation link): limits mailbox flooding
+        account_email:
+            policy: sliding_window
+            limit: 3
+            interval: '15 minutes'

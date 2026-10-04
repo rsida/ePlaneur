@@ -1,0 +1,12 @@
+{% extends 'layout/form_page.html.twig' %}
+
+{% block title %}Nouveau lien de confirmation{% endblock %}
+{% block heading %}Nouveau lien de confirmation{% endblock %}
+{% block intro %}Indiquez l’adresse utilisée lors de l’inscription : nous vous renvoyons un lien pour confirmer votre compte.{% endblock %}
+
+{% block content %}
+    {{ form_start(form, {attr: {class: 'c-form', novalidate: 'novalidate'}}) }}
+        {{ form_rest(form) }}
+        <twig:Ui:Button type="submit" block>Envoyer le lien</twig:Ui:Button>
+    {{ form_end(form) }}
+{% endblock %}

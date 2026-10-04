@@ -62,8 +62,8 @@ assets/styles/
   tokens.css          tokens + surface themes
   base.css            reset and element defaults
   layout.css          l-* layout primitives, u-* utilities
-  components/         c-* component styles (typography, button, tag, card, data, media, site)
-  pages/home.css      p-* home page compositions
+  components/         c-* component styles (typography, button, tag, card, data, media, form, site)
+  pages/              p-* page compositions (home.css, account.css)
 assets/icons/         SVG icons (currentColor), used with <twig:ux:icon name="..."/>
 assets/images/        pictures (home/ = Figma mock-up visuals)
 templates/components/ Twig components: Ui/ (atoms), Card/ (patterns), Layout/, Site/ (header, footer)
@@ -116,7 +116,14 @@ usage example.
 | `Site:Footer` | Footer with link columns and legal line | — |
 
 Other CSS-only components: `c-display`, `c-tagline`, `c-motto`, `c-callout`, `c-link-bar`,
-`c-icon-tile`.
+`c-icon-tile`, `c-definition-list`.
+
+Forms: Symfony forms are rendered by the site form theme `templates/form/theme.html.twig`
+(registered in `config/packages/twig.yaml`), which outputs `c-field` rows (`c-field__label`, `c-input`,
+`c-field__help`, `c-field__errors`, `c-field--invalid`); wrap fields and the submit button in a
+`c-form`. `c-check` styles a checkbox with its label, `c-alert` (`--success`, `--error`) the flash
+messages and form-level errors. Feedback colors (`--color-danger`, `--color-success` and their `-soft`
+backgrounds) are not in the Figma file yet.
 
 Example:
 

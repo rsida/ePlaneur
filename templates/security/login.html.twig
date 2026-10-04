@@ -1,0 +1,36 @@
+{% extends 'layout/form_page.html.twig' %}
+
+{% block title %}Connexion{% endblock %}
+{% block heading %}Connexion{% endblock %}
+{% block intro %}Connectez-vous pour accéder aux contenus réservés aux inscrits, aux membres et au comité.{% endblock %}
+
+{% block content %}
+    {% if error %}
+        <div class="c-alert c-alert--error" role="alert">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+    {% endif %}
+    {% if error and error.messageKey == constant('App\\Security\\UserChecker::UNVERIFIED_MESSAGE') %}
+        <twig:Ui:Link href="{{ path('app_register_resend') }}">Recevoir un nouveau lien de confirmation</twig:Ui:Link>
+    {% endif %}
+
+    <form method="post" action="{{ path('app_login') }}" class="c-form">
+        <div class="c-field">
+            <label class="c-field__label" for="email">Adresse e-mail</label>
+            <input class="c-input" type="email" id="email" name="email" value="{{ last_username }}" autocomplete="email" required autofocus>
+        </div>
+        <div class="c-field">
+            <label class="c-field__label" for="password">Mot de passe</label>
+            <input class="c-input" type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+        <label class="c-check">
+            <input type="checkbox" name="_remember_me">
+            <span>Rester connecté sur cet appareil</span>
+        </label>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}" data-controller="csrf-protection">
+        <twig:Ui:Button type="submit" block>Se connecter</twig:Ui:Button>
+    </form>
+{% endblock %}
+
+{% block aside %}
+    <twig:Ui:Link href="{{ path('app_forgot_password_request') }}">Mot de passe oublié ?</twig:Ui:Link>
+    <twig:Ui:Link href="{{ path('app_register') }}">Pas encore de compte ? Créer un compte gratuit</twig:Ui:Link>
+{% endblock %}

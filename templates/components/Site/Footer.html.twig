@@ -10,7 +10,11 @@
             <div class="c-footer__intro">
                 <twig:Ui:Logo />
                 <p class="u-lead">Le plaisir du planeur en réseau. Une communauté pour apprendre, pratiquer et partager sur Condor 2 et Condor 3.</p>
-                <twig:Ui:Link href="#">Espace membre / Connexion</twig:Ui:Link>
+                {% if app.user %}
+                    <twig:Ui:Link href="{{ path('app_account') }}">Mon compte</twig:Ui:Link>
+                {% else %}
+                    <twig:Ui:Link href="{{ path('app_login') }}">Espace membre / Connexion</twig:Ui:Link>
+                {% endif %}
             </div>
             <nav class="c-footer__columns" aria-label="Liens utiles">
                 {% for title, links in columns %}

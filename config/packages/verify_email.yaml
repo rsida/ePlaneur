@@ -1,0 +1,3 @@
+symfonycasts_verify_email:
+    # Account confirmation links stay valid 24 hours (seconds)
+    lifetime: 86400
