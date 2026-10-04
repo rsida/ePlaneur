@@ -1389,3 +1389,352 @@ img.c-avatar--lg {
     flex-wrap: wrap;
     gap: var(--space-2);
 }
+
+/* ---------- Official documents (provisional, waiting for the Figma mock-up) ---------- */
+.c-documents,
+.c-documents__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.c-documents--list .c-downloads__list {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.c-document__description {
+    color: var(--palette-slate);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+}
+
+/* ---------- Institutional page blocks (Figma "Le Club", "Statuts", "Autres documents") ---------- */
+.c-block-heading--lg {
+    font-weight: 800;
+    font-size: var(--text-h2);
+}
+
+.c-admonition--plain .c-admonition__title {
+    font-size: var(--text-title-sm);
+}
+
+/* Quote with its reference ("Statuts V23 / Article 2") */
+.c-pull-quote--reference {
+    gap: 1.125rem;
+    padding: 1.75rem var(--space-7);
+}
+
+.c-pull-quote__reference {
+    color: var(--color-primary);
+    font-size: var(--text-eyebrow);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.c-pull-quote--reference .c-pull-quote__text {
+    font-weight: 500;
+    font-size: var(--text-title-md);
+    line-height: 1.5;
+}
+
+/* Excerpt of a reference text */
+.c-excerpt {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    margin: 0;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--rule);
+}
+
+.c-excerpt__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3-xs);
+    line-height: 1.2;
+}
+
+.c-excerpt__text {
+    margin: 0;
+    font-size: var(--text-lead);
+    line-height: var(--leading-reading);
+}
+
+.c-excerpt__reference {
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: 600;
+}
+
+/* Compact arrow links */
+.c-arrow-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.c-arrow-links__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+}
+
+/* Highlighted document */
+.c-document-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--block-radius);
+    background-color: var(--color-tint-warm);
+    color: var(--palette-ink);
+}
+
+.c-document-card__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-md);
+    line-height: 1.2;
+}
+
+.c-document-card__meta {
+    color: var(--palette-slate);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+}
+
+/* Child page cards */
+.c-page-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.c-page-cards__list {
+    display: grid;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-width: 40em) {
+    .c-page-cards__list {
+        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    }
+}
+
+@media (min-width: 64em) {
+    .p-page__body--wide .c-page-cards__list {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.c-page-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.125rem;
+    padding: var(--space-6);
+    outline: 1px solid var(--palette-line);
+    outline-offset: -1px;
+    border-radius: var(--radius-md);
+    background-color: var(--color-paper);
+    color: var(--palette-ink);
+}
+
+@media (min-width: 64em) {
+    .p-page__body--wide .c-page-card {
+        min-height: 23.125rem; /* 370 */
+    }
+}
+
+.c-page-card__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3-xs);
+    line-height: 1.2;
+}
+
+.c-page-card__text {
+    color: var(--palette-slate);
+    font-size: var(--text-lead);
+    line-height: var(--leading-reading);
+}
+
+.c-page-card__link {
+    margin-top: auto;
+    padding-top: var(--space-2);
+}
+
+/* ---------- Official documents: compact list or cards ---------- */
+.c-documents {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+}
+
+.c-documents__header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-5);
+}
+
+.c-documents__title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--text-section-title);
+    line-height: 1.16;
+}
+
+.c-documents__switch {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.c-documents__toggle {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--palette-line);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface);
+    color: var(--color-primary);
+    font-size: var(--text-eyebrow);
+    font-weight: 700;
+}
+
+.c-documents__toggle[aria-pressed='true'] {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.c-documents__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.c-documents__category {
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3-sm);
+    line-height: 1.2;
+}
+
+.c-documents__list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+}
+
+.c-document {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    outline: 1px solid var(--palette-line);
+    outline-offset: -1px;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--palette-ink);
+}
+
+.c-document__icon {
+    display: none;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+    font-size: 1.5rem;
+}
+
+.c-document__main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.c-document__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-xs);
+    line-height: 1.25;
+}
+
+.c-document__description,
+.c-document__facts span,
+.c-document__size span {
+    color: var(--palette-slate);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+}
+
+.c-document__facts,
+.c-document__size {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+}
+
+.c-document__facts strong {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.c-document__size strong {
+    font-weight: 600;
+}
+
+.c-document__size span {
+    font-size: var(--text-eyebrow);
+}
+
+/* Compact list: one row per document from 48em */
+@media (min-width: 48em) {
+    .c-documents[data-layout='list'] .c-document {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 15.625rem 4.875rem 8.3125rem; /* 250, 78, 133 */
+        gap: var(--space-5);
+    }
+
+    .c-documents[data-layout='list'] .c-document__download {
+        padding-top: var(--space-1);
+    }
+}
+
+/* Cards: two columns with the file icon */
+.c-documents[data-layout='cards'] .c-documents__list {
+    gap: var(--space-6);
+}
+
+@media (min-width: 48em) {
+    .c-documents[data-layout='cards'] .c-documents__list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.c-documents[data-layout='cards'] .c-document {
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+}
+
+.c-documents[data-layout='cards'] .c-document__icon {
+    display: grid;
+}
+
+.c-documents[data-layout='cards'] .c-document__title {
+    font-size: var(--text-title-md);
+}

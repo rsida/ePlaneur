@@ -12,11 +12,23 @@ use App\Content\Block\BlockInterface;
  */
 final readonly class PlacedBlock
 {
+    /**
+     * @param array<string, mixed> $context data the block needs from its page (e.g. the child pages)
+     */
     public function __construct(
         public BlockInterface $block,
         public string $key,
         public ?TocEntry $toc = null,
+        public array $context = [],
     ) {
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function withContext(array $context): self
+    {
+        return new self($this->block, $this->key, $this->toc, [...$this->context, ...$context]);
     }
 
     public function component(): string

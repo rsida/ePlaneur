@@ -18,7 +18,7 @@ Default groups, created by the first migration and by the dev fixtures (`App\Sec
 | Code | Name | Permissions |
 |---|---|---|
 | `member` | Membre | none yet |
-| `committee` | Comité | `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE` |
+| `committee` | Comité | `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE`, `PAGE_MANAGE`, `DOCUMENT_MANAGE` |
 | `admin` | Administrateur | all (`all_permissions` flag: includes permissions added later, and sees every content) |
 
 Administrators can create other groups (Rédacteur, Bienfaiteur, Bénévole...) and change which
@@ -35,6 +35,9 @@ immediately, without logging the user out.
 | Logged in | `#[IsGranted('ROLE_USER')]` | `{% if app.user %}` |
 | A permission | `#[IsGranted('USER_MANAGE')]`, `$this->denyAccessUnlessGranted(Permission::UserManage->value)` | `{% if is_granted('USER_MANAGE') %}` |
 | See a content (post, page, menu link, document) | `$this->denyAccessUnlessGranted(ContentVoter::VIEW, $post)` | `{% if is_granted('CONTENT_VIEW', link) %}` |
+
+Readers who may not see a page or post get the "Contenu réservé" page (HTTP 403), see
+[content](content.md#pages-menus-and-restricted-content).
 
 Restricted content implements `App\Security\RestrictedContentInterface` (`getVisibility()`,
 `getAllowedGroups()`); `App\Security\Voter\ContentVoter` then decides:

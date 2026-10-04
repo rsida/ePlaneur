@@ -1,0 +1,27 @@
+{#
+    Header of an institutional page (Figma "Le Club — rubrique", "Statuts"): breadcrumb, kicker,
+    Oswald title, lead, optional highlight on the right and "Mis à jour" line.
+    <twig:Content:PageHeader :crumbs="crumbs" kicker="Le Club / Textes officiels" title="Statuts" />
+#}
+{% props crumbs = [], kicker = null, title, lead = null, highlight = null, highlightNote = null, updatedAt = null %}
+<header {{ attributes.defaults({class: 'l-container p-article__header p-page__header'}) }}>
+    <twig:Ui:Breadcrumb :items="crumbs" />
+
+    <div class="p-article__intro">
+        <div class="p-article__promise">
+            {% if kicker %}<p class="c-eyebrow">{{ kicker }}</p>{% endif %}
+            <h1 class="p-article__title">{{ title }}</h1>
+            {% if lead %}<p class="p-article__lead">{{ lead }}</p>{% endif %}
+        </div>
+        {% if highlight %}
+            <div class="p-article__highlight">
+                <p class="p-article__highlight-text">{{ highlight|nl2br }}</p>
+                {% if highlightNote %}<p class="u-note">{{ highlightNote|nl2br }}</p>{% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    {% if updatedAt %}
+        <p class="p-page__updated">Mis à jour le <time datetime="{{ updatedAt|date('c') }}">{{ updatedAt|format_date('long', locale: 'fr') }}</time></p>
+    {% endif %}
+</header>

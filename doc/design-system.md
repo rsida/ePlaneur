@@ -64,7 +64,7 @@ assets/styles/
   base.css            reset and element defaults
   layout.css          l-* layout primitives, u-* utilities
   components/         c-* component styles (typography, button, tag, card, data, media, form, site)
-  pages/              p-* page compositions (home.css, account.css)
+  pages/              p-* page compositions (home.css, account.css, article.css, page.css)
 assets/icons/         SVG icons (currentColor), used with <twig:ux:icon name="..."/>
 assets/images/        pictures (home/ = Figma mock-up visuals)
 templates/components/ Twig components: Ui/ (atoms), Card/ (patterns), Layout/, Site/ (header, footer)
@@ -107,6 +107,7 @@ usage example.
 | `Ui:Figure` | Rounded picture with badge and caption | `src`, `alt`, `badge`, `caption` |
 | `Ui:Profile` | Icon + title + text line | `icon`, `title`, `text` |
 | `Ui:Breadcrumb` | Breadcrumb trail, last item = current page | `items` ({label, href}) |
+| `Ui:Access` | Access tag of reserved content: lock + audience (menus, cards, documents) | content = group names or "Connectés" |
 | `Layout:Section` | Themed full-width section with container | `theme`, `tag`, `container` |
 | `Layout:SectionHeader` | Eyebrow + title + lead + optional `aside` block | `eyebrow`, `title`, `lead`, `level` |
 | `Card:Feature` | Tinted card with icon tile | `icon`, `title`, `text`, `tone` (warm, cool) |
@@ -119,8 +120,9 @@ usage example.
 | `Content:Toc` | Article table of contents with reading progress (`toc` controller) | `entries` |
 | `Content:Share` | Copy link, e-mail, native share (`share` controller) | `url`, `title` |
 | `Content:AuthorCard` | Author presentation | `author` |
+| `Content:PageHeader` | Institutional page header: breadcrumb, kicker, Oswald title, lead, highlight, "Mis à jour" line | `crumbs`, `kicker`, `title`, `lead`, `highlight`, `highlightNote`, `updatedAt` |
 | `Content:Comment`, `Content:Feedback` | Comment and "was it useful?" (visual only, not wired yet) | see files |
-| `Site:Header` | Sticky header, burger menu below 64em (`menu` Stimulus controller) | — |
+| `Site:Header` | Header from the `main` menu. From 64em: sticky row, a section opens its mega-menu (columns of second-level links, third-level links with note and access tag, "Toute la rubrique" and current page). Below: "Menu" button, full-width member button, full-screen panel with accordions. `menu` Stimulus controller | — |
 | `Site:Footer` | Footer with link columns and legal line | — |
 
 Other CSS-only components: `c-display`, `c-tagline`, `c-motto`, `c-callout`, `c-link-bar`,
@@ -130,7 +132,10 @@ Content blocks (`Block:*` components, one per block type, styles in `components/
 described in [content](content.md). Article typography tokens: `--text-article-title`,
 `--text-article-lead`, `--text-section-title`, `--text-band-title`, `--text-quote`,
 `--text-title-md/sm/xs`, `--leading-reading`; layout tokens `--article-sidebar`, `--article-gap`,
-`--article-column`.
+`--article-column`. Navigation and page tokens: `--text-menu-column`, `--text-menu-row`,
+`--text-menu-row-open`, `--text-restricted-title`. Institutional pages (`pages/page.css`): a root
+page spreads its blocks over the full width, a sub-page has the section's pages on the left
+(`c-subnav`); the "Contenu réservé" card is `c-restricted`.
 
 Forms: Symfony forms are rendered by the site form theme `templates/form/theme.html.twig`
 (registered in `config/packages/twig.yaml`), which outputs `c-field` rows (`c-field__label`, `c-input`,
@@ -159,7 +164,8 @@ text color). Render them with `<twig:ux:icon name="arrow-right" />` (size `1em` 
 `font-size` or `width/height` to resize). Available: `arrow-right`, `chevron-right`, `glider`,
 `settings`, `upload`, `discover`, `progress`, `share`, and for articles `arrow-up-right`, `check`,
 `chevron-left`, `clock`, `download`, `file-text`, `info`, `lightbulb`, `link`, `mail`,
-`message-circle`, `minus`, `play`, `plus`, `printer`, `share-2`, `thumbs-up`, `triangle-alert`.
+`message-circle`, `minus`, `play`, `plus`, `printer`, `share-2`, `thumbs-up`, `triangle-alert`, and
+for navigation `chevron-down`, `chevron-up`, `lock-keyhole`, `menu`, `x`.
 
 ## Adding or changing something
 

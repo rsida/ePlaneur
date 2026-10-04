@@ -42,7 +42,7 @@ enum DefaultGroup: string
     public function defaultPermissions(): array
     {
         return match ($this) {
-            self::Committee => [Permission::PostCreate, Permission::PostEdit, Permission::PostPublish, Permission::CategoryManage, Permission::MediaManage],
+            self::Committee => [Permission::PostCreate, Permission::PostEdit, Permission::PostPublish, Permission::CategoryManage, Permission::MediaManage, Permission::PageManage, Permission::DocumentManage],
             default => [],
         };
     }

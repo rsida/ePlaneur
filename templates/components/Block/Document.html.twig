@@ -1,0 +1,15 @@
+{# One official document highlighted in a warm card (hidden if the reader may not see it). #}
+{% props placed %}
+{% set data = placed.block %}
+{% set document = document(data.documentId) %}
+{% if document %}
+    {% set file = document.file %}
+    <section class="c-document-card" aria-labelledby="{{ placed.key }}-title">
+        <h3 class="c-document-card__title" id="{{ placed.key }}-title">{{ document.title }}</h3>
+        <p class="c-document-card__meta">
+            {{ file.format }}{% if document.version %} · {{ document.version }}{% endif %}{% if file.pages %} · {{ file.pages }} page{{ file.pages > 1 ? 's' }}{% endif %} · {{ file.size|file_size }}
+            {%- for detail in document.details %}<br>{{ detail }}{% endfor %}
+        </p>
+        <twig:Ui:Link href="{{ media_url(file) }}">{{ data.linkLabel ?: 'Consulter le document' }}</twig:Ui:Link>
+    </section>
+{% endif %}

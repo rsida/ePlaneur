@@ -1,9 +1,4 @@
-{# Site footer: identity, link columns, legal line. Placeholder links for now. #}
-{% set columns = {
-    'Formation': ['Installer Condor 2', 'Installer Condor 3', 'Parcours guidé', 'Vidéos pédagogiques', 'Bonnes pratiques'],
-    'Voler': ['Vols en réseau', 'Participer à un vol', 'Prérequis pour voler', 'Déposer une trace', 'Créer mon carnet'],
-    'Le Club': ['Présentation du club', 'Liste des membres', 'Actualités', 'Rejoindre le club', 'Contacter le club'],
-} %}
+{# Site footer: identity, link columns from the "footer" menu (level 1 = titles), legal line. #}
 <footer {{ attributes.defaults({class: 'l-section c-footer t-dark'}) }}>
     <div class="l-container">
         <div class="c-footer__top">
@@ -17,11 +12,13 @@
                 {% endif %}
             </div>
             <nav class="c-footer__columns" aria-label="Liens utiles">
-                {% for title, links in columns %}
+                {% for column in menu('footer') %}
                     <div>
-                        <p class="c-footer__title">{{ title }}</p>
+                        <p class="c-footer__title">{% if column.href %}<a href="{{ column.href }}">{{ column.label }}</a>{% else %}{{ column.label }}{% endif %}</p>
                         <ul class="c-footer__links" role="list">
-                            {% for label in links %}<li><a href="#">{{ label }}</a></li>{% endfor %}
+                            {% for link in column.children %}
+                                <li><a href="{{ link.href ?? '#' }}"{% if link.external %} rel="noopener"{% endif %}>{{ link.label }}</a></li>
+                            {% endfor %}
                         </ul>
                     </div>
                 {% endfor %}
@@ -29,8 +26,8 @@
         </div>
         <div class="c-footer__legal">
             <p class="c-footer__copyright">© {{ 'now'|date('Y') }} ePlaneur · Le ciel se partage.</p>
-            <a href="#">Mentions légales</a>
-            <a href="#">Confidentialité</a>
+            <a href="{{ path('app_page_show', {path: 'mentions-legales'}) }}">Mentions légales</a>
+            <a href="{{ path('app_page_show', {path: 'confidentialite'}) }}">Confidentialité</a>
         </div>
     </div>
 </footer>

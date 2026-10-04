@@ -22,6 +22,7 @@ enum BlockType: string
     case Carousel = 'carousel';
     case Video = 'video';
     case Quote = 'quote';
+    case Excerpt = 'excerpt';
     case List = 'list';
     case Steps = 'steps';
     case Tabs = 'tabs';
@@ -29,6 +30,9 @@ enum BlockType: string
     case Table = 'table';
     case Pdf = 'pdf';
     case Downloads = 'downloads';
+    case Documents = 'documents';
+    case Document = 'document';
+    case ChildPages = 'child_pages';
     case Notes = 'notes';
     case Glossary = 'glossary';
     case Faq = 'faq';
@@ -51,6 +55,7 @@ enum BlockType: string
             self::Carousel => CarouselBlock::class,
             self::Video => VideoBlock::class,
             self::Quote => QuoteBlock::class,
+            self::Excerpt => ExcerptBlock::class,
             self::List => ListBlock::class,
             self::Steps => StepsBlock::class,
             self::Tabs => TabsBlock::class,
@@ -58,6 +63,9 @@ enum BlockType: string
             self::Table => TableBlock::class,
             self::Pdf => PdfBlock::class,
             self::Downloads => DownloadsBlock::class,
+            self::Documents => DocumentsBlock::class,
+            self::Document => DocumentBlock::class,
+            self::ChildPages => ChildPagesBlock::class,
             self::Notes => NotesBlock::class,
             self::Glossary => GlossaryBlock::class,
             self::Faq => FaqBlock::class,
@@ -85,6 +93,7 @@ enum BlockType: string
             self::Carousel => 'Carrousel d’images',
             self::Video => 'Vidéo',
             self::Quote => 'Citation',
+            self::Excerpt => 'Extrait référencé',
             self::List => 'Liste',
             self::Steps => 'Étapes numérotées',
             self::Tabs => 'Onglets',
@@ -92,6 +101,9 @@ enum BlockType: string
             self::Table => 'Tableau',
             self::Pdf => 'Document PDF intégré',
             self::Downloads => 'Fichiers à télécharger',
+            self::Documents => 'Documents officiels',
+            self::Document => 'Document mis en avant',
+            self::ChildPages => 'Sous-pages',
             self::Notes => 'Notes',
             self::Glossary => 'Glossaire',
             self::Faq => 'Questions fréquentes',

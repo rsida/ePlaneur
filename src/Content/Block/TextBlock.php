@@ -9,6 +9,8 @@ final readonly class TextBlock implements BlockInterface
 {
     public function __construct(
         public string $html,
+        /** Secondary text in a muted colour */
+        public bool $muted = false,
     ) {
     }
 

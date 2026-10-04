@@ -116,11 +116,14 @@ final class PostTest extends WebTestCase
         $this->entityManager->flush();
 
         $this->client->request('GET', '/actualites/compte-rendu');
-        self::assertResponseRedirects('/connexion');
+        self::assertResponseStatusCodeSame(403);
+        self::assertSelectorTextContains('.c-restricted__title', 'Contenu réservé au groupe Comité');
+        self::assertSelectorTextNotContains('body', 'Secret');
 
         $this->client->loginUser($this->createUser('membre@example.org', 'member'));
         $this->client->request('GET', '/actualites/compte-rendu');
         self::assertResponseStatusCodeSame(403);
+        self::assertSelectorTextContains('.c-restricted', 'votre compte n’a pas accès');
 
         $this->client->loginUser($this->createUser('comite@example.org', 'committee'));
         $this->client->request('GET', '/actualites/compte-rendu');

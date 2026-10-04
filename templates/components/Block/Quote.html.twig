@@ -1,6 +1,7 @@
 {% props placed %}
 {% set data = placed.block %}
-<figure class="c-pull-quote">
+<figure class="c-pull-quote{{ data.reference ? ' c-pull-quote--reference' }}">
+    {% if data.reference %}<p class="c-pull-quote__reference">{{ data.reference }}</p>{% endif %}
     <blockquote class="c-pull-quote__text"><p>{{ data.text }}</p></blockquote>
     {% if data.attribution %}<figcaption class="c-pull-quote__attribution">{{ data.attribution }}</figcaption>{% endif %}
 </figure>

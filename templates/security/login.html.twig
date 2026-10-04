@@ -26,6 +26,11 @@
             <span>Rester connecté sur cet appareil</span>
         </label>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}" data-controller="csrf-protection">
+        {# Back to the requested page after login; internal paths only (no open redirect) #}
+        {% set target = app.request.query.get('_target_path', '') %}
+        {% if target starts with '/' and not (target starts with '//') and not ('\\' in target) %}
+            <input type="hidden" name="_target_path" value="{{ target }}">
+        {% endif %}
         <twig:Ui:Button type="submit" block>Se connecter</twig:Ui:Button>
     </form>
 {% endblock %}

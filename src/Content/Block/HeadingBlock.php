@@ -9,6 +9,8 @@ final readonly class HeadingBlock implements BlockInterface
 {
     public function __construct(
         public string $text,
+        /** "md" (default, 27px) or "lg" (34px, a heading that opens a group of blocks) */
+        public string $size = 'md',
     ) {
     }
 

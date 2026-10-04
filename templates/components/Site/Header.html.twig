@@ -1,39 +1,121 @@
 {#
-    Sticky site header. Below 64em the navigation collapses into a panel toggled by the
-    `menu` Stimulus controller.
+    Sticky site header (Figma "En-tête", "Menu Le Club ouvert", "Menu plein écran mobile").
+    Links come from the "main" menu (MenuItem, filtered by the reader's rights). A first-level link
+    with children opens a mega-menu: one column per second-level link with its third-level links,
+    their notes and the access tag of reserved pages. Below 64em the navigation becomes a full-screen
+    panel with accordions. One markup for both, driven by the `menu` Stimulus controller.
 #}
-{% set nav = [
-    {label: 'Accueil', route: 'app_home'},
-    {label: 'Formation', href: '/#formation'},
-    {label: 'Voler', href: '/#vols'},
-    {label: 'Le Club', href: '/#club'},
-    {label: 'Actualités', href: '/#actualites', activeRoutes: ['app_post_show']},
-] %}
-<header {{ attributes.defaults({class: 'c-header t-light'}) }} data-controller="menu" data-action="keydown.esc@window->menu#close">
+{% set items = menu('main') %}
+{% if app.user %}
+    {% set groupNames = app.user.groups|map(g => g.name) %}
+    {% set state = 'Connecté · ' ~ (groupNames is not empty ? groupNames|join(' · ') : 'Compte gratuit') %}
+{% else %}
+    {% set state = 'Visiteur · Informations publiques' %}
+{% endif %}
+{% set currentLabel = null %}
+{% for item in items|filter(i => i.active) %}
+    {% set trail = item.activeTrail %}
+    {% set currentLabel = trail is not empty ? trail|last : item.label %}
+{% endfor %}
+
+<header {{ attributes.defaults({class: 'c-header t-light'}) }} data-controller="menu"
+        data-action="keydown.esc@window->menu#close click@window->menu#closeOutside">
     <div class="l-container c-header__bar">
         <twig:Ui:Logo />
         <button type="button" class="c-header__toggle" aria-controls="site-menu" aria-expanded="false"
                 data-menu-target="toggle" data-action="menu#toggle">
-            <span class="c-header__burger" aria-hidden="true"></span>
-            <span class="u-visually-hidden">Menu</span>
+            <span class="c-header__toggle-label c-header__toggle-label--open">Menu</span>
+            <span class="c-header__toggle-label c-header__toggle-label--close">Fermer</span>
+            <twig:ux:icon name="menu" class="c-header__toggle-icon c-header__toggle-icon--open" />
+            <twig:ux:icon name="x" class="c-header__toggle-icon c-header__toggle-icon--close" />
         </button>
-        <div class="c-header__panel" id="site-menu">
-            <nav aria-label="Navigation principale">
-                <ul class="c-nav" role="list">
-                    {% for item in nav %}
-                        {% set current = (item.route is defined and app.current_route == item.route) or app.current_route in (item.activeRoutes ?? []) %}
-                        <li>
-                            <a class="c-nav__link" href="{{ item.route is defined ? path(item.route) : item.href }}"
-                               {% if current %}aria-current="page"{% endif %} data-action="menu#close">{{ item.label }}</a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </nav>
+
+        <nav class="c-nav" id="site-menu" aria-label="Navigation principale">
+            <ul class="c-nav__list" role="list">
+                {% for item in items %}
+                    <li class="c-nav__item">
+                        {% if item.hasChildren %}
+                            <button type="button" class="c-nav__link c-nav__trigger" aria-expanded="false" aria-controls="mega-{{ loop.index }}"
+                                    {% if item.active %}data-active{% endif %} data-menu-target="section" data-action="menu#section">
+                                {{- item.label -}}
+                                <twig:ux:icon name="chevron-down" class="c-nav__chevron" />
+                            </button>
+                            <div class="c-mega" id="mega-{{ loop.index }}" hidden>
+                                <div class="l-container c-mega__inner">
+                                    <div class="c-mega__top">
+                                        {% if item.description %}<p class="c-eyebrow">{{ item.description }}</p>{% endif %}
+                                        <p class="c-mega__state">{{ state }}</p>
+                                    </div>
+                                    {% if item.href %}
+                                        <twig:Ui:Link href="{{ item.href }}" class="c-mega__all c-mega__all--top">Toute la rubrique {{ item.label }}</twig:Ui:Link>
+                                    {% endif %}
+                                    <ul class="c-mega__columns" role="list">
+                                        {% for column in item.children %}
+                                            <li class="c-mega__column">
+                                                {% if column.hasChildren %}
+                                                    {% if column.href %}
+                                                        <a class="c-mega__title c-mega__title--desktop" href="{{ column.href }}"{% if column.current %} aria-current="page"{% endif %}>{{ column.label }}</a>
+                                                    {% else %}
+                                                        <p class="c-mega__title c-mega__title--desktop">{{ column.label }}</p>
+                                                    {% endif %}
+                                                    <button type="button" class="c-mega__title c-mega__title--mobile" aria-expanded="{{ column.active ? 'true' : 'false' }}" aria-controls="mega-{{ loop.parent.loop.index }}-{{ loop.index }}"
+                                                            data-action="menu#group">
+                                                        {{- column.label -}}
+                                                        <twig:ux:icon name="chevron-down" class="c-nav__chevron" />
+                                                    </button>
+                                                    <ul class="c-mega__links" id="mega-{{ loop.parent.loop.index }}-{{ loop.index }}" role="list">
+                                                        {% if column.href %}
+                                                            <li class="c-mega__overview">{{ _self.link(column, 'Vue d’ensemble') }}</li>
+                                                        {% endif %}
+                                                        {% for link in column.children %}
+                                                            <li>{{ _self.link(link) }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <a class="c-mega__title" href="{{ column.href }}"{% if column.current %} aria-current="page"{% endif %}{% if column.external %} rel="noopener"{% endif %}>{{ column.label }}</a>
+                                                    {% if column.description or column.access %}
+                                                        <div class="c-mega__links">{{ _self.extra(column) }}</div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% if item.href or item.active %}
+                                        <div class="c-mega__footer">
+                                            {% if item.href %}<twig:Ui:Link href="{{ item.href }}" class="c-mega__all">Toute la rubrique {{ item.label }}</twig:Ui:Link>{% endif %}
+                                            {% if item.active and item.activeTrail is not empty %}
+                                                <p class="c-mega__current">Page courante : {{ item.activeTrail|join(' › ') }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <a class="c-nav__link" href="{{ item.href }}"{% if item.active %} aria-current="page"{% endif %}{% if item.external %} rel="noopener"{% endif %} data-action="menu#close">
+                                {{- item.label -}}
+                            </a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </nav>
+        <div class="c-header__account">
             {% if app.user %}
-                <twig:Ui:Button href="{{ path('app_account') }}" variant="dark">Mon compte</twig:Ui:Button>
+                <twig:Ui:Button href="{{ path('app_account') }}" variant="dark" class="c-header__cta">Mon compte</twig:Ui:Button>
             {% else %}
-                <twig:Ui:Button href="{{ path('app_login') }}" variant="dark">Espace membre</twig:Ui:Button>
+                <twig:Ui:Button href="{{ path('app_login') }}" variant="dark" class="c-header__cta">Espace membre</twig:Ui:Button>
             {% endif %}
+            <p class="c-header__state">{{ app.user ? state : 'Visiteur' }}{% if currentLabel %} · Page courante : {{ currentLabel }}{% endif %}</p>
         </div>
     </div>
 </header>
+
+{% macro link(node, label = null) %}
+    <a class="c-mega__link" href="{{ node.href }}"{% if node.current %} aria-current="page"{% endif %}{% if node.external %} rel="noopener"{% endif %}>{{ label ?? node.label }}</a>
+    {{ _self.extra(node) }}
+{% endmacro %}
+
+{% macro extra(node) %}
+    {% if node.description %}<span class="c-mega__note">{{ node.description }}</span>{% endif %}
+    {% if node.access %}<twig:Ui:Access class="c-mega__access">{{ node.access }}</twig:Ui:Access>{% endif %}
+{% endmacro %}

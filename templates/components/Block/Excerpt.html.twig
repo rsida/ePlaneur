@@ -1,0 +1,8 @@
+{# Quoted passage of a reference text: title, text, reference ("Statuts V23 · Article 9"). #}
+{% props placed %}
+{% set data = placed.block %}
+<figure class="c-excerpt">
+    <figcaption class="c-excerpt__title">{{ data.title }}</figcaption>
+    <blockquote class="c-excerpt__text"><p>{{ data.text }}</p></blockquote>
+    {% if data.reference %}<p class="c-excerpt__reference">{{ data.reference }}</p>{% endif %}
+</figure>

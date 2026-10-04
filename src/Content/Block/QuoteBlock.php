@@ -9,6 +9,8 @@ final readonly class QuoteBlock implements BlockInterface
     public function __construct(
         public string $text,
         public ?string $attribution = null,
+        /** Small label above the quote, e.g. "Statuts V23 / Article 2" */
+        public ?string $reference = null,
     ) {
     }
 

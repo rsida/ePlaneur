@@ -13,6 +13,7 @@ final readonly class CalloutBlock implements BlockInterface
         public string $title,
         public string $html,
         public string $variant = 'info',
+        public bool $showIcon = true,
     ) {
     }
 

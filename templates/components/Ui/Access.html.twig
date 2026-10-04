@@ -1,0 +1,8 @@
+{#
+    Access tag of reserved content: lock and the audience (group names or "Connectés").
+    <twig:Ui:Access>Membre</twig:Ui:Access>
+#}
+<span {{ attributes.defaults({class: 'c-access'}) }}>
+    <twig:ux:icon name="lock-keyhole" class="c-access__icon" />
+    <span class="u-visually-hidden">Réservé : </span>{% block content %}{% endblock %}
+</span>

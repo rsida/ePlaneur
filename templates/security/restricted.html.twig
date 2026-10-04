@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{#
+    "Contenu réservé" (HTTP 403), Figma "Contenu réservé — visiteur / comité": the header of the
+    content asked for stays, its body is replaced by the access card.
+    Variables: content (Page or Post), visibility, groups (names), loggedIn.
+#}
+{% set isPage = content.lineage is defined %}
+{% set audience = visibility.value == 'authenticated'
+    ? 'aux personnes connectées'
+    : (groups|length > 1 ? 'aux groupes ' ~ groups|join(', ', ' et ') : 'au groupe ' ~ (groups|first ?: 'désigné')) %}
+{% set access = visibility.value == 'authenticated' ? 'Connectés' : (groups|join(' · ') ?: 'Réservé') %}
+
+{% block title %}Contenu réservé · {{ content.title }}{% endblock %}
+
+{% block body %}
+    {% if isPage %}
+        {% set page = content %}
+        {% set crumbs = [{label: 'Accueil', href: path('app_home')}] %}
+        {% for ancestor in page.lineage %}
+            {% set crumbs = crumbs|merge([{label: ancestor.title, href: path('app_page_show', {path: ancestor.path})}]) %}
+        {% endfor %}
+        {% set highlight = page.highlightSource %}
+        {% set back = {label: 'Retour à la rubrique ' ~ (page.lineage|first).title, href: path('app_page_show', {path: (page.lineage|first).path})} %}
+    {% else %}
+        {% set crumbs = [{label: 'Accueil', href: path('app_home')}, {label: 'Actualités', href: path('app_home') ~ '#actualites'}, {label: content.title}] %}
+        {% set highlight = null %}
+        {% set back = {label: 'Retour aux actualités', href: path('app_home') ~ '#actualites'} %}
+    {% endif %}
+
+    <article class="p-page">
+        <twig:Content:PageHeader
+            :crumbs="crumbs"
+            :kicker="content.kicker"
+            :title="content.title"
+            :lead="content.excerpt"
+            :highlight="highlight ? highlight.highlight : null"
+            :highlightNote="highlight ? highlight.highlightNote : null"
+        />
+
+        <div class="l-container p-page__restricted">
+            <section class="c-restricted" aria-labelledby="restricted-title">
+                <p class="c-restricted__head">
+                    <span class="c-restricted__lock"><twig:ux:icon name="lock-keyhole" /></span>
+                    <twig:Ui:Access>{{ access }}</twig:Ui:Access>
+                </p>
+                {% if loggedIn %}
+                    <h2 class="c-restricted__title" id="restricted-title">Ce contenu est réservé {{ audience }}.</h2>
+                    <p class="c-restricted__text">Vous êtes connecté, mais votre compte n’a pas accès à ce contenu.</p>
+                    <p class="u-note">Si vous pensez devoir y accéder (adhésion validée, rôle au comité…), contactez le club.</p>
+                    <twig:Ui:Link href="{{ back.href }}">{{ back.label }}</twig:Ui:Link>
+                {% else %}
+                    <h2 class="c-restricted__title" id="restricted-title">Contenu réservé {{ audience }}</h2>
+                    <p class="c-restricted__text">La consultation de ce contenu nécessite une authentification. Connectez-vous à votre compte pour y accéder.</p>
+                    <div class="l-cluster">
+                        <twig:Ui:Button href="{{ path('app_login', {_target_path: app.request.requestUri}) }}">Se connecter</twig:Ui:Button>
+                        <twig:Ui:Button href="{{ path('app_register') }}" variant="outline">Créer un compte gratuit</twig:Ui:Button>
+                    </div>
+                    <p class="u-note">La création d’un compte gratuit est distincte de l’adhésion à l’association.</p>
+                {% endif %}
+            </section>
+            {% if not loggedIn %}<twig:Ui:Link href="{{ back.href }}">{{ back.label }}</twig:Ui:Link>{% endif %}
+        </div>
+    </article>
+{% endblock %}

@@ -1,10 +1,10 @@
-{# Highlighted box. Variants: info (cool), tip and warning (warm). #}
+{# Highlighted box. Variants: info (cool), tip and warning (warm); the icon can be hidden. #}
 {% props placed %}
 {% set data = placed.block %}
 {% set variant = data.safeVariant %}
 {% set icons = {info: 'info', tip: 'lightbulb', warning: 'triangle-alert'} %}
-<aside class="c-admonition c-admonition--{{ variant }}"{% if variant == 'warning' %} role="note"{% endif %}>
-    <twig:ux:icon name="{{ icons[variant] }}" class="c-admonition__icon" />
+<aside class="c-admonition c-admonition--{{ variant }}{{ data.showIcon ? '' : ' c-admonition--plain' }}"{% if variant == 'warning' %} role="note"{% endif %}>
+    {% if data.showIcon %}<twig:ux:icon name="{{ icons[variant] }}" class="c-admonition__icon" />{% endif %}
     <div class="c-admonition__content">
         <p class="c-admonition__title">{{ data.title }}</p>
         <div class="c-rich-text c-rich-text--sm">{{ data.html|sanitize_html('app.rich_text') }}</div>

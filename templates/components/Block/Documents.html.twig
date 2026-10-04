@@ -1,0 +1,58 @@
+{#
+    Official documents (Figma "Autres documents — liste compacte / cartes"): grouped by category, only
+    those the reader may see. Readers switch between the compact list and the cards (`layout`
+    Stimulus controller); the block's layout is the default.
+#}
+{% props placed %}
+{% set data = placed.block %}
+{% set groups = documents(data.categoryId) %}
+{% set layout = data.safeLayout %}
+<section class="c-documents" data-layout="{{ layout }}" data-controller="layout"{% if data.title %} aria-labelledby="{{ placed.key }}-title"{% endif %}>
+    {% if data.title or data.intro or groups is not empty %}
+        <header class="c-documents__header">
+            {% if data.title %}<h2 class="c-documents__title" id="{{ placed.key }}-title">{{ data.title }}</h2>{% endif %}
+            {% if data.intro %}<p class="u-note">{{ data.intro }}</p>{% endif %}
+            {% if groups is not empty %}
+                <div class="c-documents__switch" role="group" aria-label="Affichage des documents">
+                    {% for value, label in {list: 'Liste compacte', cards: 'Cartes'} %}
+                        <button type="button" class="c-documents__toggle" aria-pressed="{{ value == layout ? 'true' : 'false' }}"
+                                data-layout-target="toggle" data-layout-value-param="{{ value }}" data-action="layout#switch">{{ label }}</button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </header>
+    {% endif %}
+
+    {% for category, items in groups %}
+        <div class="c-documents__group">
+            {% if category %}<h3 class="c-documents__category">{{ category }}</h3>{% endif %}
+            <ul class="c-documents__list" role="list">
+                {% for document in items %}
+                    {% set file = document.file %}
+                    {% set access = document.visibility.value == 'authenticated' ? 'Connectés' : (document.visibility.value == 'groups' ? (document.allowedGroups|map(g => g.name)|join(' · ') ?: 'Réservé') : null) %}
+                    <li class="c-document">
+                        <span class="c-document__icon" aria-hidden="true"><twig:ux:icon name="file-text" /></span>
+                        <div class="c-document__main">
+                            <p class="c-document__title">{{ document.title }}</p>
+                            {% if document.description %}<p class="c-document__description">{{ document.description }}</p>{% endif %}
+                            {% if access %}<twig:Ui:Access>{{ access }}</twig:Ui:Access>{% endif %}
+                        </div>
+                        <p class="c-document__facts">
+                            <strong>{{ file.format }}{% if document.version %} · Version : {{ document.version }}{% endif %}</strong>
+                            {% for detail in document.details %}<span>{{ detail }}</span>{% endfor %}
+                        </p>
+                        <p class="c-document__size">
+                            <strong>{{ file.size|file_size }}</strong>
+                            {% if file.pages %}<span>{{ file.pages }} page{{ file.pages > 1 ? 's' }}</span>{% endif %}
+                        </p>
+                        <twig:Ui:Link href="{{ media_url(file, true) }}" class="c-document__download" download>
+                            Télécharger<span class="u-visually-hidden"> « {{ document.title }} »</span>
+                        </twig:Ui:Link>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <p class="u-note">Aucun document disponible pour le moment.</p>
+    {% endfor %}
+</section>

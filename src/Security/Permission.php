@@ -22,6 +22,9 @@ enum Permission: string
     case PostDelete = 'POST_DELETE';
     case CategoryManage = 'CATEGORY_MANAGE';
     case MediaManage = 'MEDIA_MANAGE';
+    case PageManage = 'PAGE_MANAGE';
+    case MenuManage = 'MENU_MANAGE';
+    case DocumentManage = 'DOCUMENT_MANAGE';
 
     public function label(): string
     {
@@ -35,6 +38,9 @@ enum Permission: string
             self::PostDelete => 'Supprimer des articles',
             self::CategoryManage => 'Gérer les catégories d’articles',
             self::MediaManage => 'Gérer la médiathèque (images, documents)',
+            self::PageManage => 'Gérer les pages et voir les pages non publiées',
+            self::MenuManage => 'Gérer les menus de navigation',
+            self::DocumentManage => 'Gérer les documents officiels',
         };
     }
 }

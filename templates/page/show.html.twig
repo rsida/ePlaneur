@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{#
+    Institutional page (Figma "Le Club — rubrique" and "Statuts — contenu niveau 3").
+    A root page (section) spreads its blocks over the full width, without sidebar; a sub-page shows
+    the pages of its section on the left, then the sidebar blocks, and its "Mis à jour" date.
+#}
+{% set page = view.page %}
+{% set highlight = page.highlightSource %}
+{% set section = page.parent is null %}
+
+{% block title %}{{ page.title }}{% endblock %}
+{% block description %}{{ (page.excerpt ?: page.title)|u.truncate(160, '…', false) }}{% endblock %}
+
+{% block body %}
+    {% if preview %}
+        <p class="p-article__preview" role="status">Aperçu : cette page n’est pas publiée.</p>
+    {% endif %}
+
+    {% set crumbs = [{label: 'Accueil', href: path('app_home')}] %}
+    {% for ancestor in page.lineage %}
+        {% set crumbs = crumbs|merge([{label: ancestor.title, href: path('app_page_show', {path: ancestor.path})}]) %}
+    {% endfor %}
+
+    <article class="p-page">
+        <twig:Content:PageHeader
+            :crumbs="crumbs"
+            :kicker="page.kicker"
+            :title="page.title"
+            :lead="page.excerpt"
+            :highlight="highlight ? highlight.highlight : null"
+            :highlightNote="highlight ? highlight.highlightNote : null"
+            :updatedAt="section ? null : page.updatedAt"
+        />
+
+        {% if section %}
+            <div class="l-container p-page__body p-page__body--wide">
+                <twig:Content:Blocks :blocks="view.body" />
+                <twig:Content:Blocks :blocks="view.aside" />
+            </div>
+        {% else %}
+            <div class="l-container p-page__layout">
+                <aside class="p-page__sidebar">
+                    {% if view.siblings|length > 1 %}
+                        <nav class="c-subnav" aria-label="Pages de la rubrique {{ page.parent.title }}">
+                            <p class="c-subnav__title">{{ page.parent.title }}</p>
+                            <ul class="c-subnav__list" role="list">
+                                {% for sibling in view.siblings %}
+                                    <li>
+                                        <a class="c-subnav__link" href="{{ path('app_page_show', {path: sibling.path}) }}"{% if sibling == page %} aria-current="page"{% endif %}>
+                                            {{- sibling.title -}}
+                                            {% if sibling.visibility.value != 'public' %}<twig:ux:icon name="lock-keyhole" class="c-subnav__lock" aria-label="réservé" />{% endif %}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                    <twig:Content:Blocks :blocks="view.aside" />
+                </aside>
+
+                <div class="p-article__body p-page__body">
+                    <twig:Content:Blocks :blocks="view.body" />
+                </div>
+            </div>
+        {% endif %}
+    </article>
+{% endblock %}
