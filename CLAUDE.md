@@ -17,6 +17,9 @@ Before any functional work, read `doc/project/` — it is the reference for the 
 (what eplaneur.fr, Condor Club, Yapla... already do — do not rebuild them without a decision),
 `current-site.md` (site map and features to carry over) and `glossary.md`.
 
+The plan of work lives in `doc/roadmap.md`: read it to know what to do next, and update its status,
+decisions and open questions as work progresses.
+
 Key domain constraints:
 - User-facing content is in **French**; times are metropolitan France time (many members are in
   La Réunion).
