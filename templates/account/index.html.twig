@@ -25,5 +25,8 @@
 {% endblock %}
 
 {% block aside %}
+    {% if is_granted('ADMIN_ACCESS') %}
+        <twig:Ui:Link href="{{ path('admin') }}">Administration du site</twig:Ui:Link>
+    {% endif %}
     <twig:Ui:Link href="{{ path('app_forgot_password_request') }}">Changer de mot de passe</twig:Ui:Link>
 {% endblock %}

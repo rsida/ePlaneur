@@ -14,6 +14,7 @@ yet validated step by step by the project owner.
 | Step 1: accounts, groups and permissions | [accounts.md](accounts.md): registration with e-mail confirmation, login, password reset, groups and permissions in database, `CONTENT_VIEW` voter, console commands |
 | Step 2a: posts and content blocks | [content.md](content.md): `Post`, `Category`, `Media`, 22 block types, article page `/actualites/{slug}`, demo article in fixtures |
 | Step 2b: pages, menus, documents | [content.md](content.md#pages-menus-and-restricted-content): page tree, menus filtered by rights (mega-menu, mobile full-screen menu), official documents (list and cards), "Contenu réservé" page, layouts from the Figma mock-up |
+| Step 3a: back-office reference screens | [admin.md](admin.md): EasyAdmin at `/admin`, accounts, groups and permissions, categories, media library (upload), official documents, menus |
 
 ## Next: content and editorial back-office (replaces the WordPress blog and pages)
 
@@ -24,7 +25,8 @@ Do the steps in this order: each one depends on the previous ones.
 | 1 | Accounts and roles | `User` entity, login, free registration, roles visitor / registered user / member / committee / admin as described in [club.md](project/club.md); a voter that decides who can read a given content | Done (2026-10-04), see [accounts.md](accounts.md) |
 | 2a | Posts and content blocks | `Post`, `Category`, `Media` (uploads served with access control); article body = ordered list of typed blocks (JSON) covering every block of the Figma article (node 29-4356): text, heading, callout, image, image pair, carousel, video, quote, list, steps, tabs, checklist, table, PDF reader, downloads, notes, glossary, FAQ, links, sidebar resource, takeaways; article page (`/actualites/{slug}`) with table of contents, reading progress, sharing, author, related posts; demo article in fixtures; post permissions | Done (2026-10-04), see [content.md](content.md) |
 | 2b | Pages, menus, documents | `Page` (tree giving URLs and breadcrumbs), `MenuItem` (separate tree: links to a page, an internal path or an external URL, filtered with `CONTENT_VIEW`), `Document` + `DocumentCategory` (official texts with version and date); each implements `RestrictedContentInterface`; "Contenu réservé" page for pages and posts; matching permissions (`PAGE_MANAGE`, `MENU_MANAGE`, `DOCUMENT_MANAGE`). Layouts from the Figma frames generated with the prompt in [figma-prompts.md](figma-prompts.md) | Done (2026-10-04), see [content.md](content.md#pages-menus-and-restricted-content) |
-| 3 | Admin with EasyAdmin | CRUD for posts, categories, pages, menu, documents, users and groups (with their permissions), each screen and action restricted by permission; rich text editor for non-technical editors | To do |
+| 3a | Back-office: reference screens | EasyAdmin 5 at `/admin` (`ADMIN_ACCESS`), one screen per permission: accounts (membership validation by group), groups and their permissions, post categories, media library with multi-file upload, official documents and their categories, menus | Done (2026-10-05), see [admin.md](admin.md) |
+| 3b | Back-office: posts and pages | Post and page screens with a **visual block editor** (WordPress-like: blocks rendered with the site styles, text edited in place, a settings panel per block, add / move / delete blocks), publication and preview, media picker, resized images | To do |
 | 4 | Public front | News list (replaces the `/actualites` redirect), post page, filter by category and date; the home page "Ça bouge au club" section reads featured posts instead of placeholders; pages rendered from the tree with the menu | To do |
 | 5 | WordPress migration | `app:import-wordpress` command reading posts, pages and media through the WordPress REST API (79 pages, 34 posts, about 20 of them restricted committee minutes); 301 redirects from the old URLs | To do |
 
@@ -43,17 +45,19 @@ existing content.
 | 2026-10-04 | Videos are YouTube (youtube-nocookie) or Vimeo URLs, loaded on click; no self-hosted video files |
 | 2026-10-04 | Restricted pages and posts show a "Contenu réservé" page (login/register for visitors, required group for logged-in users) instead of redirecting |
 | 2026-10-04 | Links and cards to reserved pages stay visible with an access tag (Figma mock-up); a link hidden by its own visibility disappears |
+| 2026-10-05 | Back-office with EasyAdmin 5; step 3 split into 3a (reference screens) and 3b (posts and pages); posts and pages get a visual, WordPress-like block editor rather than plain forms |
 | 2026-10-04 | Comments and "was this article useful?" feedback come later (moderation rules to define); step 2 split into 2a (posts, blocks) and 2b (pages, menus, documents) |
 
 ## Open questions
 
-- Back-office: EasyAdmin (recommended, not confirmed) or a custom admin.
+- Visual block editor (3b): build it on a library (Editor.js, Tiptap...) or as Stimulus controllers
+  over the existing `Block:*` components; to decide at the start of 3b.
 - Member validation: the committee adds the "Membre" group by hand after the Yapla payment; a yearly
   expiry of membership is not modelled yet.
 - Article comments and feedback: who can comment, moderation, notifications (after step 4); their
   visual components already exist (`Content:Comment`, `Content:Feedback`).
-- Image sizes: pictures are served as uploaded; generate resized versions (LiipImagine or similar)
-  when the editor allows uploads (step 3).
+- Image sizes: pictures are served as uploaded (the media library accepts uploads since 3a);
+  generate resized versions (LiipImagine or similar) with the post editor (step 3b).
 - PDF block: the browser viewer is used (hidden on mobile, where the open/download links remain); the
   mock-up's page and zoom tools would need PDF.js.
 - Title line breaks: the mock-up breaks the article title after "VOTRE PREMIER VOL."; titles wrap

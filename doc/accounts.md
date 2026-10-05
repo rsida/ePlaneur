@@ -8,7 +8,7 @@ levels of the club) is in [project/club.md](project/club.md).
 | Concept | Where | Edited by |
 |---|---|---|
 | **User** (`App\Entity\User`) | Table `app_user`: e-mail (login), display name, password hash, `verified`, creation date | The user (registration, password) and administrators |
-| **Group** (`App\Entity\Group`) | Table `app_group`: code, name, description, permissions, "all permissions" flag, "system" flag | Administrators (admin screens come with roadmap step 3; console commands meanwhile) |
+| **Group** (`App\Entity\Group`) | Table `app_group`: code, name, description, permissions, "all permissions" flag, "system" flag | Administrators, in the back-office ("Groupes et droits", see [admin](admin.md)) or from the console |
 | **Membership** | Table `app_user_group`: a user belongs to **any number** of groups; rights add up | Administrators |
 | **Permission** (`App\Security\Permission`) | PHP enum: the fixed catalogue of actions (`ADMIN_ACCESS`, `USER_MANAGE`, `GROUP_MANAGE`, post permissions listed in [content](content.md#permissions)...) | Developers: add a case when a feature needs a new right |
 | **Visibility** (`App\Security\Visibility`) | On each restricted content: `public`, `authenticated` or `groups` (+ the allowed groups) | Content editors |
@@ -18,7 +18,7 @@ Default groups, created by the first migration and by the dev fixtures (`App\Sec
 | Code | Name | Permissions |
 |---|---|---|
 | `member` | Membre | none yet |
-| `committee` | Comité | `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE`, `PAGE_MANAGE`, `DOCUMENT_MANAGE` |
+| `committee` | Comité | `ADMIN_ACCESS`, `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE`, `PAGE_MANAGE`, `DOCUMENT_MANAGE` |
 | `admin` | Administrateur | all (`all_permissions` flag: includes permissions added later, and sees every content) |
 
 Administrators can create other groups (Rédacteur, Bienfaiteur, Bénévole...) and change which
@@ -78,7 +78,8 @@ E-mails use the sender `MAILER_FROM` (see [configuration](configuration.md)); th
 
 ## Console commands
 
-Until the admin screens exist (roadmap step 3), accounts and groups are managed from the console:
+Accounts and groups are managed in the back-office ("Comptes", "Groupes et droits", see
+[admin](admin.md)) or from the console, for instance to create the first administrator:
 
 ```bash
 # First administrator (asks the password)

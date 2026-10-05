@@ -142,5 +142,5 @@ In production `var/uploads` is the Docker volume `uploads`: back it up with the 
 | `DOCUMENT_MANAGE` | Managing official documents |
 
 The "Comité" group gets all of them except `POST_DELETE` and `MENU_MANAGE` by default (migrations
-`Version20261004143458` and `Version20261004155717`); the screens using them come with the
-back-office (roadmap step 3).
+`Version20261004143458` and `Version20261004155717`). The back-office screens using them are
+described in [admin](admin.md); posts and pages get theirs in roadmap step 3b.

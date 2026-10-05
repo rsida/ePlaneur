@@ -41,6 +41,10 @@ docker compose exec -e APP_ENV=test php php bin/phpunit --testsuite unit
 | `unit` | `tests/Unit` | `PHPUnit\Framework\TestCase` (no kernel) |
 | `functional` | `tests/Functional` | `WebTestCase` (HTTP) / `KernelTestCase` (services) |
 
+Back-office tests live in `tests/Functional/Admin/`: one EasyAdmin `AbstractCrudTestCase` per screen
+(`generateIndexUrl()`, `generateEditFormUrl($id)`...) plus `AdminAccessTest` for permissions. See
+[admin](admin.md#adding-a-screen).
+
 The configuration fails on deprecations, notices and warnings.
 
 ## Behat

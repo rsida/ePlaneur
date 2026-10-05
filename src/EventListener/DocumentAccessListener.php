@@ -28,6 +28,9 @@ final class DocumentAccessListener
         foreach ($documents as $document) {
             \assert($document instanceof Document);
             $file = $document->getFile();
+            if (null === $file) {
+                continue; // refused by validation
+            }
             $file->setVisibility($document->getVisibility());
             foreach ($file->getAllowedGroups()->toArray() as $group) {
                 if (!$document->getAllowedGroups()->contains($group)) {

@@ -64,9 +64,12 @@ class Document implements RestrictedContentInterface
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
         private string $title,
+        /** Null only while a document is being created in the back-office (the column is not nullable) */
+        // @phpstan-ignore doctrine.associationType
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
-        private Media $file,
+        #[Assert\NotNull(message: 'Choisissez le fichier du document.')]
+        private ?Media $file = null,
     ) {
         $this->allowedGroups = new ArrayCollection();
         $this->updatedAt = new \DateTimeImmutable();
@@ -89,7 +92,7 @@ class Document implements RestrictedContentInterface
         return $this;
     }
 
-    public function getFile(): Media
+    public function getFile(): ?Media
     {
         return $this->file;
     }

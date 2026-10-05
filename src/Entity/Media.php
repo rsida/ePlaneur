@@ -205,4 +205,9 @@ class Media implements RestrictedContentInterface
     {
         return $this->uploadedAt;
     }
+
+    public function __toString(): string
+    {
+        return $this->originalName;
+    }
 }

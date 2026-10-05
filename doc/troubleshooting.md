@@ -20,6 +20,10 @@ After changing `SERVER_NAME`, delete `docker/certs/*.pem`, then `make certs` and
 
 The hosts entry is missing on the machine running the **browser** (Windows when using WSL2).
 
+Inside WSL (tests with Playwright, `curl`), WSL regenerates `/etc/hosts` on restart: without a
+`127.0.0.1 eplaneur.local` line every request waits about 11 seconds for name resolution. Add the
+line again (`sudo` needed), or use `https://127.0.0.1` for scripted checks.
+
 ## Access denied for the database user
 
 Credentials changed after the volume was created. Either restore the previous values, or recreate the

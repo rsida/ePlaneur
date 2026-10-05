@@ -86,3 +86,26 @@ make qa                           # lint + php-cs-fixer + phpstan + tests
   See `doc/content.md` before adding a block type or touching navigation.
 - **Prod deploys** are tag-based: `make release TAG=vX` locally, `make deploy-prod TAG=vX` on the server
   (APP_ENV=prod in the server's `.env.local`).
+
+<easyadmin-guidelines>
+This project uses EasyAdmin 5.6.1.
+
+Before creating or modifying admin dashboards, CRUD controllers, fields, actions,
+filters or their tests, read and follow the `easyadmin` skill at `.claude/skills/easyadmin/SKILL.md`.
+
+Prefer the makers (`make:admin:dashboard`, `make:admin:crud`) to generate the
+initial classes instead of writing them from scratch.
+
+Team conventions for EasyAdmin, if any, are in the `## EasyAdmin conventions`
+section of this file, outside this block.
+</easyadmin-guidelines>
+
+## EasyAdmin conventions
+
+- The back-office is documented in `doc/admin.md`; keep its screen table in sync.
+- One `final` CRUD controller per entity in `src/Controller/Admin/`, restricted as a whole with
+  `#[IsGranted(Permission::X->value)]` (never only with menu or action permissions), listed in
+  `DashboardController::configureMenuItems()` with the same permission.
+- Labels, help texts and flash messages in French; restricted contents use `VisibilityFields::create()`.
+- Every screen has a functional test in `tests/Functional/Admin/` (`AbstractCrudTestCase`), and
+  `AdminAccessTest` checks who may open it.

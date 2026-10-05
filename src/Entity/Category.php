@@ -58,6 +58,13 @@ class Category
         return $this->slug;
     }
 
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
     public function getDescription(): ?string
     {
         return $this->description;

@@ -1,0 +1,85 @@
+/*
+ * Back-office (EasyAdmin) in the colors of the site. EasyAdmin styles live in cascade layers, so
+ * these unlayered rules win. Its design tokens are overridden on `:root, .ea-dark-scheme`.
+ */
+@import url('./tokens.css');
+
+:root,
+.ea-dark-scheme {
+    --ea-primary: var(--palette-navy);
+    --ea-radius: var(--radius-sm);
+}
+
+:root {
+    --body-bg: var(--palette-cream);
+    --font-family-base: var(--font-body);
+}
+
+/* Dashboard home */
+.admin-intro {
+    margin-bottom: var(--space-6);
+    color: var(--palette-slate);
+}
+
+.admin-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-shortcut a {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    height: 100%;
+    padding: var(--space-5);
+    border: 1px solid var(--palette-line);
+    border-radius: var(--radius-md);
+    background-color: var(--palette-white);
+    color: var(--palette-ink);
+    text-decoration: none;
+}
+
+.admin-shortcut a:hover {
+    border-color: var(--palette-navy);
+}
+
+.admin-shortcut i {
+    color: var(--palette-navy);
+    font-size: 1.25rem;
+}
+
+.admin-shortcut span {
+    color: var(--palette-slate);
+    font-size: var(--text-sm);
+}
+
+/* Media library */
+.admin-media-preview {
+    width: 4rem;
+    height: 3rem;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+}
+
+.admin-media-format {
+    display: inline-grid;
+    place-items: center;
+    width: 4rem;
+    height: 3rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--palette-sky-soft);
+    color: var(--palette-navy);
+    font-size: var(--text-micro);
+    font-weight: 700;
+}
+
+.admin-form-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-top: var(--space-6);
+}

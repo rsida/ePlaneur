@@ -1,0 +1,24 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{# Back-office home: one card per screen the user may open (DashboardController::shortcuts()). #}
+{% block page_title 'Administration' %}
+{% block content_title 'Administration du Club ePlaneur' %}
+
+{% block main %}
+    <p class="admin-intro">Bonjour {{ app.user.displayName }}. Les écrans ci-dessous dépendent des droits de vos groupes.</p>
+    {% if shortcuts is empty %}
+        <twig:ea:Alert variant="info">Aucun écran n’est ouvert à vos groupes pour le moment.</twig:ea:Alert>
+    {% else %}
+        <ul class="admin-shortcuts">
+            {% for shortcut in shortcuts %}
+                <li class="admin-shortcut">
+                    <a href="{{ path(shortcut.route) }}">
+                        <twig:ea:Icon name="{{ shortcut.icon }}" />
+                        <strong>{{ shortcut.label }}</strong>
+                        <span>{{ shortcut.text }}</span>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

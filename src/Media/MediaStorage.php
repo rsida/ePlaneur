@@ -7,6 +7,7 @@ namespace App\Media;
 use App\Entity\Media;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Mime\MimeTypes;
 
 /**
@@ -32,15 +33,34 @@ final readonly class MediaStorage
             throw new \InvalidArgumentException(\sprintf('File "%s" not found.', $sourcePath));
         }
 
-        $originalName ??= basename($sourcePath);
+        return $this->store($sourcePath, $originalName ?? basename($sourcePath), move: false);
+    }
+
+    /**
+     * Moves a file uploaded from the back-office into the storage. The returned Media is not persisted.
+     */
+    public function storeUpload(UploadedFile $file): Media
+    {
+        return $this->store($file->getPathname(), $file->getClientOriginalName(), move: true);
+    }
+
+    private function store(string $sourcePath, string $originalName, bool $move): Media
+    {
         $mimeType = MimeTypes::getDefault()->guessMimeType($sourcePath) ?? 'application/octet-stream';
         $extension = mb_strtolower(pathinfo($originalName, \PATHINFO_EXTENSION)) ?: (MimeTypes::getDefault()->getExtensions($mimeType)[0] ?? 'bin');
         $relativePath = \sprintf('%s/%s.%s', date('Y/m'), bin2hex(random_bytes(16)), $extension);
+        $target = $this->absolutePath($relativePath);
+        $size = (int) filesize($sourcePath);
 
-        $this->filesystem->copy($sourcePath, $this->absolutePath($relativePath));
+        if ($move) {
+            $this->filesystem->mkdir(\dirname($target));
+            $this->filesystem->rename($sourcePath, $target);
+        } else {
+            $this->filesystem->copy($sourcePath, $target);
+        }
 
-        $media = new Media($relativePath, $originalName, $mimeType, (int) filesize($sourcePath));
-        $this->describe($media, $sourcePath);
+        $media = new Media($relativePath, $originalName, $mimeType, $size);
+        $this->describe($media, $target);
 
         return $media;
     }

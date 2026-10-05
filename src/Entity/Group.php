@@ -71,6 +71,17 @@ class Group
         return $this->code;
     }
 
+    /** Codes are referenced by code (DefaultGroup): only set before the group is first saved. */
+    public function setCode(string $code): static
+    {
+        if (null !== $this->id) {
+            throw new \LogicException('The code of a saved group cannot change.');
+        }
+        $this->code = $code;
+
+        return $this;
+    }
+
     public function getName(): string
     {
         return $this->name;

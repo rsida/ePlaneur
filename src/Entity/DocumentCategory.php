@@ -58,6 +58,13 @@ class DocumentCategory
         return $this->slug;
     }
 
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
     public function getPosition(): int
     {
         return $this->position;

@@ -96,6 +96,13 @@ class MenuItem implements RestrictedContentInterface
         return $this->location;
     }
 
+    public function setLocation(MenuLocation $location): static
+    {
+        $this->location = $location;
+
+        return $this;
+    }
+
     public function getLabel(): string
     {
         return $this->label;
@@ -218,8 +225,9 @@ class MenuItem implements RestrictedContentInterface
         return $this;
     }
 
+    /** Label with its parents ("Le Club › Textes officiels"), to choose a parent in the back-office. */
     public function __toString(): string
     {
-        return $this->label;
+        return null !== $this->parent ? $this->parent.' › '.$this->label : $this->label;
     }
 }
