@@ -54,7 +54,7 @@ final class AdminAccessTest extends WebTestCase
 
         $crawler = $this->client->request('GET', '/admin');
         self::assertResponseIsSuccessful();
-        $shortcuts = $crawler->filter('.admin-shortcut strong')->each(static fn ($node): string => $node->text());
+        $shortcuts = $crawler->filter('.ep-shortcut__title')->each(static fn ($node): string => $node->text());
         self::assertContains('Médiathèque', $shortcuts);
         self::assertContains('Documents officiels', $shortcuts);
         self::assertNotContains('Comptes', $shortcuts, 'USER_MANAGE is not granted to the committee');

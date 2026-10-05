@@ -6,9 +6,10 @@ French because the generated screens must be. Once a mock-up exists, note its li
 
 ## Back-office theme on EasyAdmin 5 (step 3, 2026-10-05)
 
-Status: waiting for the mock-up. The theme must stay within what EasyAdmin 5 can change without
-rewriting its pages: tokens (`Dashboard::setTheme()`, CSS variables), fonts, logo, icons and a few
-template overrides (see [admin](admin.md)).
+Status: done (2026-10-05). Frames on the "Admin" page of the Figma file `a00zZWdxi7zD4Opbt6gIbn`
+(node 37-3): dashboard, media library, accounts, group form, document form, upload, interface states,
+mobile dashboard and the style sheet, each in light and dark (the mobile media library was not
+generated). Applied as described in [admin](admin.md#theme).
 
 > **Contexte.** Tu travailles sur le back-office du site du Club ePlaneur, une association qui forme au vol en planeur sur le simulateur Condor. Il est réalisé avec **EasyAdmin 5** (bundle Symfony, interface Bootstrap) : propose un **thème** pour cette interface, pas une nouvelle application. Garde sa structure telle quelle :
 > - **barre latérale gauche** : logo, menu en sections (Contenus, Comptes), lien « Voir le site » ; repliée derrière un bouton en mobile ;

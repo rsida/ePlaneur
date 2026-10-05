@@ -54,10 +54,8 @@ final class MenuItemCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield FormField::addFieldset('Lien', 'fa fa-link');
-        yield ChoiceField::new('location', 'Menu')
-            ->setChoices(array_combine(array_map(static fn (MenuLocation $location): string => $location->label(), MenuLocation::cases()), MenuLocation::cases()))
-            ->formatValue(static fn (mixed $value): mixed => $value instanceof MenuLocation ? $value->label() : $value);
+        yield FormField::addFieldset('Lien', 'link');
+        yield ChoiceField::new('location', 'Menu');
         yield AssociationField::new('parent', 'Sous')
             ->setQueryBuilder(static fn (QueryBuilder $qb): QueryBuilder => $qb->orderBy('entity.location', 'DESC')->addOrderBy('entity.position', 'ASC'))
             ->setHelp('Vide pour un lien de premier niveau ; le parent doit appartenir au même menu.');

@@ -55,7 +55,7 @@ final class DocumentCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield FormField::addFieldset('Document', 'fa fa-file-lines');
+        yield FormField::addFieldset('Document', 'files');
         yield TextField::new('title', 'Titre')->setFormTypeOption('empty_data', '');
         yield AssociationField::new('category', 'Catégorie');
         yield AssociationField::new('file', 'Fichier')

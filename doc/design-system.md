@@ -165,7 +165,8 @@ text color). Render them with `<twig:ux:icon name="arrow-right" />` (size `1em` 
 `settings`, `upload`, `discover`, `progress`, `share`, and for articles `arrow-up-right`, `check`,
 `chevron-left`, `clock`, `download`, `file-text`, `info`, `lightbulb`, `link`, `mail`,
 `message-circle`, `minus`, `play`, `plus`, `printer`, `share-2`, `thumbs-up`, `triangle-alert`, and
-for navigation `chevron-down`, `chevron-up`, `lock-keyhole`, `menu`, `x`.
+for navigation `chevron-down`, `chevron-up`, `lock-keyhole`, `menu`, `x`. `assets/icons/admin/` holds
+the back-office icons (`admin:` prefix, see [admin](admin.md#theme)).
 
 ## Adding or changing something
 

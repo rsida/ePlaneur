@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use Symfony\Contracts\Translation\TranslatableInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
+
 /**
  * Catalogue of the actions that can be granted to a group.
  *
@@ -11,7 +14,7 @@ namespace App\Security;
  * which permission is data, edited by an administrator. Add a case here when a feature needs a new
  * right, then grant it to groups.
  */
-enum Permission: string
+enum Permission: string implements TranslatableInterface
 {
     case AdminAccess = 'ADMIN_ACCESS';
     case UserManage = 'USER_MANAGE';
@@ -42,5 +45,11 @@ enum Permission: string
             self::MenuManage => 'Gérer les menus de navigation',
             self::DocumentManage => 'Gérer les documents officiels',
         };
+    }
+
+    /** French label, shown as is by forms and the back-office (EasyAdmin renders translatable enums). */
+    public function trans(TranslatorInterface $translator, ?string $locale = null): string
+    {
+        return $this->label();
     }
 }

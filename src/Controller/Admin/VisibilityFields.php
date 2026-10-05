@@ -20,14 +20,14 @@ final class VisibilityFields
      */
     public static function create(): iterable
     {
-        yield FormField::addFieldset('Visibilité', 'fa fa-lock');
+        yield FormField::addFieldset('Visibilité', 'lock-keyhole');
+        // Visibility is a translatable enum: EasyAdmin lists its cases and shows their French label.
+        // Badge variants are keyed by case name; admin.css gives them the colors of the theme.
         yield ChoiceField::new('visibility', 'Visible par')
-            ->setChoices(array_combine(array_map(static fn (Visibility $visibility): string => $visibility->label(), Visibility::cases()), Visibility::cases()))
-            ->formatValue(static fn (mixed $value): mixed => $value instanceof Visibility ? $value->label() : $value)
             ->renderAsBadges([
-                Visibility::Public->value => 'success',
-                Visibility::Authenticated->value => 'info',
-                Visibility::Groups->value => 'warning',
+                Visibility::Public->name => 'secondary',
+                Visibility::Authenticated->name => 'info',
+                Visibility::Groups->name => 'warning',
             ]);
         yield AssociationField::new('allowedGroups', 'Groupes autorisés')
             ->setFormTypeOptions(['by_reference' => false, 'expanded' => true])

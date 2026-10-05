@@ -43,8 +43,7 @@ final class DocumentCrudControllerTest extends AbstractCrudTestCase
         $values['Document']['file'] = (string) $media->getId();
         $values['Document']['version'] = 'V1';
         $values['Document']['details'] = ['Approuvé le 29/09/2026'];
-        // Enum choices are submitted by their position in Visibility::cases()
-        $values['Document']['visibility'] = (string) array_search(Visibility::Groups, Visibility::cases(), true);
+        $values['Document']['visibility'] = Visibility::Groups->value;
         $values['Document']['allowedGroups'] = [(string) $committee->getId()];
         $this->client->request($form->getMethod(), $form->getUri(), $values);
         self::assertResponseRedirects();

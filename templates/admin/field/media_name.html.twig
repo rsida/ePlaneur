@@ -1,0 +1,10 @@
+{# Thumbnail (image or format tile) and file name, in the media library list. #}
+{% set media = entity.instance %}
+<span class="ep-media-name">
+    {% if media.image %}
+        <img class="ep-media-thumb" src="{{ media_url(media) }}" alt="" loading="lazy">
+    {% else %}
+        <span class="ep-media-thumb ep-media-thumb--file">{{ media.format }}</span>
+    {% endif %}
+    <span>{{ field.formattedValue }}</span>
+</span>

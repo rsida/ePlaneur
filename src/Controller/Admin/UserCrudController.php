@@ -60,16 +60,17 @@ final class UserCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield FormField::addFieldset('Compte', 'fa fa-user');
+        yield FormField::addFieldset('Compte', 'users');
         yield TextField::new('displayName', 'Nom affiché')->setFormTypeOption('empty_data', '');
         yield EmailField::new('email', 'E-mail')->setFormTypeOption('empty_data', '');
-        yield BooleanField::new('verified', 'E-mail confirmé')->renderAsSwitch(false);
+        yield BooleanField::new('verified', 'E-mail confirmé')->renderAsSwitch(false)
+            ->setFormTypeOption('label_attr', ['class' => 'checkbox-switch']);
         yield AssociationField::new('groups', 'Groupes')
             ->setFormTypeOptions(['by_reference' => false, 'expanded' => true])
             ->setHelp('Ajoutez « Membre » une fois l’adhésion payée sur Yapla et validée.');
         yield DateTimeField::new('createdAt', 'Inscription')->hideOnForm();
 
-        yield FormField::addFieldset('Profil d’auteur', 'fa fa-pen');
+        yield FormField::addFieldset('Profil d’auteur', 'pencil');
         yield TextField::new('jobTitle', 'Fonction')->hideOnIndex();
         yield TextareaField::new('bio', 'Présentation')->hideOnIndex();
         yield AssociationField::new('avatar', 'Photo')

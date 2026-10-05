@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use Symfony\Contracts\Translation\TranslatableInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
+
 /**
  * Who can see a piece of content (menu link, post, page, document...).
  */
-enum Visibility: string
+enum Visibility: string implements TranslatableInterface
 {
     /** Everyone, including visitors. */
     case Public = 'public';
@@ -25,5 +28,11 @@ enum Visibility: string
             self::Authenticated => 'Utilisateurs connectés',
             self::Groups => 'Groupes choisis',
         };
+    }
+
+    /** French label, shown as is by forms and the back-office (EasyAdmin renders translatable enums). */
+    public function trans(TranslatorInterface $translator, ?string $locale = null): string
+    {
+        return $this->label();
     }
 }

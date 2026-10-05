@@ -1,24 +1,38 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{# Back-office home: one card per screen the user may open (DashboardController::shortcuts()). #}
-{% block page_title 'Administration' %}
-{% block content_title 'Administration du Club ePlaneur' %}
+{#
+    Back-office home (Figma "Tableau de bord — Clair / Sombre"): one card per screen the user may open
+    (DashboardController::shortcuts()), then the user's access.
+#}
+{% block page_title 'Tableau de bord' %}
+{% block content_title 'Tableau de bord' %}
 
 {% block main %}
-    <p class="admin-intro">Bonjour {{ app.user.displayName }}. Les écrans ci-dessous dépendent des droits de vos groupes.</p>
+    <p class="ep-page-subtitle">Administration du Club ePlaneur</p>
+    <p class="ep-greeting">Bonjour {{ app.user.displayName }}. Les écrans ci-dessous dépendent des droits de vos groupes.</p>
+
     {% if shortcuts is empty %}
         <twig:ea:Alert variant="info">Aucun écran n’est ouvert à vos groupes pour le moment.</twig:ea:Alert>
     {% else %}
-        <ul class="admin-shortcuts">
+        <ul class="ep-shortcuts">
             {% for shortcut in shortcuts %}
-                <li class="admin-shortcut">
-                    <a href="{{ path(shortcut.route) }}">
-                        <twig:ea:Icon name="{{ shortcut.icon }}" />
-                        <strong>{{ shortcut.label }}</strong>
-                        <span>{{ shortcut.text }}</span>
+                <li>
+                    <a class="ep-shortcut" href="{{ path(shortcut.route) }}">
+                        <span class="ep-shortcut__head">
+                            <twig:ea:Icon name="{{ shortcut.icon }}" class="ep-shortcut__icon" />
+                            <strong class="ep-shortcut__title">{{ shortcut.label }}</strong>
+                            <twig:ea:Icon name="chevron-right" class="ep-shortcut__chevron" />
+                        </span>
+                        <span class="ep-shortcut__text">{{ shortcut.text }}</span>
                     </a>
                 </li>
             {% endfor %}
         </ul>
     {% endif %}
+
+    {% set groups = app.user.groups|map(g => g.name) %}
+    <twig:ea:Alert variant="info" withDismissButton>
+        Vos accès : {{ groups is empty ? 'aucun groupe' : groups|join(' · ') }}.
+    </twig:ea:Alert>
+    <p class="ep-note">Les modifications de visibilité s’appliquent au site et à l’espace membre.</p>
 {% endblock %}

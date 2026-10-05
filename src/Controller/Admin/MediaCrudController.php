@@ -21,7 +21,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -59,7 +58,7 @@ final class MediaCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $upload = Action::new('upload', 'Téléverser', 'fa fa-upload')
+        $upload = Action::new('upload', 'Téléverser', 'upload')
             ->linkToCrudAction('upload')
             ->createAsGlobalAction()
             ->asPrimaryAction();
@@ -76,12 +75,14 @@ final class MediaCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield IdField::new('id', 'Aperçu')->setTemplatePath('admin/field/media_preview.html.twig')->onlyOnIndex();
-        yield FormField::addFieldset('Fichier', 'fa fa-file');
-        yield TextField::new('originalName', 'Nom')->setDisabled();
-        yield TextField::new('mimeType', 'Type')->hideOnForm();
+        // Index: thumbnail and name in one column, short format, date without time (Figma "Médiathèque")
+        yield TextField::new('originalName', 'Nom du fichier')->setTemplatePath('admin/field/media_name.html.twig')->onlyOnIndex();
+        yield TextField::new('format', 'Type')->setSortable(false)->onlyOnIndex();
+        yield FormField::addFieldset('Fichier', 'files');
+        yield TextField::new('originalName', 'Nom')->setDisabled()->hideOnIndex();
+        yield TextField::new('mimeType', 'Type')->onlyOnDetail();
         yield IntegerField::new('size', 'Taille')->setTemplatePath('admin/field/file_size.html.twig')->hideOnForm();
-        yield DateTimeField::new('uploadedAt', 'Ajouté le')->hideOnForm();
+        yield DateTimeField::new('uploadedAt', 'Date d’ajout')->setFormat('dd/MM/yyyy')->hideOnForm();
         yield TextField::new('alt', 'Texte alternatif')
             ->setHelp('Décrit l’image pour les personnes qui ne la voient pas. Laisser vide pour une image décorative.')
             ->hideOnIndex();

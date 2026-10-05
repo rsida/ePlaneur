@@ -14,6 +14,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -57,20 +58,28 @@ final class GroupCrudController extends AbstractCrudController
             $permissions[$permission->label()] = $permission;
         }
 
-        yield TextField::new('name', 'Nom')->setFormTypeOption('empty_data', '');
-        yield TextField::new('code', 'Code')->onlyWhenCreating()->setFormTypeOption('empty_data', '')
+        yield FormField::addFieldset('Informations du groupe');
+        yield TextField::new('name', 'Nom')->setFormTypeOption('empty_data', '')->setColumns(6)
+            ->setHelp('Nom affiché sur les comptes membres.');
+        yield TextareaField::new('description', 'Description')->setColumns(6)->setNumOfRows(3)->hideOnIndex()
+            ->setHelp('Description interne, non visible sur le site.');
+        yield TextField::new('code', 'Code')->onlyWhenCreating()->setFormTypeOption('empty_data', '')->setColumns(6)
             ->setHelp('Identifiant technique définitif : minuscules, chiffres, - et _.');
         yield TextField::new('code', 'Code')->hideOnForm();
-        yield TextareaField::new('description', 'Description')->hideOnIndex();
         yield AssociationField::new('users', 'Membres')->onlyOnIndex();
+
+        yield FormField::addFieldset('Droits du groupe')->setHelp('Les droits des différents groupes d’un compte se cumulent.');
         yield BooleanField::new('allPermissions', 'Tous les droits')
             ->setHelp('Réservé aux administrateurs du site : donne tous les droits, y compris les futurs.')
-            ->renderAsSwitch(false);
+            ->renderAsSwitch(false) // no one-click toggle on the list
+            ->setFormTypeOption('label_attr', ['class' => 'checkbox-switch']);
         yield ChoiceField::new('permissions', 'Droits')
             ->setChoices($permissions)
             ->allowMultipleChoices()
             ->renderExpanded()
             ->setRequired(false)
+            ->addCssClass('ep-choices-columns')
+            ->setColumns(12)
             ->hideOnIndex();
     }
 

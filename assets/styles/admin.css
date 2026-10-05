@@ -1,85 +1,456 @@
 /*
- * Back-office (EasyAdmin) in the colors of the site. EasyAdmin styles live in cascade layers, so
- * these unlayered rules win. Its design tokens are overridden on `:root, .ea-dark-scheme`.
+ * Back-office theme (EasyAdmin 5), from the Figma "Admin" page (node 37-3, "Planche de styles").
+ *
+ * EasyAdmin's own API does the main part (DashboardController::configureDashboard() -> setTheme():
+ * primary colors, radius, density). This file only:
+ *   1. declares the --ep-* aliases of the style sheet, per color scheme;
+ *   2. maps them onto EasyAdmin's CSS variables (its styles live in cascade layers, so these
+ *      unlayered declarations win without !important);
+ *   3. adds the few sizes and typographic choices EasyAdmin has no variable for.
+ * Colors shared with the site come from tokens.css; the others are admin-only values of the mock-up.
+ * Variables are declared on `:root, .ea-dark-scheme` (light) and `.ea-dark-scheme` (dark), as
+ * EasyAdmin requires: the dark scheme is a class on <body>.
  */
 @import url('./tokens.css');
 
+/* ---------- 1. Aliases (Figma "Planche de styles — Clair") ---------- */
 :root,
 .ea-dark-scheme {
-    --ea-primary: var(--palette-navy);
-    --ea-radius: var(--radius-sm);
+    --ep-page-bg: var(--palette-cream);       /* #F7F5EF */
+    --ep-surface: var(--palette-white);
+    --ep-sidebar-bg: #f0efe9;
+    --ep-topbar-bg: var(--palette-white);
+    --ep-subtle-bg: #f5f4f0;                  /* table head, row hover, discreet surfaces */
+    --ep-text: var(--palette-ink);
+    --ep-text-muted: var(--palette-slate);
+    --ep-disabled-color: #929c9f;
+    --ep-border: var(--palette-line);         /* #D8DDD9 */
+    --ep-control-border: #a5afaf;
+    --ep-selected-bg: var(--palette-sky-soft);
+    --ep-focus: #7294bb;
+    --ep-primary-hover: #334e70;
+    --ep-primary-active: #29415e;
+    --ep-sand: var(--palette-sand);
+    --ep-badge-public-bg: #eef0ed;
+    --ep-badge-public-color: #46534f;
+    --ep-badge-restricted-bg: var(--palette-sand-soft);
+    --ep-badge-restricted-color: #694530;
+    --ep-info-bg: var(--palette-sky-soft);
+    --ep-info-color: #35587c;
+    --ep-success-bg: #eaf3ed;
+    --ep-success-color: #246348;
+    --ep-danger-bg: #fbedec;
+    --ep-danger-color: #a83232;
+    --ep-danger-foreground: var(--palette-cream);
+    --ep-modal-backdrop: rgb(25 38 48 / 60%);
+    --ep-menu-shadow: 0 4px 16px rgb(25 38 48 / 14%);
+
+    /* Geometry and type (same in both schemes) */
+    --ep-radius-panel: 6px;
+    --ep-control-height: 38px;
+    --ep-sidebar-width: 240px;
+    --ep-topbar-height: 64px;
+    --ep-page-padding: 32px;
+    --ep-panel-padding: 20px;
+    --ep-table-row-height: 58px;
+    --ep-table-head-height: 42px;
+    --ep-font-title: var(--font-heading);     /* Barlow */
+    --ep-font-ui: var(--font-body);           /* Inter */
 }
 
-:root {
-    --body-bg: var(--palette-cream);
-    --font-family-base: var(--font-body);
+/* Figma "Planche de styles — Sombre" */
+.ea-dark-scheme {
+    --ep-page-bg: var(--palette-ink);         /* #192630 */
+    --ep-surface: #24333f;
+    --ep-sidebar-bg: #1d2b36;
+    --ep-topbar-bg: #24333f;
+    --ep-subtle-bg: #2a3b48;
+    --ep-text: var(--palette-cream);
+    --ep-text-muted: #b7c2ca;
+    --ep-disabled-color: #7d8d98;
+    --ep-border: #435561;
+    --ep-control-border: #71828e;
+    --ep-selected-bg: #30475e;
+    --ep-focus: #7294bb;
+    --ep-primary-hover: #abc7e8;
+    --ep-primary-active: #c0d6ef;
+    --ep-badge-public-bg: #35433f;
+    --ep-badge-public-color: #ccd7d0;
+    --ep-badge-restricted-bg: #493b35;
+    --ep-badge-restricted-color: #f0c9b5;
+    --ep-info-bg: #30475e;
+    --ep-info-color: #b3d0ef;
+    --ep-success-bg: #263e35;
+    --ep-success-color: #9dd5b7;
+    --ep-danger-bg: #482f33;
+    --ep-danger-color: #ffb1aa;
+    --ep-danger-foreground: var(--palette-ink);
+    --ep-modal-backdrop: rgb(16 26 35 / 73%);
 }
 
-/* Dashboard home */
-.admin-intro {
-    margin-bottom: var(--space-6);
-    color: var(--palette-slate);
+/* ---------- 2. EasyAdmin variables ---------- */
+:root,
+.ea-dark-scheme {
+    /* Names shared with tokens.css: give them back their EasyAdmin meaning (per scheme) */
+    --color-primary: var(--ea-primary);
+    --color-success: var(--ep-success-color);
+    --color-danger: var(--ep-danger-color);
+
+    /* Type */
+    --font-family-base: var(--ep-font-ui);
+    --font-family-sans-serif: var(--ep-font-ui);
+    --font-size-base: 13px;
+    --body-max-width: 100%;
+
+    /* Surfaces and text */
+    --body-bg: var(--ep-page-bg);
+    --content-bg: var(--ep-page-bg);
+    --text-color: var(--ep-text);
+    --text-muted: var(--ep-text-muted);
+    --link-color: var(--ea-primary);
+    --content-top-border-color: var(--ep-border);
+    --content-section-border-color: var(--ep-border);
+
+    /* Sidebar and mobile header */
+    --sidebar-max-width: var(--ep-sidebar-width);
+    --sidebar-bg: var(--ep-sidebar-bg);
+    --sidebar-border-color: var(--ep-border);
+    --sidebar-logo-color: var(--ep-text);
+    --sidebar-menu-color: var(--ep-text);
+    --sidebar-menu-icon-color: var(--ep-text-muted);
+    --sidebar-menu-header-color: var(--ep-text-muted);
+    --sidebar-menu-hover-color: var(--ea-primary);
+    --sidebar-item-hover-bg: var(--ep-subtle-bg);
+    --sidebar-menu-active-item-bg: var(--ep-selected-bg);
+    --sidebar-menu-active-item-color: var(--ea-primary);
+    --responsive-header-bg: var(--ep-topbar-bg);
+    --responsive-header-border-color: var(--ep-border);
+    --responsive-header-logo-color: var(--ep-text);
+
+    /* Tables */
+    --table-thead-color: var(--ep-text);
+    --table-cell-color: var(--ep-text);
+    --table-cell-border-color: var(--ep-border);
+    --table-hover-cell-bg: var(--ep-subtle-bg);
+    --table-selected-cell-bg: var(--ep-selected-bg);
+    --table-thead-sorted-color: var(--ep-text);
+    --table-thead-sorted-marker-color: var(--ea-primary);
+    --datagrid-noresults-placeholder-bg: var(--ep-subtle-bg);
+    --pagination-active-bg: var(--ea-primary);
+
+    /* Forms */
+    --form-label-color: var(--ep-text);
+    --form-control-bg: var(--ep-surface);
+    --form-control-disabled-bg: var(--ep-subtle-bg);
+    --form-control-disabled-color: var(--ep-disabled-color);
+    --form-input-border-color: var(--ep-control-border);
+    --form-input-hover-border-color: var(--ep-text-muted);
+    --form-input-text-color: var(--ep-text);
+    --form-input-error-border-color: var(--ep-danger-color);
+    --form-input-error-legend-color: var(--ep-danger-color);
+    --form-type-check-input-border-color: var(--ep-control-border);
+    --switch-bg: var(--ep-control-border);
+    --form-type-autocomplete-dropdown-bg: var(--ep-surface);
+
+    /* Menus, modals */
+    --dropdown-bg: var(--ep-surface);
+    --dropdown-border-color: var(--ep-border);
+    --dropdown-link-color: var(--ep-text);
+    --dropdown-link-hover-bg: var(--ep-subtle-bg);
+    --modal-bg: var(--ep-surface);
+    --modal-border-color: var(--ep-border);
+    --modal-header-bg: var(--ep-surface);
+    --modal-footer-bg: var(--ep-subtle-bg);
+    --modal-title-color: var(--ep-text);
+
+    /* Badges: visibility and groups (variants chosen in VisibilityFields) */
+    --badge-secondary-bg: var(--ep-badge-public-bg);
+    --badge-secondary-color: var(--ep-badge-public-color);
+    --badge-info-bg: var(--ep-info-bg);
+    --badge-info-color: var(--ep-info-color);
+    --badge-warning-bg: var(--ep-badge-restricted-bg);
+    --badge-warning-color: var(--ep-badge-restricted-color);
+    --badge-success-bg: var(--ep-success-bg);
+    --badge-success-color: var(--ep-success-color);
+    --badge-danger-bg: var(--ep-danger-bg);
+    --badge-danger-color: var(--ep-danger-color);
+
+    /* Flash messages and alerts: flat banners, no border */
+    --alert-success-bg: var(--ep-success-bg);
+    --alert-success-color: var(--ep-success-color);
+    --alert-success-border-color: var(--ep-success-bg);
+    --alert-info-bg: var(--ep-info-bg);
+    --alert-info-color: var(--ep-info-color);
+    --alert-info-border-color: var(--ep-info-bg);
+    --alert-danger-bg: var(--ep-danger-bg);
+    --alert-danger-color: var(--ep-danger-color);
+    --alert-danger-border-color: var(--ep-danger-bg);
+
+    /* Buttons: flat, as in the mock-up */
+    --button-primary-bg: var(--ea-primary);
+    --button-primary-hover-bg: var(--ep-primary-hover);
+    --button-primary-active-bg: var(--ep-primary-active);
+    --button-primary-border-color: var(--ea-primary);
+    --button-primary-hover-border-color: var(--ep-primary-hover);
+    --button-primary-active-border-color: var(--ep-primary-active);
+    --button-primary-box-shadow: none;
+    --button-secondary-bg: var(--ep-surface);
+    --button-secondary-hover-bg: var(--ep-subtle-bg);
+    --button-secondary-active-bg: var(--ep-subtle-bg);
+    --button-secondary-border-color: var(--ep-control-border);
+    --button-secondary-hover-border-color: var(--ep-control-border);
+    --button-secondary-color: var(--ep-text);
+    --button-secondary-box-shadow: none;
+    --button-danger-bg: var(--ep-danger-color);
+    --button-danger-color: var(--ep-danger-foreground);
+    --button-danger-border-color: var(--ep-danger-color);
+    --button-danger-hover-bg: var(--ep-danger-color);
+    --button-danger-hover-color: var(--ep-danger-foreground);
+    --button-danger-box-shadow: none;
+
+    /* Focus: 2px ring of the focus color (3px on buttons, EasyAdmin default) */
+    --ea-primary-ring: var(--ep-focus);
 }
 
-.admin-shortcuts {
+/* ---------- 3. Sizes and type without EasyAdmin variable ---------- */
+.content-header-title .title {
+    font-family: var(--ep-font-title);
+    font-weight: 600;
+    font-size: 28px;
+    line-height: 34px;
+}
+
+.content-top {
+    min-height: var(--ep-topbar-height);
+    background-color: var(--ep-topbar-bg);
+}
+
+.modal-backdrop.show {
+    background-color: var(--ep-modal-backdrop);
+    opacity: 1;
+}
+
+.dropdown-menu {
+    box-shadow: var(--ep-menu-shadow);
+}
+
+.datagrid thead th {
+    background-color: var(--ep-subtle-bg);
+}
+
+.datagrid tbody td {
+    height: var(--ep-table-row-height);
+}
+
+/* Brand (dashboard title, templates/admin/_brand.html.twig) */
+.ep-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ep-text);
+    font-family: var(--ep-font-title);
+    font-weight: 800;
+    font-size: 26px;
+    line-height: 32px;
+    letter-spacing: -0.6px;
+}
+
+.ep-brand__mark {
+    width: 30px;
+    height: 25px;
+    color: var(--ea-primary);
+}
+
+.ep-brand__caption {
+    display: block;
+    margin-top: 6px;
+    color: var(--ep-text-muted);
+    font-family: var(--ep-font-ui);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+/* Sidebar: 40px entries, section titles in small capitals */
+.ea-sidebar-item-link {
+    padding-block: 10px;
+    font-size: 13px;
+}
+
+.ea-sidebar-group-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+/* Lists: the table sits in a panel */
+table.datagrid {
+    border: 1px solid var(--ep-border);
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--ep-radius-panel);
+    overflow: hidden;
+    background-color: var(--ep-surface);
+}
+
+.datagrid thead th {
+    height: var(--ep-table-head-height);
+}
+
+/* Badges: visibility, groups (12px, 3 x 8px) */
+.badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 18px;
+    box-shadow: none;
+}
+
+.datagrid td {
+    vertical-align: middle;
+}
+
+/* Forms: each fieldset is a panel (FormField::addFieldset()) */
+.form-fieldset {
+    margin-bottom: 24px;
+    padding: var(--ep-panel-padding);
+    border: 1px solid var(--ep-border);
+    border-radius: var(--ep-radius-panel);
+    background-color: var(--ep-surface);
+}
+
+.form-fieldset-header .form-fieldset-title .form-fieldset-title-content {
+    box-shadow: none;
+    font-family: var(--ep-font-title);
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+.form-fieldset-header .form-fieldset-title .form-fieldset-help {
+    color: var(--ep-text-muted);
+    font-size: 12px;
+}
+
+.form-control,
+.form-select {
+    min-height: var(--ep-control-height);
+}
+
+/* Long lists of choices on two columns (->addCssClass('ep-choices-columns')) */
+.ep-choices-columns .form-widget > div {
+    columns: 2;
+    column-gap: 24px;
+}
+
+.ep-choices-columns .form-check {
+    break-inside: avoid;
+}
+
+/* ---------- Dashboard (templates/admin/dashboard.html.twig) ---------- */
+.ep-page-subtitle {
+    margin: -16px 0 24px;
+    color: var(--ep-text-muted);
+}
+
+.ep-greeting {
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+.ep-shortcuts {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-    gap: var(--space-4);
-    margin: 0;
+    gap: 16px;
+    margin: 0 0 24px;
     padding: 0;
     list-style: none;
 }
 
-.admin-shortcut a {
+.ep-shortcut {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-    height: 100%;
-    padding: var(--space-5);
-    border: 1px solid var(--palette-line);
-    border-radius: var(--radius-md);
-    background-color: var(--palette-white);
-    color: var(--palette-ink);
+    gap: 12px;
+    min-height: 136px;
+    padding: var(--ep-panel-padding);
+    border: 1px solid var(--ep-border);
+    border-radius: var(--ep-radius-panel);
+    background-color: var(--ep-surface);
+    color: var(--ep-text);
     text-decoration: none;
 }
 
-.admin-shortcut a:hover {
-    border-color: var(--palette-navy);
+.ep-shortcut:hover {
+    border-color: var(--ea-primary);
+    color: var(--ep-text);
 }
 
-.admin-shortcut i {
-    color: var(--palette-navy);
-    font-size: 1.25rem;
+.ep-shortcut__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.admin-shortcut span {
-    color: var(--palette-slate);
-    font-size: var(--text-sm);
+.ep-shortcut__icon {
+    font-size: 20px;
+    color: var(--ea-primary);
 }
 
-/* Media library */
-.admin-media-preview {
-    width: 4rem;
-    height: 3rem;
+.ep-shortcut__title {
+    flex: 1;
+    font-family: var(--ep-font-title);
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+.ep-shortcut__chevron {
+    font-size: 16px;
+    color: var(--ep-text-muted);
+}
+
+.ep-shortcut__text {
+    color: var(--ep-text-muted);
+    line-height: 1.5;
+}
+
+.ep-note {
+    margin-top: 16px;
+    color: var(--ep-text-muted);
+    font-size: 12px;
+}
+
+/* ---------- Media library ---------- */
+.ep-media-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ep-media-thumb {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
     object-fit: cover;
-    border-radius: var(--radius-sm);
+    border-radius: 4px;
 }
 
-.admin-media-format {
+.ep-media-thumb--file {
     display: inline-grid;
     place-items: center;
-    width: 4rem;
-    height: 3rem;
-    border-radius: var(--radius-sm);
-    background-color: var(--palette-sky-soft);
-    color: var(--palette-navy);
-    font-size: var(--text-micro);
-    font-weight: 700;
+    background-color: var(--ep-badge-restricted-bg);
+    color: var(--ep-badge-restricted-color);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 14px;
 }
 
 .admin-form-actions {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
-    margin-top: var(--space-6);
+    gap: 16px;
+    margin-top: 24px;
 }
