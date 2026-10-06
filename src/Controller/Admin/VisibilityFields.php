@@ -15,6 +15,13 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
  */
 final class VisibilityFields
 {
+    /** Badge variant of each visibility, keyed by case name; admin.css gives them the colors of the theme. */
+    public const array BADGES = [
+        Visibility::Public->name => 'secondary',
+        Visibility::Authenticated->name => 'info',
+        Visibility::Groups->name => 'warning',
+    ];
+
     /**
      * @return iterable<FieldInterface>
      */
@@ -22,13 +29,7 @@ final class VisibilityFields
     {
         yield FormField::addFieldset('Visibilité', 'lock-keyhole');
         // Visibility is a translatable enum: EasyAdmin lists its cases and shows their French label.
-        // Badge variants are keyed by case name; admin.css gives them the colors of the theme.
-        yield ChoiceField::new('visibility', 'Visible par')
-            ->renderAsBadges([
-                Visibility::Public->name => 'secondary',
-                Visibility::Authenticated->name => 'info',
-                Visibility::Groups->name => 'warning',
-            ]);
+        yield ChoiceField::new('visibility', 'Visible par')->renderAsBadges(self::BADGES);
         yield AssociationField::new('allowedGroups', 'Groupes autorisés')
             ->setFormTypeOptions(['by_reference' => false, 'expanded' => true])
             ->setHelp('Utilisé seulement avec « Groupes choisis ».')

@@ -11,8 +11,11 @@ final readonly class ChecklistBlock implements BlockInterface
      * @param list<string> $items
      */
     public function __construct(
+        #[Field('Titre')]
         public string $title,
+        #[Field('Points à cocher', widget: 'lines')]
         public array $items,
+        #[Field('Note')]
         public ?string $note = null,
     ) {
     }

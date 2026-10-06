@@ -3,6 +3,6 @@
 {% set data = placed.block %}
 <header class="c-block-section" id="{{ placed.toc.anchor }}">
     <p class="c-eyebrow">{{ placed.toc.number }}{% if data.eyebrow %} / {{ data.eyebrow }}{% endif %}</p>
-    <h2 class="c-block-section__title">{{ data.title }}</h2>
-    {% if data.intro %}<p class="c-block-section__intro">{{ data.intro }}</p>{% endif %}
+    <h2 class="c-block-section__title"{{ edit_field(placed, 'title') }}>{{ data.title }}</h2>
+    {% if data.intro %}<p class="c-block-section__intro"{{ edit_field(placed, 'intro') }}>{{ data.intro }}</p>{% endif %}
 </header>

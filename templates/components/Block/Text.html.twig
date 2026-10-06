@@ -1,2 +1,2 @@
 {% props placed %}
-<div class="c-rich-text{{ placed.block.muted ? ' c-rich-text--muted' }}">{{ placed.block.html|sanitize_html('app.rich_text') }}</div>
+<div class="c-rich-text{{ placed.block.muted ? ' c-rich-text--muted' }}"{{ edit_field(placed, 'html', 'rich') }}>{{ placed.block.html|sanitize_html('app.rich_text') }}</div>

@@ -5,7 +5,7 @@
 {% set embed = data.embedUrl %}
 <figure class="c-video">
     <div class="c-video__player" data-controller="video" data-video-src-value="{{ embed }}" data-video-title-value="{{ data.title ?: 'Vidéo' }}">
-        {% if poster %}<img class="c-video__poster" src="{{ media_url(poster) }}" alt="" loading="lazy">{% endif %}
+        {% if poster %}<img class="c-video__poster" src="{{ image_url(poster, 'content') }}" alt="" loading="lazy">{% endif %}
         {% if embed %}
             <button type="button" class="c-video__play" data-action="video#play">
                 <twig:ux:icon name="play" />

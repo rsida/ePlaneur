@@ -1,0 +1,912 @@
+/*
+ * Back-office block editor (templates/admin/editor/editor.html.twig) and page tree, from the Figma
+ * "Admin" page (frames "Article · …", "Page · …", "Pages · Arbre du site"). Colors and sizes come
+ * from the --ep-* aliases of admin.css; the canvas itself has its own styles (editor-canvas.css).
+ */
+
+/* ---------- Editor layout: top bar, then library | canvas | settings ---------- */
+.ep-editor-page .content-wrapper {
+    padding: 0;
+}
+
+.ep-editor-page .content-wrapper > .resizer-handler {
+    display: none;
+}
+
+.ep-editor {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--ep-topbar-height));
+    min-height: 36rem;
+    background: var(--ep-surface);
+    color: var(--ep-text);
+}
+
+.ep-editor__form {
+    display: contents;
+}
+
+.ep-editor__bar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    padding: var(--space-4) var(--space-4) var(--space-3);
+    border-bottom: 1px solid var(--ep-border);
+}
+
+.ep-editor__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.ep-editor__heading {
+    min-width: 0;
+}
+
+.ep-editor__title {
+    overflow: hidden;
+    margin: 0;
+    font-family: var(--ep-font-title);
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ep-editor__status {
+    margin: 0;
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+}
+
+.ep-editor__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.ep-editor__actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.ep-editor__icon-button {
+    padding-inline: var(--space-2);
+}
+
+.ep-editor__hints {
+    display: flex;
+    grid-column: 1 / -1;
+    gap: var(--space-9);
+    margin: 0;
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+}
+
+.ep-editor__errors {
+    margin: var(--space-3) var(--space-4) 0;
+}
+
+.ep-editor__errors ul {
+    margin: var(--space-1) 0 0;
+    padding-left: var(--space-5);
+}
+
+.ep-editor__workspace {
+    display: grid;
+    flex: 1;
+    grid-template-columns: 14rem minmax(0, 1fr) 17.5rem;
+    min-height: 0;
+}
+
+.ep-editor__workspace--no-library {
+    grid-template-columns: 0 minmax(0, 1fr) 17.5rem;
+}
+
+.ep-editor__workspace--no-settings {
+    grid-template-columns: 14rem minmax(0, 1fr) 0;
+}
+
+.ep-editor__workspace--no-library.ep-editor__workspace--no-settings {
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+}
+
+.ep-editor__workspace--no-library .ep-editor__library,
+.ep-editor__workspace--no-settings .ep-editor__settings {
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    visibility: hidden;
+}
+
+.ep-editor__library,
+.ep-editor__settings {
+    overflow-y: auto;
+    padding: var(--space-5) var(--space-4);
+    background: var(--ep-surface);
+}
+
+.ep-editor__library {
+    border-right: 1px solid var(--ep-border);
+}
+
+.ep-editor__settings {
+    border-left: 1px solid var(--ep-border);
+}
+
+.ep-editor__canvas {
+    min-width: 0;
+    background: var(--ep-page-bg);
+}
+
+.ep-editor__frame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.ep-editor__shortcuts {
+    padding: var(--space-2) var(--space-4);
+    border-top: 1px solid var(--ep-border);
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+}
+
+/* Toggle buttons of the side panels (wide screens) */
+.ep-editor__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.ep-editor__panel-title {
+    margin: 0 0 var(--space-3);
+    font-family: var(--ep-font-title);
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.ep-editor__panel-head .ep-editor__panel-title {
+    margin: 0;
+    font-family: var(--ep-font-ui);
+    font-size: var(--text-sm);
+}
+
+.ep-editor__collapse {
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ep-text-muted);
+}
+
+.ep-editor__collapse:hover {
+    background: var(--ep-subtle-bg);
+    color: var(--ep-text);
+}
+
+.ep-editor__tip,
+.ep-block-form__meta {
+    margin: var(--space-4) 0 0;
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-normal);
+}
+
+.ep-editor__path {
+    margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+    overflow-wrap: anywhere;
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+}
+
+.ep-editor__fieldset {
+    margin: 0 0 var(--space-4);
+    padding: 0;
+    border: 0;
+}
+
+.ep-editor__fieldset > legend,
+.ep-editor__fieldset > summary {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.ep-editor__fieldset > summary {
+    cursor: pointer;
+}
+
+.ep-editor__settings legend.form-label {
+    float: none;
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.ep-library__search {
+    font-size: var(--text-sm);
+}
+
+.ep-editor__settings .form-group,
+.ep-editor__settings .mb-3 {
+    margin-bottom: var(--space-4);
+}
+
+/* ---------- Tabs (Blocs / Structure, Article / Bloc) ---------- */
+.ep-tabs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.ep-tabs__tab {
+    padding: 0 0 var(--space-2);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+}
+
+.ep-tabs__tab[aria-selected='true'] {
+    border-bottom-color: currentcolor;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* ---------- Block library and structure ---------- */
+.ep-library__search {
+    margin-bottom: var(--space-4);
+}
+
+.ep-library__group-title,
+.ep-structure__title {
+    margin: var(--space-4) 0 var(--space-2);
+    color: var(--ep-text-muted);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.ep-library__list,
+.ep-structure__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ep-library__item,
+.ep-structure__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-2);
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--ep-text);
+    font-size: var(--text-sm);
+    text-align: left;
+}
+
+.ep-library__item {
+    cursor: grab;
+}
+
+.ep-library__item:hover,
+.ep-structure__item:hover,
+.ep-structure__item[aria-current='true'] {
+    background: var(--ep-selected-bg);
+}
+
+.ep-library__icon {
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--ep-text-muted);
+}
+
+.ep-structure__item {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ep-structure__empty {
+    padding: var(--space-1) var(--space-2);
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+}
+
+/* ---------- Settings of the selected block ---------- */
+.ep-block-form__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.ep-block-form__head svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-bottom: var(--space-3);
+    color: var(--ep-text-muted);
+}
+
+.ep-block-form__remove {
+    margin-top: var(--space-4);
+    padding: 0;
+}
+
+.ep-mini {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding: 0 var(--space-1);
+    border: 1px solid var(--ep-border);
+    border-radius: 4px;
+    background: var(--ep-surface);
+    color: var(--ep-text);
+    line-height: 1;
+}
+
+.ep-mini--danger {
+    color: var(--ep-danger-color);
+}
+
+.ep-lines {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.ep-lines__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) repeat(3, auto);
+    gap: var(--space-1);
+}
+
+.ep-items {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.ep-item {
+    border: 1px solid var(--ep-border);
+    border-radius: var(--ep-radius-panel);
+}
+
+.ep-item > summary {
+    overflow: hidden;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.ep-item__body {
+    padding: 0 var(--space-3) var(--space-3);
+}
+
+.ep-item__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.ep-table__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--ep-columns), minmax(4rem, 1fr));
+    gap: 2px;
+    overflow-x: auto;
+}
+
+.ep-table__head {
+    font-weight: 600;
+}
+
+.ep-table__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+}
+
+.ep-rich {
+    min-height: 5rem;
+    overflow-wrap: anywhere;
+}
+
+.ep-rich p {
+    margin: 0 0 var(--space-2);
+}
+
+.ep-rich__tools {
+    display: flex;
+    gap: var(--space-1);
+    margin-bottom: var(--space-1);
+}
+
+/* ---------- Publish dialog ---------- */
+.ep-dialog {
+    width: min(24rem, calc(100vw - 2rem));
+    margin: calc(var(--ep-topbar-height) + var(--space-5)) var(--space-4) auto auto;
+    padding: var(--space-5);
+    border: 1px solid var(--ep-border);
+    border-radius: var(--ep-radius-panel);
+    background: var(--ep-surface);
+    box-shadow: var(--ep-menu-shadow);
+    color: var(--ep-text);
+}
+
+.ep-dialog::backdrop {
+    background: var(--ep-modal-backdrop);
+}
+
+.ep-dialog__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.ep-dialog__head h2 {
+    margin: 0;
+    font-family: var(--ep-font-title);
+    font-size: 1.375rem;
+}
+
+.ep-dialog__head .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.ep-dialog__when {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    border: 0;
+}
+
+.ep-dialog__when legend {
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.ep-choice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--ep-border);
+    border-radius: 4px;
+}
+
+.ep-choice:has(:checked) {
+    border-color: var(--color-primary);
+    background: var(--ep-selected-bg);
+}
+
+.ep-dialog__summary {
+    margin: var(--space-4) 0;
+    padding: var(--space-3);
+    border-radius: 4px;
+    background: var(--ep-subtle-bg);
+    font-size: var(--text-sm);
+}
+
+.ep-dialog__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.ep-dialog__actions .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* ---------- Page tree ---------- */
+.ep-page-subtitle {
+    margin: calc(-1 * var(--space-4)) 0 var(--space-5);
+    color: var(--ep-text-muted);
+    font-family: var(--ep-font-ui);
+    font-size: var(--text-sm);
+    font-weight: 400;
+}
+
+.ep-tree__search {
+    max-width: 24rem;
+    margin-bottom: var(--space-5);
+}
+
+.ep-tree__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-left: calc(var(--ep-depth, 0) * 1.5rem);
+}
+
+.ep-tree__toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ep-text-muted);
+}
+
+.ep-tree__toggle svg {
+    transition: transform 0.15s;
+}
+
+.is-folded .ep-tree__toggle svg {
+    transform: rotate(-90deg);
+}
+
+.ep-tree__icon {
+    width: 1.5rem;
+    color: var(--ep-text-muted);
+}
+
+.ep-tree__path {
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+}
+
+.ep-tree__note,
+.ep-tree__empty {
+    margin-top: var(--space-4);
+    color: var(--ep-text-muted);
+    font-size: var(--text-sm);
+}
+
+/* ---------- Narrow screens (tablets, Figma "Tablette · …"): panels over the canvas ---------- */
+.ep-editor__panel-toggles,
+.ep-editor__backdrop {
+    display: none;
+}
+
+@media (width < 75em) {
+    .ep-editor__hints {
+        display: none;
+    }
+
+    .ep-editor__panel-toggles {
+        display: flex;
+        grid-column: 1 / -1;
+        gap: var(--space-2);
+    }
+
+    .ep-editor__panel-toggles .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    .ep-editor__panel-toggles .btn[aria-expanded='true'] {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+    }
+
+    .ep-editor__workspace,
+    .ep-editor__workspace[class*='--no-'] {
+        position: relative;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ep-editor__library,
+    .ep-editor__settings,
+    .ep-editor__workspace[class*='--no-'] .ep-editor__library,
+    .ep-editor__workspace[class*='--no-'] .ep-editor__settings {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        z-index: 20;
+        display: none;
+        width: min(22rem, 90%);
+        padding: var(--space-5) var(--space-4);
+        border: 0;
+        box-shadow: var(--ep-menu-shadow);
+        visibility: visible;
+    }
+
+    .ep-editor__library {
+        left: 0;
+    }
+
+    .ep-editor__settings {
+        right: 0;
+    }
+
+    .ep-editor__workspace--show-library .ep-editor__library,
+    .ep-editor__workspace--show-settings .ep-editor__settings {
+        display: block;
+    }
+
+    .ep-editor__workspace[class*='--show-'] .ep-editor__backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: block;
+        background: var(--ep-modal-backdrop);
+    }
+}
+
+/* ---------- Media window (Figma "Fenêtre Médiathèque", "Fenêtre Téléverser") ---------- */
+.ep-media-dialog {
+    width: min(64rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 4rem);
+    margin: auto;
+    padding: 0;
+}
+
+.ep-media-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.ep-media-dialog .ep-dialog__head {
+    padding: var(--space-5) var(--space-5) var(--space-3);
+}
+
+.ep-media-dialog__tabs {
+    margin: 0;
+    padding: 0 var(--space-5);
+    border-bottom: 1px solid var(--ep-border);
+}
+
+.ep-media-dialog__library {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    min-height: 0;
+}
+
+.ep-media-dialog__library[hidden],
+.ep-media-dialog__upload[hidden] {
+    display: none;
+}
+
+.ep-media-dialog__main {
+    overflow-y: auto;
+    padding: var(--space-5);
+}
+
+.ep-media-dialog__filters {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+.ep-media-dialog__count {
+    margin: var(--space-4) 0 var(--space-3);
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+}
+
+.ep-media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ep-media-grid__empty {
+    grid-column: 1 / -1;
+    color: var(--ep-text-muted);
+    font-size: var(--text-sm);
+}
+
+.ep-media-card {
+    display: grid;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2);
+    border: 1px solid var(--ep-border);
+    border-radius: var(--ep-radius-panel);
+    background: var(--ep-surface);
+    color: var(--ep-text);
+    text-align: left;
+}
+
+.ep-media-card:hover {
+    border-color: var(--ep-control-border);
+}
+
+.ep-media-card[aria-pressed='true'] {
+    border: 2px solid var(--color-primary);
+    background: var(--ep-selected-bg);
+}
+
+.ep-media-card .ep-media-thumb {
+    width: 100%;
+    height: 7rem;
+    border-radius: 4px;
+}
+
+.ep-media-card__name {
+    overflow: hidden;
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ep-media-card__selected {
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: 600;
+}
+
+.ep-media-dialog__more {
+    margin-top: var(--space-4);
+}
+
+.ep-media-dialog__info {
+    overflow-y: auto;
+    padding: var(--space-5);
+    border-left: 1px solid var(--ep-border);
+}
+
+.ep-media-dialog__info-title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.ep-media-dialog__name {
+    margin: 0 0 var(--space-2);
+    overflow-wrap: anywhere;
+    font-weight: 600;
+}
+
+.ep-media-dialog__facts {
+    margin: 0 0 var(--space-4);
+    padding: 0;
+    color: var(--ep-text-muted);
+    font-size: var(--text-xs);
+    list-style: none;
+}
+
+.ep-media-dialog__upload {
+    overflow-y: auto;
+    padding: var(--space-5);
+}
+
+.ep-dropzone {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding: var(--space-9) var(--space-5);
+    border: 2px dashed var(--ep-focus);
+    border-radius: var(--ep-radius-panel);
+    background: var(--ep-page-bg);
+    text-align: center;
+}
+
+.ep-dropzone.is-over {
+    border-color: var(--color-primary);
+    background: var(--ep-selected-bg);
+}
+
+.ep-dropzone p {
+    margin: 0;
+}
+
+.ep-dropzone .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.ep-dropzone__icon {
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-primary);
+}
+
+.ep-dropzone__title {
+    font-family: var(--ep-font-title);
+    font-size: 1.375rem;
+    font-weight: 600;
+}
+
+.ep-media-dialog__messages {
+    margin: var(--space-3) 0;
+    padding: 0;
+    font-size: var(--text-sm);
+    list-style: none;
+}
+
+.ep-media-dialog__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5);
+    border-top: 1px solid var(--ep-border);
+}
+
+.ep-media-dialog__footer .ep-editor__tip {
+    margin: 0;
+}
+
+.ep-media-dialog__selection {
+    margin: 0 0 0 auto;
+    color: var(--ep-text-muted);
+    font-size: var(--text-sm);
+}
+
+.ep-media-dialog__footer .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Media fields of the settings (block media, post cover) */
+.ep-media-field__preview {
+    display: grid;
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.ep-media-field__image {
+    width: 100%;
+    max-height: 9rem;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.ep-media-field__name {
+    overflow-wrap: anywhere;
+}
+
+.ep-media-field__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+@media (width < 48em) {
+    .ep-media-dialog__library {
+        grid-template-columns: 1fr;
+    }
+
+    .ep-media-dialog__info {
+        border-top: 1px solid var(--ep-border);
+        border-left: 0;
+    }
+}
+
+/* Controls outside EasyAdmin's form markup keep the size of the settings panel */
+.ep-editor .form-control,
+.ep-editor .form-select {
+    font-size: var(--text-sm);
+}

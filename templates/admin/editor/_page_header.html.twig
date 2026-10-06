@@ -1,0 +1,15 @@
+{# Page header in the editor canvas, as templates/page/show.html.twig renders it, editable in place. #}
+{% set crumbs = [{label: 'Accueil', href: '#'}] %}
+{% for ancestor in page.lineage %}
+    {% set crumbs = crumbs|merge([{label: ancestor.title ?: 'Nouvelle page', href: '#'}]) %}
+{% endfor %}
+<twig:Content:PageHeader
+    :crumbs="crumbs"
+    :kicker="page.kicker"
+    :title="page.title"
+    :lead="page.excerpt"
+    :highlight="highlight ? highlight.highlight : null"
+    :highlightNote="highlight ? highlight.highlightNote : null"
+    :updatedAt="page.parent is null ? null : page.updatedAt"
+    :editing="true"
+/>

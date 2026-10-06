@@ -8,9 +8,13 @@ namespace App\Content\Block;
 final readonly class ResourceBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Titre', inline: true)]
         public string $title,
+        #[Field('Texte', widget: 'textarea')]
         public ?string $text = null,
+        #[Field('Texte du lien')]
         public ?string $linkLabel = null,
+        #[Field('Adresse du lien', widget: 'url')]
         public ?string $linkUrl = null,
     ) {
     }

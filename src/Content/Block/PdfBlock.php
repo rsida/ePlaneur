@@ -8,7 +8,9 @@ namespace App\Content\Block;
 final readonly class PdfBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Fichier PDF', widget: 'media', accept: 'pdf')]
         public int $mediaId,
+        #[Field('Titre')]
         public ?string $title = null,
     ) {
     }

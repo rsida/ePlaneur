@@ -11,9 +11,12 @@ final readonly class LinksBlock implements BlockInterface
      * @param list<LinkItem> $links
      */
     public function __construct(
+        #[Field('Liens', widget: 'items', item: LinkItem::class)]
         public array $links,
         /** "rows" (title, description, arrow) or "arrows" (compact arrow links) */
+        #[Field('Présentation', widget: 'choice', choices: ['rows' => 'Lignes avec description', 'arrows' => 'Liens fléchés compacts'])]
         public string $style = 'rows',
+        #[Field('Note')]
         public ?string $note = null,
     ) {
     }

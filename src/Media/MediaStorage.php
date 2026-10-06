@@ -76,9 +76,22 @@ final readonly class MediaStorage
         $this->filesystem->remove($this->directory);
     }
 
+    /**
+     * Where the resized version of a picture is kept (see ImageVariants): next to the uploads, under
+     * cache/<filter>/, with the same random name.
+     */
+    public function variantPath(Media $media, string $filter, string $extension): string
+    {
+        return $this->absolutePath(\sprintf('cache/%s/%s.%s', $filter, preg_replace('/\.[^.\/]+$/', '', $media->getPath()), $extension));
+    }
+
+    /** Removes the file and its resized versions. */
     public function delete(Media $media): void
     {
         $this->filesystem->remove($this->pathOf($media));
+        foreach (ImageVariants::FILTERS as $filter) {
+            $this->filesystem->remove($this->variantPath($media, $filter, ImageVariants::EXTENSION));
+        }
     }
 
     private function absolutePath(string $relativePath): string

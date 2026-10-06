@@ -2,7 +2,7 @@
 {% set data = placed.block %}
 <aside class="c-resource">
     <twig:ux:icon name="file-text" class="c-resource__icon" />
-    <p class="c-resource__title">{{ data.title }}</p>
-    {% if data.text %}<p class="c-resource__text">{{ data.text }}</p>{% endif %}
+    <p class="c-resource__title"{{ edit_field(placed, 'title') }}>{{ data.title }}</p>
+    {% if data.text %}<p class="c-resource__text"{{ edit_field(placed, 'text') }}>{{ data.text }}</p>{% endif %}
     {% if data.linkLabel and data.linkUrl %}<a class="c-resource__link" href="{{ data.linkUrl }}">{{ data.linkLabel }}</a>{% endif %}
 </aside>

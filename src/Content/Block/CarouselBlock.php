@@ -11,7 +11,9 @@ final readonly class CarouselBlock implements BlockInterface
      * @param list<CarouselSlide> $slides
      */
     public function __construct(
+        #[Field('Diapositives', widget: 'items', item: CarouselSlide::class)]
         public array $slides,
+        #[Field('Titre')]
         public ?string $title = null,
     ) {
     }

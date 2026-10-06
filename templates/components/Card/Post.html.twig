@@ -5,7 +5,7 @@
 {% props post, readingMinutes = null %}
 {% set cover = post.cover %}
 <article {{ attributes.defaults({class: 'c-card c-post-card t-paper'}) }}>
-    {% if cover %}<img class="c-post-card__media" src="{{ media_url(cover) }}" alt="" loading="lazy">{% endif %}
+    {% if cover %}<img class="c-post-card__media" src="{{ image_url(cover, 'card') }}" alt="" loading="lazy">{% endif %}
     <div class="c-card__body">
         {% if post.category %}<p class="c-eyebrow">{{ post.category.name }}</p>{% endif %}
         <h3 class="c-post-card__title"><a href="{{ path('app_post_show', {slug: post.slug}) }}">{{ post.title }}</a></h3>

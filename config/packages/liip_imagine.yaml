@@ -1,0 +1,41 @@
+# Resized versions of the pictures of the media library (doc/content.md#media).
+# The bundle is only used as an image filter engine: App\Media\ImageVariants applies these filter sets
+# and stores the results next to the uploads, and MediaController serves them with the same access
+# control as the original file. The bundle's own resolve route and public cache are not used.
+# Full reference: https://symfony.com/bundles/LiipImagineBundle/current/configuration.html
+liip_imagine:
+    driver: gd
+
+    filter_sets:
+        # Small squares: back-office thumbnails, carousel thumbnails, avatars
+        thumb:
+            quality: 80
+            format: webp
+            filters:
+                auto_rotate: ~
+                strip: ~
+                thumbnail: { size: [400, 400], mode: outbound, allow_upscale: false }
+        # Cards (posts, related posts) and images side by side
+        card:
+            quality: 82
+            format: webp
+            filters:
+                auto_rotate: ~
+                strip: ~
+                thumbnail: { size: [960, 960], mode: inset, allow_upscale: false }
+        # Reading column (820 px), twice for sharp screens
+        content:
+            quality: 82
+            format: webp
+            filters:
+                auto_rotate: ~
+                strip: ~
+                thumbnail: { size: [1640, 2400], mode: inset, allow_upscale: false }
+        # Full-width pictures: article cover, carousel slides
+        wide:
+            quality: 80
+            format: webp
+            filters:
+                auto_rotate: ~
+                strip: ~
+                thumbnail: { size: [2400, 1600], mode: inset, allow_upscale: false }

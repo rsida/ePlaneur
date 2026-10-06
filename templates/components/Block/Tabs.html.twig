@@ -9,11 +9,11 @@
                     data-tabs-target="tab" data-action="tabs#select keydown->tabs#navigate">{{ tab.label }}</button>
         {% endfor %}
     </div>
-    {% for tab in placed.block.tabs %}
+    {% for tab in placed.block.tabs %}{% set tabIndex = loop.index0 %}
         <div class="c-tabs__panel" role="tabpanel" id="{{ id }}-panel-{{ loop.index }}" aria-labelledby="{{ id }}-tab-{{ loop.index }}"
              tabindex="0" data-tabs-target="panel">
-            <h3 class="c-tabs__title">{{ tab.title }}</h3>
-            {% if tab.html %}<div class="c-rich-text c-rich-text--muted">{{ tab.html|sanitize_html('app.rich_text') }}</div>{% endif %}
+            <h3 class="c-tabs__title"{{ edit_field(placed, 'tabs.' ~ tabIndex ~ '.title') }}>{{ tab.title }}</h3>
+            {% if tab.html %}<div class="c-rich-text c-rich-text--muted"{{ edit_field(placed, 'tabs.' ~ tabIndex ~ '.html', 'rich') }}>{{ tab.html|sanitize_html('app.rich_text') }}</div>{% endif %}
             {% if tab.facts is not empty %}
                 <dl class="c-tabs__facts">
                     {% for fact in tab.facts %}

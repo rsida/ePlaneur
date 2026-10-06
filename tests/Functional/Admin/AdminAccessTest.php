@@ -37,7 +37,11 @@ final class AdminAccessTest extends WebTestCase
         $this->client->loginUser($this->userIn($this->entityManager, 'inscrit@example.org'));
         $this->client->request('GET', '/admin');
         self::assertResponseStatusCodeSame(403);
+        $this->client->request('GET', '/admin/post');
+        self::assertResponseStatusCodeSame(403);
 
+        // The kernel was rebooted between the requests: use its entity manager
+        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $this->client->loginUser($this->userIn($this->entityManager, 'membre@example.org', 'member'));
         $this->client->request('GET', '/admin');
         self::assertResponseStatusCodeSame(403);
@@ -57,6 +61,8 @@ final class AdminAccessTest extends WebTestCase
         $shortcuts = $crawler->filter('.ep-shortcut__title')->each(static fn ($node): string => $node->text());
         self::assertContains('Médiathèque', $shortcuts);
         self::assertContains('Documents officiels', $shortcuts);
+        self::assertContains('Articles', $shortcuts);
+        self::assertContains('Pages', $shortcuts);
         self::assertNotContains('Comptes', $shortcuts, 'USER_MANAGE is not granted to the committee');
         self::assertNotContains('Menus', $shortcuts, 'MENU_MANAGE is not granted to the committee');
 
@@ -72,7 +78,7 @@ final class AdminAccessTest extends WebTestCase
     {
         $this->client->loginUser($this->userIn($this->entityManager, 'admin@example.org', 'admin'));
 
-        foreach (['/admin', '/admin/user', '/admin/group', '/admin/category', '/admin/media', '/admin/media/upload', '/admin/document', '/admin/document/new', '/admin/document-category', '/admin/menu-item', '/admin/menu-item/new'] as $url) {
+        foreach (['/admin', '/admin/post', '/admin/post/new', '/admin/page', '/admin/page/new', '/admin/user', '/admin/group', '/admin/category', '/admin/media', '/admin/media/upload', '/admin/document', '/admin/document/new', '/admin/document-category', '/admin/menu-item', '/admin/menu-item/new'] as $url) {
             $this->client->request('GET', $url);
             self::assertResponseIsSuccessful($url);
         }

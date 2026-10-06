@@ -8,7 +8,9 @@ namespace App\Content\Block;
 final readonly class Fact
 {
     public function __construct(
+        #[Field('Libellé')]
         public string $label,
+        #[Field('Texte')]
         public string $text,
     ) {
     }

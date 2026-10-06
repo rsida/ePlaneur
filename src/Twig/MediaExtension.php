@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Twig;
 
 use App\Entity\Media;
+use App\Media\ImageVariants;
 use App\Media\MediaLibrary;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -12,7 +13,8 @@ use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
 
 /**
- * `media(id)`, `media_url(media)` and `|file_size` for templates displaying uploaded files.
+ * `media(id)`, `media_url(media)`, `image_url(media, filter)` and `|file_size` for templates displaying
+ * uploaded files.
  */
 final readonly class MediaExtension
 {
@@ -20,6 +22,7 @@ final readonly class MediaExtension
         private MediaLibrary $library,
         private UrlGeneratorInterface $urlGenerator,
         private SluggerInterface $slugger,
+        private ImageVariants $variants,
     ) {
     }
 
@@ -40,6 +43,22 @@ final readonly class MediaExtension
         }
 
         return $this->urlGenerator->generate('app_media', $parameters);
+    }
+
+    /**
+     * Address of a picture resized for its use (filter sets of config/packages/liip_imagine.yaml):
+     * thumb (400 px squares), card (960 px), content (reading column, 1640 px), wide (2400 px).
+     * Pictures that are not resized (SVG, GIF) keep their own address.
+     */
+    #[AsTwigFunction('image_url')]
+    public function imageUrl(Media $media, string $filter): string
+    {
+        if (!$this->variants->supports($media)) {
+            return $this->mediaUrl($media);
+        }
+        $name = $this->slugger->slug(pathinfo($media->getOriginalName(), \PATHINFO_FILENAME))->lower()->toString();
+
+        return $this->urlGenerator->generate('app_media_variant', ['id' => $media->getId(), 'filter' => $filter, 'name' => ('' !== $name ? $name : 'image').'.'.ImageVariants::EXTENSION]);
     }
 
     /** Size in French units: "248 Ko", "1,2 Mo". */

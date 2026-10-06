@@ -1,0 +1,92 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{#
+    Page list as a tree (Figma "Pages · Arbre du site et sous-pages"): each page under its parent,
+    with its path, state and visibility; sub-pages fold under their parent (`page-tree` controller).
+#}
+{% block page_title 'Pages' %}
+{% block content_title 'Pages' %}
+
+{% block page_actions %}
+    <twig:ea:Button href="{{ path('admin_page_new') }}" variant="primary" icon="plus">Créer une page</twig:ea:Button>
+{% endblock %}
+
+{% block main %}
+    <div class="ep-tree" data-controller="page-tree">
+        <p class="ep-page-subtitle">Arborescence du site · {{ tree|length }} page{{ tree|length > 1 ? 's' }}</p>
+        <div class="ep-tree__search">
+            <label class="form-label" for="page-search">Recherche</label>
+            <input class="form-control" type="search" id="page-search" placeholder="Rechercher une page…" data-action="page-tree#filter">
+        </div>
+
+        {% if tree is empty %}
+            <p class="ep-tree__empty">Aucune page pour l’instant.</p>
+        {% else %}
+            <table class="table datagrid ep-tree__table">
+                <thead>
+                    <tr>
+                        <th scope="col">Titre</th>
+                        <th scope="col">Chemin</th>
+                        <th scope="col">État</th>
+                        <th scope="col">Visibilité</th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for node in tree %}
+                        {% set page = node.page %}
+                        {% set ancestors = page.lineage|slice(0, -1)|map(ancestor => ancestor.id)|join(' ') %}
+                        <tr data-page-tree-target="row" data-id="{{ page.id }}" data-ancestors="{{ ancestors }}" data-title="{{ page.title|lower }}">
+                            <td>
+                                <span class="ep-tree__title" style="--ep-depth: {{ node.depth }}">
+                                    {% if page.children is not empty %}
+                                        <button type="button" class="ep-tree__toggle" aria-expanded="true" aria-label="Replier les sous-pages de {{ page.title }}" data-action="page-tree#toggle">
+                                            <twig:ux:icon name="admin:chevron-down" />
+                                        </button>
+                                    {% else %}
+                                        <twig:ux:icon name="admin:file-text" class="ep-tree__icon" />
+                                    {% endif %}
+                                    <a href="{{ path('admin_page_edit', {entityId: page.id}) }}">{{ page.title }}</a>
+                                </span>
+                            </td>
+                            <td><code class="ep-tree__path">/{{ page.path }}</code></td>
+                            <td>{{ include('admin/field/post_state.html.twig', {entity: {instance: page}}) }}</td>
+                            <td>
+                                {% set badge = {Public: 'secondary', Authenticated: 'info', Groups: 'warning'}[page.visibility.name] %}
+                                <span class="badge badge-{{ badge }}">{{ page.visibility.label }}</span>
+                            </td>
+                            <td class="actions">
+                                <twig:ea:ActionMenu>
+                                    <twig:ea:ActionMenu:Button class="btn btn-secondary" withoutDropdownToggleMarker aria-label="Actions sur {{ page.title }}">
+                                        <twig:ea:Icon name="internal:dots-horizontal" />
+                                    </twig:ea:ActionMenu:Button>
+                                    <twig:ea:ActionMenu:Overlay>
+                                        <twig:ea:ActionMenu:ActionList>
+                                            <twig:ea:ActionMenu:ActionList:Item label="Modifier" icon="pencil" url="{{ path('admin_page_edit', {entityId: page.id}) }}" />
+                                            {% if node.depth < constant('App\\Entity\\Page::MAX_DEPTH') - 1 %}
+                                                <twig:ea:ActionMenu:ActionList:Item label="Ajouter une sous-page" icon="file-plus" url="{{ path('admin_page_new', {parent: page.id}) }}" />
+                                            {% endif %}
+                                            <twig:ea:ActionMenu:ActionList:Item label="Voir sur le site" icon="external-link" url="{{ path('app_page_show', {path: page.path}) }}" :htmlAttributes="{target: '_blank'}" />
+                                            <twig:ea:ActionMenu:ActionList:Divider />
+                                            <twig:ea:ActionMenu:ActionList:Item label="Supprimer" icon="trash-2" url="#"
+                                                :htmlAttributes="{
+                                                    class: 'dropdown-item text-danger',
+                                                    formaction: path('admin_page_delete', {entityId: page.id}),
+                                                    'data-action-confirmation': 'true',
+                                                    'data-action-confirmation-message': 'Supprimer la page « ' ~ page.title ~ ' » ?',
+                                                    'data-action-confirmation-button': 'Supprimer',
+                                                }" />
+                                        </twig:ea:ActionMenu:ActionList>
+                                    </twig:ea:ActionMenu:Overlay>
+                                </twig:ea:ActionMenu>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="ep-tree__note">Les sous-pages héritent du chemin de leur parent ; le menu « Ajouter une sous-page » les range à cet endroit.</p>
+        {% endif %}
+    </div>
+
+    {{ include('@EasyAdmin/crud/includes/_action_confirmation_modal.html.twig') }}
+{% endblock %}

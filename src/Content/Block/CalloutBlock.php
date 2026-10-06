@@ -10,9 +10,13 @@ final readonly class CalloutBlock implements BlockInterface
     public const array VARIANTS = ['info', 'tip', 'warning'];
 
     public function __construct(
+        #[Field('Titre', inline: true)]
         public string $title,
+        #[Field('Texte', widget: 'rich', inline: true)]
         public string $html,
+        #[Field('Variante', widget: 'choice', choices: ['info' => 'À retenir', 'tip' => 'Conseil', 'warning' => 'Vigilance'])]
         public string $variant = 'info',
+        #[Field('Afficher l’icône')]
         public bool $showIcon = true,
     ) {
     }

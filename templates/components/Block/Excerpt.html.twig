@@ -2,7 +2,7 @@
 {% props placed %}
 {% set data = placed.block %}
 <figure class="c-excerpt">
-    <figcaption class="c-excerpt__title">{{ data.title }}</figcaption>
-    <blockquote class="c-excerpt__text"><p>{{ data.text }}</p></blockquote>
+    <figcaption class="c-excerpt__title"{{ edit_field(placed, 'title') }}>{{ data.title }}</figcaption>
+    <blockquote class="c-excerpt__text"><p{{ edit_field(placed, 'text') }}>{{ data.text }}</p></blockquote>
     {% if data.reference %}<p class="c-excerpt__reference">{{ data.reference }}</p>{% endif %}
 </figure>

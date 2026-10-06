@@ -11,6 +11,7 @@ final readonly class StepsBlock implements BlockInterface
      * @param list<StepItem> $steps
      */
     public function __construct(
+        #[Field('Étapes', widget: 'items', item: StepItem::class)]
         public array $steps,
     ) {
     }

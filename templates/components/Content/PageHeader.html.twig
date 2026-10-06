@@ -2,16 +2,17 @@
     Header of an institutional page (Figma "Le Club — rubrique", "Statuts"): breadcrumb, kicker,
     Oswald title, lead, optional highlight on the right and "Mis à jour" line.
     <twig:Content:PageHeader :crumbs="crumbs" kicker="Le Club / Textes officiels" title="Statuts" />
+    In the back-office canvas (`editing`), kicker, title and lead are always shown and editable in place.
 #}
-{% props crumbs = [], kicker = null, title, lead = null, highlight = null, highlightNote = null, updatedAt = null %}
+{% props crumbs = [], kicker = null, title, lead = null, highlight = null, highlightNote = null, updatedAt = null, editing = false %}
 <header {{ attributes.defaults({class: 'l-container p-article__header p-page__header'}) }}>
     <twig:Ui:Breadcrumb :items="crumbs" />
 
     <div class="p-article__intro">
         <div class="p-article__promise">
-            {% if kicker %}<p class="c-eyebrow">{{ kicker }}</p>{% endif %}
-            <h1 class="p-article__title">{{ title }}</h1>
-            {% if lead %}<p class="p-article__lead">{{ lead }}</p>{% endif %}
+            {% if kicker or editing %}<p class="c-eyebrow"{% if editing %} data-ep-meta="kicker"{% endif %}>{{ kicker }}</p>{% endif %}
+            <h1 class="p-article__title"{% if editing %} data-ep-meta="title"{% endif %}>{{ title }}</h1>
+            {% if lead or editing %}<p class="p-article__lead"{% if editing %} data-ep-meta="excerpt"{% endif %}>{{ lead }}</p>{% endif %}
         </div>
         {% if highlight %}
             <div class="p-article__highlight">

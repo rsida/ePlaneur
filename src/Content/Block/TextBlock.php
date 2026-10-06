@@ -8,8 +8,10 @@ namespace App\Content\Block;
 final readonly class TextBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Texte', widget: 'rich', inline: true)]
         public string $html,
         /** Secondary text in a muted colour */
+        #[Field('Texte secondaire (gris)')]
         public bool $muted = false,
     ) {
     }

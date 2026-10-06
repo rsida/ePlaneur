@@ -2,6 +2,6 @@
 {% set data = placed.block %}
 <figure class="c-pull-quote{{ data.reference ? ' c-pull-quote--reference' }}">
     {% if data.reference %}<p class="c-pull-quote__reference">{{ data.reference }}</p>{% endif %}
-    <blockquote class="c-pull-quote__text"><p>{{ data.text }}</p></blockquote>
-    {% if data.attribution %}<figcaption class="c-pull-quote__attribution">{{ data.attribution }}</figcaption>{% endif %}
+    <blockquote class="c-pull-quote__text"><p{{ edit_field(placed, 'text') }}>{{ data.text }}</p></blockquote>
+    {% if data.attribution %}<figcaption class="c-pull-quote__attribution"{{ edit_field(placed, 'attribution') }}>{{ data.attribution }}</figcaption>{% endif %}
 </figure>

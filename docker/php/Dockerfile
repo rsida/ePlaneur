@@ -14,7 +14,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git unzip \
     && rm -rf /var/lib/apt/lists/* \
-    && install-php-extensions apcu intl opcache pdo_mysql zip
+    && install-php-extensions apcu gd intl opcache pdo_mysql zip
 
 ENV COMPOSER_HOME=/tmp/composer \
     COMPOSER_ALLOW_SUPERUSER=1

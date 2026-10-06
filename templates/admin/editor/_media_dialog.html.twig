@@ -1,0 +1,85 @@
+{#
+    "Choisir un média" window of the block editor (assets/editor/media_picker.js): media library with
+    search, type filter and details of the selected file, and the upload tab for MEDIA_MANAGE.
+    Variables: can_manage_media.
+#}
+<dialog class="ep-dialog ep-media-dialog" aria-labelledby="ep-media-title" data-block-editor-target="mediaDialog"
+        data-token="{{ csrf_token(constant('App\\Controller\\Admin\\EditorDataController::MEDIA_TOKEN')) }}"
+        data-can-edit="{{ can_manage_media ? 'true' : 'false' }}">
+    <div class="ep-dialog__head">
+        <h2 id="ep-media-title">Choisir un média</h2>
+        <button type="button" class="btn btn-secondary" data-media-close><twig:ux:icon name="admin:x" /> Fermer</button>
+    </div>
+
+    <div class="ep-tabs ep-media-dialog__tabs" role="tablist">
+        <button type="button" role="tab" class="ep-tabs__tab" aria-selected="true" aria-controls="ep-media-library" data-media-tab="library">Médiathèque</button>
+        {% if can_manage_media %}
+            <button type="button" role="tab" class="ep-tabs__tab" aria-selected="false" aria-controls="ep-media-upload" data-media-tab="upload">Téléverser</button>
+        {% endif %}
+    </div>
+
+    <div id="ep-media-library" role="tabpanel" class="ep-media-dialog__library">
+        <div class="ep-media-dialog__main">
+            <div class="ep-media-dialog__filters">
+                <div>
+                    <label class="form-label" for="ep-media-search">Rechercher</label>
+                    <input type="search" class="form-control" id="ep-media-search" data-media="search" placeholder="Nom, texte alternatif, crédit…">
+                </div>
+                <div>
+                    <label class="form-label" for="ep-media-type">Type</label>
+                    <select class="form-select" id="ep-media-type" data-media="type">
+                        <option value="">Tous les types</option>
+                        <option value="image">Images</option>
+                        <option value="pdf">PDF</option>
+                        <option value="other">Autres fichiers</option>
+                    </select>
+                </div>
+            </div>
+            <p class="ep-media-dialog__count" data-media="count" role="status"></p>
+            <ul class="ep-media-grid" role="list" data-media="grid"></ul>
+            <button type="button" class="btn btn-secondary ep-media-dialog__more" data-media="more" hidden>Afficher plus</button>
+        </div>
+
+        <aside class="ep-media-dialog__info" aria-labelledby="ep-media-info-title">
+            <h3 class="ep-media-dialog__info-title" id="ep-media-info-title">Informations du média</h3>
+            <p class="ep-editor__tip" data-media="no-details">Sélectionnez un fichier pour voir ses informations.</p>
+            <div data-media="details" hidden>
+                <p class="ep-media-dialog__name" data-media="name"></p>
+                <ul class="ep-media-dialog__facts" role="list" data-media="facts"></ul>
+                <div class="form-group" data-media="alt-row">
+                    <label class="form-label" for="ep-media-alt">Texte alternatif</label>
+                    <input type="text" class="form-control" id="ep-media-alt" data-media="alt" maxlength="255">
+                    <p class="form-text">Décrit l’image pour qui ne la voit pas ; vide pour une image décorative.</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ep-media-credit">Crédit</label>
+                    <input type="text" class="form-control" id="ep-media-credit" data-media="credit" maxlength="255">
+                </div>
+                <p class="form-text" data-media="saved" role="status"></p>
+                {% if not can_manage_media %}<p class="form-text">Seule l’équipe de la médiathèque peut modifier ces informations.</p>{% endif %}
+            </div>
+        </aside>
+    </div>
+
+    {% if can_manage_media %}
+        <div id="ep-media-upload" role="tabpanel" class="ep-media-dialog__upload" hidden>
+            <div class="ep-dropzone" data-media="dropzone">
+                <twig:ux:icon name="admin:upload" class="ep-dropzone__icon" />
+                <p class="ep-dropzone__title">Déposez vos fichiers ici</p>
+                <p>ou choisissez-les sur votre ordinateur</p>
+                <button type="button" class="btn btn-primary" data-media="choose"><twig:ux:icon name="admin:folder" /> Choisir des fichiers</button>
+                <input type="file" multiple hidden data-media="files" accept="{{ constant('App\\Form\\Admin\\MediaUploadType::MIME_TYPES')|join(',') }}">
+                <p class="form-text" data-media="formats"></p>
+            </div>
+            <ul class="ep-media-dialog__messages" role="list" data-media="upload-messages" aria-live="polite"></ul>
+            <p class="form-text">Les fichiers seront ajoutés à la médiathèque, visibles par tout le monde. Vous pourrez ensuite renseigner leur texte alternatif, leur crédit et restreindre leur visibilité.</p>
+        </div>
+    {% endif %}
+
+    <div class="ep-media-dialog__footer">
+        <p class="ep-editor__tip">Échap pour fermer · Tab pour parcourir · double-clic pour choisir</p>
+        <p class="ep-media-dialog__selection" data-media="selection"></p>
+        <button type="button" class="btn btn-secondary" data-media-close>Annuler</button>
+        <button type="button" class="btn btn-primary" data-media="use" disabled><twig:ux:icon name="admin:circle-check" /> Utiliser ce média</button>
+    </div>
+</dialog>

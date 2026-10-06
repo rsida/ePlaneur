@@ -1,0 +1,237 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+{% form_theme form with ['@EasyAdmin/crud/form_theme.html.twig', 'admin/editor/_form_theme.html.twig'] only %}
+
+{#
+    Block editor of posts and pages (Figma "Admin" page, frames "Article · …" and "Page · …"):
+    top bar, block library and structure on the left, the canvas (iframe with the site styles) in the
+    middle, the settings of the content and of the selected block on the right. The `block-editor`
+    controller (assets/editor/) keeps the blocks, renders them through the `render` action and writes
+    them into the hidden zone fields before the form is sent.
+
+    Variables: form, kind (post|page), entity, zones (name => label), schema (BlockSchema), can_publish, urls.
+#}
+{% set is_post = kind == 'post' %}
+{% set noun = is_post ? 'article' : 'page' %}
+{% set title = entity.title ?: (is_post ? 'Nouvel article' : 'Nouvelle page') %}
+{% set published_at = entity.publishedAt %}
+{% set state = published_at is null ? 'draft' : (entity.published ? 'published' : 'scheduled') %}
+
+{% block page_title title %}
+{% block body_class 'page-content ep-editor-page' %}
+
+{% block content %}
+<div class="ep-editor"
+     data-controller="block-editor"
+     data-block-editor-kind-value="{{ kind }}"
+     data-block-editor-form-name-value="{{ form.vars.name }}"
+     data-block-editor-schema-value="{{ schema|json_encode }}"
+     data-block-editor-urls-value="{{ urls|merge({
+         media: path('admin_editor_media'),
+         documents: path('admin_editor_documents'),
+         document_categories: path('admin_editor_document_categories'),
+         media_show: path('admin_editor_media_show', {id: 0})|replace({'/0': '/__id__'}),
+         media_upload: path('admin_editor_media_upload'),
+         media_update: path('admin_editor_media_update', {id: 0})|replace({'/0': '/__id__'}),
+     })|json_encode }}"
+     data-block-editor-zones-value="{{ zones|json_encode }}"
+     data-action="keydown@window->block-editor#shortcut beforeunload@window->block-editor#confirmLeave">
+    {{ form_start(form, {attr: {class: 'ep-editor__form', novalidate: 'novalidate', 'data-block-editor-target': 'form', 'data-action': 'submit->block-editor#beforeSubmit input->block-editor#formChanged change->block-editor#formChanged'}}) }}
+
+    <header class="ep-editor__bar">
+        <a class="btn btn-secondary ep-editor__back" href="{{ urls.index }}">
+            <twig:ux:icon name="admin:arrow-left" /> {{ is_post ? 'Articles' : 'Pages' }}
+        </a>
+        <div class="ep-editor__heading">
+            <h1 class="ep-editor__title" data-block-editor-target="title">{{ title }}</h1>
+            <p class="ep-editor__status" data-block-editor-target="status" role="status">{{ form.vars.submitted ? 'Modifications non enregistrées' : 'Enregistré' }}</p>
+        </div>
+        <div class="ep-editor__actions">
+            {% if state == 'draft' %}
+                <span class="badge badge-info">Brouillon</span>
+            {% elseif state == 'scheduled' %}
+                <span class="badge badge-warning">Programmé le {{ published_at|format_datetime(pattern: "dd/MM 'à' HH:mm", locale: 'fr', timezone: 'Europe/Paris') }}</span>
+            {% else %}
+                <span class="badge badge-success">Publié</span>
+            {% endif %}
+            <button type="button" class="btn btn-secondary ep-editor__icon-button" data-action="block-editor#undo" data-block-editor-target="undo" title="Annuler (Ctrl + Z)" disabled>
+                <twig:ux:icon name="admin:undo-2" /><span class="visually-hidden">Annuler</span>
+            </button>
+            <button type="button" class="btn btn-secondary ep-editor__icon-button" data-action="block-editor#redo" data-block-editor-target="redo" title="Rétablir (Ctrl + Maj + Z)" disabled>
+                <twig:ux:icon name="admin:redo-2" /><span class="visually-hidden">Rétablir</span>
+            </button>
+            <button type="submit" class="btn btn-secondary" formaction="{{ urls.preview }}" formtarget="_blank" data-action="block-editor#preview">
+                <twig:ux:icon name="admin:eye" /> Aperçu
+            </button>
+            <button type="submit" class="btn btn-secondary" data-block-editor-target="save">Enregistrer</button>
+            {% if can_publish %}
+                <button type="button" class="btn btn-primary" data-action="block-editor#openPublish">
+                    {{ state == 'draft' ? 'Publier' : 'Publication' }}
+                </button>
+            {% endif %}
+        </div>
+        <p class="ep-editor__hints">Éditeur de blocs · Styles du site <span>Ctrl + S : enregistrer · Ctrl + Z : annuler</span></p>
+        {# Narrow screens (tablets): the side panels open over the canvas #}
+        <div class="ep-editor__panel-toggles">
+            <button type="button" class="btn btn-secondary" data-action="block-editor#togglePanel" data-panel="library" aria-expanded="false">
+                <twig:ux:icon name="admin:panel-left" /> Bibliothèque
+            </button>
+            <button type="button" class="btn btn-secondary" data-action="block-editor#togglePanel" data-panel="settings" aria-expanded="false">
+                <twig:ux:icon name="admin:panel-right" /> Réglages
+            </button>
+        </div>
+    </header>
+
+    {% set errors = form.vars.errors.form.getErrors(true) %}
+    {% if errors|length > 0 %}
+        <div class="alert alert-danger ep-editor__errors" role="alert">
+            <p><strong>L’{{ noun }} n’a pas été enregistré{{ is_post ? '' : 'e' }} :</strong></p>
+            <ul>
+                {% for error in errors %}
+                    <li>{% if error.origin and error.origin.config.option('label') %}{{ error.origin.config.option('label') }} : {% endif %}{{ error.message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="ep-editor__workspace" data-block-editor-target="workspace">
+        <aside class="ep-editor__library" aria-label="Insérer un bloc" data-block-editor-target="library">
+            <div class="ep-editor__panel-head">
+                <h2 class="ep-editor__panel-title">Insérer un bloc</h2>
+                <button type="button" class="ep-editor__collapse" data-action="block-editor#togglePanel" data-panel="library" aria-label="Replier la liste des blocs">
+                    <twig:ux:icon name="admin:panel-left" />
+                </button>
+            </div>
+            <div class="ep-tabs" role="tablist">
+                <button type="button" role="tab" class="ep-tabs__tab" aria-selected="true" aria-controls="ep-library-blocks" id="ep-tab-blocks" data-action="block-editor#switchTab">Blocs</button>
+                <button type="button" role="tab" class="ep-tabs__tab" aria-selected="false" aria-controls="ep-library-structure" id="ep-tab-structure" data-action="block-editor#switchTab">Structure</button>
+            </div>
+            <div class="ep-tabs__panel" role="tabpanel" id="ep-library-blocks" aria-labelledby="ep-tab-blocks">
+                <input type="search" class="form-control ep-library__search" placeholder="Rechercher un bloc…" aria-label="Rechercher un bloc" data-action="block-editor#filterLibrary">
+                {% for group in schema.groups %}
+                    <section class="ep-library__group" data-block-editor-target="libraryGroup">
+                        <h3 class="ep-library__group-title">{{ group.label }}</h3>
+                        <ul class="ep-library__list" role="list">
+                            {% for type in schema.types|filter(type => type.group == group.id) %}
+                                <li data-block-editor-target="libraryItem" data-search="{{ (type.label ~ ' ' ~ type.description)|lower }}">
+                                    <button type="button" class="ep-library__item" draggable="true" data-type="{{ type.type }}"
+                                            title="{{ type.description }}"
+                                            data-action="click->block-editor#insertFromLibrary dragstart->block-editor#dragFromLibrary dragend->block-editor#endDrag">
+                                        <twig:ux:icon name="admin:{{ type.icon }}" class="ep-library__icon" />
+                                        <span>{{ type.label }}</span>
+                                    </button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                {% endfor %}
+                <p class="ep-editor__tip">Glissez un bloc dans une zone, ou tapez « / » dans un paragraphe vide.</p>
+            </div>
+            <div class="ep-tabs__panel" role="tabpanel" id="ep-library-structure" aria-labelledby="ep-tab-structure" hidden>
+                <p class="ep-library__group-title">Plan ordonné des zones</p>
+                <div data-block-editor-target="structure"></div>
+            </div>
+        </aside>
+
+        <div class="ep-editor__backdrop" data-action="click->block-editor#closePanels"></div>
+
+        <div class="ep-editor__canvas">
+            <iframe class="ep-editor__frame" src="{{ urls.canvas }}" title="{{ is_post ? 'Article' : 'Page' }} modifiable, avec les styles du site"
+                    data-block-editor-target="frame" data-action="load->block-editor#frameLoaded"></iframe>
+        </div>
+
+        <aside class="ep-editor__settings" aria-label="Réglages" data-block-editor-target="settings">
+            <div class="ep-tabs" role="tablist">
+                <button type="button" role="tab" class="ep-tabs__tab" aria-selected="true" aria-controls="ep-settings-content" id="ep-tab-content" data-action="block-editor#switchTab">{{ is_post ? 'Article' : 'Page' }}</button>
+                <button type="button" role="tab" class="ep-tabs__tab" aria-selected="false" aria-controls="ep-settings-block" id="ep-tab-block" data-block-editor-target="blockTab" data-action="block-editor#switchTab">Bloc</button>
+                <button type="button" class="ep-editor__collapse" data-action="block-editor#togglePanel" data-panel="settings" aria-label="Replier les réglages">
+                    <twig:ux:icon name="admin:panel-right" />
+                </button>
+            </div>
+
+            <div class="ep-tabs__panel" role="tabpanel" id="ep-settings-content" aria-labelledby="ep-tab-content">
+                <h2 class="ep-editor__panel-title">{{ is_post ? 'Informations de l’article' : 'Organisation de la page' }}</h2>
+                {% if is_post %}
+                    {{ form_row(form.slug) }}
+                    <p class="ep-editor__path" data-block-editor-target="path">{{ urls.path_prefix }}{{ form.slug.vars.value }}</p>
+                    {{ form_row(form.category) }}
+                    {{ form_row(form.keywords) }}
+                    {{ form_row(form.author) }}
+                    {{ form_row(form.badge) }}
+                    <fieldset class="ep-editor__fieldset">
+                        <legend>Couverture et légende</legend>
+                        {{ form_row(form.cover) }}
+                        {{ form_row(form.coverCaption) }}
+                    </fieldset>
+                    {{ form_row(form.highlight) }}
+                    {{ form_row(form.highlightNote) }}
+                    {{ form_row(form.featured) }}
+                {% else %}
+                    {{ form_row(form.parent) }}
+                    {{ form_row(form.slug) }}
+                    <p class="ep-editor__path" data-block-editor-target="path">{{ urls.path_prefix }}{{ form.slug.vars.value }}</p>
+                    {{ form_row(form.position) }}
+                    {{ form_row(form.linkLabel) }}
+                    {{ form_row(form.highlight) }}
+                    {{ form_row(form.highlightNote) }}
+                    {{ form_row(form.updatedAt) }}
+                {% endif %}
+                <fieldset class="ep-editor__fieldset">
+                    <legend>Visibilité</legend>
+                    {{ form_row(form.visibility) }}
+                    {{ form_row(form.allowedGroups) }}
+                </fieldset>
+                <details class="ep-editor__fieldset">
+                    <summary>Textes de l’en-tête</summary>
+                    <p class="form-text">Ils se modifient aussi directement dans la page.</p>
+                    {{ form_row(form.title) }}
+                    {{ form_row(form.kicker) }}
+                    {{ form_row(form.excerpt) }}
+                </details>
+            </div>
+
+            <div class="ep-tabs__panel" role="tabpanel" id="ep-settings-block" aria-labelledby="ep-tab-block" hidden>
+                <div data-block-editor-target="blockPanel">
+                    <p class="ep-editor__tip">Sélectionnez un bloc dans la page pour voir ses réglages.</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer class="ep-editor__shortcuts">Tab : parcourir · Entrée : modifier · Échap : quitter · Alt + Maj + ↑ / ↓ : déplacer un bloc</footer>
+
+    {% for zone in zones|keys %}{{ form_widget(form[zone]) }}{% endfor %}
+
+    {% if form.publishedAt is defined %}
+        <dialog class="ep-dialog" data-block-editor-target="publishDialog" aria-labelledby="ep-publish-title">
+            <div class="ep-dialog__head">
+                <h2 id="ep-publish-title">Publier {{ is_post ? 'l’article' : 'la page' }}</h2>
+                <button type="button" class="btn btn-secondary" data-action="block-editor#closePublish"><twig:ux:icon name="admin:x" /> Fermer</button>
+            </div>
+            <p><strong data-block-editor-target="publishTitle">{{ title }}</strong><br>Vérifiez la date et les destinataires avant de confirmer.</p>
+            <fieldset class="ep-dialog__when">
+                <legend>Quand publier ?</legend>
+                <label class="ep-choice"><input type="radio" name="ep_publish_when" value="now" data-action="block-editor#publishWhen" {{ state != 'scheduled' ? 'checked' }}> Maintenant</label>
+                <label class="ep-choice"><input type="radio" name="ep_publish_when" value="later" data-action="block-editor#publishWhen" {{ state == 'scheduled' ? 'checked' }}> À une date et une heure</label>
+            </fieldset>
+            <div data-block-editor-target="publishDate" {{ state != 'scheduled' ? 'hidden' }}>
+                {{ form_row(form.publishedAt, {label: 'Date et heure', help: 'France métropolitaine · Europe/Paris'}) }}
+            </div>
+            <div class="ep-dialog__summary" data-block-editor-target="publishVisibility"></div>
+            <div class="ep-dialog__actions">
+                <button type="button" class="btn btn-primary" data-action="block-editor#confirmPublish">
+                    <twig:ux:icon name="admin:calendar-clock" /> <span data-block-editor-target="publishLabel">Publier maintenant</span>
+                </button>
+                {% if state != 'draft' %}
+                    <button type="button" class="btn btn-secondary" data-action="block-editor#unpublish">Repasser en brouillon</button>
+                {% endif %}
+                <button type="button" class="btn btn-link" data-action="block-editor#closePublish">Annuler</button>
+            </div>
+        </dialog>
+    {% endif %}
+
+    {{ form_rest(form) }}
+    {{ form_end(form) }}
+
+    {{ include('admin/editor/_media_dialog.html.twig', {can_manage_media: is_granted('MEDIA_MANAGE')}) }}
+</div>
+{% endblock %}

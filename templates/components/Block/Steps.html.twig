@@ -4,8 +4,8 @@
         <li class="c-steps__item">
             <span class="c-steps__number" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
             <div class="c-steps__content">
-                <p class="c-steps__title">{{ step.title }}</p>
-                {% if step.text %}<p class="c-steps__text">{{ step.text }}</p>{% endif %}
+                <p class="c-steps__title"{{ edit_field(placed, 'steps.' ~ loop.index0 ~ '.title') }}>{{ step.title }}</p>
+                {% if step.text %}<p class="c-steps__text"{{ edit_field(placed, 'steps.' ~ loop.index0 ~ '.text') }}>{{ step.text }}</p>{% endif %}
             </div>
         </li>
     {% endfor %}

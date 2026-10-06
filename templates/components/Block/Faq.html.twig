@@ -2,7 +2,7 @@
 {% props placed %}
 {% set data = placed.block %}
 <section class="c-faq"{% if data.title %} aria-labelledby="{{ placed.key }}-title"{% endif %}>
-    {% if data.title %}<h3 class="c-block-heading" id="{{ placed.key }}-title">{{ data.title }}</h3>{% endif %}
+    {% if data.title %}<h3 class="c-block-heading" id="{{ placed.key }}-title"{{ edit_field(placed, 'title') }}>{{ data.title }}</h3>{% endif %}
     <div class="c-faq__list">
         {% for item in data.items %}
             <details class="c-faq__item"{% if loop.first and data.openFirst %} open{% endif %}>
@@ -11,7 +11,7 @@
                     <twig:ux:icon name="plus" class="c-faq__icon c-faq__icon--closed" />
                     <twig:ux:icon name="minus" class="c-faq__icon c-faq__icon--open" />
                 </summary>
-                <div class="c-rich-text c-rich-text--sm c-faq__answer">{{ item.answer|sanitize_html('app.rich_text') }}</div>
+                <div class="c-rich-text c-rich-text--sm c-faq__answer"{{ edit_field(placed, 'items.' ~ loop.index0 ~ '.answer', 'rich') }}>{{ item.answer|sanitize_html('app.rich_text') }}</div>
             </details>
         {% endfor %}
     </div>

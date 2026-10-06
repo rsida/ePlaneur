@@ -12,8 +12,11 @@ final readonly class TableBlock implements BlockInterface
      * @param list<list<string>> $rows
      */
     public function __construct(
+        #[Field('En-têtes de colonnes', widget: 'lines')]
         public array $headers,
+        #[Field('Lignes', widget: 'rows')]
         public array $rows,
+        #[Field('Légende du tableau')]
         public ?string $caption = null,
     ) {
     }

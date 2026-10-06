@@ -12,6 +12,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Theme;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Twig\Environment;
@@ -67,6 +68,7 @@ final class DashboardController extends AbstractDashboardController
         return Assets::new()
             ->addHtmlContentToHead($this->twig->render('_fonts.html.twig'))
             ->addCssFile('styles/admin.css')
+            ->addAssetMapperEntry('admin')
             ->useCustomIconSet('admin');
     }
 
@@ -75,6 +77,10 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToDashboard('Tableau de bord', 'layout-dashboard');
 
         yield MenuItem::section('Contenus');
+        yield MenuItem::linkTo(PostCrudController::class, 'Articles', 'file-text')
+            ->setPermission(new Expression('is_granted("POST_CREATE") or is_granted("POST_EDIT")'));
+        yield MenuItem::linkTo(PageCrudController::class, 'Pages', 'copy')
+            ->setPermission(Permission::PageManage->value);
         yield MenuItem::linkTo(CategoryCrudController::class, 'Catégories d’articles', 'tags')
             ->setPermission(Permission::CategoryManage->value);
         yield MenuItem::linkTo(MediaCrudController::class, 'Médiathèque', 'images')
@@ -104,6 +110,8 @@ final class DashboardController extends AbstractDashboardController
     private static function shortcuts(): array
     {
         return [
+            ['label' => 'Articles', 'text' => 'Écrire, mettre en forme et publier les actualités.', 'icon' => 'file-text', 'route' => 'admin_post_index', 'permission' => Permission::PostCreate->value],
+            ['label' => 'Pages', 'text' => 'Les pages du site, rangées en arborescence.', 'icon' => 'copy', 'route' => 'admin_page_index', 'permission' => Permission::PageManage->value],
             ['label' => 'Médiathèque', 'text' => 'Téléverser des images et des PDF, régler leur visibilité.', 'icon' => 'images', 'route' => 'admin_media_index', 'permission' => Permission::MediaManage->value],
             ['label' => 'Documents officiels', 'text' => 'Statuts, règlement, décisions : version, mentions datées, visibilité.', 'icon' => 'files', 'route' => 'admin_document_index', 'permission' => Permission::DocumentManage->value],
             ['label' => 'Menus', 'text' => 'Liens de l’en-tête et du pied de page, réservés ou non.', 'icon' => 'list-tree', 'route' => 'admin_menu_item_index', 'permission' => Permission::MenuManage->value],

@@ -101,7 +101,7 @@ Every command below is run on the server, in the project directory.
 | `make bash` | Shell in the PHP container (`www-data`) |
 | `make db` / `make sql q="..."` | MariaDB shell / query |
 | `make db-dump` | Gzipped dump into `backups/prod-<date>.sql.gz` |
-| `make media-dump` | Archive of the uploaded media (Docker volume `uploads`, mounted on `var/uploads`) into `backups/prod-media-<date>.tar.gz` |
+| `make media-dump` | Archive of the uploaded media (Docker volume `uploads`, mounted on `var/uploads`) into `backups/prod-media-<date>.tar.gz`. It includes the resized pictures of `var/uploads/cache/`, which are rebuilt on demand if missing |
 | `make db-restore file=...` | Restore a dump |
 | `make console c="messenger:failed:show"` | Messages that failed after 3 retries |
 | `make console c="messenger:failed:retry"` | Retry them |

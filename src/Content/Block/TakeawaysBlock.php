@@ -14,12 +14,19 @@ final readonly class TakeawaysBlock implements BlockInterface
      * @param list<string> $points
      */
     public function __construct(
+        #[Field('Titre', inline: true)]
         public string $title,
+        #[Field('Surtitre')]
         public ?string $eyebrow = null,
+        #[Field('Texte', widget: 'textarea')]
         public ?string $text = null,
+        #[Field('Points clés', widget: 'lines')]
         public array $points = [],
+        #[Field('Texte du bouton')]
         public ?string $ctaLabel = null,
+        #[Field('Adresse du bouton', widget: 'url')]
         public ?string $ctaUrl = null,
+        #[Field('Titre dans le sommaire')]
         public ?string $navTitle = null,
     ) {
     }

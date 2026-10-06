@@ -11,10 +11,15 @@ namespace App\Content\Block;
 final readonly class VideoBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Adresse YouTube ou Vimeo', widget: 'url')]
         public string $url,
+        #[Field('Titre')]
         public ?string $title = null,
+        #[Field('Sous-titre')]
         public ?string $subtitle = null,
+        #[Field('Image d’attente', widget: 'media', accept: 'image', help: 'Vide : la vignette de la vidéo.')]
         public ?int $posterId = null,
+        #[Field('Légende')]
         public ?string $caption = null,
     ) {
     }

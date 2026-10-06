@@ -33,4 +33,30 @@ class PageRepository extends ServiceEntityRepository
 
         return $page;
     }
+
+    /**
+     * Every page in tree order (each page followed by its sub-pages), with its depth (0 = root).
+     *
+     * @return list<array{page: Page, depth: int}>
+     */
+    public function findTree(): array
+    {
+        /** @var list<Page> $pages */
+        $pages = $this->createQueryBuilder('page')->orderBy('page.position', 'ASC')->addOrderBy('page.title', 'ASC')->getQuery()->getResult();
+        $byParent = [];
+        foreach ($pages as $page) {
+            $byParent[$page->getParent()?->getId() ?? 0][] = $page;
+        }
+
+        $tree = [];
+        $walk = static function (int $parentId, int $depth) use (&$walk, &$tree, $byParent): void {
+            foreach ($byParent[$parentId] ?? [] as $page) {
+                $tree[] = ['page' => $page, 'depth' => $depth];
+                $walk((int) $page->getId(), $depth + 1);
+            }
+        };
+        $walk(0, 0);
+
+        return $tree;
+    }
 }

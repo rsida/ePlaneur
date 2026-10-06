@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Content;
 
 use App\Content\Block\BlockFactory;
+use App\Content\Block\BlockInterface;
 use App\Content\Block\SectionBlock;
 use App\Content\Block\TakeawaysBlock;
 use App\Media\MediaLibrary;
@@ -31,20 +32,35 @@ final readonly class BlockPlacer
      */
     public function place(array $zones, array $extraMediaIds = []): array
     {
+        return $this->arrange(array_map($this->blockFactory->createAll(...), $zones), $extraMediaIds);
+    }
+
+    /**
+     * Places block objects. Their array keys make the block keys ("body-3"); the editor uses its own
+     * block ids there.
+     *
+     * @param array<string, array<array-key, BlockInterface>> $zones         blocks by zone name, in reading order
+     * @param list<int>                                       $extraMediaIds
+     * @param array<string, mixed>                            $context       given to every placed block
+     *
+     * @return array{zones: array<string, list<PlacedBlock>>, toc: list<TocEntry>}
+     */
+    public function arrange(array $zones, array $extraMediaIds = [], array $context = []): array
+    {
         $toc = [];
         $anchors = [];
         $placedZones = [];
         $mediaIds = $extraMediaIds;
 
-        foreach ($zones as $zone => $stored) {
+        foreach ($zones as $zone => $blocks) {
             $placedZones[$zone] = [];
-            foreach ($this->blockFactory->createAll($stored) as $index => $block) {
+            foreach ($blocks as $key => $block) {
                 $entry = null;
                 if ($block instanceof SectionBlock || $block instanceof TakeawaysBlock) {
                     $entry = new TocEntry(\sprintf('%02d', \count($toc) + 1), $block->tocTitle(), $this->uniqueAnchor($block->tocTitle(), $anchors));
                     $toc[] = $entry;
                 }
-                $placedZones[$zone][] = new PlacedBlock($block, $zone.'-'.$index, $entry);
+                $placedZones[$zone][] = new PlacedBlock($block, $zone.'-'.$key, $entry, $context);
                 array_push($mediaIds, ...$block->mediaIds());
             }
         }

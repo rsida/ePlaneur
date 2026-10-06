@@ -4,7 +4,7 @@
 <fieldset class="c-checklist" data-controller="checklist" data-checklist-key-value="{{ placed.key }}">
     <legend class="u-visually-hidden">{{ data.title }}</legend>
     <div class="c-checklist__head" aria-hidden="true">
-        <p class="c-checklist__title">{{ data.title }}</p>
+        <p class="c-checklist__title"{{ edit_field(placed, 'title') }}>{{ data.title }}</p>
         <p class="c-checklist__count"><span data-checklist-target="count">0</span> / {{ data.items|length }} vérifications</p>
     </div>
     {% for item in data.items %}

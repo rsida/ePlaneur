@@ -10,6 +10,7 @@ namespace App\Content\Block;
 final readonly class ChildPagesBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Surtitre')]
         public ?string $eyebrow = null,
     ) {
     }

@@ -9,7 +9,7 @@
     <div class="c-carousel__stage">
         {% for slide in slides %}
             {% set image = media(slide.mediaId) %}
-            <img class="c-carousel__slide" src="{{ media_url(image) }}" alt="{{ image.alt ?: slide.label }}" width="{{ image.width }}" height="{{ image.height }}"
+            <img class="c-carousel__slide" src="{{ image_url(image, 'wide') }}" alt="{{ image.alt ?: slide.label }}" width="{{ image.width }}" height="{{ image.height }}"
                  loading="lazy" data-carousel-target="slide"{% if not loop.first %} hidden{% endif %}>
         {% endfor %}
         <p class="c-carousel__counter" aria-live="polite"><span data-carousel-target="current">01</span> / {{ '%02d'|format(count) }}</p>
@@ -29,7 +29,7 @@
                 <li>
                     <button type="button" class="c-carousel__thumb" data-carousel-target="thumb" data-action="carousel#show"
                             data-carousel-index-param="{{ loop.index0 }}"{% if loop.first %} aria-current="true"{% endif %}>
-                        <img src="{{ media_url(image) }}" alt="" loading="lazy">
+                        <img src="{{ image_url(image, 'thumb') }}" alt="" loading="lazy">
                         <span>{{ slide.label }}</span>
                     </button>
                 </li>

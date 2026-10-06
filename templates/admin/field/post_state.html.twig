@@ -1,0 +1,9 @@
+{# Publication state of a post or page: draft, scheduled or published. #}
+{% set content = entity.instance %}
+{% if content.publishedAt is null %}
+    <span class="badge badge-info">Brouillon</span>
+{% elseif content.published %}
+    <span class="badge badge-success">Publié</span>
+{% else %}
+    <span class="badge badge-warning" title="{{ content.publishedAt|format_datetime('short', 'short', locale: 'fr', timezone: 'Europe/Paris') }}">Programmé</span>
+{% endif %}

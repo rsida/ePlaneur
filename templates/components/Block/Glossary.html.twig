@@ -1,10 +1,10 @@
 {% props placed %}
 {% set data = placed.block %}
 <section class="c-glossary"{% if data.title %} aria-labelledby="{{ placed.key }}-title"{% endif %}>
-    {% if data.title %}<h3 class="c-block-heading" id="{{ placed.key }}-title">{{ data.title }}</h3>{% endif %}
+    {% if data.title %}<h3 class="c-block-heading" id="{{ placed.key }}-title"{{ edit_field(placed, 'title') }}>{{ data.title }}</h3>{% endif %}
     <dl class="c-glossary__list">
         {% for entry in data.entries %}
-            <div class="c-glossary__entry"><dt>{{ entry.label }}</dt><dd>{{ entry.text }}</dd></div>
+            <div class="c-glossary__entry"><dt{{ edit_field(placed, 'entries.' ~ loop.index0 ~ '.label') }}>{{ entry.label }}</dt><dd{{ edit_field(placed, 'entries.' ~ loop.index0 ~ '.text') }}>{{ entry.text }}</dd></div>
         {% endfor %}
     </dl>
 </section>

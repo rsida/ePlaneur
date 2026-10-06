@@ -4,12 +4,12 @@
 <section class="c-takeaways t-primary" id="{{ placed.toc.anchor }}" aria-labelledby="{{ placed.key }}-title">
     <div class="c-takeaways__inner">
         <p class="c-eyebrow">{{ placed.toc.number }} / {{ data.eyebrow ?: data.tocTitle }}</p>
-        <h2 class="c-takeaways__title" id="{{ placed.key }}-title">{{ data.title }}</h2>
-        {% if data.text %}<p class="c-takeaways__text">{{ data.text }}</p>{% endif %}
+        <h2 class="c-takeaways__title" id="{{ placed.key }}-title"{{ edit_field(placed, 'title') }}>{{ data.title }}</h2>
+        {% if data.text %}<p class="c-takeaways__text"{{ edit_field(placed, 'text') }}>{{ data.text }}</p>{% endif %}
         {% if data.points is not empty %}
             <ul class="c-takeaways__points" role="list">
                 {% for point in data.points %}
-                    <li><twig:ux:icon name="check" class="c-takeaways__check" /><span>{{ point }}</span></li>
+                    <li><twig:ux:icon name="check" class="c-takeaways__check" /><span{{ edit_field(placed, 'points.' ~ loop.index0) }}>{{ point }}</span></li>
                 {% endfor %}
             </ul>
         {% endif %}

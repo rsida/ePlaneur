@@ -7,9 +7,12 @@ namespace App\Content\Block;
 final readonly class QuoteBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Citation', widget: 'textarea', inline: true)]
         public string $text,
+        #[Field('Auteur')]
         public ?string $attribution = null,
         /** Small label above the quote, e.g. "Statuts V23 / Article 2" */
+        #[Field('Référence', help: 'Petit libellé au-dessus : « Statuts V23 / Article 2 ».')]
         public ?string $reference = null,
     ) {
     }

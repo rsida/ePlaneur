@@ -11,6 +11,7 @@ final readonly class ImageGridBlock implements BlockInterface
      * @param list<CaptionedImage> $images
      */
     public function __construct(
+        #[Field('Images', widget: 'items', item: CaptionedImage::class)]
         public array $images,
     ) {
     }

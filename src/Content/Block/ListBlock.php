@@ -11,7 +11,9 @@ final readonly class ListBlock implements BlockInterface
      * @param list<string> $items
      */
     public function __construct(
+        #[Field('Éléments', widget: 'lines')]
         public array $items,
+        #[Field('Liste numérotée')]
         public bool $ordered = false,
     ) {
     }

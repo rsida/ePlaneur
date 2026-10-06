@@ -1,0 +1,20 @@
+{% extends 'admin/editor/_canvas_layout.html.twig' %}
+
+{# Article layout of templates/post/show.html.twig, with the editor slots and block zones. #}
+{% block canvas %}
+    <article class="p-article">
+        <div data-ep-slot="header"></div>
+
+        <div class="l-container p-article__reading-layout">
+            <aside class="p-article__sidebar">
+                <div data-ep-slot="toc"></div>
+                <div class="ep-zone" data-ep-zone="aside" data-ep-zone-label="{{ zones.aside }}"></div>
+            </aside>
+            <div class="p-article__body">
+                <div class="ep-zone" data-ep-zone="body" data-ep-zone-label="{{ zones.body }}"></div>
+            </div>
+        </div>
+
+        <div class="ep-zone ep-zone--wide" data-ep-zone="outro" data-ep-zone-label="{{ zones.outro }}"></div>
+    </article>
+{% endblock %}

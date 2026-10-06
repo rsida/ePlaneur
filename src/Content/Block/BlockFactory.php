@@ -47,20 +47,32 @@ final readonly class BlockFactory
      */
     public function create(array $stored, int $index = 0): ?BlockInterface
     {
-        $type = \is_string($stored['type'] ?? null) ? BlockType::tryFrom($stored['type']) : null;
-        if (null === $type) {
-            $this->logger->warning('Content block {index} skipped: unknown type "{type}".', ['index' => $index, 'type' => $stored['type'] ?? null]);
+        try {
+            return $this->createOrFail($stored);
+        } catch (InvalidBlockException $exception) {
+            $this->logger->warning('Content block {index} skipped: {message}', ['index' => $index, 'message' => $exception->getMessage()]);
 
             return null;
+        }
+    }
+
+    /**
+     * @param array{type?: mixed, data?: mixed} $stored
+     *
+     * @throws InvalidBlockException when the type is unknown or the data does not fit its class
+     */
+    public function createOrFail(array $stored): BlockInterface
+    {
+        $type = \is_string($stored['type'] ?? null) ? BlockType::tryFrom($stored['type']) : null;
+        if (null === $type) {
+            throw new InvalidBlockException(null, \sprintf('unknown type "%s"', \is_string($stored['type'] ?? null) ? $stored['type'] : get_debug_type($stored['type'] ?? null)));
         }
 
         try {
             /* @var BlockInterface */
             return $this->serializer->denormalize(\is_array($stored['data'] ?? null) ? $stored['data'] : [], $type->blockClass());
         } catch (ExceptionInterface|\TypeError $exception) {
-            $this->logger->warning('Content block {index} ({type}) skipped: {message}', ['index' => $index, 'type' => $type->value, 'message' => $exception->getMessage()]);
-
-            return null;
+            throw new InvalidBlockException($type, $exception->getMessage(), $exception);
         }
     }
 

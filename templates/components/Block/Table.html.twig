@@ -4,13 +4,13 @@
     <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="{{ data.caption ?: 'Tableau' }}">
         <table>
             <thead>
-                <tr>{% for header in data.headers %}<th scope="col">{{ header }}</th>{% endfor %}</tr>
+                <tr>{% for header in data.headers %}<th scope="col"{{ edit_field(placed, 'headers.' ~ loop.index0) }}>{{ header }}</th>{% endfor %}</tr>
             </thead>
             <tbody>
-                {% for row in data.rows %}
+                {% for row in data.rows %}{% set rowIndex = loop.index0 %}
                     <tr>
                         {% for cell in row %}
-                            {% if loop.first %}<th scope="row">{{ cell }}</th>{% else %}<td>{{ cell }}</td>{% endif %}
+                            {% if loop.first %}<th scope="row"{{ edit_field(placed, 'rows.' ~ rowIndex ~ '.' ~ loop.index0) }}>{{ cell }}</th>{% else %}<td{{ edit_field(placed, 'rows.' ~ rowIndex ~ '.' ~ loop.index0) }}>{{ cell }}</td>{% endif %}
                         {% endfor %}
                     </tr>
                 {% endfor %}

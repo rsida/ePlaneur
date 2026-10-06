@@ -8,7 +8,9 @@ namespace App\Content\Block;
 final readonly class CaptionedImage
 {
     public function __construct(
+        #[Field('Image', widget: 'media', accept: 'image')]
         public int $mediaId,
+        #[Field('Légende')]
         public ?string $caption = null,
     ) {
     }

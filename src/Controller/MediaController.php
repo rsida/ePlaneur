@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Media;
+use App\Media\ImageVariants;
 use App\Media\MediaStorage;
 use App\Security\Visibility;
 use App\Security\Voter\ContentVoter;
@@ -27,13 +28,7 @@ final class MediaController extends AbstractController
     #[Route('/media/{id<\d+>}/{name}', name: 'app_media', methods: ['GET'])]
     public function show(#[MapEntity(id: 'id')] Media $media, Request $request, MediaStorage $storage): BinaryFileResponse
     {
-        // Public files skip the security check: reading the user would start the session and make
-        // the response uncacheable
-        $public = Visibility::Public === $media->getVisibility();
-        if (!$public) {
-            $this->denyAccessUnlessGranted(ContentVoter::VIEW, $media);
-        }
-
+        $public = $this->checkAccess($media);
         $path = $storage->pathOf($media);
         if (!is_file($path)) {
             throw $this->createNotFoundException('Fichier introuvable.');
@@ -41,7 +36,6 @@ final class MediaController extends AbstractController
 
         $response = new BinaryFileResponse($path);
         $response->headers->set('Content-Type', $media->getMimeType());
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
 
         $inline = !$request->query->has('download') && \in_array($media->getMimeType(), self::INLINE_TYPES, true);
         $response->setContentDisposition(
@@ -50,6 +44,53 @@ final class MediaController extends AbstractController
             preg_replace('/[^\x20-\x7e]/', '_', $media->getOriginalName()) ?? 'file',
         );
 
+        return $this->cache($response, $public);
+    }
+
+    /**
+     * Resized version of a picture (ImageVariants): same access rules as the original file. Pictures
+     * that are not resized (SVG, GIF) are served as uploaded.
+     */
+    #[Route('/media/{id<\d+>}/{filter<thumb|card|content|wide>}/{name}', name: 'app_media_variant', methods: ['GET'])]
+    public function variant(#[MapEntity(id: 'id')] Media $media, string $filter, Request $request, MediaStorage $storage, ImageVariants $variants): BinaryFileResponse
+    {
+        if (!$media->isImage()) {
+            throw $this->createNotFoundException('Pas une image.');
+        }
+        if (!$variants->supports($media)) {
+            return $this->show($media, $request, $storage);
+        }
+
+        $public = $this->checkAccess($media);
+        if (!is_file($storage->pathOf($media))) {
+            throw $this->createNotFoundException('Fichier introuvable.');
+        }
+
+        $response = new BinaryFileResponse($variants->path($media, $filter));
+        $response->headers->set('Content-Type', 'image/'.ImageVariants::EXTENSION);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, 'image.'.ImageVariants::EXTENSION);
+
+        return $this->cache($response, $public);
+    }
+
+    /**
+     * @return bool whether the file is public
+     */
+    private function checkAccess(Media $media): bool
+    {
+        // Public files skip the security check: reading the user would start the session and make
+        // the response uncacheable
+        $public = Visibility::Public === $media->getVisibility();
+        if (!$public) {
+            $this->denyAccessUnlessGranted(ContentVoter::VIEW, $media);
+        }
+
+        return $public;
+    }
+
+    private function cache(BinaryFileResponse $response, bool $public): BinaryFileResponse
+    {
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
         if ($public) {
             // A file never changes behind its id: browsers and proxies may keep it
             $response->setPublic();

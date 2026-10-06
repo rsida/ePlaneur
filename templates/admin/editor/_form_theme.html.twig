@@ -1,0 +1,23 @@
+{# Form widgets of the block editor, on top of EasyAdmin's form theme. #}
+
+{# MediaPickerType: hidden id, preview and buttons opening the media window (block-editor#pickFormMedia) #}
+{% block media_picker_row %}
+    <div class="form-group ep-media-field" data-ep-media-picker data-accept="{{ accept }}">
+        {{ form_label(form) }}
+        {{ form_widget(form) }}
+        <div class="ep-media-field__preview" data-ep-media-preview>
+            {% if media %}
+                {% if media.image %}<img class="ep-media-field__image" src="{{ image_url(media, 'card') }}" alt="">{% endif %}
+                <span class="ep-media-field__name">{{ media.originalName }}</span>
+            {% else %}
+                <span class="ep-media-field__name">Aucun média</span>
+            {% endif %}
+        </div>
+        <div class="ep-media-field__actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="block-editor#pickFormMedia">{{ media ? 'Changer' : 'Choisir' }}…</button>
+            <button type="button" class="btn btn-link btn-sm text-danger" data-action="block-editor#clearFormMedia"{% if not media %} hidden{% endif %}>Retirer</button>
+        </div>
+        {{ form_errors(form) }}
+        {{ form_help(form) }}
+    </div>
+{% endblock %}

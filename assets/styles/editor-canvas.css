@@ -1,0 +1,414 @@
+/*
+ * Editor canvas (iframe of the back-office block editor, templates/admin/editor/_canvas_layout.html.twig).
+ * The content keeps the site styles (app.css, loaded by the app entry point); this file adds the
+ * editing layer of the Figma "Article · …" frames: zones, block outlines, placeholders, toolbar,
+ * block menu and drop line. Colors and sizes come from tokens.css.
+ */
+
+.ep-canvas {
+    padding-bottom: var(--space-10);
+    background: var(--palette-cream);
+}
+
+.ep-canvas [data-ep-slot='header'] {
+    padding-top: var(--space-6);
+}
+
+/* The sidebar scrolls with the canvas: there is no site header here */
+.ep-canvas .p-article__sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+}
+
+/* ---------- Zones: blocks keep the spacing of their column ---------- */
+.ep-zone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-gap);
+    min-width: 0;
+}
+
+.p-article__sidebar .ep-zone {
+    gap: var(--space-7);
+}
+
+.ep-zone::before {
+    content: attr(data-ep-zone-label);
+    color: var(--palette-slate);
+    font-family: var(--font-body);
+    font-size: var(--text-micro);
+    line-height: 1;
+}
+
+.ep-zone > .ep-block:has(> .c-block-section):not(:first-of-type) {
+    margin-top: calc(var(--section-gap) - var(--block-gap));
+}
+
+.p-page__layout > .p-page__body > .ep-zone {
+    max-width: none;
+}
+
+.p-page__layout > .p-page__body > .ep-zone > .ep-block:not(:has(> .c-documents, > .c-page-cards)) {
+    max-width: var(--article-column);
+}
+
+.ep-zone--wide {
+    margin-top: var(--space-9);
+}
+
+.ep-zone--wide::before {
+    padding-inline: var(--gutter);
+}
+
+/* ---------- Blocks ---------- */
+.ep-block {
+    position: relative;
+    border-radius: var(--radius-sm);
+    outline: 1px dashed transparent;
+    outline-offset: 6px;
+    transition: outline-color 0.1s;
+}
+
+.ep-block:hover {
+    outline-color: var(--palette-mist);
+}
+
+.ep-block.is-selected {
+    outline: 2px solid var(--color-primary);
+}
+
+.ep-block a,
+.ep-block summary,
+.ep-block button {
+    cursor: text;
+}
+
+[contenteditable]:focus {
+    outline: none;
+}
+
+[contenteditable].is-empty::before {
+    content: attr(data-placeholder);
+    color: var(--palette-slate);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.ep-block__empty {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-6);
+    border: 1px dashed var(--palette-mist);
+    border-radius: var(--radius-sm);
+    background: var(--palette-white);
+    color: var(--palette-slate);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+}
+
+.ep-block__empty svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.ep-block__empty strong {
+    color: var(--palette-ink);
+}
+
+.ep-block__empty--media {
+    flex-direction: column;
+    justify-content: center;
+    min-height: 15rem;
+    text-align: center;
+}
+
+.ep-block__empty--media > svg {
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-primary);
+}
+
+.ep-block__empty-note {
+    font-size: var(--text-xs);
+}
+
+.ep-canvas-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--palette-mist);
+    border-radius: var(--radius-sm);
+    background: var(--palette-white);
+    color: var(--palette-ink);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+}
+
+.ep-canvas-button--primary {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.ep-canvas-button svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.ep-canvas-invalid {
+    margin: 0;
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+}
+
+/* Dashed "+" at the end of each zone */
+.ep-appender {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: 2.75rem;
+    border: 1px dashed var(--palette-mist);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-primary);
+    font-size: var(--text-title-xs);
+    cursor: pointer;
+}
+
+.ep-appender:hover,
+.ep-appender:focus-visible {
+    border-color: var(--color-primary);
+    background: var(--palette-white);
+}
+
+.ep-zone--wide > .ep-appender {
+    width: calc(100% - 2 * var(--gutter));
+    margin-inline: auto;
+}
+
+/* ---------- Block toolbar ---------- */
+.ep-toolbar {
+    position: absolute;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: var(--space-1);
+    border: 1px solid var(--palette-line);
+    border-radius: var(--radius-sm);
+    background: var(--palette-white);
+    box-shadow: var(--shadow-raised);
+    color: var(--palette-ink);
+    font-family: var(--font-body);
+}
+
+.ep-toolbar[hidden] {
+    display: none;
+}
+
+.ep-toolbar__button,
+.ep-toolbar__type {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+}
+
+.ep-toolbar__button:hover,
+.ep-toolbar__button:focus-visible,
+.ep-toolbar__button[aria-expanded='true'] {
+    background: var(--palette-sky-soft);
+}
+
+.ep-toolbar__button[hidden] {
+    display: none;
+}
+
+.ep-toolbar__grip {
+    cursor: grab;
+}
+
+.ep-toolbar svg {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+.ep-toolbar__separator {
+    width: 1px;
+    height: 1.25rem;
+    margin-inline: var(--space-1);
+    background: var(--palette-line);
+}
+
+.ep-toolbar__menu {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    display: grid;
+    min-width: 12rem;
+    padding: var(--space-1);
+    border: 1px solid var(--palette-line);
+    border-radius: var(--radius-sm);
+    background: var(--palette-white);
+    box-shadow: var(--shadow-raised);
+}
+
+.ep-toolbar__menu[hidden] {
+    display: none;
+}
+
+.ep-toolbar__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
+}
+
+.ep-toolbar__item:hover,
+.ep-toolbar__item:focus-visible {
+    background: var(--palette-sky-soft);
+}
+
+.ep-toolbar__item--danger {
+    color: var(--color-danger);
+}
+
+/* ---------- Block menu ("/" command, insert before / after) ---------- */
+.ep-menu {
+    position: absolute;
+    z-index: 60;
+    width: min(28rem, calc(100vw - 2rem));
+    padding: var(--space-1);
+    border: 1px solid var(--palette-line);
+    border-radius: var(--radius-sm);
+    background: var(--palette-white);
+    box-shadow: var(--shadow-raised);
+    color: var(--palette-ink);
+    font-family: var(--font-body);
+}
+
+.ep-menu__search {
+    width: 100%;
+    margin-bottom: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--palette-line);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: var(--text-sm);
+}
+
+.ep-menu__list {
+    max-height: 18rem;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.ep-menu__item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.ep-menu__item[aria-selected='true'] {
+    background: var(--palette-sky-soft);
+    color: var(--color-primary);
+}
+
+.ep-menu__item svg {
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 2px;
+}
+
+.ep-menu__item svg:last-child:not(:first-child) {
+    margin-left: auto;
+}
+
+.ep-menu__text {
+    display: grid;
+    gap: 2px;
+    font-size: var(--text-sm);
+}
+
+.ep-menu__text span {
+    color: var(--palette-slate);
+    font-size: var(--text-xs);
+}
+
+.ep-menu__empty {
+    padding: var(--space-3);
+    color: var(--palette-slate);
+    font-size: var(--text-sm);
+}
+
+.ep-menu__hint {
+    margin: 0;
+    padding: var(--space-2) var(--space-3) var(--space-1);
+    color: var(--palette-slate);
+    font-size: var(--text-micro);
+}
+
+/* ---------- Drop line while dragging ---------- */
+.ep-dropline {
+    position: absolute;
+    z-index: 55;
+    height: 2px;
+    background: var(--color-primary);
+    pointer-events: none;
+}
+
+.ep-dropline[hidden] {
+    display: none;
+}
+
+.ep-dropline::before {
+    position: absolute;
+    top: -3px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    content: '';
+}
+
+.ep-dropline span {
+    position: absolute;
+    bottom: var(--space-1);
+    left: 0;
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    font-size: var(--text-micro);
+    white-space: nowrap;
+}
+
+/* Symfony web debug toolbar (dev only): it would cover the content of the canvas */
+.ep-canvas .sf-toolbar {
+    display: none !important;
+}

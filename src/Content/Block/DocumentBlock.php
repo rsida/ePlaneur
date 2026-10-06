@@ -10,7 +10,9 @@ namespace App\Content\Block;
 final readonly class DocumentBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Document', widget: 'document')]
         public int $documentId,
+        #[Field('Texte du lien')]
         public ?string $linkLabel = null,
     ) {
     }

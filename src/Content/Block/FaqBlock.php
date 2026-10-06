@@ -11,8 +11,11 @@ final readonly class FaqBlock implements BlockInterface
      * @param list<FaqItem> $items
      */
     public function __construct(
+        #[Field('Questions', widget: 'items', item: FaqItem::class)]
         public array $items,
+        #[Field('Titre')]
         public ?string $title = null,
+        #[Field('Ouvrir la première question')]
         public bool $openFirst = true,
     ) {
     }

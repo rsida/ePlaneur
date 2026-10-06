@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+{#
+    Document of the editor canvas (iframe): the site styles and behaviours (app entry point), the
+    canvas styles (styles/editor-canvas.css) and empty slots and zones that the editor fills
+    (assets/editor/). Links do not navigate here.
+#}
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Canevas de l’éditeur</title>
+        {{ include('_fonts.html.twig') }}
+        {{ importmap('app') }}
+        <link rel="stylesheet" href="{{ asset('styles/editor-canvas.css') }}">
+    </head>
+    <body class="ep-canvas">
+        <main id="main">
+            {% block canvas %}{% endblock %}
+        </main>
+
+        {# Icons the canvas tools need (block types, toolbar), cloned by the editor #}
+        <template id="ep-icons">
+            {% for name in ['grip-vertical', 'arrow-up', 'arrow-down', 'bold', 'italic', 'link', 'list', 'ellipsis', 'copy', 'between-horizontal-start', 'between-horizontal-end', 'trash-2', 'plus', 'corner-down-left', 'search', 'images', 'upload'] %}
+                <span data-icon="{{ name }}">{{ ux_icon('admin:' ~ name) }}</span>
+            {% endfor %}
+            {% for type in block_types() %}
+                <span data-icon="{{ type.icon }}">{{ ux_icon('admin:' ~ type.icon) }}</span>
+            {% endfor %}
+        </template>
+    </body>
+</html>

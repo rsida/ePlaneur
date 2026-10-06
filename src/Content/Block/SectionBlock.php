@@ -11,9 +11,13 @@ namespace App\Content\Block;
 final readonly class SectionBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Titre', inline: true)]
         public string $title,
+        #[Field('Surtitre', help: 'Après le numéro : « 01 / Premières ailes ».')]
         public ?string $eyebrow = null,
+        #[Field('Introduction', widget: 'textarea')]
         public ?string $intro = null,
+        #[Field('Titre dans le sommaire', help: 'Plus court que le titre ; vide = le titre.')]
         public ?string $navTitle = null,
     ) {
     }

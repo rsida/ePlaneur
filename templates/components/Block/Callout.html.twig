@@ -6,7 +6,7 @@
 <aside class="c-admonition c-admonition--{{ variant }}{{ data.showIcon ? '' : ' c-admonition--plain' }}"{% if variant == 'warning' %} role="note"{% endif %}>
     {% if data.showIcon %}<twig:ux:icon name="{{ icons[variant] }}" class="c-admonition__icon" />{% endif %}
     <div class="c-admonition__content">
-        <p class="c-admonition__title">{{ data.title }}</p>
-        <div class="c-rich-text c-rich-text--sm">{{ data.html|sanitize_html('app.rich_text') }}</div>
+        <p class="c-admonition__title"{{ edit_field(placed, 'title') }}>{{ data.title }}</p>
+        <div class="c-rich-text c-rich-text--sm"{{ edit_field(placed, 'html', 'rich') }}>{{ data.html|sanitize_html('app.rich_text') }}</div>
     </div>
 </aside>

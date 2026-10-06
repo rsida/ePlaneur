@@ -1,7 +1,8 @@
 # Content: posts, pages, menus, documents, blocks and media
 
 How news posts, institutional pages, navigation menus and official documents are stored and
-rendered, and how to add a new kind of block. The visual references are the Figma frame "Premier
+rendered, and how to add a new kind of block. Posts and pages are written in the back-office block
+editor (see [admin](admin.md#block-editor)). The visual references are the Figma frame "Premier
 vol · Article desktop" (node 29-4356), reproduced by the demo post at `/actualites/votre-premier-vol`,
 and the step 2b frames (nodes 33-17798 to 33-20172: header and mega-menu, mobile menu, "Le Club"
 section, "Statuts", "Autres documents", "Contenu réservé"), reproduced by the fixtures under
@@ -60,7 +61,7 @@ only visible to users holding `POST_EDIT` (preview banner). `Post` and `Media` i
 
 Each zone is a JSON list of `{"type": "...", "data": {...}}`. `BlockFactory` converts it to block
 objects (`App\Content\Block\*`, immutable) with the Symfony serializer, and back
-(`serializeAll()`, used by the fixtures and the future editor). A block whose type is unknown or
+(`serializeAll()`, used by the fixtures and the back-office editor). A block whose type is unknown or
 whose data no longer fits its class is **skipped and logged**: one broken block never breaks a page.
 
 `PostPresenter` prepares the page: numbers the `section` and `takeaways` blocks (table of contents
@@ -104,13 +105,22 @@ printed through the `app.rich_text` sanitizer (`config/packages/html_sanitizer.y
 ## Adding a block type
 
 1. Create the block class in `src/Content/Block/` (`final readonly`, implements `BlockInterface`,
-   constructor properties = stored data; nested lists typed with `@param list<Item>`).
-2. Add a case to `BlockType` (value = stored type, never renamed afterwards) with its class and label.
+   constructor properties = stored data; nested lists typed with `@param list<Item>`). Give every
+   constructor parameter a `#[Field('Libellé', widget: ...)]` attribute: the back-office editor
+   builds its settings panel from them (widgets and options are listed in `Field`; lists of objects
+   use `widget: 'items', item: Item::class`, and the item class needs `#[Field]` too).
+2. Add a case to `BlockType` (value = stored type, never renamed afterwards) with its class, label,
+   library group, icon (`assets/icons/admin/`) and one-line description.
 3. Create its component `templates/components/Block/<Name>.html.twig` (`{% props placed %}`,
    `{% set data = placed.block %}`; do not name the variable `block`, Twig reserves it inside
-   components) and its styles in `assets/styles/components/content.css`.
+   components) and its styles in `assets/styles/components/content.css`. Mark the elements whose
+   text can be edited in place: `<h3{{ edit_field(placed, 'title') }}>`,
+   `<div{{ edit_field(placed, 'html', 'rich') }}>`, `'items.' ~ loop.index0` inside loops; it prints
+   nothing on the site. A field marked `inline: true` in `#[Field]` is only edited in place, so its
+   element must always be rendered.
 4. Add a sample to the `/_toolkit` style guide (`ToolkitController::sampleBlocks()`).
-5. `BlockFactoryTest::testEveryBlockTypeHasAComponent` fails until the component exists.
+5. `BlockFactoryTest::testEveryBlockTypeHasAComponent` fails until the component exists;
+   `BlockSchemaTest` fails until every parameter has its `#[Field]` and a new block can be read.
 
 ## Media
 
@@ -121,11 +131,34 @@ tests) under a random name, reads image dimensions and PDF page counts. `MediaCo
 - restricted media: `CONTENT_VIEW` check, `no-store`;
 - only images and PDF are displayed inline; any other type is downloaded.
 
-Twig helpers: `media(id)`, `media_url(media, download = false)`, `|file_size` ("248 Ko"),
-`reading_minutes(post)`, `document(id)`, `documents(categoryId)` (documents the reader may see).
+Twig helpers: `media(id)`, `media_url(media, download = false)`, `image_url(media, filter)`,
+`|file_size` ("248 Ko"), `reading_minutes(post)`, `document(id)`, `documents(categoryId)` (documents
+the reader may see).
+
+### Resized pictures
+
+Pictures are displayed through resized WebP versions, made with the LiipImagine filter sets of
+`config/packages/liip_imagine.yaml` (GD driver), never upscaled:
+
+| Filter | Size | Used by |
+|---|---|---|
+| `thumb` | 400 × 400, cropped | Carousel thumbnails, avatars, back-office thumbnails |
+| `card` | 960 px max | Post cards, images side by side, media window |
+| `content` | 1640 × 2400 max (reading column twice) | Image block, video poster |
+| `wide` | 2400 × 1600 max | Article cover, carousel slides |
+
+`image_url(media, 'content')` gives `/media/{id}/content/{name}.webp`. `ImageVariants` makes a version
+the first time it is asked for and keeps it under `var/uploads/cache/<filter>/`; `MediaController`
+serves it with the same access rules and cache headers as the original file (the bundle's own
+resolve route and public cache are not used, so restricted pictures stay restricted). SVG and GIF
+pictures are served as uploaded. Deleting a media deletes its versions. Original files stay
+untouched: `media_url()` still gives them (downloads, PDF).
+
+To change a size, edit the filter set and empty `var/uploads/cache/<filter>/`: versions are made
+again on demand.
 
 In production `var/uploads` is the Docker volume `uploads`: back it up with the database (see
-[production](production.md)).
+[production](production.md)); `var/uploads/cache/` can be left out, it is rebuilt on demand.
 
 ## Permissions
 
@@ -143,4 +176,4 @@ In production `var/uploads` is the Docker volume `uploads`: back it up with the 
 
 The "Comité" group gets all of them except `POST_DELETE` and `MENU_MANAGE` by default (migrations
 `Version20261004143458` and `Version20261004155717`). The back-office screens using them are
-described in [admin](admin.md); posts and pages get theirs in roadmap step 3b.
+described in [admin](admin.md).

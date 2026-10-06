@@ -15,6 +15,9 @@ yet validated step by step by the project owner.
 | Step 2a: posts and content blocks | [content.md](content.md): `Post`, `Category`, `Media`, 22 block types, article page `/actualites/{slug}`, demo article in fixtures |
 | Step 2b: pages, menus, documents | [content.md](content.md#pages-menus-and-restricted-content): page tree, menus filtered by rights (mega-menu, mobile full-screen menu), official documents (list and cards), "Contenu réservé" page, layouts from the Figma mock-up |
 | Step 3a: back-office reference screens | [admin.md](admin.md): EasyAdmin at `/admin`, accounts, groups and permissions, categories, media library (upload), official documents, menus |
+| Step 3b-1: block editor | [admin.md](admin.md#block-editor): post list, page tree, WordPress-like editor (canvas with the site styles, library with drag and drop, "/" command, toolbar, settings panel, undo, publication, preview) |
+| Step 3b-2: media window | [admin.md](admin.md#block-editor): "Choisir un média" window (library with search and type filter, alt text and credit, upload) for block media and post covers |
+| Step 3b-3: resized pictures, tablets | [content.md](content.md#resized-pictures): WebP versions made with LiipImagine and served with access control; editor panels as overlays on tablets |
 
 ## Next: content and editorial back-office (replaces the WordPress blog and pages)
 
@@ -26,7 +29,10 @@ Do the steps in this order: each one depends on the previous ones.
 | 2a | Posts and content blocks | `Post`, `Category`, `Media` (uploads served with access control); article body = ordered list of typed blocks (JSON) covering every block of the Figma article (node 29-4356): text, heading, callout, image, image pair, carousel, video, quote, list, steps, tabs, checklist, table, PDF reader, downloads, notes, glossary, FAQ, links, sidebar resource, takeaways; article page (`/actualites/{slug}`) with table of contents, reading progress, sharing, author, related posts; demo article in fixtures; post permissions | Done (2026-10-04), see [content.md](content.md) |
 | 2b | Pages, menus, documents | `Page` (tree giving URLs and breadcrumbs), `MenuItem` (separate tree: links to a page, an internal path or an external URL, filtered with `CONTENT_VIEW`), `Document` + `DocumentCategory` (official texts with version and date); each implements `RestrictedContentInterface`; "Contenu réservé" page for pages and posts; matching permissions (`PAGE_MANAGE`, `MENU_MANAGE`, `DOCUMENT_MANAGE`). Layouts from the Figma frames generated with the prompt in [figma-prompts.md](figma-prompts.md) | Done (2026-10-04), see [content.md](content.md#pages-menus-and-restricted-content) |
 | 3a | Back-office: reference screens | EasyAdmin 5 at `/admin` (`ADMIN_ACCESS`), one screen per permission: accounts (membership validation by group), groups and their permissions, post categories, media library with multi-file upload, official documents and their categories, menus | Done (2026-10-05), see [admin.md](admin.md) |
-| 3b | Back-office: posts and pages | Post and page screens with a **visual block editor** (WordPress-like: blocks rendered with the site styles, text edited in place, a settings panel per block, add / move / delete blocks), publication and preview, media picker, resized images | To do |
+| 3b | Back-office: posts and pages | Post and page screens with a **visual block editor** (WordPress-like: blocks rendered with the site styles, text edited in place, a settings panel per block, add / move / delete blocks), publication and preview, media picker, resized images. Mock-up: Figma "Admin" page, frames `71:3` to `71:2740` | Done (2026-10-06), split below |
+| 3b-1 | Editor core | Post list (state badges) and page tree; editor page: canvas in an iframe with the site styles, block library (drag and drop, search), "/" command, toolbar (move, duplicate, insert, delete, bold / italic / link / list), settings panel generated from the block classes, structure tab, undo, save, publish or schedule, preview | Done (2026-10-05), see [admin](admin.md#block-editor) |
+| 3b-2 | Media picker | Media window (search, type filter, upload, alt text and credit) for covers and image, carousel, PDF, downloads, video poster blocks | Done (2026-10-06), see [admin](admin.md#block-editor) |
+| 3b-3 | Images and finish | Resized images (LiipImagineBundle), tablet layout (panels as overlays), dark mode check | Done (2026-10-06), see [content](content.md#resized-pictures) and [admin](admin.md#block-editor) |
 | 4 | Public front | News list (replaces the `/actualites` redirect), post page, filter by category and date; the home page "Ça bouge au club" section reads featured posts instead of placeholders; pages rendered from the tree with the menu | To do |
 | 5 | WordPress migration | `app:import-wordpress` command reading posts, pages and media through the WordPress REST API (79 pages, 34 posts, about 20 of them restricted committee minutes); 301 redirects from the old URLs | To do |
 
@@ -46,18 +52,20 @@ existing content.
 | 2026-10-04 | Restricted pages and posts show a "Contenu réservé" page (login/register for visitors, required group for logged-in users) instead of redirecting |
 | 2026-10-04 | Links and cards to reserved pages stay visible with an access tag (Figma mock-up); a link hidden by its own visibility disappears |
 | 2026-10-05 | Back-office with EasyAdmin 5; step 3 split into 3a (reference screens) and 3b (posts and pages); posts and pages get a visual, WordPress-like block editor rather than plain forms |
+| 2026-10-05 | Block editor (3b): WordPress-like, built with Stimulus controllers over the existing `Block:*` Twig components (the canvas shows blocks as the site renders them, no second renderer in JS); blocks are added by drag and drop from a block list or with a "/" command and search; text edited in place, other settings in a side panel; mock-up generated in Figma first |
+| 2026-10-05 | Resized images with LiipImagineBundle (step 3b) |
+| 2026-10-06 | LiipImagine is only the filter engine: resized WebP versions are stored under `var/uploads/cache/` and served by `MediaController` with the access rules of the original, so restricted pictures stay restricted (the bundle's public cache would bypass them); GD added to the `php` image |
 | 2026-10-04 | Comments and "was this article useful?" feedback come later (moderation rules to define); step 2 split into 2a (posts, blocks) and 2b (pages, menus, documents) |
 
 ## Open questions
 
-- Visual block editor (3b): build it on a library (Editor.js, Tiptap...) or as Stimulus controllers
-  over the existing `Block:*` components; to decide at the start of 3b.
 - Member validation: the committee adds the "Membre" group by hand after the Yapla payment; a yearly
   expiry of membership is not modelled yet.
 - Article comments and feedback: who can comment, moderation, notifications (after step 4); their
   visual components already exist (`Content:Comment`, `Content:Feedback`).
-- Image sizes: pictures are served as uploaded (the media library accepts uploads since 3a);
-  generate resized versions (LiipImagine or similar) with the post editor (step 3b).
+- Editor canvas width: next to both panels the canvas is narrower than the site's desktop
+  breakpoint (64em), so posts show their mobile layout (table of contents above the text); folding
+  the panels shows the desktop layout. A desktop-width canvas scaled down is possible if needed.
 - PDF block: the browser viewer is used (hidden on mobile, where the open/download links remain); the
   mock-up's page and zoom tools would need PDF.js.
 - Title line breaks: the mock-up breaks the article title after "VOTRE PREMIER VOL."; titles wrap

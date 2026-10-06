@@ -11,7 +11,9 @@ final readonly class DownloadsBlock implements BlockInterface
      * @param list<DownloadItem> $files
      */
     public function __construct(
+        #[Field('Fichiers', widget: 'items', item: DownloadItem::class)]
         public array $files,
+        #[Field('Note')]
         public ?string $note = null,
     ) {
     }

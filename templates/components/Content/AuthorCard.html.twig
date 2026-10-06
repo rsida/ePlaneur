@@ -2,7 +2,7 @@
 {% props author %}
 <section {{ attributes.defaults({class: 'c-author-card'}) }} aria-label="À propos de l’auteur">
     {% if author.avatar %}
-        <img class="c-avatar c-avatar--lg" src="{{ media_url(author.avatar) }}" alt="" width="84" height="84" loading="lazy">
+        <img class="c-avatar c-avatar--lg" src="{{ image_url(author.avatar, 'thumb') }}" alt="" width="84" height="84" loading="lazy">
     {% else %}
         <span class="c-avatar c-avatar--lg" aria-hidden="true">{{ author.initials }}</span>
     {% endif %}

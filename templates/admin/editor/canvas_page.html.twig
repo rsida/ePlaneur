@@ -1,0 +1,37 @@
+{% extends 'admin/editor/_canvas_layout.html.twig' %}
+
+{#
+    Page layout of templates/page/show.html.twig, with the editor slots and block zones: a section
+    (root page) spreads its blocks over the full width; a sub-page has the pages of its section and
+    the sidebar zone on the left.
+#}
+{% block canvas %}
+    <article class="p-page">
+        <div data-ep-slot="header"></div>
+
+        {% if parent is null %}
+            <div class="l-container p-page__body p-page__body--wide">
+                <div class="ep-zone" data-ep-zone="body" data-ep-zone-label="{{ zones.body }}"></div>
+                <div class="ep-zone" data-ep-zone="aside" data-ep-zone-label="{{ zones.aside }}"></div>
+            </div>
+        {% else %}
+            <div class="l-container p-page__layout">
+                <aside class="p-page__sidebar">
+                    <nav class="c-subnav" aria-label="Pages de la rubrique {{ parent.title }}">
+                        <p class="c-subnav__title">{{ parent.title }}</p>
+                        <ul class="c-subnav__list" role="list">
+                            {% for sibling in siblings %}
+                                <li><a class="c-subnav__link" href="#"{% if sibling == page %} aria-current="page"{% endif %}>{{ sibling.title }}</a></li>
+                            {% endfor %}
+                            {% if page is null %}<li><a class="c-subnav__link" href="#" aria-current="page">Nouvelle page</a></li>{% endif %}
+                        </ul>
+                    </nav>
+                    <div class="ep-zone" data-ep-zone="aside" data-ep-zone-label="{{ zones.aside }}"></div>
+                </aside>
+                <div class="p-article__body p-page__body">
+                    <div class="ep-zone" data-ep-zone="body" data-ep-zone-label="{{ zones.body }}"></div>
+                </div>
+            </div>
+        {% endif %}
+    </article>
+{% endblock %}

@@ -11,7 +11,9 @@ final readonly class GlossaryBlock implements BlockInterface
      * @param list<Fact> $entries label = term, text = definition
      */
     public function __construct(
+        #[Field('Termes', widget: 'items', item: Fact::class)]
         public array $entries,
+        #[Field('Titre')]
         public ?string $title = null,
     ) {
     }

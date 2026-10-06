@@ -11,8 +11,11 @@ final readonly class NotesBlock implements BlockInterface
      * @param list<Fact> $rows
      */
     public function __construct(
+        #[Field('Titre')]
         public string $title,
+        #[Field('Lignes', widget: 'items', item: Fact::class)]
         public array $rows,
+        #[Field('Note')]
         public ?string $note = null,
     ) {
     }

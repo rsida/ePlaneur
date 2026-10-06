@@ -10,8 +10,11 @@ namespace App\Content\Block;
 final readonly class ExcerptBlock implements BlockInterface
 {
     public function __construct(
+        #[Field('Titre', inline: true)]
         public string $title,
+        #[Field('Extrait', widget: 'textarea', inline: true)]
         public string $text,
+        #[Field('Référence')]
         public ?string $reference = null,
     ) {
     }

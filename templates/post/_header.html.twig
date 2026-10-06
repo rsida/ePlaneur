@@ -1,0 +1,68 @@
+{#
+    Article header and cover, shared by the article page and the back-office canvas. In the canvas
+    (`editing`), kicker, title and lead are always shown and editable in place.
+    Variables: post, readingMinutes, editing (default false).
+#}
+{% set editing = editing ?? false %}
+<header class="l-container p-article__header">
+    <twig:Ui:Breadcrumb :items="[
+        {label: 'Accueil', href: path('app_home')},
+        {label: 'Actualités', href: path('app_home') ~ '#actualites'},
+        {label: post.title},
+    ]" />
+
+    <div class="p-article__intro">
+        <div class="p-article__promise">
+            {% if post.kicker or post.badge or editing %}
+                <p class="p-article__kicker">
+                    {% if post.kicker or editing %}<span class="c-eyebrow"{% if editing %} data-ep-meta="kicker"{% endif %}>{{ post.kicker }}</span>{% endif %}
+                    {% if post.badge %}<span class="c-level-badge">{{ post.badge }}</span>{% endif %}
+                </p>
+            {% endif %}
+            <h1 class="p-article__title"{% if editing %} data-ep-meta="title"{% endif %}>{{ post.title }}</h1>
+            <p class="p-article__lead"{% if editing %} data-ep-meta="excerpt"{% endif %}>{{ post.excerpt }}</p>
+        </div>
+        {% if post.highlight %}
+            <div class="p-article__highlight">
+                <p class="p-article__highlight-text">{{ post.highlight|nl2br }}</p>
+                {% if post.highlightNote %}<p class="u-note">{{ post.highlightNote|nl2br }}</p>{% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="p-article__meta">
+        {% if post.author %}
+            <div class="p-article__author">
+                {% if post.author.avatar %}
+                    <img class="c-avatar" src="{{ image_url(post.author.avatar, 'thumb') }}" alt="" width="48" height="48">
+                {% else %}
+                    <span class="c-avatar" aria-hidden="true">{{ post.author.initials }}</span>
+                {% endif %}
+                <p>
+                    <strong>{{ post.author.displayName }}</strong>
+                    {% if post.author.jobTitle %}<span class="u-note">{{ post.author.jobTitle }}</span>{% endif %}
+                </p>
+            </div>
+        {% endif %}
+        <p class="p-article__dates">
+            {% if post.publishedAt %}<span>Publié le <time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|format_date('long', locale: 'fr') }}</time></span>{% endif %}
+            {% if post.wasUpdatedAfterPublication %}<strong>Mis à jour le <time datetime="{{ post.updatedAt|date('c') }}">{{ post.updatedAt|format_date('long', locale: 'fr') }}</time></strong>{% endif %}
+        </p>
+        <p class="p-article__reading">
+            <twig:ux:icon name="clock" />{{ readingMinutes }} min de lecture
+        </p>
+        {% if not editing %}<twig:Content:Share :url="url('app_post_show', {slug: post.slug})" :title="post.title" />{% endif %}
+    </div>
+</header>
+
+{% if post.cover %}
+    <figure class="p-article__cover">
+        <img src="{{ image_url(post.cover, 'wide') }}" alt="{{ post.cover.alt }}" width="{{ post.cover.width }}" height="{{ post.cover.height }}" fetchpriority="high">
+        {% if post.coverCaption or post.cover.credit %}
+            <figcaption class="l-container p-article__cover-caption">
+                {% if post.coverCaption %}<span class="p-article__cover-title">{{ post.coverCaption }}</span>{% endif %}
+                {% if post.cover.credit %}<span>{{ post.cover.credit }}</span>{% endif %}
+            </figcaption>
+        {% endif %}
+    </figure>
+{% endif %}

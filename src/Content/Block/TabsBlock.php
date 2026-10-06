@@ -11,6 +11,7 @@ final readonly class TabsBlock implements BlockInterface
      * @param list<Tab> $tabs
      */
     public function __construct(
+        #[Field('Onglets', widget: 'items', item: Tab::class)]
         public array $tabs,
     ) {
     }
