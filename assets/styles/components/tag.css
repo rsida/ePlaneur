@@ -67,3 +67,20 @@ button.c-tag[aria-pressed='false'] {
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }
+
+/* Outlined tag: an unselected filter (news categories) */
+.c-tag--outline {
+    --_bg: var(--color-paper);
+    --_fg: var(--color-primary);
+
+    outline: 1px solid var(--palette-line);
+    outline-offset: -1px;
+}
+
+a.c-tag {
+    text-decoration: none;
+}
+
+a.c-tag--outline:hover {
+    outline-color: var(--color-primary);
+}

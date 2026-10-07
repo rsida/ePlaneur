@@ -14,7 +14,7 @@
             </ul>
         {% endif %}
         {% if data.ctaLabel and data.ctaUrl %}
-            <twig:Ui:Button href="{{ data.ctaUrl }}" variant="accent" size="sm">{{ data.ctaLabel }}</twig:Ui:Button>
+            <twig:Ui:Button href="{{ data.ctaUrl|safe_url }}" variant="accent" size="sm">{{ data.ctaLabel }}</twig:Ui:Button>
         {% endif %}
     </div>
 </section>

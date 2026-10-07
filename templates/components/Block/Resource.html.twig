@@ -4,5 +4,5 @@
     <twig:ux:icon name="file-text" class="c-resource__icon" />
     <p class="c-resource__title"{{ edit_field(placed, 'title') }}>{{ data.title }}</p>
     {% if data.text %}<p class="c-resource__text"{{ edit_field(placed, 'text') }}>{{ data.text }}</p>{% endif %}
-    {% if data.linkLabel and data.linkUrl %}<a class="c-resource__link" href="{{ data.linkUrl }}">{{ data.linkLabel }}</a>{% endif %}
+    {% if data.linkLabel and data.linkUrl %}<a class="c-resource__link" href="{{ data.linkUrl|safe_url }}">{{ data.linkLabel }}</a>{% endif %}
 </aside>

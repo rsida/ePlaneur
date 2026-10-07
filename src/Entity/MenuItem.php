@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Content\LinkUrl;
 use App\Navigation\MenuLocation;
 use App\Repository\MenuItemRepository;
 use App\Security\RestrictedContentInterface;
@@ -47,7 +48,7 @@ class MenuItem implements RestrictedContentInterface
     /** Internal path ("/actualites", "/#vols") or external URL ("https://…"). */
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
-    #[Assert\Regex(pattern: '~^(/|https?://|mailto:)~', message: 'Une adresse commençant par /, http(s):// ou mailto:.')]
+    #[Assert\Regex(pattern: LinkUrl::PATTERN, message: LinkUrl::MESSAGE)]
     private ?string $url = null;
 
     /** Short note under the link ("Document PDF", "Lien externe"); for a section, the drop-down kicker. */

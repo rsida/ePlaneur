@@ -95,6 +95,35 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
         self::assertSelectorTextContains('.ep-editor__errors', 'Bloc 1 (Encadré) : contenu invalide.');
     }
 
+    public function testUnsafeLinksAreRefusedAndRichTextIsCleanedOnSave(): void
+    {
+        $this->client->loginUser($this->userIn($this->entityManager, 'comite@example.org', 'committee'));
+        $post = $this->createPost('liens', null);
+
+        $crawler = $this->client->request('GET', $this->generateEditFormUrl($post->getId()));
+        $form = $crawler->filter('form[name="post_editor"]')->form();
+        $values = $form->getPhpValues();
+        $values['post_editor']['body'] = json_encode([
+            ['type' => 'links', 'data' => ['links' => [['title' => 'Piège', 'url' => 'javascript:alert(1)']]]],
+        ]);
+        $this->client->request('POST', $form->getUri(), $values);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('.ep-editor__errors', 'Bloc 1 (Liens) : adresse de lien refusée « javascript:alert(1) »');
+
+        $values['post_editor']['body'] = json_encode([
+            ['type' => 'text', 'data' => ['html' => '<p>Texte<img src=x onerror="alert(1)"><script>alert(2)</script></p>']],
+            ['type' => 'links', 'data' => ['links' => [['title' => 'Interne', 'url' => '/actualites'], ['title' => 'Club', 'url' => 'https://club.eplaneur.fr']]]],
+        ]);
+        $this->client->request('POST', $form->getUri(), $values);
+
+        self::assertResponseRedirects();
+        $this->entityManager->clear();
+        $body = $this->entityManager->getRepository(Post::class)->find($post->getId())?->getBody() ?? [];
+        self::assertSame('<p>Texte</p>', $body[0]['data']['html'], 'Rich text is stored as it is displayed');
+        self::assertSame('/actualites', $body[1]['data']['links'][0]['url']);
+    }
+
     public function testTheCanvasRendersBlocksWithEditableValues(): void
     {
         $this->client->loginUser($this->userIn($this->entityManager, 'comite@example.org', 'committee'));
@@ -155,14 +184,16 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
         $crawler = $this->client->request('GET', $this->generateEditFormUrl($post->getId()));
         $form = $crawler->filter('form[name="post_editor"]')->form();
         $values = $form->getPhpValues();
-        $values['post_editor']['publishedAt'] = '2026-10-12T20:30';
+        // Always in the future, in summer time (UTC+2)
+        $year = (int) date('Y') + 1;
+        $values['post_editor']['publishedAt'] = $year.'-07-12T20:30';
         $this->client->request('POST', $form->getUri(), $values);
 
         self::assertResponseRedirects();
         $this->client->followRedirect();
-        self::assertSelectorTextContains('body', 'Article programmé : il paraîtra le 12/10/2026 à 20:30.');
+        self::assertSelectorTextContains('body', 'Article programmé : il paraîtra le 12/07/'.$year.' à 20:30.');
         $publishedAt = $this->entityManager->getRepository(Post::class)->find($post->getId())?->getPublishedAt();
-        self::assertSame('2026-10-12 18:30', $publishedAt?->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i'), 'Entered in metropolitan France time');
+        self::assertSame($year.'-07-12 18:30', $publishedAt?->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i'), 'Entered in metropolitan France time');
     }
 
     private function createPost(string $slug, ?\DateTimeImmutable $publishedAt): Post

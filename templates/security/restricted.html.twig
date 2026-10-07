@@ -23,9 +23,9 @@
         {% set highlight = page.highlightSource %}
         {% set back = {label: 'Retour à la rubrique ' ~ (page.lineage|first).title, href: path('app_page_show', {path: (page.lineage|first).path})} %}
     {% else %}
-        {% set crumbs = [{label: 'Accueil', href: path('app_home')}, {label: 'Actualités', href: path('app_home') ~ '#actualites'}, {label: content.title}] %}
+        {% set crumbs = [{label: 'Accueil', href: path('app_home')}, {label: 'Actualités', href: path('app_post_index')}, {label: content.title}] %}
         {% set highlight = null %}
-        {% set back = {label: 'Retour aux actualités', href: path('app_home') ~ '#actualites'} %}
+        {% set back = {label: 'Retour aux actualités', href: path('app_post_index')} %}
     {% endif %}
 
     <article class="p-page">

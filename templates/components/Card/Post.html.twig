@@ -1,18 +1,42 @@
 {#
-    Article card: picture, category, title, excerpt, reading time and link.
-    <twig:Card:Post :post="post" readingMinutes="7" />
+    Article card: picture, category, title, date (`dated`), excerpt, reading time and link.
+    A post the reader may not open shows a lock and its audience instead of its picture and excerpt;
+    the link leads to the "Contenu réservé" page (login for visitors).
+    <twig:Card:Post :post="post" readingMinutes="7" dated />
 #}
-{% props post, readingMinutes = null %}
+{% props post, readingMinutes = null, dated = false %}
 {% set cover = post.cover %}
-<article {{ attributes.defaults({class: 'c-card c-post-card t-paper'}) }}>
-    {% if cover %}<img class="c-post-card__media" src="{{ image_url(cover, 'card') }}" alt="" loading="lazy">{% endif %}
+{% set locked = not is_granted('CONTENT_VIEW', post) %}
+{% set access = access_label(post) %}
+<article {{ attributes.defaults({class: html_classes('c-card c-post-card t-paper', {'c-post-card--locked': locked})}) }}>
+    {% if locked %}
+        <div class="c-post-card__lock">
+            <span class="c-post-card__lock-icon"><twig:ux:icon name="lock-keyhole" /></span>
+            <twig:Ui:Access>{{ access }}</twig:Ui:Access>
+        </div>
+    {% elseif cover %}
+        <img class="c-post-card__media" src="{{ image_url(cover, 'card') }}" alt="" loading="lazy">
+    {% endif %}
     <div class="c-card__body">
         {% if post.category %}<p class="c-eyebrow">{{ post.category.name }}</p>{% endif %}
         <h3 class="c-post-card__title"><a href="{{ path('app_post_show', {slug: post.slug}) }}">{{ post.title }}</a></h3>
-        <p class="c-post-card__excerpt">{{ post.excerpt|u.truncate(120, '…', false) }}</p>
+        {% if dated and post.publishedAt %}
+            <p class="c-post-card__date"><time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|format_date('long', locale: 'fr', timezone: 'Europe/Paris') }}</time></p>
+        {% endif %}
+        {% if locked %}
+            <p class="c-post-card__excerpt">Cet article est réservé{{ access == 'Connectés' ? ' aux membres connectés' : ' : ' ~ access }}.</p>
+        {% else %}
+            <p class="c-post-card__excerpt">{{ post.excerpt|u.truncate(120, '…', false) }}</p>
+            {% if access %}<twig:Ui:Access>{{ access }}</twig:Ui:Access>{% endif %}
+        {% endif %}
         <div class="c-post-card__footer">
-            {% if readingMinutes %}<span class="u-note">{{ readingMinutes }} min de lecture</span>{% endif %}
-            <span class="c-post-card__more" aria-hidden="true">Lire l’article →</span>
+            {% if locked %}
+                <span class="u-note">Lecture réservée</span>
+                <span class="c-post-card__more" aria-hidden="true">{{ app.user ? 'Voir les conditions d’accès' : 'Se connecter pour lire' }} →</span>
+            {% else %}
+                {% if readingMinutes %}<span class="u-note">{{ readingMinutes }} min de lecture</span>{% endif %}
+                <span class="c-post-card__more" aria-hidden="true">Lire l’article →</span>
+            {% endif %}
         </div>
     </div>
 </article>

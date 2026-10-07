@@ -91,6 +91,28 @@
                 <twig:Card:News eyebrow="Rubrique" title="News avec image" text="Carte éditoriale." image="{{ asset('images/home/news-cockpit.jpg') }}" />
                 <twig:Card:News featured poster="2025" posterLabel="Poster" eyebrow="À la une" title="News à la une" text="Variante mise en avant." />
             </div>
+            <twig:Ui:Heading level="3" size="h3">Actualités</twig:Ui:Heading>
+            <div class="u-full">
+                <twig:Card:PostFeatured :post="posts.featured" readingMinutes="4" />
+            </div>
+            <div class="l-rail p-news__rail">
+                <twig:Card:PostFeatured :post="posts.featured" readingMinutes="4" layout="stacked" level="3" />
+                <twig:Card:Post :post="posts.public" readingMinutes="5" dated class="c-card--outlined" />
+                <twig:Card:Post :post="posts.reserved" readingMinutes="3" dated class="c-card--outlined" />
+            </div>
+            <div class="l-cluster u-full">
+                <a class="c-tag" href="#" aria-current="true">Tag de filtre actif · 12</a>
+                <a class="c-tag c-tag--outline" href="#">Tag de filtre (.c-tag--outline) · 7</a>
+            </div>
+            <nav class="c-pagination u-full" aria-label="Exemple de pagination">
+                <span class="c-pagination__step" aria-disabled="true">‹ Précédent</span>
+                <ol class="c-pagination__pages" role="list">
+                    <li><a class="c-pagination__page" href="#" aria-current="page">1</a></li>
+                    <li><a class="c-pagination__page" href="#">2</a></li>
+                </ol>
+                <a class="c-pagination__step" href="#">Suivant ›</a>
+            </nav>
+
             <div class="l-grid l-grid--2 u-full">
                 <twig:Card:Guide eyebrow="Guide" title="Guide" text="Carte avec chapitres."
                     :chapters="[{label: 'Chapitre un'}, {label: 'Chapitre deux'}]" ctaLabel="Action" />

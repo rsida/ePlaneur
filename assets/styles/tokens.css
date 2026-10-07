@@ -110,7 +110,7 @@
     --radius-sm: 4px;
     --radius-md: 8px;
     --shadow-raised: 0 12px 32px rgb(25 38 48 / 13%);
-    --focus-ring: 0 0 0 3px var(--color-accent);
+    --focus-color: var(--color-primary);  /* keyboard focus outline: navy on light surfaces */
 
     --header-height: 4.5rem;
     --transition: 160ms ease;
@@ -146,6 +146,7 @@
 }
 
 .t-dark {
+    --focus-color: var(--color-accent);
     --surface: var(--color-dark);
     --on-surface: var(--palette-white);
     --on-surface-muted: var(--palette-mist);
@@ -155,6 +156,7 @@
 }
 
 .t-primary {
+    --focus-color: var(--color-accent);
     --surface: var(--color-primary);
     --on-surface: var(--palette-white);
     --on-surface-muted: var(--palette-white);

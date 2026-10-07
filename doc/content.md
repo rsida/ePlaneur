@@ -25,6 +25,27 @@ only visible to users holding `POST_EDIT` (preview banner). `Post` and `Media` i
 `RestrictedContentInterface`: visibility `public`, `authenticated` or `groups` (see
 [accounts](accounts.md)).
 
+## News list and home page
+
+Figma frames "Actualités · …" and "Accueil · Ça bouge au club · …" (page 4 of the file, node 75-4).
+
+- `/actualites` (`PostController::index`, `App\Content\News\NewsLister`) lists the **published**
+  posts, newest first, 12 per page. The unfiltered list starts with the **featured** post (the
+  latest one marked "À la une"), which is then not repeated in the grid.
+- Filters in the query string (`NewsFilter`, read with `#[MapQueryString]`): `categorie` (slug),
+  `annee`, `mois` (only with a year), `page`. Periods follow metropolitan France time. An unknown
+  category, an invalid value or a page beyond the last one gives a 404. Category tags show the
+  number of published posts; the year and month lists only offer periods with posts; without
+  JavaScript a "Filtrer" button submits them (`autosubmit` controller otherwise).
+- **Reserved posts are listed** like reserved pages: readers who may not open one see a lock and its
+  audience instead of the cover and excerpt, and "Se connecter pour lire"; the post page then shows
+  "Contenu réservé".
+- The home page section "Ça bouge au club" (`HomeController`) shows the featured post, large, and
+  the two latest other published posts; alone, the featured post takes the whole width; without
+  featured post, the three latest posts.
+- The article breadcrumb, its "Tous les articles" link and the "Contenu réservé" page lead to
+  `/actualites`.
+
 ## Pages, menus and restricted content
 
 - Pages are served by `PageController` (`/{path}`, lowest route priority). A root page cannot take a
@@ -48,7 +69,6 @@ only visible to users holding `POST_EDIT` (preview banner). `Post` and `Media` i
   lead) stays; only its body is replaced.
 - A document's visibility is copied onto its file before each flush (`DocumentAccessListener`), so
   the file URL is exactly as restricted as the document.
-- `/actualites` redirects to the news section of the home page until the news list exists (step 4).
 
 
 ## Block zones
@@ -99,8 +119,10 @@ and selects three related posts the reader is allowed to see.
 | `resource` | title, text, linkLabel, linkUrl | Sidebar card |
 | `takeaways` | eyebrow, title, text, points, ctaLabel, ctaUrl, navTitle | Closing band, numbered like a section |
 
-Rich text fields contain limited HTML (paragraphs, bold, italic, links, lists, code) and are always
-printed through the `app.rich_text` sanitizer (`config/packages/html_sanitizer.yaml`).
+Rich text fields contain limited HTML (paragraphs, bold, italic, links, lists, code): the
+`app.rich_text` sanitizer (`config/packages/html_sanitizer.yaml`) cleans them when the editor saves
+and again when they are printed. Link fields are printed through `|safe_url`, which turns an address
+that is not a path, an anchor, a web address or an e-mail into `#`.
 
 ## Adding a block type
 
@@ -132,8 +154,9 @@ tests) under a random name, reads image dimensions and PDF page counts. `MediaCo
 - only images and PDF are displayed inline; any other type is downloaded.
 
 Twig helpers: `media(id)`, `media_url(media, download = false)`, `image_url(media, filter)`,
-`|file_size` ("248 Ko"), `reading_minutes(post)`, `document(id)`, `documents(categoryId)` (documents
-the reader may see).
+`|file_size` ("248 Ko"), `reading_minutes(post)`, `access_label(content)` (audience of reserved
+content for its access tag: group names or "Connectés"), `document(id)`, `documents(categoryId)`
+(documents the reader may see).
 
 ### Resized pictures
 

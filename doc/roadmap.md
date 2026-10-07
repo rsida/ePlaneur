@@ -18,6 +18,7 @@ yet validated step by step by the project owner.
 | Step 3b-1: block editor | [admin.md](admin.md#block-editor): post list, page tree, WordPress-like editor (canvas with the site styles, library with drag and drop, "/" command, toolbar, settings panel, undo, publication, preview) |
 | Step 3b-2: media window | [admin.md](admin.md#block-editor): "Choisir un média" window (library with search and type filter, alt text and credit, upload) for block media and post covers |
 | Step 3b-3: resized pictures, tablets | [content.md](content.md#resized-pictures): WebP versions made with LiipImagine and served with access control; editor panels as overlays on tablets |
+| Step 4: public news | [content.md](content.md#news-list-and-home-page): `/actualites` list (featured post, category and period filters, pagination, reserved posts with their access tag), home "Ça bouge au club" section from the real posts |
 
 ## Next: content and editorial back-office (replaces the WordPress blog and pages)
 
@@ -33,13 +34,25 @@ Do the steps in this order: each one depends on the previous ones.
 | 3b-1 | Editor core | Post list (state badges) and page tree; editor page: canvas in an iframe with the site styles, block library (drag and drop, search), "/" command, toolbar (move, duplicate, insert, delete, bold / italic / link / list), settings panel generated from the block classes, structure tab, undo, save, publish or schedule, preview | Done (2026-10-05), see [admin](admin.md#block-editor) |
 | 3b-2 | Media picker | Media window (search, type filter, upload, alt text and credit) for covers and image, carousel, PDF, downloads, video poster blocks | Done (2026-10-06), see [admin](admin.md#block-editor) |
 | 3b-3 | Images and finish | Resized images (LiipImagineBundle), tablet layout (panels as overlays), dark mode check | Done (2026-10-06), see [content](content.md#resized-pictures) and [admin](admin.md#block-editor) |
-| 4 | Public front | News list (replaces the `/actualites` redirect), post page, filter by category and date; the home page "Ça bouge au club" section reads featured posts instead of placeholders; pages rendered from the tree with the menu | To do |
+| 4 | Public front | News list (replaces the `/actualites` redirect), post page, filter by category and date; the home page "Ça bouge au club" section reads featured posts instead of placeholders; pages rendered from the tree with the menu (done in 2b) | Done (2026-10-06), see [content](content.md#news-list-and-home-page) |
 | 5 | WordPress migration | `app:import-wordpress` command reading posts, pages and media through the WordPress REST API (79 pages, 34 posts, about 20 of them restricted committee minutes); 301 redirects from the old URLs | To do |
 
 Why this order: restricted content (committee minutes, 4th-level pages) and the back-office both need
 accounts and roles first; EasyAdmin gives a usable back-office quickly, a custom admin is only worth it
 later for business screens (network flights, progression tracking); the import avoids retyping the
 existing content.
+
+## Audit follow-ups (2026-10-07)
+
+The code, JS/CSS and UX audit of 2026-10-07 found five urgent issues, fixed the same day: unsafe
+`javascript:` links in blocks, rich text not cleaned on save, a test tied to a calendar date, arrow
+keys handled twice in the block menu, a low-contrast focus ring. Left for later, in this order:
+
+| Batch | Content |
+|---|---|
+| Editor UX | Warn that saving a published post updates the site at once; open the tab and highlight the field of a validation error; choose the visibility of files uploaded from the editor; state filter and "À la une" column in the post list; keyboard and ARIA for the block menus and format buttons; focus management of the tablet panels and of the site's mobile menu; draft backup in the browser |
+| Code | One base controller and shared form fields for the post and page editors; one access-label service; N+1 queries on the groups of reserved content; author field only with POST_EDIT; unpublished sections hide their sub-pages; editor preview banner only for unpublished content; slug length and page number validation; `ClockInterface` instead of hard-coded `Europe/Paris`; tests for the category and menu screens |
+| CSS | Split `content.css` into one file per component; semantic tokens instead of `--palette-*` and literal sizes; one set of breakpoints; merge `c-news--featured` into `c-featured-post`; self-hosted fonts instead of Google Fonts |
 
 ## Decisions
 
@@ -54,6 +67,7 @@ existing content.
 | 2026-10-05 | Back-office with EasyAdmin 5; step 3 split into 3a (reference screens) and 3b (posts and pages); posts and pages get a visual, WordPress-like block editor rather than plain forms |
 | 2026-10-05 | Block editor (3b): WordPress-like, built with Stimulus controllers over the existing `Block:*` Twig components (the canvas shows blocks as the site renders them, no second renderer in JS); blocks are added by drag and drop from a block list or with a "/" command and search; text edited in place, other settings in a side panel; mock-up generated in Figma first |
 | 2026-10-05 | Resized images with LiipImagineBundle (step 3b) |
+| 2026-10-06 | News list: reserved posts are listed with their access tag (lock and audience instead of cover and excerpt), like reserved pages; the featured post leads the unfiltered list and is not repeated |
 | 2026-10-06 | LiipImagine is only the filter engine: resized WebP versions are stored under `var/uploads/cache/` and served by `MediaController` with the access rules of the original, so restricted pictures stay restricted (the bundle's public cache would bypass them); GD added to the `php` image |
 | 2026-10-04 | Comments and "was this article useful?" feedback come later (moderation rules to define); step 2 split into 2a (posts, blocks) and 2b (pages, menus, documents) |
 

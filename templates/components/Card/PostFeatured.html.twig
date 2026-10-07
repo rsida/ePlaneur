@@ -1,0 +1,32 @@
+{#
+    Featured post ("À la une", Figma "Actualités · /actualites" and "Ça bouge au club"): its cover, or
+    a dark poster with its kicker and publication year, next to (`split`) or above (`stacked`) a navy
+    panel with category, title, excerpt, date and reading time.
+    <twig:Card:PostFeatured :post="post" readingMinutes="4" layout="stacked" />
+#}
+{% props post, readingMinutes = null, layout = 'split', level = 2 %}
+{% set locked = not is_granted('CONTENT_VIEW', post) %}
+<article {{ attributes.defaults({class: 'c-featured-post c-featured-post--' ~ layout}) }}>
+    <div class="c-featured-post__visual">
+        {% if post.cover and not locked %}
+            <img class="c-featured-post__media" src="{{ image_url(post.cover, 'wide') }}" alt="" loading="lazy">
+        {% else %}
+            <p class="c-eyebrow c-featured-post__poster-label">{{ post.kicker ?: 'Les actualités du club ePlaneur' }}</p>
+            {% if post.publishedAt %}<p class="c-featured-post__year">{{ post.publishedAt|date('Y', 'Europe/Paris') }}</p>{% endif %}
+        {% endif %}
+    </div>
+    <div class="c-featured-post__body t-primary">
+        <p class="c-eyebrow c-featured-post__eyebrow">À la une{% if post.category %} / {{ post.category.name }}{% endif %}</p>
+        <h{{ level }} class="c-featured-post__title"><a href="{{ path('app_post_show', {slug: post.slug}) }}">{{ post.title }}</a></h{{ level }}>
+        {% if locked %}
+            <twig:Ui:Access>{{ access_label(post) }}</twig:Ui:Access>
+        {% else %}
+            <p class="c-featured-post__excerpt">{{ post.excerpt|u.truncate(220, '…', false) }}</p>
+        {% endif %}
+        <p class="c-featured-post__meta">
+            {% if post.publishedAt %}<time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|format_date('long', locale: 'fr', timezone: 'Europe/Paris') }}</time>{% endif %}
+            {% if readingMinutes and not locked %}<span>Lecture estimée : {{ readingMinutes }} min</span>{% endif %}
+        </p>
+        <span class="c-featured-post__more" aria-hidden="true">{{ locked ? 'Lecture réservée' : 'Lire l’article' }} <twig:ux:icon name="arrow-right" /></span>
+    </div>
+</article>

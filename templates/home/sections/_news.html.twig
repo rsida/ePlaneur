@@ -1,21 +1,26 @@
+{#
+    "Ça bouge au club" (Figma "Accueil · Ça bouge au club"): the featured post, large, and the latest
+    published posts (HomeController). Alone, the featured post spreads over the whole width.
+#}
 <twig:Layout:Section theme="light" id="actualites">
     <div class="l-stack l-stack--lg">
         <twig:Layout:SectionHeader eyebrow="06 / À lire entre deux vols" title="Ça bouge au club." class="u-full p-news__header">
-            <twig:block name="aside"><twig:Ui:Link href="#">Toutes les actualités</twig:Ui:Link></twig:block>
+            <twig:block name="aside"><twig:Ui:Link href="{{ path('app_post_index') }}">Toutes les actualités</twig:Ui:Link></twig:block>
         </twig:Layout:SectionHeader>
 
-        <div class="l-rail p-news__rail">
-            <twig:Card:News featured poster="2025" posterLabel="Championnat de France ePlaneur"
-                eyebrow="À la une / Vie du club" title="Victor BRUGIERE – Champion de France ePlaneur 2025"
-                text="Retrouvez l’actualité du championnat publiée sur le site du club." linkLabel="Lire l’actualité" />
-            <twig:Card:News eyebrow="Bonnes pratiques" title="Les bons réflexes avant de décoller"
-                text="Préparer votre vol et profiter de chaque session avec sérénité."
-                image="{{ asset('images/home/news-good-practices.jpg') }}" linkLabel="Voir les ressources" />
-            <twig:Card:News eyebrow="Formation" title="Un cockpit prêt pour l’aventure"
-                text="Installation, commandes, connexion : retrouvez les guides du club."
-                image="{{ asset('images/home/news-cockpit.jpg') }}" linkLabel="Voir les ressources" />
-        </div>
+        {% if featured or latest is not empty %}
+            <div class="l-rail p-news__rail{{ not featured ? ' p-news__rail--even' : (latest is empty ? ' p-news__rail--single') }}">
+                {% if featured %}
+                    <twig:Card:PostFeatured :post="featured" :readingMinutes="reading_minutes(featured)" layout="{{ latest is empty ? 'split' : 'stacked' }}" level="3" />
+                {% endif %}
+                {% for post in latest %}
+                    <twig:Card:Post :post="post" :readingMinutes="reading_minutes(post)" dated class="c-card--outlined" />
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="u-full">Les premières actualités du club arrivent bientôt.</p>
+        {% endif %}
 
-        <p class="u-note">L’actualité du championnat est issue du site du club. Les deux autres cartes présentent ses ressources. Visuels d’ambiance, pas des captures de Condor.</p>
+        <p class="u-note">Visuels d’ambiance, pas des captures de Condor.</p>
     </div>
 </twig:Layout:Section>

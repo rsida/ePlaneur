@@ -12,7 +12,7 @@
                 <span class="u-visually-hidden">Lire la vidéo{% if data.title %} « {{ data.title }} »{% endif %}{% if data.provider %} ({{ data.provider }}){% endif %}</span>
             </button>
         {% else %}
-            <a class="c-video__play" href="{{ data.url }}" rel="noopener">
+            <a class="c-video__play" href="{{ data.url|safe_url }}" rel="noopener">
                 <twig:ux:icon name="play" />
                 <span class="u-visually-hidden">Voir la vidéo</span>
             </a>

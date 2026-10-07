@@ -29,7 +29,10 @@ Add each new component there.
 | Primitives | `--palette-*`, `--font-*` | Raw Figma values. Never used directly by components |
 | Semantic | `--color-*`, `--text-*`, `--space-*`, `--radius-*`, `--shadow-*`, `--leading-*` | Intent-based aliases used by components |
 | Component | `--button-*`, `--tag-*`, `--card-*` | Knobs declared at the top of each component file |
-| Surface | `--surface`, `--on-surface`, `--on-surface-muted`, `--eyebrow`, `--link`, `--rule` | Set by theme classes |
+| Surface | `--surface`, `--on-surface`, `--on-surface-muted`, `--eyebrow`, `--link`, `--rule`, `--focus-color` | Set by theme classes |
+
+Keyboard focus is a 2px outline in `--focus-color` (`base.css`): navy on light surfaces, sand on
+`t-dark` and `t-primary`, so it keeps a 3:1 contrast and stays visible in forced-colors mode.
 
 Palette (Figma): ink `#192630`, ink-soft `#273642`, navy `#3e5d83` (primary), sand `#e7bca7`
 (accent), sand-soft `#f1ded2`, sky-soft `#e5ebf1`, cream `#f7f5ef`, slate `#586772` (muted text),
@@ -115,7 +118,8 @@ usage example.
 | `Card:Guide` | Guide with chapters and CTA | `eyebrow`, `title`, `text`, `chapters`, `ctaLabel`, `ctaHref` |
 | `Card:News` | Editorial card, image or featured poster | `eyebrow`, `title`, `text`, `image`, `featured`, `poster`, `posterLabel`, `href`, `linkLabel` |
 | `Card:Step` | Numbered step of a path | `number`, `title`, `text`, `linkLabel`, `href` |
-| `Card:Post` | Article card: picture, category, title, excerpt, reading time | `post`, `readingMinutes` |
+| `Card:Post` | Article card: picture, category, title, date, excerpt, reading time; a reserved post the reader may not open shows a lock and its audience | `post`, `readingMinutes`, `dated` |
+| `Card:PostFeatured` | Featured post ("À la une"): cover or year poster next to (`split`) or above (`stacked`) a navy panel | `post`, `readingMinutes`, `layout`, `level` |
 | `Content:Blocks` | Renders a list of content blocks with their `Block:*` components (see [content](content.md)) | `blocks` |
 | `Content:Toc` | Article table of contents with reading progress (`toc` controller) | `entries` |
 | `Content:Share` | Copy link, e-mail, native share (`share` controller) | `url`, `title` |
@@ -126,7 +130,8 @@ usage example.
 | `Site:Footer` | Footer with link columns and legal line | — |
 
 Other CSS-only components: `c-display`, `c-tagline`, `c-motto`, `c-callout`, `c-link-bar`,
-`c-icon-tile`, `c-definition-list`, `c-level-badge`, `c-keyword`, `c-avatar`.
+`c-icon-tile`, `c-definition-list`, `c-level-badge`, `c-keyword`, `c-avatar`, `c-tag--outline` (unselected
+filter), `c-pagination` (pages of a list).
 
 Content blocks (`Block:*` components, one per block type, styles in `components/content.css`) are
 described in [content](content.md). Article typography tokens: `--text-article-title`,

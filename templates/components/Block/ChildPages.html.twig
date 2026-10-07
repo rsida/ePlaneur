@@ -10,7 +10,7 @@
         {% if data.eyebrow %}<h2 class="c-eyebrow" id="{{ placed.key }}-title">{{ data.eyebrow }}</h2>{% endif %}
         <ul class="c-page-cards__list" role="list">
             {% for child in pages %}
-                {% set access = child.visibility.value == 'authenticated' ? 'Connectés' : (child.visibility.value == 'groups' ? (child.allowedGroups|map(g => g.name)|join(' · ') ?: 'Réservé') : null) %}
+                {% set access = access_label(child) %}
                 <li class="c-page-card">
                     <h3 class="c-page-card__title">{{ child.title }}</h3>
                     {% if child.excerpt %}<p class="c-page-card__text">{{ child.excerpt }}</p>{% endif %}

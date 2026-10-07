@@ -7,6 +7,10 @@ namespace App\Controller;
 use App\Content\Block as B;
 use App\Content\PlacedBlock;
 use App\Content\TocEntry;
+use App\Entity\Category;
+use App\Entity\Group;
+use App\Entity\Post;
+use App\Security\Visibility;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -19,7 +23,27 @@ final class ToolkitController extends AbstractController
     #[Route('/_toolkit', name: 'app_toolkit', methods: ['GET'], env: 'dev')]
     public function index(): Response
     {
-        return $this->render('toolkit/index.html.twig', ['blocks' => $this->sampleBlocks()]);
+        return $this->render('toolkit/index.html.twig', ['blocks' => $this->sampleBlocks(), 'posts' => self::samplePosts()]);
+    }
+
+    /**
+     * Unsaved posts for the news cards: featured, public, reserved to the committee.
+     *
+     * @return array{featured: Post, public: Post, reserved: Post}
+     */
+    private static function samplePosts(): array
+    {
+        $club = new Category('Vie du club', 'vie-du-club');
+        $post = static fn (string $title, string $slug): Post => (new Post($title, $slug))
+            ->setExcerpt('Extrait de l’article, coupé après deux lignes dans les cartes.')
+            ->setCategory($club)
+            ->setPublishedAt(new \DateTimeImmutable('2026-01-01 09:00'));
+
+        return [
+            'featured' => $post('Vœux 2026', 'voeux-2026')->setKicker('Les vœux du club ePlaneur')->setFeatured(true),
+            'public' => $post('Carte d’article', 'carte'),
+            'reserved' => $post('Compte rendu du Comité', 'compte-rendu')->setVisibility(Visibility::Groups)->addAllowedGroup(new Group('committee', 'Comité')),
+        ];
     }
 
     /**

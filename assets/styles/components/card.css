@@ -218,3 +218,118 @@
     font-size: var(--text-lead);
     line-height: var(--leading-relaxed);
 }
+
+/* Featured post ("À la une"): cover or year poster, next to (split) or above (stacked) a navy panel */
+.c-featured-post {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    border-radius: var(--card-radius);
+    background-color: var(--color-dark);
+}
+
+.c-featured-post__visual {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-height: 13.75rem;   /* 220 */
+    padding: 1.75rem;
+    background-color: var(--color-dark);
+    color: var(--color-accent);
+}
+
+.c-featured-post__visual:has(.c-featured-post__media) {
+    padding: 0;
+}
+
+.c-featured-post__media {
+    width: 100%;
+    height: 100%;
+    min-height: 13.75rem;
+    object-fit: cover;
+}
+
+.c-featured-post__poster-label {
+    color: inherit;
+    line-height: normal;
+}
+
+.c-featured-post__year {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(4.5rem, 3rem + 5vw, 7.125rem);
+    line-height: 1;
+}
+
+.c-featured-post__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: 1.75rem;
+    background-color: var(--surface);
+    color: var(--on-surface);
+}
+
+.c-featured-post__eyebrow {
+    color: var(--eyebrow);
+}
+
+.c-featured-post__title {
+    font-family: var(--font-heading);
+    font-size: var(--text-h2-lg);
+    font-weight: 800;
+    line-height: var(--leading-tight);
+}
+
+.c-featured-post__title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* The whole card is clickable through its title link */
+.c-featured-post__title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+}
+
+.c-featured-post__excerpt {
+    font-size: var(--text-lead);
+    line-height: var(--leading-relaxed);
+}
+
+.c-featured-post__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    font-size: var(--text-xs);
+}
+
+.c-featured-post__more {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: auto;
+    font-weight: 700;
+}
+
+.c-featured-post__more svg {
+    font-size: 1.25rem;
+}
+
+/* Stacked: a 220 px band above the panel, which takes the remaining height */
+.c-featured-post--stacked {
+    grid-template-rows: 13.75rem 1fr;
+}
+
+.c-featured-post--stacked .c-featured-post__media {
+    height: 13.75rem;
+}
+
+@media (min-width: 48em) {
+    /* Figma 552 / 744 */
+    .c-featured-post--split {
+        grid-template-columns: minmax(0, 552fr) minmax(0, 744fr);
+    }
+}

@@ -60,10 +60,11 @@ button {
     cursor: pointer;
 }
 
+/* Outline, not a shadow: it stays in forced-colors mode and leaves the element's shape alone.
+   Navy on light surfaces, sand on dark ones (--focus-color of the themes): at least 3:1. */
 :focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-    border-radius: var(--radius-sm);
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

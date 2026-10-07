@@ -22,7 +22,7 @@
                 </dl>
             {% endif %}
             {% if tab.linkLabel and tab.linkUrl %}
-                <twig:Ui:Button href="{{ tab.linkUrl }}" size="sm">{{ tab.linkLabel }}</twig:Ui:Button>
+                <twig:Ui:Button href="{{ tab.linkUrl|safe_url }}" size="sm">{{ tab.linkLabel }}</twig:Ui:Button>
             {% endif %}
         </div>
     {% endfor %}

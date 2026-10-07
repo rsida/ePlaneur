@@ -1,0 +1,51 @@
+/* Pagination of a list: previous / page numbers / next (news list). */
+
+.c-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--palette-line);
+}
+
+.c-pagination__pages {
+    display: flex;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+}
+
+.c-pagination__page {
+    display: grid;
+    place-items: center;
+    min-width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-sm);
+    outline: 1px solid var(--palette-line);
+    outline-offset: -1px;
+    background-color: var(--color-paper);
+    color: var(--palette-ink);
+    font-size: var(--text-sm);
+    text-decoration: none;
+}
+
+.c-pagination__page[aria-current='page'] {
+    outline-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.c-pagination__step {
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.c-pagination__step[aria-disabled='true'] {
+    color: var(--palette-slate);
+    font-weight: 400;
+    opacity: 0.6;
+}

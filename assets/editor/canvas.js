@@ -320,8 +320,8 @@ export class Canvas {
         menu.style.left = `${rect.left + this.win.scrollX}px`;
         this.filterMenu(query);
         if (input) {
+            // Its keys (↑ ↓ Entrée Échap) reach the document listener, which hands them to menuKey()
             input.addEventListener('input', () => this.filterMenu(input.value));
-            input.addEventListener('keydown', (event) => this.menuKey(event));
             input.focus();
         }
     }

@@ -63,7 +63,9 @@ How it works:
   attributes of the block classes (`App\Content\Editor\BlockSchema`, given to the page as JSON).
 - On save, `BlockZoneType` reads every block through its class (`ZoneNormalizer`): unknown types or
   data that do not fit are refused with "Bloc n (Type) : contenu invalide.", editor ids and unknown
-  keys are dropped.
+  keys are dropped. Rich text is cleaned with the `app.rich_text` sanitizer (so the editor can show
+  stored HTML as is), and link addresses (`url` fields) must start with `/`, `#`, `http(s)://` or
+  `mailto:` (`App\Content\LinkUrl`, shared with the menus): a `javascript:` link is refused.
 - Media are chosen in the **"Choisir un média" window** (`assets/editor/media_picker.js`,
   `templates/admin/editor/_media_dialog.html.twig`), opened by the media fields of the settings
   panel, the post cover (`MediaPickerType`), the empty media blocks of the canvas ("Choisir dans la

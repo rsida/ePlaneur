@@ -1329,6 +1329,34 @@ img.c-avatar--lg {
     font-weight: 700;
 }
 
+.c-post-card__date {
+    color: var(--palette-slate);
+    font-size: var(--text-xs);
+}
+
+/* Reserved post the reader may not open: a lock and its audience instead of the picture */
+.c-post-card__lock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    aspect-ratio: 416 / 230;
+    border-radius: var(--card-radius);
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+}
+
+.c-post-card__lock-icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--palette-cream);
+    font-size: 1.375rem;
+}
+
 /* ---------- Comments and feedback (visual only for now) ---------- */
 .c-comment {
     display: flex;

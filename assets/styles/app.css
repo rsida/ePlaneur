@@ -14,9 +14,11 @@
 @import url('./components/media.css');
 @import url('./components/form.css');
 @import url('./components/content.css');
+@import url('./components/pagination.css');
 @import url('./components/site.css');
 
 @import url('./pages/home.css');
 @import url('./pages/account.css');
 @import url('./pages/article.css');
 @import url('./pages/page.css');
+@import url('./pages/news.css');

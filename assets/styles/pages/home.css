@@ -273,9 +273,18 @@
 /* ---------- News ---------- */
 .p-news__header { --section-aside-width: 15.625rem; }     /* 250 */
 
-/* Featured story wider than the two resources (Figma 552 / 348 / 348) */
+/* Featured story wider than the two latest posts (Figma 552 / 348 / 348) */
 .p-news__rail {
     --rail-columns: minmax(0, 552fr) repeat(2, minmax(0, 348fr));
+}
+
+/* Without featured story: three equal cards; featured story alone: the whole width */
+.p-news__rail--even {
+    --rail-columns: repeat(3, minmax(0, 1fr));
+}
+
+.p-news__rail--single {
+    --rail-columns: minmax(0, 1fr);
 }
 
 /* ---------- Community ---------- */

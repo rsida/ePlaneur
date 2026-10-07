@@ -1,0 +1,136 @@
+{% extends 'base.html.twig' %}
+
+{#
+    News list (Figma "Actualités · /actualites", "Actualités · Vie du club · 2025", "Actualités · Sans
+    résultat"): header, featured post (unfiltered list only), filters by category and period, cards of
+    the published posts, 12 per page. Prepared by App\Content\News\NewsLister.
+#}
+{% set filter = news.filter %}
+{% set month = filter.month %}
+{% set month_name = month ? ('2000-' ~ '%02d'|format(month) ~ '-01')|format_date(pattern: 'LLLL', locale: 'fr') : null %}
+{% set period = month ? month_name ~ ' ' ~ filter.year : filter.year %}
+{% if news.category and period %}
+    {% set heading = news.category.name ~ (month ? ' · ' ~ period : ' en ' ~ period) %}
+{% elseif news.category %}
+    {% set heading = news.category.name %}
+{% elseif period %}
+    {% set heading = month ? period|capitalize : 'Actualités de ' ~ period %}
+{% else %}
+    {% set heading = 'Toutes les actualités' %}
+{% endif %}
+
+{% block title %}{{ filter.empty ? 'Actualités' : heading ~ ' · Actualités' }}{% endblock %}
+{% block description %}La vie du club ePlaneur, ses projets et les repères pour préparer vos prochains vols en planeur sur Condor.{% endblock %}
+
+{% block body %}
+    {% set highlight = 'Chacun son rythme.' ~ "\n" ~ 'La même envie de ciel.' %}
+    {% set highlight_note = 'Le Club ePlaneur' ~ "\n" ~ 'Association loi 1901' %}
+    <div class="p-news-list">
+        <twig:Content:PageHeader
+            :crumbs="[{label: 'Accueil', href: path('app_home')}, {label: 'Actualités'}]"
+            kicker="Le Club / À lire entre deux vols"
+            title="Actualités"
+            lead="La vie du club, ses projets et les repères pour préparer vos prochains vols."
+            :highlight="highlight"
+            :highlightNote="highlight_note"
+        />
+
+        {% if news.featured and filter.page == 1 %}
+            <div class="l-container p-news-list__featured">
+                <twig:Card:PostFeatured :post="news.featured" :readingMinutes="reading_minutes(news.featured)" />
+            </div>
+        {% endif %}
+
+        <section class="l-container p-news-list__filters" aria-labelledby="news-filters-title">
+            <h2 class="c-eyebrow" id="news-filters-title">Explorer les articles</h2>
+            <ul class="p-news-list__categories" role="list">
+                <li>
+                    <a class="c-tag{{ news.category ? ' c-tag--outline' }}" href="{{ path('app_post_index', filter.query({category: null})) }}"{% if not news.category %} aria-current="true"{% endif %}>Tous · {{ news.allCount }}</a>
+                </li>
+                {% for item in news.categories %}
+                    {% set current = news.category == item.category %}
+                    <li>
+                        <a class="c-tag{{ current ? '' : ' c-tag--outline' }}" href="{{ path('app_post_index', filter.query({category: item.category.slug})) }}"{% if current %} aria-current="true"{% endif %}>{{ item.category.name }} · {{ item.count }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <form class="p-news-list__period" method="get" action="{{ path('app_post_index') }}" data-controller="autosubmit">
+                {% if filter.category %}<input type="hidden" name="categorie" value="{{ filter.category }}">{% endif %}
+                <div class="c-field">
+                    <label class="c-field__label" for="news-year">Année</label>
+                    <select class="c-input" id="news-year" name="annee" data-action="autosubmit#submit" data-autosubmit-reset-param="mois">
+                        <option value="">Toutes les années</option>
+                        {% for year in news.periods|keys %}
+                            <option value="{{ year }}"{% if year == filter.year %} selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="c-field">
+                    <label class="c-field__label" for="news-month">Mois</label>
+                    <select class="c-input" id="news-month" name="mois" data-action="autosubmit#submit"{% if not filter.year %} disabled{% endif %}>
+                        <option value="">Tous les mois</option>
+                        {% for number in news.periods[filter.year] ?? [] %}
+                            <option value="{{ number }}"{% if number == month %} selected{% endif %}>{{ ('2000-' ~ '%02d'|format(number) ~ '-01')|format_date(pattern: 'LLLL', locale: 'fr')|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="c-button c-button--outline c-button--sm" data-autosubmit-target="button">Filtrer</button>
+                {% if not filter.empty %}<a class="p-news-list__clear" href="{{ path('app_post_index') }}">Effacer les filtres</a>{% endif %}
+            </form>
+            <p class="u-note">
+                Filtres actifs : {{ news.category ? news.category.name : 'Tous' }} / {{ filter.year ?: 'Toutes les années' }}{% if month %} › {{ month_name|capitalize }}{% endif %}
+            </p>
+        </section>
+
+        <section class="l-container p-news-list__results" aria-labelledby="news-title">
+            <header class="p-news-list__results-header">
+                <h2 class="p-news-list__title" id="news-title">{{ heading }} · {{ news.total }} article{{ news.total > 1 ? 's' }}</h2>
+                {% if news.posts is not empty %}
+                    <p class="u-note">{{ news.posts|length }} publication{{ news.posts|length > 1 ? 's' }} · De la plus récente à la plus ancienne</p>
+                {% endif %}
+            </header>
+
+            {% if news.posts is not empty %}
+                <ul class="p-news-list__grid" role="list">
+                    {% for post in news.posts %}
+                        <li><twig:Card:Post :post="post" :readingMinutes="reading_minutes(post)" dated class="c-card--outlined" /></li>
+                    {% endfor %}
+                </ul>
+
+                {% if news.pages > 1 %}
+                    <nav class="c-pagination" aria-label="Pages des actualités">
+                        {% if filter.page > 1 %}
+                            <a class="c-pagination__step" href="{{ path('app_post_index', filter.query({page: filter.page - 1})) }}" rel="prev">‹ Précédent</a>
+                        {% else %}
+                            <span class="c-pagination__step" aria-disabled="true">‹ Précédent</span>
+                        {% endif %}
+                        <ol class="c-pagination__pages" role="list">
+                            {% for number in 1..news.pages %}
+                                <li>
+                                    <a class="c-pagination__page" href="{{ path('app_post_index', filter.query({page: number})) }}"{% if number == filter.page %} aria-current="page"{% endif %}>
+                                        <span class="u-visually-hidden">Page </span>{{ number }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ol>
+                        {% if filter.page < news.pages %}
+                            <a class="c-pagination__step" href="{{ path('app_post_index', filter.query({page: filter.page + 1})) }}" rel="next">Suivant ›</a>
+                        {% else %}
+                            <span class="c-pagination__step" aria-disabled="true">Suivant ›</span>
+                        {% endif %}
+                    </nav>
+                {% endif %}
+                <p class="u-note p-news-list__count">{{ news.first }}–{{ news.last }} sur {{ news.total - (news.featured ? 1 : 0) }} articles · {{ news.perPage }} articles par page</p>
+            {% else %}
+                <aside class="c-admonition c-admonition--info p-news-list__empty">
+                    <div class="c-admonition__content">
+                        <h3 class="p-news-list__empty-title">{{ period ? 'Aucun article pour cette période.' : 'Aucun article dans cette catégorie.' }}</h3>
+                        <p>Essayez une autre période ou retrouvez toutes les actualités du club.</p>
+                        <twig:Ui:Link href="{{ path('app_post_index') }}">Voir toutes les actualités</twig:Ui:Link>
+                    </div>
+                </aside>
+            {% endif %}
+        </section>
+    </div>
+{% endblock %}

@@ -1,0 +1,103 @@
+/*
+ * News list (/actualites, templates/post/index.html.twig), from the Figma frames "Actualités ·
+ * /actualites", "Actualités · Vie du club · 2025" and "Actualités · Sans résultat".
+ */
+
+.p-news-list {
+    padding-bottom: var(--section-padding);
+}
+
+.p-news-list__featured {
+    margin-top: var(--space-8);
+}
+
+.p-news-list__filters {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+    padding-block: var(--space-6);
+    border-block: 1px solid var(--palette-line);
+}
+
+.p-news-list__categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+}
+
+.p-news-list__period {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-4) var(--space-5);
+}
+
+.p-news-list__period .c-field {
+    width: min(100%, 12rem);
+}
+
+.p-news-list__period .c-input:disabled {
+    opacity: 0.6;
+}
+
+.p-news-list__clear {
+    padding-bottom: var(--space-3);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 700;
+}
+
+.p-news-list__results {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    margin-top: var(--space-8);
+}
+
+.p-news-list__results-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.p-news-list__title {
+    font-family: var(--font-heading);
+    font-size: var(--text-h2);
+    font-weight: 700;
+    line-height: var(--leading-snug);
+}
+
+.p-news-list__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+}
+
+.p-news-list__grid > li {
+    display: flex;
+}
+
+.p-news-list__grid .c-post-card {
+    width: 100%;
+}
+
+.p-news-list__count {
+    text-align: center;
+}
+
+.p-news-list__empty-title {
+    margin-bottom: var(--space-3);
+    font-family: var(--font-heading);
+    font-size: var(--text-h3);
+    font-weight: 700;
+}
+
+.p-news-list__empty p {
+    margin-bottom: var(--space-4);
+    color: var(--palette-slate);
+}

@@ -233,13 +233,6 @@ final class PageTest extends WebTestCase
         self::assertCount(0, $private->getFile()->getAllowedGroups());
     }
 
-    public function testNewsAddressLeadsToTheHomeNewsSection(): void
-    {
-        $this->client->request('GET', '/actualites');
-
-        self::assertResponseRedirects('/#actualites');
-    }
-
     /**
      * @return list<string>
      */

@@ -32,6 +32,16 @@ final class PostTest extends WebTestCase
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
     }
 
+    public function testStoredUnsafeLinksAreNotRendered(): void
+    {
+        // Stored before the editor checked link addresses: rendered as "#"
+        $this->createPost('lien-ancien', [new B\LinksBlock([new B\LinkItem('Piège', 'javascript:alert(1)'), new B\LinkItem('Club', '/le-club')])]);
+
+        $crawler = $this->client->request('GET', '/actualites/lien-ancien');
+
+        self::assertSame(['#', '/le-club'], $crawler->filter('.p-article__body a.c-link-list__item, .p-article__body .c-link-list a')->each(static fn ($link): ?string => $link->attr('href')));
+    }
+
     public function testArticleRendersItsBlocksAndTableOfContents(): void
     {
         $image = $this->storeMedia('wing-valley.png');

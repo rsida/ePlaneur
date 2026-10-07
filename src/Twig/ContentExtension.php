@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace App\Twig;
 
+use App\Content\LinkUrl;
 use App\Content\PlacedBlock;
 use App\Content\PostPresenter;
 use App\Document\DocumentLibrary;
 use App\Entity\Document;
 use App\Entity\Post;
+use App\Security\RestrictedContentInterface;
+use App\Security\Visibility;
+use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
 
 /**
- * Helpers for content listings: `reading_minutes(post)`, `document(id)`, `documents(categoryId)`, and
+ * Helpers for content listings: `reading_minutes(post)`, `access_label(content)`, `document(id)`,
+ * `documents(categoryId)`, and
  * `edit_field(placed, path)` for the block editor.
  */
 final readonly class ContentExtension
@@ -36,6 +41,30 @@ final readonly class ContentExtension
     public function documents(?int $categoryId = null): array
     {
         return $this->documents->visibleByCategory($categoryId);
+    }
+
+    /**
+     * Audience of reserved content for its access tag: the allowed groups ("Membre · Comité"),
+     * "Connectés", or null for public content.
+     */
+    #[AsTwigFunction('access_label')]
+    public function accessLabel(RestrictedContentInterface $content): ?string
+    {
+        return match ($content->getVisibility()) {
+            Visibility::Public => null,
+            Visibility::Authenticated => 'Connectés',
+            Visibility::Groups => implode(' · ', array_map(static fn ($group): string => $group->getName(), [...$content->getAllowedGroups()])) ?: 'Réservé',
+        };
+    }
+
+    /**
+     * A link address written by an editor, or "#" when it is not a path, an anchor, a web address
+     * or an e-mail (stored before the editor checked them): `href="{{ data.linkUrl|safe_url }}"`.
+     */
+    #[AsTwigFilter('safe_url')]
+    public function safeUrl(?string $url): string
+    {
+        return null !== $url && LinkUrl::isSafe($url) ? trim($url) : '#';
     }
 
     #[AsTwigFunction('reading_minutes')]

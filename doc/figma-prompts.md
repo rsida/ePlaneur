@@ -4,6 +4,34 @@ Prompts given to Figma (Figma Make / AI) to design screens that have no mock-up 
 French because the generated screens must be. Once a mock-up exists, note its link here and in
 [roadmap](roadmap.md).
 
+## News list and home news section (step 4, 2026-10-06)
+
+Status: frames generated (2026-10-06) on page 4 of the Figma file `a00zZWdxi7zD4Opbt6gIbn` (node
+75-4): news list, filtered list ("Vie du club · 2025"), no result, home section with three posts and
+with one post, each in desktop and mobile. Implemented as described in
+[content](content.md#news-list-and-home-page).
+
+> **Contexte.** Tu travailles sur le site du Club ePlaneur, une association qui forme au vol en planeur sur le simulateur Condor. Base-toi strictement sur la frame « ePlaneur — Grand air adouci · Version 6 · Desktop » de la page Accueil (en particulier sa section « 06 / À lire entre deux vols — Ça bouge au club. »), sur la frame « Premier vol · Article desktop » (bloc « À lire entre deux vols » en bas d'article, cartes d'articles) et sur les frames « Le Club » / « Statuts » / « Contenu réservé ». Reprends sans en inventer de nouveaux :
+> - **les styles** : palette ink #192630, navy #3e5d83, sand #e7bca7, sand-soft #f1ded2, sky-soft #e5ebf1, cream #f7f5ef, slate #586772, line #d8ddd9 ; typos Oswald (titres display), Barlow (titres), Inter (texte) ;
+> - **les composants** : en-tête et pied de page, fil d'Ariane, surtitre, titre display, chapô, carte d'article (image, catégorie, titre, extrait, temps de lecture, « Lire l'article → »), carte « À la une » sur fond navy, tag, repère d'accès réservé (cadenas + « Comité »), boutons, lien fléché ;
+> - **la grille** : desktop 1440 px, marges 72 px, contenu 1296 px.
+>
+> **Contenu.** Les actualités du club : guides pratiques, bonnes pratiques, vie du club (championnat ePlaneur, vœux, sorties), et des comptes rendus du Comité Directeur réservés aux membres du Comité. Catégories : « Guide pratique », « Bonnes pratiques », « Vie du club ». Certains articles sont **à la une** (choisis par le comité). Environ 35 articles depuis 2022 ; un article a une date de publication, une catégorie, un temps de lecture, souvent une image de couverture (visuels d'ambiance, pas des captures de Condor), parfois un badge de niveau (« Débutant »).
+>
+> Tous les textes sont en français, réalistes, tirés du site du club. Crée les écrans suivants, en desktop 1440 px puis en mobile 390 px :
+>
+> 1. **Page « Actualités »** (`/actualites`).
+>    - Fil d'Ariane (Accueil › Actualités), surtitre, titre display « Actualités », chapô court.
+>    - En tête, l'article **à la une** le plus récent, en grand (image ou affiche navy, catégorie, titre, extrait, date, lien).
+>    - **Filtres** : catégories en tags cliquables (« Tous », « Guide pratique », « Bonnes pratiques », « Vie du club ») avec le nombre d'articles, et **période** (année puis mois, ex. « 2026 › Octobre ») ; filtre actif visible, lien « Effacer les filtres ».
+>    - **Liste** des autres articles en grille de cartes (3 colonnes desktop, 1 mobile), du plus récent au plus ancien ; date de publication visible sur chaque carte ; un compte rendu réservé visible avec son repère « Comité » pour un visiteur.
+>    - **Pagination** (12 articles par page) : précédent / numéros / suivant, et le nombre d'articles.
+>    - État **sans résultat** pour un filtre : message et lien pour revenir à tous les articles.
+> 2. **Page filtrée** « Vie du club · 2025 » : même page, filtres actifs, titre de la liste « Vie du club en 2025 · 6 articles ».
+> 3. **Section d'accueil « Ça bouge au club »** branchée sur les vrais articles : la carte large reprend l'article à la une (image de couverture ou affiche navy quand il n'y a pas d'image), les deux autres cartes sont les derniers articles publiés ; lien « Toutes les actualités ». Montre aussi le cas où un seul article existe.
+>
+> Nomme clairement chaque frame et chaque composant en français, comme dans les frames existantes.
+
 ## Visual block editor for posts and pages (step 3b, 2026-10-05)
 
 Status: frames generated (2026-10-05) on the "Admin" page of the Figma file `a00zZWdxi7zD4Opbt6gIbn`

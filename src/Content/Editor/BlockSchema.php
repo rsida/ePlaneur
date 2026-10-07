@@ -71,11 +71,13 @@ final class BlockSchema
     }
 
     /**
+     * Fields of a block or item class, from its #[Field] attributes.
+     *
      * @param class-string $class
      *
      * @return list<FieldSchema>
      */
-    private function fieldsOf(string $class): array
+    public function fieldsOf(string $class): array
     {
         if (isset($this->fields[$class])) {
             return $this->fields[$class];
