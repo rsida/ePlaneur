@@ -27,7 +27,7 @@ Permissions and default groups are described in [accounts](accounts.md).
 | Catégories de documents | `/admin/document-category` | `DOCUMENT_MANAGE` | Name, identifier, order |
 | Menus | `/admin/menu-item` | `MENU_MANAGE` | Header (3 levels) and footer links: page or address, note, order, visibility; the parent must be in the same menu |
 | Comptes | `/admin/user` | `USER_MANAGE` | No creation (accounts come from registration); validating a membership = adding the "Membre" group; an administrator cannot delete their own account; passwords are never shown |
-| Groupes et droits | `/admin/group` | `GROUP_MANAGE` | Permissions as checkboxes; the code is set once at creation; default groups cannot be deleted |
+| Groupes et droits | `/admin/group` | `GROUP_MANAGE` | Permissions as checkboxes; "Inclut les groupes" (its members get the access and rights of those groups: Comité includes Membre); the code is set once at creation; default groups cannot be deleted |
 
 Pictures are displayed through resized versions (see [content](content.md#resized-pictures)).
 
@@ -43,7 +43,7 @@ Posts and pages are edited in a WordPress-like editor (Figma "Admin" page, frame
 | Left panel | "Blocs": the block library by group (Texte, Médias, Mise en forme, Club) with a search; click inserts after the selected block, drag and drop inserts where the line shows. "Structure": the blocks of each zone, click to select |
 | Canvas | An iframe showing the content **with the site styles**: header and blocks rendered by the site components. Titles and texts are edited in place; the dashed "+" adds a text block at the end of a zone; typing "/" in an empty text block opens the block search (↑ ↓, Entrée, Échap) |
 | Block toolbar | Above the selected block: grip (drag to move), type, up, down, bold / italic / link / list for rich text, "…" (Dupliquer, Insérer avant, Insérer après, Supprimer) |
-| Right panel | "Article" / "Page": the settings of the content (address, category, cover, visibility...). "Bloc": the settings of the selected block that are not edited in place |
+| Right panel | "Article" / "Page": the settings of the content (address, category, cover, and "Accès": "Ouvert à" and "Pour les autres", Annoncé or Privé...). "Bloc": the settings of the selected block that are not edited in place |
 | Keyboard | Ctrl + Z / Ctrl + Maj + Z outside a text, Alt + Maj + ↑ / ↓ moves the selected block, Échap leaves the selection |
 | Tablets (below 75em, 1200 px) | The canvas takes the whole width; "Bibliothèque" and "Réglages" open the side panels over it (Figma "Tablette · …"); Échap or a click on the veil closes them |
 
@@ -103,8 +103,10 @@ Conventions that keep screens consistent with the mock-up:
   two columns.
 - Booleans edited in forms use `->setFormTypeOption('label_attr', ['class' => 'checkbox-switch'])`
   (a switch), with `->renderAsSwitch(false)` when the list must not toggle them in one click.
-- Visibility badges: `secondary` = everyone, `info` = logged-in users, `warning` = chosen groups
-  (colors of the style sheet).
+- Access fields of restricted contents come from `VisibilityFields::create()` ("Accès" fieldset:
+  "Ouvert à", groups, "Pour les autres" Annoncé / Privé; menu links without the last one). Badges:
+  `secondary` = everyone, `info` = logged-in users, `warning` = chosen groups (colors of the style
+  sheet).
 - Not reproduced (EasyAdmin has no slot for them): the breadcrumb above the title, the subtitle
   under list titles, the per-list search field and the pagination inside the table panel.
 

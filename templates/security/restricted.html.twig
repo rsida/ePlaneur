@@ -29,11 +29,11 @@
     {% endif %}
 
     <article class="p-page">
+        {# Only the title: the lead of reserved content may quote it (committee minutes) #}
         <twig:Content:PageHeader
             :crumbs="crumbs"
             :kicker="content.kicker"
             :title="content.title"
-            :lead="content.excerpt"
             :highlight="highlight ? highlight.highlight : null"
             :highlightNote="highlight ? highlight.highlightNote : null"
         />

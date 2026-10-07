@@ -1,0 +1,112 @@
+# WordPress import (bin/console app:import-wordpress, see doc/wordpress-import.md).
+#
+# pages: path of each WordPress page (without slashes) → what becomes of it:
+#   - a path of the new site: the page is imported there (created, or filled if it exists; parents
+#     must come first or exist), and the old address redirects to it (301) when it differs;
+#   - { redirect: /path }: not imported, the old address redirects there (account pages, lists the
+#     new site builds itself);
+#   - skip: not imported, no redirect.
+# Every page of the old site must be listed: the import stops on an unknown one.
+#
+# categories: slug of each WordPress category → name and slug of the new category. Posts without
+# category (committee minutes) go to `uncategorized`.
+
+pages:
+    # Home, news and accounts: built by the application
+    '': { redirect: / }
+    actualites: { redirect: /actualites }
+    actualites/a-la-une: { redirect: /actualites }
+    actualites/articles-par-categorie: { redirect: /actualites }
+    actualites/articles-par-dates: { redirect: /actualites }
+    blog: { redirect: /actualites }
+    community: { redirect: / }
+    compte-club: { redirect: /mon-compte }
+    comptes: { redirect: /mon-compte }
+    comptes/comptes-site-club: { redirect: /mon-compte }
+    comptes/inscription: { redirect: /inscription }
+    login: { redirect: /connexion }
+    logout: { redirect: /deconnexion }
+    members: { redirect: /le-club/listes-des-membres }
+    password-reset: { redirect: /mot-de-passe-oublie }
+    register: { redirect: /inscription }
+    user: { redirect: /mon-compte }
+
+    # Formation (with the visitor guide "Découvrir" and "Bien démarrer")
+    formation: formation
+    formation/vue-ensemble: formation/vue-ensemble
+    formation/parcours-guide: formation/parcours-guide
+    formation/parcours-guide/etape-1: formation/parcours-guide/etape-1
+    formation/videos-pedagogiques: formation/videos-pedagogiques
+    formation/suivi-parcours: formation/suivi-parcours
+    formation/bonnes-pratiques: formation/bonnes-pratiques
+    decouvrir: formation/decouvrir
+    decouvrir/eplaneur: formation/decouvrir/eplaneur
+    decouvrir/site-eplaneur-fr: formation/decouvrir/site-eplaneur-fr
+    decouvrir/site-club: formation/decouvrir/site-club
+    decouvrir/site-club/menu: { redirect: /le-club }
+    demarrer: formation/bien-demarrer
+    demarrer/installer-condor: formation/bien-demarrer/installer-condor
+    demarrer/chatbots: formation/bien-demarrer/chatbots
+
+    # Voler
+    voler: voler
+    voler/vols-reseau: voler/vols-reseau
+    voler/vols-reseau/organisation: voler/vols-reseau/organisation
+    voler/vols-reseau/whatsapp-vols: voler/vols-reseau/whatsapp-vols
+    voler/vols-reseau/outils-vols: voler/vols-reseau/outils-vols
+    voler/vols-reseau/prerequis: voler/vols-reseau/prerequis
+    voler/vols-reseau/participer: voler/vols-reseau/participer
+    voler/vols-reseau/regles: voler/vols-reseau/regles
+    voler/vols-reseau/proposer-vol: voler/vols-reseau/proposer-vol
+    voler/vols-reseau/pause-estivale: voler/vols-reseau/pause-estivale
+    voler/enregistrer-vol: voler/enregistrer-vol
+    voler/carnet-vols: voler/carnet-vols
+    voler/mac-cready: voler/mac-cready
+    voler/outils-eplaneur: voler/outils-eplaneur
+    voler/outils-eplaneur/rechercher-fpl: voler/outils-eplaneur/rechercher-fpl
+    voler/outils-eplaneur/afficher-fpl: voler/outils-eplaneur/afficher-fpl
+    voler/outils-eplaneur/afficher-sessions: voler/outils-eplaneur/afficher-sessions
+    voler/outils-eplaneur/resultats-session: voler/outils-eplaneur/resultats-session
+    voler/sites-indispensables: voler/sites-indispensables
+    voler/sites-indispensables/condor-club: voler/sites-indispensables/condor-club
+    voler/sites-indispensables/condor-soaring: voler/sites-indispensables/condor-soaring
+    voler/sites-indispensables/utilitaires-condor: voler/sites-indispensables/utilitaires-condor
+
+    # Le Club (tree of the new site: textes-officiels, listes-des-membres, comptes-rendus)
+    le-club: le-club
+    le-club/presentation: le-club/presentation
+    le-club/objectifs: le-club/objectifs
+    le-club/objectifs/brevet-eplaneur: le-club/objectifs/brevet-eplaneur
+    le-club/documents-officiels: le-club/textes-officiels
+    le-club/documents-officiels/statuts: le-club/textes-officiels/statuts
+    le-club/documents-officiels/reglement-interieur: le-club/textes-officiels/reglement-interieur
+    le-club/documents-officiels/autres-documents: le-club/textes-officiels/autres-documents
+    le-club/communication: le-club/communication
+    le-club/communication/communication-interne: le-club/communication/communication-interne
+    le-club/communication/video-presentation: le-club/communication/video-presentation
+    le-club/communication/lettre-enseignants: le-club/communication/lettre-enseignants
+    le-club/adhesions: le-club/adhesions
+    le-club/adhesions/cotisations: le-club/adhesions/cotisations
+    le-club/adhesions/premiere-adhesion: le-club/adhesions/premiere-adhesion
+    comptes/compte-yapla: le-club/adhesions/compte-yapla
+    le-club/listes-membres: le-club/listes-des-membres
+    le-club/listes-membres/comite-directeur: le-club/listes-des-membres/comite-directeur
+    le-club/listes-membres/bureau: le-club/listes-des-membres/bureau
+    le-club/listes-membres/bienfaiteurs: le-club/listes-des-membres/bienfaiteurs
+    le-club/activites: le-club/activites
+    le-club/activites/reunions-comite-directeur: le-club/activites/comptes-rendus
+    le-club/activites/trello-eplaneur: le-club/activites/trello
+    le-club/contact: le-club/contact
+    mentions-legales: mentions-legales
+
+categories:
+    club: { name: Vie du club, slug: vie-du-club }
+    eplaneur: { name: ePlaneur, slug: eplaneur }
+    evenement: { name: Événement, slug: evenement }
+    articles-formation: { name: Formation, slug: formation }
+    sites-web: { name: Sites Web, slug: sites-web }
+    articles-voler: { name: Voler, slug: voler }
+    uncategorized: { name: Comptes rendus du Comité, slug: comptes-rendus }
+
+# Visibility of the content the public API hides ("Contenu restreint"): the groups allowed to read it.
+restricted_groups: [committee]

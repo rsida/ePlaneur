@@ -7,16 +7,19 @@ namespace App\Content;
 use App\Content\Block\ChildPagesBlock;
 use App\Entity\Page;
 use App\Repository\PageRepository;
+use App\Security\Voter\ContentVoter;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
  * Prepares a page: its blocks and table of contents, its published child and sibling pages (reserved
- * ones included, shown with their access tag).
+ * ones announced with their access tag; private ones only for their audience).
  */
 final readonly class PagePresenter
 {
     public function __construct(
         private BlockPlacer $placer,
         private PageRepository $pages,
+        private AuthorizationCheckerInterface $authorizationChecker,
     ) {
     }
 
@@ -48,7 +51,8 @@ final readonly class PagePresenter
     }
 
     /**
-     * Published pages; reserved ones stay listed (with their access tag) so readers know they exist.
+     * Published pages the reader may see listed (ContentVoter::LIST): the ones they may open, and the
+     * announced ones with their access tag, so readers know they exist.
      *
      * @param array<Page> $pages
      *
@@ -56,6 +60,7 @@ final readonly class PagePresenter
      */
     private function visible(array $pages): array
     {
-        return array_values(array_filter($pages, static fn (Page $page): bool => $page->isPublished()));
+        return array_values(array_filter($pages, fn (Page $page): bool => $page->isPublished()
+            && $this->authorizationChecker->isGranted(ContentVoter::LIST, $page)));
     }
 }

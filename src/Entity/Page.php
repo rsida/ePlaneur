@@ -79,6 +79,13 @@ class Page implements RestrictedContentInterface
     #[ORM\Column(length: 20, enumType: Visibility::class, options: ['default' => 'public'])]
     private Visibility $visibility = Visibility::Public;
 
+    /**
+     * For readers outside its audience: announced (listed with a padlock, its address explains it is
+     * reserved) or private (true = announced; false = absent from every list, its address not found).
+     */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $announced = true;
+
     /** @var Collection<int, Group> */
     #[ORM\ManyToMany(targetEntity: Group::class)]
     #[ORM\JoinTable(name: 'page_allowed_group')]
@@ -91,6 +98,10 @@ class Page implements RestrictedContentInterface
     /** @var list<array{type: string, data: array<string, mixed>}> */
     #[ORM\Column(type: 'json')]
     private array $aside = [];
+
+    /** Id of the WordPress post this content was imported from (app:import-wordpress), to update it on a new import. */
+    #[ORM\Column(nullable: true, unique: true)]
+    private ?int $wordpressId = null;
 
     public function __construct(
         #[ORM\Column(length: 255)]
@@ -380,6 +391,30 @@ class Page implements RestrictedContentInterface
     public function setAside(array $aside): static
     {
         $this->aside = array_values($aside);
+
+        return $this;
+    }
+
+    public function getWordpressId(): ?int
+    {
+        return $this->wordpressId;
+    }
+
+    public function setWordpressId(?int $wordpressId): static
+    {
+        $this->wordpressId = $wordpressId;
+
+        return $this;
+    }
+
+    public function isAnnounced(): bool
+    {
+        return $this->announced;
+    }
+
+    public function setAnnounced(bool $announced): static
+    {
+        $this->announced = $announced;
 
         return $this;
     }

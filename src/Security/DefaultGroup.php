@@ -47,6 +47,17 @@ enum DefaultGroup: string
         };
     }
 
+    /**
+     * Groups this one includes when it is created (the migration does the same): the committee has
+     * the access of the members.
+     *
+     * @return list<self>
+     */
+    public function includedGroups(): array
+    {
+        return self::Committee === $this ? [self::Member] : [];
+    }
+
     public function hasAllPermissions(): bool
     {
         return self::Admin === $this;

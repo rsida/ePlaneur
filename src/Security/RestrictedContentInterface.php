@@ -21,4 +21,10 @@ interface RestrictedContentInterface
      * @return iterable<Group>
      */
     public function getAllowedGroups(): iterable;
+
+    /**
+     * For readers outside its audience: announced (listed with a padlock; its address says it is
+     * reserved) or private (listed nowhere; its address answers "not found").
+     */
+    public function isAnnounced(): bool;
 }

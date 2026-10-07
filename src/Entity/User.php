@@ -221,20 +221,40 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * The user's groups and the groups they include (Group::getIncludedGroups()): what decides the
+     * user's permissions and the content they may see.
+     *
+     * @return list<Group>
+     */
+    public function getEffectiveGroups(): array
+    {
+        $groups = [];
+        foreach ($this->groups as $group) {
+            foreach ($group->getEffectiveGroups() as $effective) {
+                if (!\in_array($effective, $groups, true)) {
+                    $groups[] = $effective;
+                }
+            }
+        }
+
+        return $groups;
+    }
+
     public function isInGroup(string $code): bool
     {
-        return $this->groups->exists(static fn (int $key, Group $group): bool => $group->getCode() === $code);
+        return array_any($this->getEffectiveGroups(), static fn (Group $group): bool => $group->getCode() === $code);
     }
 
     public function hasPermission(Permission $permission): bool
     {
-        return $this->groups->exists(static fn (int $key, Group $group): bool => $group->hasPermission($permission));
+        return array_any($this->getEffectiveGroups(), static fn (Group $group): bool => $group->hasPermission($permission));
     }
 
     /** True when one of the user's groups grants every permission (administrators). */
     public function hasAllPermissions(): bool
     {
-        return $this->groups->exists(static fn (int $key, Group $group): bool => $group->hasAllPermissions());
+        return array_any($this->getEffectiveGroups(), static fn (Group $group): bool => $group->hasAllPermissions());
     }
 
     /**

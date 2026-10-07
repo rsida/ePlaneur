@@ -176,9 +176,10 @@
                     {{ form_row(form.updatedAt) }}
                 {% endif %}
                 <fieldset class="ep-editor__fieldset">
-                    <legend>Visibilité</legend>
+                    <legend>Accès</legend>
                     {{ form_row(form.visibility) }}
                     {{ form_row(form.allowedGroups) }}
+                    {{ form_row(form.announced) }}
                 </fieldset>
                 <details class="ep-editor__fieldset">
                     <summary>Textes de l’en-tête</summary>

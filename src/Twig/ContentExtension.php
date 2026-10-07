@@ -10,8 +10,8 @@ use App\Content\PostPresenter;
 use App\Document\DocumentLibrary;
 use App\Entity\Document;
 use App\Entity\Post;
+use App\Security\AccessLabel;
 use App\Security\RestrictedContentInterface;
-use App\Security\Visibility;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
 
@@ -50,11 +50,7 @@ final readonly class ContentExtension
     #[AsTwigFunction('access_label')]
     public function accessLabel(RestrictedContentInterface $content): ?string
     {
-        return match ($content->getVisibility()) {
-            Visibility::Public => null,
-            Visibility::Authenticated => 'Connectés',
-            Visibility::Groups => implode(' · ', array_map(static fn ($group): string => $group->getName(), [...$content->getAllowedGroups()])) ?: 'Réservé',
-        };
+        return AccessLabel::of($content);
     }
 
     /**

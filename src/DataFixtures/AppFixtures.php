@@ -22,7 +22,7 @@ final class AppFixtures extends Fixture
     /** @var array<string, array{string, list<DefaultGroup>}> e-mail => [display name, groups] */
     private const array USERS = [
         'admin@eplaneur.test' => ['Admin ePlaneur', [DefaultGroup::Admin]],
-        'comite@eplaneur.test' => ['Camille Comité', [DefaultGroup::Member, DefaultGroup::Committee]],
+        'comite@eplaneur.test' => ['Camille Comité', [DefaultGroup::Committee]],
         'membre@eplaneur.test' => ['Max Membre', [DefaultGroup::Member]],
         'inscrit@eplaneur.test' => ['Inès Inscrite', []],
     ];
@@ -44,6 +44,11 @@ final class AppFixtures extends Fixture
             $manager->persist($group);
             $this->addReference('group-'.$default->value, $group);
             $groups[$default->value] = $group;
+        }
+        foreach (DefaultGroup::cases() as $default) {
+            foreach ($default->includedGroups() as $included) {
+                $groups[$default->value]->addIncludedGroup($groups[$included->value]);
+            }
         }
 
         foreach (self::USERS as $email => [$displayName, $defaults]) {

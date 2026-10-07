@@ -73,7 +73,8 @@ final class PostFixtures extends Fixture implements DependentFixtureInterface
 
         $minutes = $this->simplePost('Compte rendu de la réunion du Comité Directeur', 'compte-rendu-reunion-comite-directeur', $clubLife, null,
             'Décisions et suivi des actions de la réunion du Comité Directeur. Contenu réservé au comité.', '-2 days', $author);
-        $minutes->setVisibility(Visibility::Groups)->addAllowedGroup($this->getReference('group-'.DefaultGroup::Committee->value, Group::class));
+        // Committee minutes: hidden from the other readers, not listed with a padlock
+        $minutes->setVisibility(Visibility::Groups)->addAllowedGroup($this->getReference('group-'.DefaultGroup::Committee->value, Group::class))->setAnnounced(false);
 
         $manager->flush();
     }

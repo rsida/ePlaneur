@@ -24,7 +24,7 @@
             <p class="c-post-card__date"><time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|format_date('long', locale: 'fr', timezone: 'Europe/Paris') }}</time></p>
         {% endif %}
         {% if locked %}
-            <p class="c-post-card__excerpt">Cet article est réservé{{ access == 'Connectés' ? ' aux membres connectés' : ' : ' ~ access }}.</p>
+            <p class="c-post-card__excerpt">Cet article est réservé{{ post.visibility.value == 'authenticated' ? ' aux comptes connectés' : ' : ' ~ access }}.</p>
         {% else %}
             <p class="c-post-card__excerpt">{{ post.excerpt|u.truncate(120, '…', false) }}</p>
             {% if access %}<twig:Ui:Access>{{ access }}</twig:Ui:Access>{% endif %}

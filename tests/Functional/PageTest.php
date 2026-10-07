@@ -188,6 +188,26 @@ final class PageTest extends WebTestCase
         self::assertSelectorNotExists('.c-nav a[href="/cache"]', 'A hidden heading hides its links');
     }
 
+    public function testHiddenReservedPagesDisappearForTheOthers(): void
+    {
+        $club = $this->page('Le Club', 'le-club');
+        $minutes = $this->page('Comptes rendus', 'comptes-rendus', $club);
+        $minutes->setVisibility(Visibility::Groups)->addAllowedGroup($this->group('committee'))->setAnnounced(false);
+        $clubLink = $this->link('Le Club', page: $club);
+        $this->link('Comptes rendus', $clubLink, page: $minutes);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/le-club');
+        self::assertSelectorNotExists('.c-mega a[href="/le-club/comptes-rendus"]', 'Its menu links disappear');
+        self::assertSelectorTextNotContains('main', 'Comptes rendus', 'Its card among the sub-pages too');
+        $this->client->request('GET', '/le-club/comptes-rendus');
+        self::assertResponseStatusCodeSame(404, 'A private page does not reveal it exists');
+
+        $this->client->loginUser($this->user('comite@example.org', 'committee'));
+        $this->client->request('GET', '/le-club');
+        self::assertSelectorExists('.c-mega a[href="/le-club/comptes-rendus"]', 'The committee sees it');
+    }
+
     public function testOfficialDocumentsFollowTheirVisibility(): void
     {
         $category = new DocumentCategory('Textes fondateurs', 'textes-fondateurs');
@@ -195,7 +215,9 @@ final class PageTest extends WebTestCase
         $public = $this->document('Statuts', $category);
         $public->setVersion('V23')->setDetails(['Adoptés le 15/12/2025']);
         $private = $this->document('Compte rendu', $category);
-        $private->setVisibility(Visibility::Groups)->addAllowedGroup($this->group('committee'));
+        $private->setVisibility(Visibility::Groups)->addAllowedGroup($this->group('committee'))->setAnnounced(false);
+        $announced = $this->document('Règlement des membres', $category);
+        $announced->setVisibility(Visibility::Groups)->addAllowedGroup($this->group('member'));
         $this->entityManager->flush();
 
         // The file follows the document
@@ -211,13 +233,17 @@ final class PageTest extends WebTestCase
         $this->client->request('GET', '/documents');
         self::assertSelectorTextContains('.c-documents', 'Statuts');
         self::assertSelectorExists('.c-documents[data-layout="cards"]');
-        self::assertSelectorTextContains('.c-document__facts', 'Version : V23');
-        self::assertSelectorTextContains('.c-document__facts', 'Adoptés le 15/12/2025');
+        self::assertSelectorTextContains('.c-documents', 'Version : V23');
+        self::assertSelectorTextContains('.c-documents', 'Adoptés le 15/12/2025');
         self::assertSelectorTextContains('.c-document-card', 'Consulter les statuts signés');
         self::assertSelectorCount(1, '.c-document-card', 'A highlighted document the reader may not see is left out');
-        self::assertSelectorTextNotContains('.c-documents', 'Compte rendu');
+        self::assertSelectorTextNotContains('.c-documents', 'Compte rendu', 'A private document is left out…');
+        self::assertSelectorTextContains('.c-documents', 'Règlement des membres', '…an announced one is listed…');
+        self::assertSelectorTextContains('.c-documents .c-access', 'Membre', '…with its access tag');
         $this->client->request('GET', '/media/'.$private->getFile()->getId().'/compte-rendu.pdf');
-        self::assertResponseStatusCodeSame(302);
+        self::assertResponseStatusCodeSame(404, 'The file of a private document is not found');
+        $this->client->request('GET', '/media/'.$announced->getFile()->getId().'/reglement.pdf');
+        self::assertResponseRedirects('/connexion', null, 'The file of an announced document asks to log in');
 
         $this->client->loginUser($this->user('comite@example.org', 'committee'));
         $this->client->request('GET', '/documents');

@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\Form\Admin;
 
 use App\Entity\Category;
-use App\Entity\Group;
 use App\Entity\Post;
 use App\Entity\User;
-use App\Security\Visibility;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -16,7 +14,6 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
-use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -65,20 +62,6 @@ final class PostEditorType extends AbstractType
             ->add('highlight', TextareaType::class, ['label' => 'Phrase d’accroche', 'required' => false, 'help' => 'À droite du titre ; une ligne par phrase.'])
             ->add('highlightNote', TextareaType::class, ['label' => 'Note sous l’accroche', 'required' => false])
             ->add('featured', CheckboxType::class, ['label' => 'À la une', 'required' => false, 'label_attr' => ['class' => 'checkbox-switch']])
-            ->add('visibility', EnumType::class, [
-                'label' => 'Visible par',
-                'class' => Visibility::class,
-                'choice_label' => static fn (Visibility $visibility): string => $visibility->label(),
-            ])
-            ->add('allowedGroups', EntityType::class, [
-                'label' => 'Groupes autorisés',
-                'class' => Group::class,
-                'multiple' => true,
-                'expanded' => true,
-                'required' => false,
-                'by_reference' => false,
-                'help' => 'Utilisé seulement avec « Groupes choisis ».',
-            ])
             ->add('body', BlockZoneType::class, ['content_kind' => 'post'])
             ->add('aside', BlockZoneType::class, ['content_kind' => 'post'])
             ->add('outro', BlockZoneType::class, ['content_kind' => 'post']);
@@ -87,6 +70,8 @@ final class PostEditorType extends AbstractType
             static fn (?array $keywords): string => implode(', ', $keywords ?? []),
             static fn (?string $keywords): array => array_values(array_filter(array_map(trim(...), explode(',', $keywords ?? '')), static fn (string $keyword): bool => '' !== $keyword)),
         ));
+
+        AccessFields::add($builder);
 
         if ($options['can_publish']) {
             $builder->add('publishedAt', DateTimeType::class, [

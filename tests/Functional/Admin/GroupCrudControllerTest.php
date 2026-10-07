@@ -51,6 +51,15 @@ final class GroupCrudControllerTest extends AbstractCrudTestCase
         self::assertTrue($committee->hasPermission(Permission::AdminAccess), 'Other rights are kept');
     }
 
+    public function testTheCommitteeIncludesTheMembers(): void
+    {
+        $committee = $this->defaultGroup('committee');
+        self::assertContains($this->defaultGroup('member'), $committee->getIncludedGroups()->toArray(), 'Set by the migration');
+
+        $crawler = $this->client->request('GET', $this->generateEditFormUrl($committee->getId()));
+        self::assertCount(1, $crawler->filter('[name="Group[includedGroups][]"][value="'.$this->defaultGroup('member')->getId().'"][checked]'));
+    }
+
     public function testANewGroupGetsACode(): void
     {
         $crawler = $this->client->request('GET', $this->generateNewFormUrl());

@@ -44,6 +44,13 @@ class Media implements RestrictedContentInterface
     #[ORM\Column(length: 20, enumType: Visibility::class, options: ['default' => 'public'])]
     private Visibility $visibility = Visibility::Public;
 
+    /**
+     * For readers outside its audience: announced (listed with a padlock, its address explains it is
+     * reserved) or private (true = announced; false = absent from every list, its address not found).
+     */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $announced = true;
+
     /** @var Collection<int, Group> */
     #[ORM\ManyToMany(targetEntity: Group::class)]
     #[ORM\JoinTable(name: 'media_allowed_group')]
@@ -51,6 +58,10 @@ class Media implements RestrictedContentInterface
 
     #[ORM\Column]
     private \DateTimeImmutable $uploadedAt;
+
+    /** Address of the file on the WordPress site it was imported from (app:import-wordpress). */
+    #[ORM\Column(length: 500, nullable: true, unique: true)]
+    private ?string $sourceUrl = null;
 
     public function __construct(
         /** Path relative to the uploads directory, e.g. 2026/10/3f2a...c1.png */
@@ -204,6 +215,30 @@ class Media implements RestrictedContentInterface
     public function getUploadedAt(): \DateTimeImmutable
     {
         return $this->uploadedAt;
+    }
+
+    public function getSourceUrl(): ?string
+    {
+        return $this->sourceUrl;
+    }
+
+    public function setSourceUrl(?string $sourceUrl): static
+    {
+        $this->sourceUrl = $sourceUrl;
+
+        return $this;
+    }
+
+    public function isAnnounced(): bool
+    {
+        return $this->announced;
+    }
+
+    public function setAnnounced(bool $announced): static
+    {
+        $this->announced = $announced;
+
+        return $this;
     }
 
     public function __toString(): string

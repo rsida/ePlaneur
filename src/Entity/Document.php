@@ -54,6 +54,13 @@ class Document implements RestrictedContentInterface
     #[ORM\Column(length: 20, enumType: Visibility::class, options: ['default' => 'public'])]
     private Visibility $visibility = Visibility::Public;
 
+    /**
+     * For readers outside its audience: announced (listed with a padlock, its address explains it is
+     * reserved) or private (true = announced; false = absent from every list, its address not found).
+     */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $announced = true;
+
     /** @var Collection<int, Group> */
     #[ORM\ManyToMany(targetEntity: Group::class)]
     #[ORM\JoinTable(name: 'document_allowed_group')]
@@ -214,6 +221,18 @@ class Document implements RestrictedContentInterface
     public function removeAllowedGroup(Group $group): static
     {
         $this->allowedGroups->removeElement($group);
+
+        return $this;
+    }
+
+    public function isAnnounced(): bool
+    {
+        return $this->announced;
+    }
+
+    public function setAnnounced(bool $announced): static
+    {
+        $this->announced = $announced;
 
         return $this;
     }

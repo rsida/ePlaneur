@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Repository\PostRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,11 +18,13 @@ final class HomeController extends AbstractController
     #[Route('/', name: 'app_home', methods: ['GET'])]
     public function index(PostRepository $posts): Response
     {
-        $featured = $posts->findFeatured();
+        $reader = $this->getUser();
+        $reader = $reader instanceof User ? $reader : null;
+        $featured = $posts->findFeatured($reader);
 
         return $this->render('home/index.html.twig', [
             'featured' => $featured,
-            'latest' => $posts->findLatest(self::NEWS_COUNT - (null !== $featured ? 1 : 0), $featured),
+            'latest' => $posts->findLatest($reader, self::NEWS_COUNT - (null !== $featured ? 1 : 0), $featured),
         ]);
     }
 }

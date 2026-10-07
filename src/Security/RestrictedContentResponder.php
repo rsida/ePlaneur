@@ -8,12 +8,14 @@ use App\Entity\Page;
 use App\Entity\Post;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Twig\Environment;
 
 /**
- * "Contenu réservé" page (HTTP 403) shown instead of a page or post the reader may not see: the
- * content header (breadcrumb, title, lead) stays, the body is replaced by the access card. Visitors
- * get the login and registration actions, logged-in users learn who the content is for.
+ * Answer to a reader who may not open a page or post. Announced content gets the "Contenu réservé"
+ * page (HTTP 403): its header (breadcrumb, kicker, title) stays, the body is replaced by the access
+ * card; visitors get the login and registration actions, logged-in users learn who it is for.
+ * Private content is not found (404): it does not even reveal it exists.
  */
 final readonly class RestrictedContentResponder
 {
@@ -27,10 +29,16 @@ final readonly class RestrictedContentResponder
      * @param Page|Post                  $content    the content asked for (title, lead, breadcrumb)
      * @param RestrictedContentInterface $restricted the content whose visibility refuses the reader
      *                                               (the content itself, or one of its ancestor pages)
+     *
+     * @throws NotFoundHttpException for private content
      */
     public function respond(Page|Post $content, ?RestrictedContentInterface $restricted = null): Response
     {
         $restricted ??= $content;
+        if (!$restricted->isAnnounced()) {
+            throw new NotFoundHttpException('Contenu introuvable.');
+        }
+
         $groups = [];
         if (Visibility::Groups === $restricted->getVisibility()) {
             foreach ($restricted->getAllowedGroups() as $group) {

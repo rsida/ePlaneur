@@ -6,7 +6,7 @@ namespace App\Navigation;
 
 use App\Entity\MenuItem;
 use App\Repository\MenuItemRepository;
-use App\Security\Visibility;
+use App\Security\AccessLabel;
 use App\Security\Voter\ContentVoter;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -15,9 +15,10 @@ use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Builds the menu tree a reader may see. A link is hidden when its own visibility excludes the reader
- * (CONTENT_VIEW) or when its target page is not published; a link to a reserved page stays visible
- * with an access tag (teaser) and leads to the "Contenu réservé" page. A heading without visible
- * links is dropped. Used in templates through `menu('main')`.
+ * (CONTENT_VIEW), when its target page is not published, or when that page is private to others
+ * (CONTENT_LIST); a link to an announced page stays visible with an access tag and leads to the
+ * "Contenu réservé" page. A heading without visible links is dropped. Used in templates through
+ * `menu('main')`.
  */
 final class MenuBuilder implements ResetInterface
 {
@@ -93,27 +94,28 @@ final class MenuBuilder implements ResetInterface
         return $nodes;
     }
 
+    /**
+     * The link's own visibility, then its page: published and listed for the reader (an announced
+     * page keeps its link with an access tag, a private one takes it away).
+     */
     private function isVisible(MenuItem $item): bool
     {
+        $page = $item->getPage();
+
         return $this->authorizationChecker->isGranted(ContentVoter::VIEW, $item)
-            && (null === $item->getPage() || $item->getPage()->isPublished());
+            && (null === $page || ($page->isPublished() && $this->authorizationChecker->isGranted(ContentVoter::LIST, $page)));
     }
 
     /**
-     * Access tag of a link to reserved content: the groups allowed, or "Connectés".
+     * Access tag of a link to reserved content (its page's audience, or its own).
      */
     private function accessLabel(MenuItem $item): ?string
     {
         foreach ([$item->getPage(), $item] as $content) {
-            if (null === $content || Visibility::Public === $content->getVisibility()) {
-                continue;
+            $label = null !== $content ? AccessLabel::of($content) : null;
+            if (null !== $label) {
+                return $label;
             }
-            if (Visibility::Authenticated === $content->getVisibility()) {
-                return 'Connectés';
-            }
-            $names = array_map(static fn ($group): string => $group->getName(), $content->getAllowedGroups()->toArray());
-
-            return implode(' · ', $names) ?: 'Réservé';
         }
 
         return null;

@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Form\Admin;
 
-use App\Entity\Group;
 use App\Entity\Page;
 use App\Repository\PageRepository;
-use App\Security\Visibility;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
-use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -72,20 +69,6 @@ final class PageEditorType extends AbstractType
                 'input' => 'datetime_immutable',
                 'help' => 'Affichée sous le titre des sous-pages. Elle passe à aujourd’hui à chaque enregistrement, sauf si vous choisissez une autre date.',
             ])
-            ->add('visibility', EnumType::class, [
-                'label' => 'Visible par',
-                'class' => Visibility::class,
-                'choice_label' => static fn (Visibility $visibility): string => $visibility->label(),
-            ])
-            ->add('allowedGroups', EntityType::class, [
-                'label' => 'Groupes autorisés',
-                'class' => Group::class,
-                'multiple' => true,
-                'expanded' => true,
-                'required' => false,
-                'by_reference' => false,
-                'help' => 'Utilisé seulement avec « Groupes choisis ».',
-            ])
             ->add('publishedAt', DateTimeType::class, [
                 'label' => 'Date de publication',
                 'required' => false,
@@ -96,6 +79,8 @@ final class PageEditorType extends AbstractType
             ])
             ->add('body', BlockZoneType::class, ['content_kind' => 'page'])
             ->add('aside', BlockZoneType::class, ['content_kind' => 'page']);
+
+        AccessFields::add($builder);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

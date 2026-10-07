@@ -7,6 +7,7 @@ namespace App\Controller\Admin;
 use App\Entity\Group;
 use App\Security\Permission;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -68,7 +69,13 @@ final class GroupCrudController extends AbstractCrudController
         yield TextField::new('code', 'Code')->hideOnForm();
         yield AssociationField::new('users', 'Membres')->onlyOnIndex();
 
-        yield FormField::addFieldset('Droits du groupe')->setHelp('Les droits des différents groupes d’un compte se cumulent.');
+        yield AssociationField::new('includedGroups', 'Inclut les groupes')
+            ->setFormTypeOptions(['by_reference' => false, 'expanded' => true])
+            ->setQueryBuilder(static fn (QueryBuilder $qb): QueryBuilder => $qb->orderBy('entity.name', 'ASC'))
+            ->setHelp('Ses membres ont aussi l’accès et les droits de ces groupes : le Comité inclut Membre, sans qu’il faille mettre ses membres dans les deux groupes.')
+            ->setColumns(12);
+
+        yield FormField::addFieldset('Droits du groupe')->setHelp('Les droits des différents groupes d’un compte, et des groupes qu’ils incluent, se cumulent.');
         yield BooleanField::new('allPermissions', 'Tous les droits')
             ->setHelp('Réservé aux administrateurs du site : donne tous les droits, y compris les futurs.')
             ->renderAsSwitch(false) // no one-click toggle on the list

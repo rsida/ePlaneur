@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\Category;
 use App\Entity\Post;
+use App\Entity\User;
 use App\Repository\GroupRepository;
 use App\Security\Visibility;
 use Doctrine\ORM\EntityManagerInterface;
@@ -106,6 +107,29 @@ final class NewsTest extends WebTestCase
         self::assertSelectorTextContains('.c-post-card--locked', 'Comité');
         self::assertSelectorTextContains('.c-post-card--locked', 'Se connecter pour lire');
         self::assertSelectorTextNotContains('.c-post-card--locked', 'Résumé de compte-rendu', 'The excerpt stays hidden');
+    }
+
+    public function testHiddenReservedPostsOnlyAppearToTheirReaders(): void
+    {
+        $minutes = $this->post('compte-rendu-cd', '2025-09-30 20:00', featured: true);
+        $minutes->setVisibility(Visibility::Groups)->addAllowedGroup(static::getContainer()->get(GroupRepository::class)->findOneByCode('committee'))->setAnnounced(false);
+        $this->post('public', '2025-09-01 20:00');
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/actualites');
+        self::assertSelectorNotExists('.c-featured-post', 'Not even as the featured post');
+        self::assertSame(['Article public'], $crawler->filter('.c-post-card__title')->each(static fn ($node): string => $node->text()));
+        self::assertSelectorTextContains('#news-title', '1 article');
+        $this->client->request('GET', '/');
+        self::assertSelectorTextNotContains('#actualites', 'compte-rendu-cd');
+
+        $committee = (new User())->setEmail('comite@example.org')->setDisplayName('Comité')->setVerified(true)->setPassword('x')
+            ->addGroup(static::getContainer()->get(GroupRepository::class)->findOneByCode('committee'));
+        $this->entityManager->persist($committee);
+        $this->entityManager->flush();
+        $this->client->loginUser($committee);
+        $this->client->request('GET', '/actualites');
+        self::assertSelectorTextContains('.c-featured-post', 'Article compte-rendu-cd', 'The committee sees it, without padlock');
     }
 
     public function testTheHomePageShowsTheFeaturedAndLatestPosts(): void

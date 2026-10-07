@@ -8,21 +8,26 @@ levels of the club) is in [project/club.md](project/club.md).
 | Concept | Where | Edited by |
 |---|---|---|
 | **User** (`App\Entity\User`) | Table `app_user`: e-mail (login), display name, password hash, `verified`, creation date | The user (registration, password) and administrators |
-| **Group** (`App\Entity\Group`) | Table `app_group`: code, name, description, permissions, "all permissions" flag, "system" flag | Administrators, in the back-office ("Groupes et droits", see [admin](admin.md)) or from the console |
-| **Membership** | Table `app_user_group`: a user belongs to **any number** of groups; rights add up | Administrators |
+| **Group** (`App\Entity\Group`) | Table `app_group`: code, name, description, permissions, "all permissions" flag, "system" flag; groups it **includes** (table `group_inclusion`) | Administrators, in the back-office ("Groupes et droits", see [admin](admin.md)) or from the console |
+| **Membership** | Table `app_user_group`: a user belongs to **any number** of groups; rights add up, with those of the groups they include | Administrators |
 | **Permission** (`App\Security\Permission`) | PHP enum: the fixed catalogue of actions (`ADMIN_ACCESS`, `USER_MANAGE`, `GROUP_MANAGE`, post permissions listed in [content](content.md#permissions)...) | Developers: add a case when a feature needs a new right |
-| **Visibility** (`App\Security\Visibility`) | On each restricted content: `public`, `authenticated` or `groups` (+ the allowed groups) | Content editors |
+| **Access** | On each restricted content (post, page, document, media): who may open it, `visibility` = `public`, `authenticated` or `groups` (+ the allowed groups), and what the others get, `announced` (see below) | Content editors |
 
 Default groups, created by the first migration and by the dev fixtures (`App\Security\DefaultGroup`):
 
 | Code | Name | Permissions |
 |---|---|---|
 | `member` | Membre | none yet |
-| `committee` | Comité | `ADMIN_ACCESS`, `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE`, `PAGE_MANAGE`, `DOCUMENT_MANAGE` |
+| `committee` | Comité, includes Membre | `ADMIN_ACCESS`, `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE`, `PAGE_MANAGE`, `DOCUMENT_MANAGE` |
 | `admin` | Administrateur | all (`all_permissions` flag: includes permissions added later, and sees every content) |
 
 Administrators can create other groups (Rédacteur, Bienfaiteur, Bénévole...) and change which
 permissions each group holds. A registered user without any group is a free account ("inscrit").
+
+**Group inclusion**: a group can include other groups ("Inclut les groupes" in the back-office).
+Its members then count as members of the included groups, for content access and permissions, and
+inclusions are followed transitively (cycles are ignored): the committee includes the members, so a
+committee member does not need the "Membre" group too (`User::getEffectiveGroups()`).
 
 Every account has the single Symfony role `ROLE_USER`. Rights are **not** stored in the security
 token: voters read the user's groups on each request, so a change of groups or permissions applies
@@ -34,18 +39,29 @@ immediately, without logging the user out.
 |---|---|---|
 | Logged in | `#[IsGranted('ROLE_USER')]` | `{% if app.user %}` |
 | A permission | `#[IsGranted('USER_MANAGE')]`, `$this->denyAccessUnlessGranted(Permission::UserManage->value)` | `{% if is_granted('USER_MANAGE') %}` |
-| See a content (post, page, menu link, document) | `$this->denyAccessUnlessGranted(ContentVoter::VIEW, $post)` | `{% if is_granted('CONTENT_VIEW', link) %}` |
+| Open a content (post, page, document, media) | `$this->isGranted(ContentVoter::VIEW, $post)` | `{% if is_granted('CONTENT_VIEW', post) %}` |
+| List it (lists, menus, cards) | `$this->isGranted(ContentVoter::LIST, $page)` | `{% if is_granted('CONTENT_LIST', page) %}` |
 
-Readers who may not see a page or post get the "Contenu réservé" page (HTTP 403), see
-[content](content.md#pages-menus-and-restricted-content).
+### Access to content
 
 Restricted content implements `App\Security\RestrictedContentInterface` (`getVisibility()`,
-`getAllowedGroups()`); `App\Security\Voter\ContentVoter` then decides:
+`getAllowedGroups()`, `isAnnounced()`). Who may **open** it (`CONTENT_VIEW`):
 
 - `public`: everyone;
 - `authenticated`: any logged-in user;
-- `groups`: members of at least one allowed group;
-- users in a group with "all permissions" see everything.
+- `groups`: members of at least one allowed group, or of a group including it;
+- users in a group with "all permissions" (administrators) see everything.
+
+What the **others** get depends on `announced` ("Pour les autres" in the back-office):
+
+| Mode | Lists, menus, cards (`CONTENT_LIST`) | Its address |
+|---|---|---|
+| **Annoncé** (default) | Shown with a padlock and the audience ("Comité", "Connectés") | "Contenu réservé" page (403): title, then login and registration for visitors, or "réservé au groupe…" |
+| **Privé** | Absent | Not found (404): the content does not reveal it exists |
+
+Files follow the same rule (an announced file asks to log in, a private one is not found), and a
+document's file takes the access of its document. See
+[content](content.md#pages-menus-and-restricted-content).
 
 To add a right: add a case to `Permission` (with its French label), protect the action with
 `#[IsGranted('NEW_PERMISSION')]`, then grant it to the relevant groups. Hide links to actions the
@@ -105,7 +121,7 @@ On the production server, `make console c="..."` runs them the same way (see [pr
 | E-mail | Groups |
 |---|---|
 | `admin@eplaneur.test` | Administrateur |
-| `comite@eplaneur.test` | Membre, Comité |
+| `comite@eplaneur.test` | Comité (includes Membre) |
 | `membre@eplaneur.test` | Membre |
 | `inscrit@eplaneur.test` | none (free account) |
 | `camille@eplaneur.test` | Comité (author of the demo posts) |

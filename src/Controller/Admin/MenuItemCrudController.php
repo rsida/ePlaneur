@@ -67,6 +67,6 @@ final class MenuItemCrudController extends AbstractCrudController
         yield TextField::new('url', 'Ou adresse')
             ->setHelp('Chemin du site (/actualites, /#vols), URL externe (https://…) ou mailto:.');
         yield IntegerField::new('position', 'Ordre');
-        yield from VisibilityFields::create();
+        yield from VisibilityFields::create(announced: false);
     }
 }

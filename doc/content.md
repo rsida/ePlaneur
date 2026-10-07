@@ -37,9 +37,10 @@ Figma frames "Actualités · …" and "Accueil · Ça bouge au club · …" (pag
   category, an invalid value or a page beyond the last one gives a 404. Category tags show the
   number of published posts; the year and month lists only offer periods with posts; without
   JavaScript a "Filtrer" button submits them (`autosubmit` controller otherwise).
-- **Reserved posts are listed** like reserved pages: readers who may not open one see a lock and its
-  audience instead of the cover and excerpt, and "Se connecter pour lire"; the post page then shows
-  "Contenu réservé".
+- Reserved posts follow their access (see below): **announced**, they are shown to the readers who
+  may not open them with a lock and the audience instead of the cover and excerpt, and "Se
+  connecter pour lire"; **private**, they are not listed at all for them (counts, periods, featured
+  post and home page included).
 - The home page section "Ça bouge au club" (`HomeController`) shows the featured post, large, and
   the two latest other published posts; alone, the featured post takes the whole width; without
   featured post, the three latest posts.
@@ -51,24 +52,32 @@ Figma frames "Actualités · …" and "Accueil · Ça bouge au club · …" (pag
 - Pages are served by `PageController` (`/{path}`, lowest route priority). A root page cannot take a
   slug used by the application (`Page::RESERVED_SLUGS`); a page with children cannot be deleted
   (`PageDeletionGuard`). Every ancestor of a page must be visible too.
-- `MenuBuilder` (Twig `menu('main')`, `menu('footer')`) builds the links the reader may see. A link is
-  hidden by its own visibility or when its target page is unpublished; a link to a **reserved page
-  stays visible** with an access tag (group names or "Connectés") and leads to the "Contenu réservé"
-  page, so readers know the content exists. A heading whose links are all hidden disappears; the
+- **Reserved content, announced or private**: every post, page, document and file has its access
+  ("Accès" in the editor and the back-office, see [accounts](accounts.md#access-to-content)): who
+  may open it ("Ouvert à": everyone, logged-in users, chosen groups) and what the others get ("Pour
+  les autres"). **Annoncé** (default): it stays in lists and menus with an access tag (group names
+  or "Connectés") so readers know it exists, and its address answers "Contenu réservé" (403).
+  **Privé**: it appears nowhere for them (news list, home page, sub-page cards, side navigation,
+  menu links, document lists) and its address answers "not found" (404). Administrators see
+  everything.
+- `MenuBuilder` (Twig `menu('main')`, `menu('footer')`) builds the links the reader may see. A link
+  follows its page: hidden when the page is unpublished or private to the reader, shown with an
+  access tag when it is announced. Links to other addresses have their own visibility. A heading whose links are all hidden disappears; the
   current section is `active`, the current link `current`.
 - Header: a first-level link with children opens a mega-menu (one column per second-level link,
   their links with note and access tag); below 64em the menu is a full-screen panel with accordions.
 - Page layout: a root page (section) spreads its blocks over the full width; a sub-page shows the
   pages of its section on the left, the `aside` blocks below them, and its update date. A page with
   published sub-pages lists them as cards (`child_pages` block, added at the end when the editor did
-  not place one); reserved sub-pages appear with their access tag.
+  not place one); announced sub-pages appear with their access tag, private ones only to their
+  audience.
   The first migration of step 2b seeds the menus with the links the header and footer had in code.
-- Readers without access to a page or post get the **"Contenu réservé"** page (HTTP 403,
+- Readers without access to an announced page or post get the **"Contenu réservé"** page (HTTP 403,
   `RestrictedContentResponder`): login and registration buttons for visitors (back to the page after
-  login), the required group for logged-in users. The header of the page or post (breadcrumb, title,
-  lead) stays; only its body is replaced.
-- A document's visibility is copied onto its file before each flush (`DocumentAccessListener`), so
-  the file URL is exactly as restricted as the document.
+  login), the required group for logged-in users. The header of the page or post (breadcrumb, kicker,
+  title) stays; its lead and body are not shown, as the lead may quote the content.
+- A document's access (visibility, groups, announced or private) is copied onto its file before each
+  flush (`DocumentAccessListener`), so the file URL is exactly as restricted as the document.
 
 
 ## Block zones

@@ -105,7 +105,7 @@ final class MediaCrudController extends AbstractCrudController
             $groups = $form->get('allowedGroups')->getData();
 
             foreach ($files as $file) {
-                $media = $this->storage->storeUpload($file)->setVisibility($visibility);
+                $media = $this->storage->storeUpload($file)->setVisibility($visibility)->setAnnounced((bool) $form->get('announced')->getData());
                 foreach ($groups as $group) {
                     $media->addAllowedGroup($group);
                 }

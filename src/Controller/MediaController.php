@@ -81,7 +81,11 @@ final class MediaController extends AbstractController
         // Public files skip the security check: reading the user would start the session and make
         // the response uncacheable
         $public = Visibility::Public === $media->getVisibility();
-        if (!$public) {
+        if (!$public && !$this->isGranted(ContentVoter::VIEW, $media)) {
+            // A private file does not reveal it exists; an announced one asks to log in
+            if (!$media->isAnnounced()) {
+                throw $this->createNotFoundException('Fichier introuvable.');
+            }
             $this->denyAccessUnlessGranted(ContentVoter::VIEW, $media);
         }
 

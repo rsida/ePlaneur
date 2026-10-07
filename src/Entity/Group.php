@@ -47,6 +47,18 @@ class Group
     #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'groups')]
     private Collection $users;
 
+    /**
+     * Groups whose rights and access this group includes: members of "Comité" (including "Membre")
+     * see what is reserved to members and hold their permissions. Followed transitively.
+     *
+     * @var Collection<int, Group>
+     */
+    #[ORM\ManyToMany(targetEntity: self::class)]
+    #[ORM\JoinTable(name: 'group_inclusion')]
+    #[ORM\JoinColumn(name: 'group_id', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'included_group_id', onDelete: 'CASCADE')]
+    private Collection $includedGroups;
+
     public function __construct(
         #[ORM\Column(length: 50, unique: true)]
         #[Assert\NotBlank]
@@ -59,6 +71,7 @@ class Group
         private string $name,
     ) {
         $this->users = new ArrayCollection();
+        $this->includedGroups = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -181,6 +194,51 @@ class Group
     public function getUsers(): Collection
     {
         return $this->users;
+    }
+
+    /**
+     * @return Collection<int, Group>
+     */
+    public function getIncludedGroups(): Collection
+    {
+        return $this->includedGroups;
+    }
+
+    public function addIncludedGroup(Group $group): static
+    {
+        if ($group !== $this && !$this->includedGroups->contains($group)) {
+            $this->includedGroups->add($group);
+        }
+
+        return $this;
+    }
+
+    public function removeIncludedGroup(Group $group): static
+    {
+        $this->includedGroups->removeElement($group);
+
+        return $this;
+    }
+
+    /**
+     * This group and every group it includes, directly or not (cycles are ignored).
+     *
+     * @return list<Group>
+     */
+    public function getEffectiveGroups(): array
+    {
+        $groups = [];
+        $pending = [$this];
+        while ([] !== $pending) {
+            $group = array_pop($pending);
+            if (\in_array($group, $groups, true)) {
+                continue;
+            }
+            $groups[] = $group;
+            array_push($pending, ...$group->getIncludedGroups()->toArray());
+        }
+
+        return $groups;
     }
 
     public function __toString(): string

@@ -129,6 +129,7 @@ final class PostTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
         self::assertSelectorTextContains('.c-restricted__title', 'Contenu réservé au groupe Comité');
         self::assertSelectorTextNotContains('body', 'Secret');
+        self::assertSelectorTextNotContains('body', 'Résumé de l’article.', 'The lead may quote the content: it stays hidden');
 
         $this->client->loginUser($this->createUser('membre@example.org', 'member'));
         $this->client->request('GET', '/actualites/compte-rendu');

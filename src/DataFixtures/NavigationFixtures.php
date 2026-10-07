@@ -140,7 +140,7 @@ final class NavigationFixtures extends Fixture implements DependentFixtureInterf
         $reports = $this->page('Comptes rendus du Comité', 'comptes-rendus', $activities, 'Réunions et suivi de la vie associative du Club ePlaneur.', [
             new B\DocumentsBlock($decisions->getId()),
         ], 'Le Club / Activités');
-        $reports->setVisibility(Visibility::Groups)->addAllowedGroup($committee);
+        $reports->setVisibility(Visibility::Groups)->addAllowedGroup($committee)->setAnnounced(false);
         $tools = $this->page('Outils des membres', 'outils-membres', $activities, 'Ressources réservées aux adhérents.', [
             new B\LinksBlock([new B\LinkItem('Rechercher un FPL', 'https://www.eplaneur.fr', 'Base de plans de vol sur eplaneur.fr.')]),
         ], 'Le Club / Activités');

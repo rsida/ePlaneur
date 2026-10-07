@@ -227,6 +227,12 @@ class MenuItem implements RestrictedContentInterface
     }
 
     /** Label with its parents ("Le Club › Textes officiels"), to choose a parent in the back-office. */
+    /** A link outside the reader's audience is never shown: it has nothing to announce. */
+    public function isAnnounced(): bool
+    {
+        return false;
+    }
+
     public function __toString(): string
     {
         return null !== $this->parent ? $this->parent.' › '.$this->label : $this->label;

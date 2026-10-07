@@ -20,22 +20,25 @@ final readonly class DocumentLibrary
     ) {
     }
 
-    /** A document the reader may see, or null. */
+    /** A document the reader may see listed (open it, or announced with a padlock), or null. */
     public function find(int $id): ?Document
     {
         $document = $this->documents->find($id);
 
-        return null !== $document && $this->authorizationChecker->isGranted(ContentVoter::VIEW, $document) ? $document : null;
+        return null !== $document && $this->authorizationChecker->isGranted(ContentVoter::LIST, $document) ? $document : null;
     }
 
     /**
+     * Documents the reader may see listed: the ones they may open and the announced ones (shown with
+     * their access tag).
+     *
      * @return array<string, list<Document>> documents by category name ('' = no category)
      */
     public function visibleByCategory(?int $categoryId = null): array
     {
         $groups = [];
         foreach ($this->documents->findForListing($categoryId) as $document) {
-            if ($this->authorizationChecker->isGranted(ContentVoter::VIEW, $document)) {
+            if ($this->authorizationChecker->isGranted(ContentVoter::LIST, $document)) {
                 $groups[$document->getCategory()?->getName() ?? ''][] = $document;
             }
         }

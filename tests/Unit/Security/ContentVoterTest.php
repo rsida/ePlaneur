@@ -68,6 +68,27 @@ final class ContentVoterTest extends TestCase
         self::assertSame(VoterInterface::ACCESS_GRANTED, $this->vote($this->tokenFor($admins), $content));
     }
 
+    public function testIncludedGroupsGiveAccess(): void
+    {
+        $this->committee->addIncludedGroup($this->members);
+        $content = $this->content(Visibility::Groups, $this->members);
+
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $this->vote($this->tokenFor($this->committee), $content), 'The committee includes the members');
+        self::assertSame(VoterInterface::ACCESS_DENIED, $this->vote($this->tokenFor($this->members), $this->content(Visibility::Groups, $this->committee)), 'Not the other way round');
+    }
+
+    public function testAnnouncedContentIsListedForEveryonePrivateContentForItsAudienceOnly(): void
+    {
+        $voter = new ContentVoter();
+        $announced = $this->contentAnnounced(true, Visibility::Groups, $this->committee);
+        $private = $this->contentAnnounced(false, Visibility::Groups, $this->committee);
+
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $voter->vote(new NullToken(), $announced, [ContentVoter::LIST]));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $voter->vote(new NullToken(), $announced, [ContentVoter::VIEW]));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $voter->vote($this->tokenFor($this->members), $private, [ContentVoter::LIST]));
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $voter->vote($this->tokenFor($this->committee), $private, [ContentVoter::LIST]));
+    }
+
     public function testAbstainsOnOtherSubjects(): void
     {
         self::assertSame(VoterInterface::ACCESS_ABSTAIN, (new ContentVoter())->vote($this->tokenFor(), new \stdClass(), [ContentVoter::VIEW]));
@@ -90,12 +111,22 @@ final class ContentVoterTest extends TestCase
 
     private function content(Visibility $visibility, Group ...$groups): RestrictedContentInterface
     {
-        return new readonly class($visibility, $groups) implements RestrictedContentInterface {
+        return $this->contentAnnounced(true, $visibility, ...$groups);
+    }
+
+    private function contentAnnounced(bool $announced, Visibility $visibility, Group ...$groups): RestrictedContentInterface
+    {
+        return new readonly class($visibility, $groups, $announced) implements RestrictedContentInterface {
             /**
              * @param list<Group> $groups
              */
-            public function __construct(private Visibility $visibility, private array $groups)
+            public function __construct(private Visibility $visibility, private array $groups, private bool $announced)
             {
+            }
+
+            public function isAnnounced(): bool
+            {
+                return $this->announced;
             }
 
             public function getVisibility(): Visibility

@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace App\Form\Admin;
 
-use App\Entity\Group;
-use App\Security\Visibility;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -38,20 +34,8 @@ final class MediaUploadType extends AbstractType
                     new Assert\Count(min: 1, minMessage: 'Choisissez au moins un fichier.'),
                     new Assert\All([new Assert\File(maxSize: '20M', mimeTypes: self::MIME_TYPES, mimeTypesMessage: 'Ce type de fichier n’est pas accepté.')]),
                 ],
-            ])
-            ->add('visibility', EnumType::class, [
-                'label' => 'Visible par',
-                'class' => Visibility::class,
-                'choice_label' => static fn (Visibility $visibility): string => $visibility->label(),
-                'data' => Visibility::Public,
-            ])
-            ->add('allowedGroups', EntityType::class, [
-                'label' => 'Groupes autorisés',
-                'class' => Group::class,
-                'multiple' => true,
-                'expanded' => true,
-                'required' => false,
-                'help' => 'Utilisé seulement avec « Groupes choisis ».',
             ]);
+
+        AccessFields::add($builder, mapped: false);
     }
 }

@@ -81,6 +81,14 @@ Credentials are applied when the volume is created only (see [installation](inst
 | `MAILER_FROM` | `"Club ePlaneur <no-reply@club.eplaneur.fr>"` | Sender of every e-mail; use an address the provider is allowed to send from |
 | `MESSENGER_TRANSPORT_DSN` | `doctrine://default?auto_setup=0`, dev: `sync://`, test: `in-memory://` | Async transport, consumed by the `worker` service in prod |
 
+### WordPress import
+
+| Variable | Default | Description |
+|---|---|---|
+| `WORDPRESS_URL` | `https://club.eplaneur.fr` | Site read by `app:import-wordpress` |
+| `WORDPRESS_USER` | empty | WordPress administrator login; set it in `.env.local` |
+| `WORDPRESS_APP_PASSWORD` | empty | Its application password (WordPress profile › Application passwords), in `.env.local` only. Without it, reserved content is not imported (see [WordPress import](wordpress-import.md)) |
+
 ## Examples
 
 Dev, another domain and no conflict with a stack already using 80/443:

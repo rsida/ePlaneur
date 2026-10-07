@@ -6,6 +6,8 @@ namespace App\Repository;
 
 use App\Entity\Category;
 use App\Entity\Post;
+use App\Entity\User;
+use App\Security\Visibility;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -53,25 +55,25 @@ class PostRepository extends ServiceEntityRepository
     }
 
     /**
-     * The latest published post marked "À la une", whatever its visibility.
+     * The latest published post marked "À la une" that the reader may see in lists.
      */
-    public function findFeatured(): ?Post
+    public function findFeatured(?User $reader): ?Post
     {
         /* @var Post|null */
-        return $this->published()
+        return $this->published($reader)
             ->andWhere('p.featured = true')
             ->setMaxResults(1)
             ->getQuery()->getOneOrNullResult();
     }
 
     /**
-     * Latest published posts, whatever their visibility (reserved ones show their access tag).
+     * Latest published posts the reader may see in lists (reserved ones may show a padlock).
      *
      * @return list<Post>
      */
-    public function findLatest(int $limit, ?Post $exclude = null): array
+    public function findLatest(?User $reader, int $limit, ?Post $exclude = null): array
     {
-        $qb = $this->published()->setMaxResults($limit);
+        $qb = $this->published($reader)->setMaxResults($limit);
         if (null !== $exclude) {
             $qb->andWhere('p != :exclude')->setParameter('exclude', $exclude);
         }
@@ -86,9 +88,9 @@ class PostRepository extends ServiceEntityRepository
      *
      * @return Paginator<Post>
      */
-    public function paginateNews(?Category $category, ?int $year, ?int $month, int $page, int $perPage, ?Post $exclude = null): Paginator
+    public function paginateNews(?User $reader, ?Category $category, ?int $year, ?int $month, int $page, int $perPage, ?Post $exclude = null): Paginator
     {
-        $qb = $this->published();
+        $qb = $this->published($reader);
         if (null !== $category) {
             $qb->andWhere('p.category = :category')->setParameter('category', $category);
         }
@@ -109,48 +111,49 @@ class PostRepository extends ServiceEntityRepository
     }
 
     /**
-     * Number of published posts per category id (key 0: without category).
+     * Number of published posts the reader may see in lists, per category id (key 0: without category).
      *
      * @return array<int, int>
      */
-    public function countPublishedByCategory(): array
+    public function countPublishedByCategory(?User $reader): array
     {
-        $rows = $this->createQueryBuilder('p')
-            ->select('IDENTITY(p.category) AS category', 'COUNT(p.id) AS total')
-            ->andWhere('p.publishedAt IS NOT NULL AND p.publishedAt <= :now')
-            ->setParameter('now', new \DateTimeImmutable())
+        $rows = $this->published($reader)
+            ->select('IDENTITY(p.category) AS categoryId', 'COUNT(p.id) AS total')
+            ->resetDQLPart('orderBy')
             ->groupBy('p.category')
             ->getQuery()->getArrayResult();
 
         $counts = [];
         foreach ($rows as $row) {
-            $counts[(int) $row['category']] = (int) $row['total'];
+            $counts[(int) $row['categoryId']] = (int) $row['total'];
         }
 
         return $counts;
     }
 
     /**
-     * Publication dates of the published posts, to offer the years and months of the list filters.
+     * Publication dates of the published posts the reader may see in lists, to offer the years and
+     * months of the list filters.
      *
      * @return list<\DateTimeImmutable>
      */
-    public function publishedDates(): array
+    public function publishedDates(?User $reader): array
     {
-        $rows = $this->createQueryBuilder('p')
+        $rows = $this->published($reader)
             ->select('p.publishedAt')
-            ->andWhere('p.publishedAt IS NOT NULL AND p.publishedAt <= :now')
-            ->setParameter('now', new \DateTimeImmutable())
-            ->orderBy('p.publishedAt', 'DESC')
             ->getQuery()->getArrayResult();
 
         return array_map(static fn (array $row): \DateTimeImmutable => $row['publishedAt'], $rows);
     }
 
-    /** Published posts, newest first, with their cover and category. */
-    private function published(): QueryBuilder
+    /**
+     * Published posts the reader may see in lists, newest first, with their cover and category: the
+     * ones they may open, and the reserved ones announced to the others (shown with a padlock); the
+     * same rule as ContentVoter::LIST (administrators see everything).
+     */
+    private function published(?User $reader): QueryBuilder
     {
-        return $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p')
             ->addSelect('cover', 'category')
             ->leftJoin('p.cover', 'cover')
             ->leftJoin('p.category', 'category')
@@ -158,5 +161,19 @@ class PostRepository extends ServiceEntityRepository
             ->setParameter('now', new \DateTimeImmutable())
             ->orderBy('p.publishedAt', 'DESC')
             ->addOrderBy('p.id', 'DESC');
+
+        if ($reader?->hasAllPermissions()) {
+            return $qb;
+        }
+        $listed = $qb->expr()->orX('p.visibility = :public', 'p.announced = true');
+        $qb->setParameter('public', Visibility::Public->value);
+        if (null !== $reader) {
+            $listed->add('p.visibility = :authenticated');
+            $listed->add('EXISTS (SELECT 1 FROM '.Post::class.' allowed JOIN allowed.allowedGroups allowedGroup WHERE allowed = p AND allowedGroup IN (:groups))');
+            $qb->setParameter('authenticated', Visibility::Authenticated->value)
+                ->setParameter('groups', $reader->getEffectiveGroups() ?: [0]);
+        }
+
+        return $qb->andWhere($listed);
     }
 }
