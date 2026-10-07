@@ -9,6 +9,7 @@ use App\Entity\Media;
 use App\Entity\User;
 use App\Media\MediaStorage;
 use App\Security\Permission;
+use App\Security\Visibility;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -75,6 +76,25 @@ final class EditorDataControllerTest extends WebTestCase
 
         $this->client->request('POST', '/admin/editor/media/'.$media->getId(), ['alt' => 'Sans jeton'], [], ['HTTP_X-CSRF-Token' => 'wrong']);
         self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testUploadedFilesTakeTheAccessOfTheContent(): void
+    {
+        $this->client->loginUser($this->userIn($this->entityManager, 'comite@example.org', 'committee'));
+        $committee = $this->entityManager->getRepository(Group::class)->findOneBy(['code' => 'committee']);
+        $copy = sys_get_temp_dir().'/'.uniqid('upload', true).'.png';
+        copy($this->fixture('duo-airfield.png'), $copy);
+
+        $this->client->request('POST', '/admin/editor/media/upload', ['visibility' => 'groups', 'groups' => [$committee?->getId()], 'announced' => '0'], ['files' => [new UploadedFile($copy, 'compte-rendu.png', 'image/png', null, true)]], ['HTTP_X-CSRF-Token' => $this->editorToken()]);
+
+        self::assertResponseIsSuccessful();
+        /** @var array{items: list<array{id: int}>} $result */
+        $result = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->entityManager->clear();
+        $media = $this->entityManager->getRepository(Media::class)->find($result['items'][0]['id']);
+        self::assertSame(Visibility::Groups, $media?->getVisibility());
+        self::assertSame(['committee'], array_map(static fn (Group $group): string => $group->getCode(), $media->getAllowedGroups()->toArray()));
+        self::assertFalse($media->isAnnounced());
     }
 
     public function testUnacceptedFilesAreRefused(): void

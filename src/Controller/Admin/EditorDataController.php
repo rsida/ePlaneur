@@ -6,11 +6,13 @@ namespace App\Controller\Admin;
 
 use App\Entity\Document;
 use App\Entity\DocumentCategory;
+use App\Entity\Group;
 use App\Entity\Media;
 use App\Form\Admin\MediaUploadType;
 use App\Media\MediaStorage;
 use App\Repository\MediaRepository;
 use App\Security\Permission;
+use App\Security\Visibility;
 use App\Twig\MediaExtension;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,6 +21,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -84,8 +87,9 @@ final class EditorDataController extends AbstractController
     }
 
     /**
-     * Upload from the media window (MEDIA_MANAGE): the files join the library, visible by everyone
-     * until restricted in the media library.
+     * Upload from the media window (MEDIA_MANAGE): the files join the library, open to everyone or,
+     * when the window sends them (`visibility`, `groups[]`, `announced`), with the access of the
+     * edited content.
      */
     #[Route('/media/upload', name: 'media_upload', methods: ['POST'])]
     #[IsGranted(Permission::MediaManage->value)]
@@ -94,6 +98,13 @@ final class EditorDataController extends AbstractController
         if (!$this->isCsrfTokenValid(self::MEDIA_TOKEN, $request->headers->get('X-CSRF-Token'))) {
             return $this->json(['error' => 'La session a expiré : rechargez la page.'], Response::HTTP_FORBIDDEN);
         }
+
+        $visibility = Visibility::tryFrom($request->request->getString('visibility', Visibility::Public->value))
+            ?? throw new BadRequestHttpException('Unknown visibility.');
+        $groups = Visibility::Groups === $visibility
+            ? $entityManager->getRepository(Group::class)->findBy(['id' => array_map(intval(...), $request->request->all('groups'))])
+            : [];
+        $announced = '0' !== $request->request->getString('announced', '1');
 
         $stored = [];
         $errors = [];
@@ -107,7 +118,10 @@ final class EditorDataController extends AbstractController
                 $errors[] = \sprintf('%s : %s', $file->getClientOriginalName(), $violations[0]->getMessage());
                 continue;
             }
-            $media = $storage->storeUpload($file);
+            $media = $storage->storeUpload($file)->setVisibility($visibility)->setAnnounced($announced);
+            foreach ($groups as $group) {
+                $media->addAllowedGroup($group);
+            }
             $entityManager->persist($media);
             $stored[] = $media;
         }

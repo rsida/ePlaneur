@@ -19,7 +19,7 @@ Permissions and default groups are described in [accounts](accounts.md).
 | Screen | URL | Permission | Notes |
 |---|---|---|---|
 | Dashboard | `/admin` | `ADMIN_ACCESS` | One card per screen the user may open |
-| Articles | `/admin/post` | `POST_CREATE` or `POST_EDIT` | List with state badge (Brouillon, Programmé, Publié); creating and editing open the [block editor](#block-editor). `POST_CREATE` edits one's own posts only, `POST_EDIT` every post (`PostVoter`, `POST_WRITE`); `POST_PUBLISH` sets the publication date; `POST_DELETE` deletes |
+| Articles | `/admin/post` | `POST_CREATE` or `POST_EDIT` | List with state badge (Brouillon, Programmé, Publié) and "À la une" column; "État" filter (`Filter\PublicationStateFilter`) and "À la une" filter; creating and editing open the [block editor](#block-editor). `POST_CREATE` edits one's own posts only, `POST_EDIT` every post (`PostVoter`, `POST_WRITE`); `POST_PUBLISH` sets the publication date; `POST_DELETE` deletes |
 | Pages | `/admin/page` | `PAGE_MANAGE` | The page tree (folding, search), not a paginated table; "Ajouter une sous-page" creates a page under another; creating and editing open the block editor. Saving sets the "Mis à jour le" date to today unless another date was chosen. A page with sub-pages cannot be deleted |
 | Catégories d'articles | `/admin/category` | `CATEGORY_MANAGE` | Name, slug (generated from the name), description |
 | Médiathèque | `/admin/media` | `MEDIA_MANAGE` | "Téléverser" adds several files at once (images, PDF, text, ZIP; 20 MB each) with their visibility; alt text and credit are edited afterwards. A file used by a document or as a post cover cannot be deleted |
@@ -39,13 +39,15 @@ Posts and pages are edited in a WordPress-like editor (Figma "Admin" page, frame
 
 | Part | What it does |
 |---|---|
-| Top bar | Back to the list, title and "Modifications non enregistrées" / "Enregistré", state badge, undo / redo, "Aperçu" (the site page with the unsaved changes, new tab), "Enregistrer" (Ctrl + S), "Publier" (dialog: now, or at a date and time in metropolitan France time; "Repasser en brouillon") |
+| Top bar | Back to the list, title and "Modifications non enregistrées" / "Enregistré", state badge, undo / redo, "Aperçu" (the site page with the unsaved changes, new tab), "Enregistrer" (Ctrl + S), named "Mettre à jour" on published content, whose status warns that saving changes the site at once, "Publier" (dialog: now, or at a date and time in metropolitan France time; "Repasser en brouillon") |
 | Left panel | "Blocs": the block library by group (Texte, Médias, Mise en forme, Club) with a search; click inserts after the selected block, drag and drop inserts where the line shows. "Structure": the blocks of each zone, click to select |
 | Canvas | An iframe showing the content **with the site styles**: header and blocks rendered by the site components. Titles and texts are edited in place; the dashed "+" adds a text block at the end of a zone; typing "/" in an empty text block opens the block search (↑ ↓, Entrée, Échap) |
 | Block toolbar | Above the selected block: grip (drag to move), type, up, down, bold / italic / link / list for rich text, "…" (Dupliquer, Insérer avant, Insérer après, Supprimer) |
 | Right panel | "Article" / "Page": the settings of the content (address, category, cover, and "Accès": "Ouvert à" and "Pour les autres", Annoncé or Privé...). "Bloc": the settings of the selected block that are not edited in place |
-| Keyboard | Ctrl + Z / Ctrl + Maj + Z outside a text, Alt + Maj + ↑ / ↓ moves the selected block, Échap leaves the selection |
-| Tablets (below 75em, 1200 px) | The canvas takes the whole width; "Bibliothèque" and "Réglages" open the side panels over it (Figma "Tablette · …"); Échap or a click on the veil closes them |
+| Keyboard | Ctrl + Z / Ctrl + Maj + Z outside a text, Alt + Maj + ↑ / ↓ moves the selected block, Échap leaves the selection. The format buttons work from the keyboard (the selection is kept); the "…" menu takes the focus (↑ ↓ Début Fin, Échap back to its button); the block search is a combobox (`aria-activedescendant`) |
+| Tablets (below 75em, 1200 px) | The canvas takes the whole width; "Bibliothèque" and "Réglages" open the side panels over it (Figma "Tablette · …"), with the focus inside and the canvas inert; Échap or a click on the veil closes them, Échap gives the focus back to the opening button |
+| Errors | A refused save shows a banner whose messages link to their field; the editor opens the tab, the panel and the folded group of the first wrong field |
+| Browser backup | Unsaved changes are kept in `localStorage` (one entry per editor address) until the form is submitted; on the next visit a banner offers "Les restaurer" or "Les abandonner" |
 
 How it works:
 
@@ -73,7 +75,8 @@ How it works:
   alt text and credit, type filter (forced by the field: images, PDF), 48 files per page, details of
   the selected file; alt text and credit are saved in the library as soon as they change.
   "Téléverser" tab: drop zone or file choice, same formats and size as the media library (20 MB);
-  uploaded files are visible by everyone until restricted in the media library. Changing the library
+  uploaded files take the access of the edited content ("Comme ce contenu", default) or are open to
+  everyone ("Tout le monde"); the choice is only offered when the content is restricted. Changing the library
   (upload, alt text, credit) needs `MEDIA_MANAGE`; without it the window only lets users choose.
 - The data come from `EditorDataController`: `/admin/editor/media` (list, `q`, `type`, `offset`),
   `/admin/editor/media/{id}` (GET one, POST alt text and credit), `/admin/editor/media/upload`, and

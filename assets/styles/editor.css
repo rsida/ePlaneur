@@ -98,6 +98,23 @@
     padding-left: var(--space-5);
 }
 
+.ep-editor__backup {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-3) var(--space-4) 0;
+}
+
+.ep-editor__backup[hidden] {
+    display: none;
+}
+
+.ep-editor__backup p {
+    flex: 1 1 20rem;
+    margin: 0;
+}
+
 .ep-editor__workspace {
     display: grid;
     flex: 1;
@@ -797,6 +814,14 @@
 .ep-media-dialog__upload {
     overflow-y: auto;
     padding: var(--space-5);
+}
+
+.ep-media-dialog__access {
+    margin-block-start: var(--space-4);
+}
+
+.ep-media-dialog__access[hidden] {
+    display: none;
 }
 
 .ep-dropzone {

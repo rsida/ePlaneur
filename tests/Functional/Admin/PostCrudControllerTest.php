@@ -43,6 +43,17 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'Brouillon');
         self::assertSelectorTextContains('body', 'Programmé');
+        self::assertSelectorTextContains('thead', 'À la une');
+
+        $crawler = $this->client->request('GET', $this->generateIndexUrl().'?filters[state]=scheduled');
+        self::assertResponseIsSuccessful();
+        $titles = $crawler->filter('tbody td[data-column="title"]')->each(static fn ($cell): string => trim($cell->text()));
+        self::assertSame(['Article programme'], $titles, 'The state filter keeps the scheduled posts only');
+
+        $crawler = $this->client->request('GET', $this->generateIndexUrl().'?filters[state]=draft');
+        $titles = $crawler->filter('tbody td[data-column="title"]')->each(static fn ($cell): string => trim($cell->text()));
+        self::assertContains('Article brouillon', $titles);
+        self::assertNotContains('Article programme', $titles);
     }
 
     public function testTheEditorSavesTheBlocksOfANewPost(): void
@@ -93,6 +104,31 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('.ep-editor__errors', 'Bloc 1 (Encadré) : contenu invalide.');
+    }
+
+    public function testAPublishedPostIsUpdatedAndFieldErrorsLeadToTheirField(): void
+    {
+        $this->client->loginUser($this->userIn($this->entityManager, 'comite@example.org', 'committee'));
+        $draft = $this->createPost('brouillon', null);
+        $published = $this->createPost('en-ligne', new \DateTimeImmutable('-1 day'));
+
+        $this->client->request('GET', $this->generateEditFormUrl($draft->getId()));
+        self::assertSelectorTextSame('[data-block-editor-target="save"]', 'Enregistrer');
+
+        $crawler = $this->client->request('GET', $this->generateEditFormUrl($published->getId()));
+        self::assertSelectorTextSame('[data-block-editor-target="save"]', 'Mettre à jour', 'Saving a published post changes the site at once');
+        self::assertSelectorTextContains('.ep-editor__status', 'En ligne');
+
+        $form = $crawler->filter('form[name="post_editor"]')->form();
+        $values = $form->getPhpValues();
+        $values['post_editor']['title'] = '';
+        $crawler = $this->client->request('POST', $form->getUri(), $values);
+
+        self::assertResponseStatusCodeSame(422);
+        $link = $crawler->filter('.ep-editor__errors a');
+        self::assertSame('#post_editor_title', $link->attr('href'));
+        self::assertSame('block-editor#revealField', $link->attr('data-action'));
+        self::assertCount(1, $crawler->filter('#post_editor_title'));
     }
 
     public function testUnsafeLinksAreRefusedAndRichTextIsCleanedOnSave(): void

@@ -14,10 +14,13 @@ export class MediaPicker {
     /**
      * @param {HTMLDialogElement} dialog
      * @param {{media: string, upload: string, update: string}} urls update contains "__id__"
+     * @param {() => {visibility: string, groups: string[], announced: boolean, summary: string}} contentAccess
+     *        access of the edited content, offered to the uploaded files
      */
-    constructor(dialog, urls) {
+    constructor(dialog, urls, contentAccess) {
         this.dialog = dialog;
         this.urls = urls;
+        this.contentAccess = contentAccess;
         this.token = dialog.dataset.token;
         this.canEdit = dialog.dataset.canEdit === 'true';
         this.part = (name) => dialog.querySelector(`[data-media="${name}"]`);
@@ -105,6 +108,12 @@ export class MediaPicker {
             const selected = tab.dataset.mediaTab === name;
             tab.setAttribute('aria-selected', selected ? 'true' : 'false');
             this.dialog.querySelector(`#${tab.getAttribute('aria-controls')}`).hidden = !selected;
+        }
+        if (name === 'upload') {
+            const access = this.contentAccess();
+            this.part('content-access').textContent = access.summary;
+            // Default: same access as the content; a public content has nothing to choose
+            this.part('access').hidden = access.visibility === 'public';
         }
         (name === 'upload' ? this.part('choose') : this.part('search')).focus();
     }
@@ -205,6 +214,13 @@ export class MediaPicker {
         messages.replaceChildren(Object.assign(document.createElement('li'), { textContent: `Envoi de ${files.length} fichier${files.length > 1 ? 's' : ''}…` }));
         const body = new FormData();
         for (const file of files) body.append('files[]', file);
+        // Files of a restricted content are restricted like it, unless "Tout le monde" is chosen
+        if (this.dialog.querySelector('[name="ep-media-access"]:checked')?.value === 'content') {
+            const access = this.contentAccess();
+            body.append('visibility', access.visibility);
+            for (const group of access.groups) body.append('groups[]', group);
+            body.append('announced', access.announced ? '1' : '0');
+        }
         let result;
         try {
             const response = await fetch(this.urls.upload, { method: 'POST', body, headers: { Accept: 'application/json', 'X-CSRF-Token': this.token } });

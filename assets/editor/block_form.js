@@ -116,26 +116,40 @@ function richEditor(id, html, onChange) {
         event.preventDefault();
         document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
     });
-    const command = (name, argument = null) => (event) => {
-        event.preventDefault();
+    // The buttons act on click (mouse or keyboard) on the last selection made in the field
+    let range = null;
+    const remember = () => {
+        const selection = document.getSelection();
+        if (selection.rangeCount > 0 && area.contains(selection.anchorNode)) range = selection.getRangeAt(0).cloneRange();
+    };
+    area.addEventListener('keyup', remember);
+    area.addEventListener('mouseup', remember);
+    area.addEventListener('blur', remember);
+    const run = (name, argument = null) => {
         area.focus();
+        if (range) {
+            const selection = document.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
         document.execCommand(name, false, argument);
+        remember();
         onChange(area.innerHTML);
     };
-    const link = (event) => {
-        event.preventDefault();
-        const url = window.prompt('Adresse du lien (vide pour retirer le lien)', 'https://');
-        area.focus();
-        document.execCommand(url ? 'createLink' : 'unlink', false, url || null);
-        onChange(area.innerHTML);
-    };
+    const tool = (label, symbol, onclick) => h('button', {
+        type: 'button', class: 'ep-mini', title: label, 'aria-label': label,
+        onmousedown: (event) => event.preventDefault(), onclick,
+    }, symbol);
 
     return h('div', { class: 'ep-rich-wrapper' },
         h('div', { class: 'ep-rich__tools', role: 'toolbar', 'aria-label': 'Mise en forme' },
-            h('button', { type: 'button', class: 'ep-mini', title: 'Gras', onmousedown: command('bold') }, h('strong', {}, 'G')),
-            h('button', { type: 'button', class: 'ep-mini', title: 'Italique', onmousedown: command('italic') }, h('em', {}, 'I')),
-            h('button', { type: 'button', class: 'ep-mini', title: 'Lien', onmousedown: link }, '🔗'),
-            h('button', { type: 'button', class: 'ep-mini', title: 'Liste', onmousedown: command('insertUnorderedList') }, '•'),
+            tool('Gras', h('strong', { 'aria-hidden': 'true' }, 'G'), () => run('bold')),
+            tool('Italique', h('em', { 'aria-hidden': 'true' }, 'I'), () => run('italic')),
+            tool('Lien', h('span', { 'aria-hidden': 'true' }, '🔗'), () => {
+                const url = window.prompt('Adresse du lien (vide pour retirer le lien)', 'https://');
+                if (url !== null) run(url ? 'createLink' : 'unlink', url || null);
+            }),
+            tool('Liste à puces', h('span', { 'aria-hidden': 'true' }, '•'), () => run('insertUnorderedList')),
         ),
         area,
     );

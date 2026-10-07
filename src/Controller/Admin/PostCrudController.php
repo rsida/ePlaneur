@@ -7,6 +7,7 @@ namespace App\Controller\Admin;
 use App\Content\Editor\BlockSchema;
 use App\Content\Editor\CanvasRenderer;
 use App\Content\PostPresenter;
+use App\Controller\Admin\Filter\PublicationStateFilter;
 use App\Entity\Post;
 use App\Entity\User;
 use App\Form\Admin\PostEditorType;
@@ -24,9 +25,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Exception\ForbiddenActionException;
 use EasyCorp\Bundle\EasyAdminBundle\Exception\InsufficientEntityPermissionException;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Security\Permission as EaPermission;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Form\FormInterface;
@@ -99,7 +102,12 @@ final class PostCrudController extends AbstractCrudController
 
     public function configureFilters(Filters $filters): Filters
     {
-        return $filters->add('category')->add('publishedAt')->add('visibility');
+        return $filters
+            ->add(PublicationStateFilter::new())
+            ->add('category')
+            ->add(BooleanFilter::new('featured', 'À la une'))
+            ->add('publishedAt')
+            ->add('visibility');
     }
 
     public function configureFields(string $pageName): iterable
@@ -109,6 +117,7 @@ final class PostCrudController extends AbstractCrudController
         yield TextField::new('state', 'État')->setVirtual(true)->setSortable(false)->setTemplatePath('admin/field/post_state.html.twig');
         yield AssociationField::new('author', 'Auteur');
         yield DateTimeField::new('publishedAt', 'Publication');
+        yield BooleanField::new('featured', 'À la une')->renderAsSwitch(false);
         yield ChoiceField::new('visibility', 'Visibilité')->renderAsBadges(VisibilityFields::BADGES);
     }
 

@@ -71,8 +71,19 @@
                 <input type="file" multiple hidden data-media="files" accept="{{ constant('App\\Form\\Admin\\MediaUploadType::MIME_TYPES')|join(',') }}">
                 <p class="form-text" data-media="formats"></p>
             </div>
+            <fieldset class="ep-media-dialog__access" data-media="access" hidden>
+                <legend class="form-label">Accès des fichiers envoyés</legend>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="ep-media-access" id="ep-media-access-content" value="content" checked>
+                    <label class="form-check-label" for="ep-media-access-content">Comme ce contenu : <span data-media="content-access"></span></label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="ep-media-access" id="ep-media-access-public" value="public">
+                    <label class="form-check-label" for="ep-media-access-public">Tout le monde</label>
+                </div>
+            </fieldset>
             <ul class="ep-media-dialog__messages" role="list" data-media="upload-messages" aria-live="polite"></ul>
-            <p class="form-text">Les fichiers seront ajoutés à la médiathèque, visibles par tout le monde. Vous pourrez ensuite renseigner leur texte alternatif, leur crédit et restreindre leur visibilité.</p>
+            <p class="form-text">Les fichiers sont ajoutés à la médiathèque. Vous pourrez ensuite renseigner leur texte alternatif et leur crédit, et changer leur accès dans la médiathèque.</p>
         </div>
     {% endif %}
 

@@ -227,7 +227,7 @@ export class Canvas {
         const button = (label, icon, attributes = {}) => this.element('button', { type: 'button', class: 'ep-toolbar__button', title: label, 'aria-label': label, ...attributes }, this.icon(icon));
 
         this.typeIcon = this.element('span', { class: 'ep-toolbar__type' });
-        this.more = this.element('div', { class: 'ep-toolbar__menu', role: 'menu', hidden: true },
+        this.more = this.element('div', { class: 'ep-toolbar__menu', id: 'ep-toolbar-more', role: 'menu', 'aria-label': 'Plus d’actions', hidden: true },
             this.menuItem('Dupliquer', 'copy', 'duplicate'),
             this.menuItem('Insérer avant', 'between-horizontal-start', 'insert-before'),
             this.menuItem('Insérer après', 'between-horizontal-end', 'insert-after'),
@@ -248,7 +248,7 @@ export class Canvas {
             this.element('span', { class: 'ep-toolbar__separator' }),
             ...this.formatButtons,
             this.element('span', { class: 'ep-toolbar__separator' }),
-            button('Plus d’actions', 'ellipsis', { 'data-command': 'more', 'aria-haspopup': 'menu' }),
+            this.moreButton = button('Plus d’actions', 'ellipsis', { 'data-command': 'more', 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-controls': 'ep-toolbar-more' }),
             this.more,
         );
         this.dropLine = this.element('div', { class: 'ep-dropline', hidden: true }, this.element('span', {}));
@@ -256,7 +256,7 @@ export class Canvas {
     }
 
     menuItem(label, icon, command, extraClass = '') {
-        return this.element('button', { type: 'button', class: `ep-toolbar__item ${extraClass}`, role: 'menuitem', 'data-command': command }, this.icon(icon), this.element('span', {}, label));
+        return this.element('button', { type: 'button', class: `ep-toolbar__item ${extraClass}`, role: 'menuitem', tabindex: '-1', 'data-command': command }, this.icon(icon), this.element('span', {}, label));
     }
 
     placeToolbar() {
@@ -281,21 +281,61 @@ export class Canvas {
         this.toolbar.style.left = `${Math.max(rect.left + this.win.scrollX, 4)}px`;
     }
 
-    closeMore() {
-        this.more.hidden = true;
+    openMore() {
+        this.more.hidden = false;
+        this.moreButton.setAttribute('aria-expanded', 'true');
+        this.more.querySelector('[role="menuitem"]')?.focus();
     }
 
+    /** @param {boolean} returnFocus true when closed from the keyboard (Échap) */
+    closeMore(returnFocus = false) {
+        if (this.more.hidden) return;
+        this.more.hidden = true;
+        this.moreButton.setAttribute('aria-expanded', 'false');
+        if (returnFocus) this.moreButton.focus();
+    }
+
+    /** Keys of the "…" menu: ↑ ↓ Début Fin move between its items, Échap and Tab close it. */
+    moreKey(event) {
+        if (this.more.hidden || !this.more.contains(event.target)) return false;
+        const items = [...this.more.querySelectorAll('[role="menuitem"]')];
+        const index = items.indexOf(event.target);
+        const moves = { ArrowDown: index + 1, ArrowUp: index - 1 + items.length, Home: 0, End: items.length - 1 };
+        if (event.key in moves) {
+            event.preventDefault();
+            items[moves[event.key] % items.length].focus();
+
+            return true;
+        }
+        if (event.key === 'Escape' || event.key === 'Tab') {
+            if (event.key === 'Escape') event.preventDefault();
+            this.closeMore(event.key === 'Escape');
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Bold, italic, link and list on the text being edited. The selection is kept while the toolbar
+     * is used, with the mouse (no focus change) or the keyboard (saved range restored).
+     */
     format(name) {
+        const editable = this.savedSelection?.editable;
+        if (!editable?.isConnected) return;
+        editable.focus({ preventScroll: true });
+        const selection = this.win.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(this.savedSelection.range);
         if (name === 'link') {
             const url = this.win.prompt('Adresse du lien (vide pour retirer le lien)', 'https://');
+            if (url === null) return;
             this.doc.execCommand(url ? 'createLink' : 'unlink', false, url || null);
         } else {
             this.doc.execCommand(name === 'list' ? 'insertUnorderedList' : name, false, null);
         }
-        const editable = this.doc.activeElement;
-        if (editable?.dataset.epField) {
-            this.fieldInput(editable);
-        }
+        this.fieldInput(editable);
     }
 
     /* ---------- Block menu: "/" command and inserter ---------- */
@@ -306,14 +346,19 @@ export class Canvas {
      */
     openMenu(anchor, { query = '', search = false, onPick }) {
         this.closeMenu();
-        const list = this.element('ul', { class: 'ep-menu__list', role: 'listbox', 'aria-label': 'Blocs' });
+        const list = this.element('ul', { class: 'ep-menu__list', id: 'ep-menu-list', role: 'listbox', 'aria-label': 'Blocs' });
         const input = search ? this.element('input', { type: 'search', class: 'ep-menu__search', placeholder: 'Rechercher un bloc…', 'aria-label': 'Rechercher un bloc' }) : null;
+        // The search field, or the text being typed ("/" command), drives the list as a combobox
+        const owner = input ?? anchor;
+        for (const [name, value] of Object.entries({ role: input ? 'combobox' : null, 'aria-autocomplete': 'list', 'aria-controls': 'ep-menu-list', 'aria-expanded': 'true' })) {
+            if (value) owner.setAttribute(name, value);
+        }
         const menu = this.element('div', { class: 'ep-menu' },
             input,
             list,
             this.element('p', { class: 'ep-menu__hint' }, '↑ ↓ Choisir · Entrée Insérer · Échap Fermer'),
         );
-        this.menu = { element: menu, list, input, items: [], active: 0, onPick };
+        this.menu = { element: menu, list, input, owner, items: [], active: 0, onPick };
         this.doc.body.append(menu);
         const rect = anchor.getBoundingClientRect();
         menu.style.top = `${rect.bottom + this.win.scrollY + 6}px`;
@@ -338,7 +383,7 @@ export class Canvas {
         this.menu.active = 0;
         this.menu.list.replaceChildren(...(types.length > 0
             ? types.map((type, index) => {
-                const option = this.element('li', { class: 'ep-menu__item', role: 'option', 'aria-selected': index === 0 ? 'true' : 'false', 'data-type': type.type },
+                const option = this.element('li', { class: 'ep-menu__item', id: `ep-menu-option-${index}`, role: 'option', 'aria-selected': index === 0 ? 'true' : 'false', 'data-type': type.type },
                     this.icon(type.icon),
                     this.element('span', { class: 'ep-menu__text' },
                         this.element('strong', {}, type.label),
@@ -352,7 +397,17 @@ export class Canvas {
 
                 return option;
             })
-            : [this.element('li', { class: 'ep-menu__empty' }, 'Aucun bloc trouvé. Essayez « texte », « image » ou « encadré ».')]));
+            : [this.element('li', { class: 'ep-menu__empty', role: 'presentation' }, 'Aucun bloc trouvé. Essayez « texte », « image » ou « encadré ».')]));
+        this.activateOption();
+    }
+
+    activateOption() {
+        [...this.menu.list.children].forEach((option, index) => option.setAttribute('aria-selected', index === this.menu.active ? 'true' : 'false'));
+        if (this.menu.items.length > 0) {
+            this.menu.owner.setAttribute('aria-activedescendant', `ep-menu-option-${this.menu.active}`);
+        } else {
+            this.menu.owner.removeAttribute('aria-activedescendant');
+        }
     }
 
     menuKey(event) {
@@ -362,7 +417,7 @@ export class Canvas {
             event.preventDefault();
             if (count === 0) return true;
             this.menu.active = (this.menu.active + (event.key === 'ArrowDown' ? 1 : count - 1)) % count;
-            [...this.menu.list.children].forEach((option, index) => option.setAttribute('aria-selected', index === this.menu.active ? 'true' : 'false'));
+            this.activateOption();
             this.menu.list.children[this.menu.active]?.scrollIntoView({ block: 'nearest' });
 
             return true;
@@ -391,7 +446,11 @@ export class Canvas {
     }
 
     closeMenu() {
-        this.menu?.element.remove();
+        if (!this.menu) return;
+        for (const name of ['aria-controls', 'aria-expanded', 'aria-activedescendant', 'aria-autocomplete']) {
+            this.menu.owner.removeAttribute(name);
+        }
+        this.menu.element.remove();
         this.menu = null;
     }
 
@@ -412,7 +471,8 @@ export class Canvas {
                     this.closeMore();
                     this.handlers.onPickMedia(this.selectedId);
                 } else if (command === 'more') {
-                    this.more.hidden = !this.more.hidden;
+                    if (this.more.hidden) this.openMore();
+                    else this.closeMore();
                 } else if (command === 'insert-before' || command === 'insert-after') {
                     this.closeMore();
                     this.openMenu(this.wrapper(this.selectedId) ?? commandButton, { search: true, onPick: (type) => this.handlers.onCommand(command, this.selectedId, type) });
@@ -420,6 +480,12 @@ export class Canvas {
                     this.closeMore();
                     this.handlers.onCommand(command, this.selectedId);
                 }
+
+                return;
+            }
+            const formatButton = target.closest('.ep-toolbar [data-format]');
+            if (formatButton) {
+                this.format(formatButton.dataset.format);
 
                 return;
             }
@@ -444,13 +510,19 @@ export class Canvas {
             this.handlers.onSelect(wrapper ? wrapper.dataset.epId : null);
         });
 
+        // The format buttons act on click; pressing them must not take the selection away
         doc.addEventListener('mousedown', (event) => {
-            const formatButton = event.target.closest('[data-format]');
-            if (formatButton) {
-                event.preventDefault();
-                this.format(formatButton.dataset.format);
-            }
+            if (event.target.closest('[data-format]')) event.preventDefault();
         });
+        const saveSelection = () => {
+            const selection = this.win.getSelection();
+            const node = selection.rangeCount > 0 ? selection.anchorNode : null;
+            const editable = (node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement)?.closest('[data-ep-kind="rich"]');
+            if (editable) this.savedSelection = { editable, range: selection.getRangeAt(0).cloneRange() };
+        };
+        for (const type of ['selectionchange', 'keyup', 'mouseup']) {
+            doc.addEventListener(type, saveSelection);
+        }
 
         doc.addEventListener('submit', (event) => event.preventDefault());
 
@@ -478,7 +550,7 @@ export class Canvas {
         });
 
         doc.addEventListener('keydown', (event) => {
-            if (this.menuKey(event)) return;
+            if (this.menuKey(event) || this.moreKey(event)) return;
             const target = event.target;
             const editable = target.closest?.('[data-ep-field], [data-ep-meta]');
             if (editable && event.key === 'Enter' && editable.getAttribute('contenteditable') === 'plaintext-only') {

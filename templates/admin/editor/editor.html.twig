@@ -34,6 +34,7 @@
          media_update: path('admin_editor_media_update', {id: 0})|replace({'/0': '/__id__'}),
      })|json_encode }}"
      data-block-editor-zones-value="{{ zones|json_encode }}"
+     data-block-editor-live-value="{{ state == 'published' ? 'true' : 'false' }}"
      data-action="keydown@window->block-editor#shortcut beforeunload@window->block-editor#confirmLeave">
     {{ form_start(form, {attr: {class: 'ep-editor__form', novalidate: 'novalidate', 'data-block-editor-target': 'form', 'data-action': 'submit->block-editor#beforeSubmit input->block-editor#formChanged change->block-editor#formChanged'}}) }}
 
@@ -43,7 +44,15 @@
         </a>
         <div class="ep-editor__heading">
             <h1 class="ep-editor__title" data-block-editor-target="title">{{ title }}</h1>
-            <p class="ep-editor__status" data-block-editor-target="status" role="status">{{ form.vars.submitted ? 'Modifications non enregistrées' : 'Enregistré' }}</p>
+            <p class="ep-editor__status" data-block-editor-target="status" role="status">
+                {%- if form.vars.submitted -%}
+                    Modifications non enregistrées
+                {%- elseif state == 'published' -%}
+                    En ligne : « Mettre à jour » publie aussitôt les modifications
+                {%- else -%}
+                    Enregistré
+                {%- endif -%}
+            </p>
         </div>
         <div class="ep-editor__actions">
             {% if state == 'draft' %}
@@ -62,7 +71,10 @@
             <button type="submit" class="btn btn-secondary" formaction="{{ urls.preview }}" formtarget="_blank" data-action="block-editor#preview">
                 <twig:ux:icon name="admin:eye" /> Aperçu
             </button>
-            <button type="submit" class="btn btn-secondary" data-block-editor-target="save">Enregistrer</button>
+            {# A published content is updated on the site as soon as it is saved: the button says so #}
+            <button type="submit" class="btn btn-secondary" data-block-editor-target="save"{% if state == 'published' %} title="Les modifications sont visibles sur le site dès l’enregistrement"{% endif %}>
+                {{- state == 'published' ? 'Mettre à jour' : 'Enregistrer' -}}
+            </button>
             {% if can_publish %}
                 <button type="button" class="btn btn-primary" data-action="block-editor#openPublish">
                     {{ state == 'draft' ? 'Publier' : 'Publication' }}
@@ -81,13 +93,28 @@
         </div>
     </header>
 
+    <div class="alert alert-info ep-editor__backup" role="status" data-block-editor-target="backup" hidden>
+        <p>Des modifications non enregistrées du <span data-block-editor-target="backupDate"></span> ont été gardées par ce navigateur.</p>
+        <button type="button" class="btn btn-primary btn-sm" data-action="block-editor#restoreBackup">Les restaurer</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="block-editor#dismissBackup">Les abandonner</button>
+    </div>
+
     {% set errors = form.vars.errors.form.getErrors(true) %}
     {% if errors|length > 0 %}
-        <div class="alert alert-danger ep-editor__errors" role="alert">
+        <div class="alert alert-danger ep-editor__errors" role="alert" data-block-editor-target="errors">
             <p><strong>L’{{ noun }} n’a pas été enregistré{{ is_post ? '' : 'e' }} :</strong></p>
             <ul>
                 {% for error in errors %}
-                    <li>{% if error.origin and error.origin.config.option('label') %}{{ error.origin.config.option('label') }} : {% endif %}{{ error.message }}</li>
+                    {% set field = error.origin and error.origin.parent is not null ? error.origin.name : null %}
+                    {% set label = error.origin ? error.origin.config.option('label') : null %}
+                    <li>
+                        {%- if field and field not in zones|keys -%}
+                            {# Each message leads to its field, wherever it is in the settings #}
+                            <a href="#{{ form.vars.id }}_{{ field }}" data-action="block-editor#revealField">{{ label ?: field }}</a> : {{ error.message }}
+                        {%- else -%}
+                            {% if label %}{{ label }} : {% endif %}{{ error.message }}
+                        {%- endif -%}
+                    </li>
                 {% endfor %}
             </ul>
         </div>

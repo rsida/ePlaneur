@@ -19,6 +19,7 @@ yet validated step by step by the project owner.
 | Step 3b-2: media window | [admin.md](admin.md#block-editor): "Choisir un média" window (library with search and type filter, alt text and credit, upload) for block media and post covers |
 | Step 3b-3: resized pictures, tablets | [content.md](content.md#resized-pictures): WebP versions made with LiipImagine and served with access control; editor panels as overlays on tablets |
 | Step 4: public news | [content.md](content.md#news-list-and-home-page): `/actualites` list (featured post, category and period filters, pagination, reserved posts with their access tag), home "Ça bouge au club" section from the real posts |
+| Step 5: WordPress import, access model | [wordpress-import.md](wordpress-import.md): `app:import-wordpress` (pages in the new tree, posts, files, 301 redirects); [accounts.md](accounts.md#access-to-content): announced or private content, group inclusion |
 
 ## Next: content and editorial back-office (replaces the WordPress blog and pages)
 
@@ -35,7 +36,15 @@ Do the steps in this order: each one depends on the previous ones.
 | 3b-2 | Media picker | Media window (search, type filter, upload, alt text and credit) for covers and image, carousel, PDF, downloads, video poster blocks | Done (2026-10-06), see [admin](admin.md#block-editor) |
 | 3b-3 | Images and finish | Resized images (LiipImagineBundle), tablet layout (panels as overlays), dark mode check | Done (2026-10-06), see [content](content.md#resized-pictures) and [admin](admin.md#block-editor) |
 | 4 | Public front | News list (replaces the `/actualites` redirect), post page, filter by category and date; the home page "Ça bouge au club" section reads featured posts instead of placeholders; pages rendered from the tree with the menu (done in 2b) | Done (2026-10-06), see [content](content.md#news-list-and-home-page) |
-| 5 | WordPress migration | `app:import-wordpress` command reading posts, pages and media through the WordPress REST API (79 pages, 34 posts, about 20 of them restricted committee minutes); 301 redirects from the old URLs | In progress (2026-10-07): command, page tree mapping and redirects done, see [wordpress-import](wordpress-import.md); the reserved content waits for a WordPress application password |
+| 5 | WordPress migration | `app:import-wordpress` command reading posts, pages and media through the WordPress REST API (79 pages, 34 posts, about 20 of them restricted committee minutes); 301 redirects from the old URLs | Done (2026-10-07), see [wordpress-import](wordpress-import.md); reserved content read with an application password |
+
+## Next: audit follow-ups (step 6, chosen on 2026-10-07)
+
+| # | Batch | Status |
+|---|---|---|
+| 6a | Editor UX (see the batch below) | Done |
+| 6b | Code | To do |
+| 6c | CSS | To do |
 
 Why this order: restricted content (committee minutes, 4th-level pages) and the back-office both need
 accounts and roles first; EasyAdmin gives a usable back-office quickly, a custom admin is only worth it
@@ -50,8 +59,8 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
 
 | Batch | Content |
 |---|---|
-| Editor UX | Warn that saving a published post updates the site at once; open the tab and highlight the field of a validation error; choose the visibility of files uploaded from the editor; state filter and "À la une" column in the post list; keyboard and ARIA for the block menus and format buttons; focus management of the tablet panels and of the site's mobile menu; draft backup in the browser |
-| Code | One base controller and shared form fields for the post and page editors; one access-label service; N+1 queries on the groups of reserved content; author field only with POST_EDIT; unpublished sections hide their sub-pages; editor preview banner only for unpublished content; slug length and page number validation; `ClockInterface` instead of hard-coded `Europe/Paris`; tests for the category and menu screens |
+| Editor UX (done 2026-10-07) | Warn that saving a published post updates the site at once; open the tab and highlight the field of a validation error; choose the visibility of files uploaded from the editor; state filter and "À la une" column in the post list; keyboard and ARIA for the block menus and format buttons; focus management of the tablet panels and of the site's mobile menu; draft backup in the browser |
+| Code | One base controller and shared form fields for the post and page editors; one access-label service (done 2026-10-07); N+1 queries on the groups of reserved content; author field only with POST_EDIT; unpublished sections hide their sub-pages; editor preview banner only for unpublished content; slug length and page number validation; `ClockInterface` instead of hard-coded `Europe/Paris`; tests for the category and menu screens |
 | CSS | Split `content.css` into one file per component; semantic tokens instead of `--palette-*` and literal sizes; one set of breakpoints; merge `c-news--featured` into `c-featured-post`; self-hosted fonts instead of Google Fonts |
 
 ## Decisions

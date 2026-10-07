@@ -17,15 +17,18 @@ import { clone, normalize, setPath, slugify, summary } from './data.js';
 const RENDER_DELAY = 250;
 const TYPING_GROUP_DELAY = 1000;
 const HISTORY_LIMIT = 100;
+const BACKUP_DELAY = 1000;
+const BACKUP_PREFIX = 'ep-editor-backup:';
 
 export default class extends Controller {
     static targets = [
         'form', 'frame', 'title', 'status', 'save', 'undo', 'redo', 'path', 'workspace',
         'library', 'libraryGroup', 'libraryItem', 'structure', 'settings', 'blockTab', 'blockPanel',
         'publishDialog', 'publishDate', 'publishLabel', 'publishVisibility', 'publishTitle', 'mediaDialog',
+        'errors', 'backup', 'backupDate',
     ];
 
-    static values = { kind: String, formName: String, schema: Object, urls: Object, zones: Object };
+    static values = { kind: String, formName: String, schema: Object, urls: Object, zones: Object, live: Boolean };
 
     connect() {
         this.types = new Map(this.schemaValue.types.map((type) => [type.type, type]));
@@ -50,18 +53,34 @@ export default class extends Controller {
         this.submitting = false;
         this.sourceCache = new Map();
         this.mediaCache = new Map();
-        this.mediaPicker = new MediaPicker(this.mediaDialogTarget, { media: this.urlsValue.media, upload: this.urlsValue.media_upload, update: this.urlsValue.media_update });
+        this.mediaPicker = new MediaPicker(this.mediaDialogTarget, { media: this.urlsValue.media, upload: this.urlsValue.media_upload, update: this.urlsValue.media_update }, () => this.contentAccess());
         this.renderSequence = 0;
         this.slugTouched = this.field('slug')?.value !== '';
         this.renderStructure();
+        // Back to a wide screen: the panels are beside the canvas again
+        this.narrowQuery = window.matchMedia('(width < 75em)');
+        this.onNarrowChange = () => {
+            if (!this.narrowQuery.matches) this.closePanels();
+        };
+        this.narrowQuery.addEventListener('change', this.onNarrowChange);
 
         if (this.frameTarget.contentDocument?.readyState === 'complete' && this.frameTarget.contentDocument.querySelector('[data-ep-zone]')) {
             this.frameLoaded();
+        }
+
+        this.offerBackup();
+
+        // After a refused save, the first wrong field is shown wherever it is in the settings
+        if (this.hasErrorsTarget) {
+            const invalid = this.formTarget.querySelector('.is-invalid, [aria-invalid="true"]');
+            if (invalid) this.reveal(invalid, { focus: false });
         }
     }
 
     disconnect() {
         clearTimeout(this.renderTimer);
+        clearTimeout(this.backupTimer);
+        this.narrowQuery.removeEventListener('change', this.onNarrowChange);
     }
 
     /* ---------- State ---------- */
@@ -78,6 +97,27 @@ export default class extends Controller {
 
     field(name) {
         return this.formTarget.querySelector(`[name="${this.formNameValue}[${name}]"]`);
+    }
+
+    /**
+     * Access chosen in the "Accès" fieldset: what the publish window shows, and what files uploaded
+     * from the media window get by default.
+     */
+    contentAccess() {
+        const checked = (name) => [...this.formTarget.querySelectorAll(`[name="${this.formNameValue}[${name}]"]:checked`)];
+        const labelOf = (input) => this.formTarget.querySelector(`label[for="${input.id}"]`)?.textContent.trim() ?? input.value;
+        const visibility = checked('visibility')[0];
+        const groups = checked('allowedGroups][').map((input) => ({ id: input.value, name: labelOf(input) }));
+        const announced = checked('announced')[0]?.value !== '0';
+        const label = visibility ? labelOf(visibility) : 'Tout le monde';
+        const restricted = visibility && visibility.value !== 'public';
+
+        return {
+            visibility: visibility?.value ?? 'public',
+            groups: groups.map((group) => group.id),
+            announced,
+            summary: `${label}${visibility?.value === 'groups' ? ` (${groups.map((group) => group.name).join(', ') || 'aucun groupe choisi'})` : ''}${restricted ? `, ${announced ? 'annoncé' : 'privé'}` : ''}`,
+        };
     }
 
     find(id) {
@@ -120,9 +160,117 @@ export default class extends Controller {
         this.scheduleRender();
     }
 
+    /* ---------- Validation errors ---------- */
+
+    /** Link of the error banner: leads to its field. */
+    revealField(event) {
+        const field = document.getElementById(event.currentTarget.hash.slice(1))
+            ?? this.formTarget.querySelector(`[id^="${event.currentTarget.hash.slice(1)}_"]`);
+        if (!field) return;
+        event.preventDefault();
+        this.reveal(field, { focus: true });
+    }
+
+    /** Opens the tab, the panel and the folded group holding a field, then scrolls to it. */
+    reveal(field, { focus }) {
+        const panel = field.closest('[role="tabpanel"]');
+        const tab = panel && this.element.querySelector(`[role="tab"][aria-controls="${panel.id}"]`);
+        if (tab) this.showTab(tab);
+        for (let details = field.closest('details'); details; details = details.parentElement.closest('details')) {
+            details.open = true;
+        }
+        if (this.isNarrow() && field.closest('.ep-editor__settings')) {
+            this.closePanels();
+            this.openPanel('settings');
+        }
+        const input = field.matches('input, select, textarea') ? field : field.querySelector('input, select, textarea');
+        (input ?? field).scrollIntoView({ block: 'center' });
+        if (focus) input?.focus({ preventScroll: true });
+    }
+
     markDirty() {
         this.dirty = true;
-        this.statusTarget.textContent = 'Modifications non enregistrées';
+        this.statusTarget.textContent = this.liveValue
+            ? 'Modifications non enregistrées : en ligne, « Mettre à jour » les publie aussitôt'
+            : 'Modifications non enregistrées';
+        clearTimeout(this.backupTimer);
+        this.backupTimer = setTimeout(() => this.writeBackup(), BACKUP_DELAY);
+    }
+
+    /* ---------- Backup in the browser ---------- */
+
+    /*
+     * Unsaved changes are kept in the browser (localStorage, per editor address) until the form is
+     * submitted: after a crash or a closed tab, the editor offers to restore them.
+     */
+
+    backupKey() {
+        return BACKUP_PREFIX + window.location.pathname;
+    }
+
+    writeBackup() {
+        if (this.submitting) return;
+        const zones = Object.keys(this.zonesValue).map((zone) => this.zoneField(zone)?.name);
+        const fields = [...this.formTarget.elements]
+            .filter((element) => element.name && !element.disabled && !['file', 'submit', 'button'].includes(element.type) && !zones.includes(element.name) && !element.name.endsWith('[_token]'))
+            .map((element) => (['radio', 'checkbox'].includes(element.type) ? [element.name, element.value, element.checked] : [element.name, element.value]));
+        try {
+            window.localStorage.setItem(this.backupKey(), JSON.stringify({ savedAt: Date.now(), fields, blocks: this.blocks }));
+        } catch {
+            // Storage full or blocked: the backup is a convenience only
+        }
+    }
+
+    readBackup() {
+        try {
+            return JSON.parse(window.localStorage.getItem(this.backupKey()) ?? 'null');
+        } catch {
+            return null;
+        }
+    }
+
+    clearBackup() {
+        clearTimeout(this.backupTimer);
+        try {
+            window.localStorage.removeItem(this.backupKey());
+        } catch {
+            // Nothing to clear
+        }
+    }
+
+    offerBackup() {
+        const backup = this.readBackup();
+        // A refused save already shows the submitted values
+        if (!this.hasBackupTarget || !backup?.blocks || this.hasErrorsTarget) return;
+        this.backupDateTarget.textContent = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Paris' }).format(new Date(backup.savedAt));
+        this.backupTarget.hidden = false;
+    }
+
+    restoreBackup() {
+        const backup = this.readBackup();
+        this.backupTarget.hidden = true;
+        if (!backup) return;
+        for (const [name, value, checked] of backup.fields ?? []) {
+            for (const element of this.formTarget.querySelectorAll(`[name="${CSS.escape(name)}"]`)) {
+                if (['radio', 'checkbox'].includes(element.type)) {
+                    if (element.value === value) element.checked = checked;
+                } else {
+                    element.value = value;
+                }
+            }
+        }
+        this.remember();
+        this.blocks = Object.fromEntries(Object.keys(this.zonesValue).map((zone) => [zone, (backup.blocks[zone] ?? []).map((block) => ({ ...block, id: this.newId() }))]));
+        this.slugTouched = this.field('slug')?.value !== '';
+        const title = this.field('title')?.value;
+        if (title) this.titleTarget.textContent = title;
+        this.select(null);
+        this.changed();
+    }
+
+    dismissBackup() {
+        this.backupTarget.hidden = true;
+        this.clearBackup();
     }
 
     restore(snapshot) {
@@ -572,25 +720,42 @@ export default class extends Controller {
         if (this.isNarrow()) {
             const open = !this.workspaceTarget.classList.contains(`ep-editor__workspace--show-${panel}`);
             this.closePanels();
-            this.workspaceTarget.classList.toggle(`ep-editor__workspace--show-${panel}`, open);
-            for (const button of this.element.querySelectorAll(`.ep-editor__panel-toggles [data-panel="${panel}"]`)) {
-                button.setAttribute('aria-expanded', open ? 'true' : 'false');
-            }
+            if (open) this.openPanel(panel, event.currentTarget);
         } else {
             this.workspaceTarget.classList.toggle(`ep-editor__workspace--no-${panel}`);
         }
         setTimeout(() => this.canvas?.placeToolbar(), 50);
     }
 
-    closePanels() {
+    /**
+     * Narrow screens: shows a panel over the canvas, which cannot be reached meanwhile (inert), and
+     * moves the focus into it. Échap closes it and gives the focus back to the button that opened it.
+     */
+    openPanel(panel, opener = null) {
+        this.workspaceTarget.classList.add(`ep-editor__workspace--show-${panel}`);
+        for (const button of this.element.querySelectorAll(`.ep-editor__panel-toggles [data-panel="${panel}"]`)) {
+            button.setAttribute('aria-expanded', 'true');
+        }
+        this.frameTarget.inert = true;
+        this.panelOpener = opener;
+        if (opener) {
+            const element = (panel === 'settings' ? this.settingsTarget : this.libraryTarget);
+            element.querySelector('[role="tab"][aria-selected="true"], button, input, select, textarea, [tabindex="0"]')?.focus();
+        }
+    }
+
+    closePanels({ returnFocus = false } = {}) {
         this.workspaceTarget.classList.remove('ep-editor__workspace--show-library', 'ep-editor__workspace--show-settings');
         for (const button of this.element.querySelectorAll('.ep-editor__panel-toggles [data-panel]')) {
             button.setAttribute('aria-expanded', 'false');
         }
+        this.frameTarget.inert = false;
+        if (returnFocus) this.panelOpener?.focus();
+        this.panelOpener = null;
     }
 
     isNarrow() {
-        return window.matchMedia('(width < 75em)').matches;
+        return this.narrowQuery.matches;
     }
 
     /* ---------- Saving, preview, publication ---------- */
@@ -601,6 +766,7 @@ export default class extends Controller {
         clearTimeout(this.renderTimer);
         if (event.submitter?.getAttribute('formtarget') === '_blank') return;
         this.submitting = true;
+        this.clearBackup();
         this.statusTarget.textContent = 'Enregistrement…';
     }
 
@@ -618,10 +784,7 @@ export default class extends Controller {
 
     openPublish() {
         if (!this.hasPublishDialogTarget) return;
-        const visibility = this.field('visibility');
-        const groups = [...this.formTarget.querySelectorAll(`[name="${this.formNameValue}[allowedGroups][]"]:checked`)].map((input) => input.closest('.form-check')?.textContent.trim()).filter(Boolean);
-        const label = visibility?.selectedOptions[0]?.textContent.trim() ?? '';
-        this.publishVisibilityTarget.textContent = `Visibilité : ${label}${visibility?.value === 'groups' ? ` (${groups.join(', ') || 'aucun groupe choisi'})` : ''}.`;
+        this.publishVisibilityTarget.textContent = `Visibilité : ${this.contentAccess().summary}.`;
         this.publishTitleTarget.textContent = this.field('title')?.value || this.titleTarget.textContent;
         this.publishWhen();
         this.publishDialogTarget.showModal();
@@ -681,7 +844,7 @@ export default class extends Controller {
             event.preventDefault();
             this.command(event.key === 'ArrowUp' ? 'up' : 'down', this.selectedId);
         } else if (event.key === 'Escape' && this.workspaceTarget.matches('[class*="--show-"]')) {
-            this.closePanels();
+            this.closePanels({ returnFocus: true });
         } else if (event.key === 'Escape' && this.selectedId && !(this.hasPublishDialogTarget && this.publishDialogTarget.open)) {
             this.canvas?.closeMenu();
             this.frameTarget.contentDocument?.activeElement?.blur();
