@@ -2,7 +2,7 @@
     <div class="l-stack l-stack--lg">
         <twig:Layout:SectionHeader eyebrow="05 / L’aventure continue au sol" title="Ce vol mérite une petite trace."
             lead="Déposez votre trace, revivez votre trajet et comparez vos vols avec ceux des membres. Pour le plaisir de progresser, pas seulement pour le score." class="u-full p-logbook__header">
-            <twig:block name="aside"><twig:Ui:Link href="#">Ouvrir mon carnet</twig:Ui:Link></twig:block>
+            <twig:block name="aside"><twig:Ui:Link href="{{ path('app_flight_logbook') }}">Ouvrir mon carnet</twig:Ui:Link></twig:block>
         </twig:Layout:SectionHeader>
 
         <article class="c-card c-card--raised t-paper p-logbook__panel u-full">
@@ -12,7 +12,7 @@
                     <twig:Ui:Heading level="3" size="h2" class="p-logbook__title">Mon vol au-dessus des Alpes</twig:Ui:Heading>
                     <p class="u-note">Condor 3 · 10 octobre 2026 · Exemple de vol</p>
                 </div>
-                <twig:Ui:Button href="#">Déposer une trace</twig:Ui:Button>
+                <twig:Ui:Button href="{{ path('app_flight_index') }}">Déposer une trace</twig:Ui:Button>
             </div>
 
             <twig:Ui:Dropzone name="trace" title="Glissez votre fichier de trace ici, ou choisissez un fichier"
@@ -56,5 +56,25 @@
         </article>
 
         <p class="u-note">Trajet, statistiques et comparaisons fictifs, non issus des vols des membres. Proposition visuelle, sans dépôt de fichier actif.</p>
+
+        {% if public_flights is not empty %}
+            <section class="l-stack l-stack--sm u-full" aria-labelledby="public-flights-title">
+                <twig:Ui:Heading level="3" size="h3" id="public-flights-title">Des vols de membres, à revivre</twig:Ui:Heading>
+                <ul class="p-home-flights">
+                    {% for flight in public_flights %}
+                        <li>
+                            <a class="c-card c-card--raised t-paper p-home-flights__card" href="{{ path('app_flight_show', {id: flight.id}) }}">
+                                <span class="c-card__body l-stack l-stack--xs">
+                                    <twig:Ui:Eyebrow>{{ [flight.simulator, flight.landscape]|filter(v => v)|join(' · ') }}</twig:Ui:Eyebrow>
+                                    <strong class="p-home-flights__pilot">{{ flight.pilot }}{% if flight.competitionId %} · {{ flight.competitionId }}{% endif %}</strong>
+                                    <span class="u-note">{{ flight.flightPlan ?? flight.glider }}</span>
+                                    <span class="p-home-flights__values">{{ flight.distance|flight_distance }} · {{ flight.duration|flight_duration }}{% if flight.taskSpeed %} · {{ flight.taskSpeed|number_format(1, ',', ' ') }} km/h{% endif %}</span>
+                                </span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
     </div>
 </twig:Layout:Section>

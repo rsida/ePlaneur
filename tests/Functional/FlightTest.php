@@ -277,6 +277,47 @@ final class FlightTest extends WebTestCase
         self::assertSelectorTextContains('h1', 'pilote@example.org');
     }
 
+    public function testThePilotMakesAFlightPublicForVisitors(): void
+    {
+        $pilot = $this->user('pilote@example.org');
+        $id = $this->uploadSample($pilot);
+        $crawler = $this->client->request('GET', '/vols/'.$id);
+        $this->client->submit($crawler->selectButton('Commenter')->form(['flight_comment[body]' => 'Note du pilote.']));
+
+        // Only its pilot makes it public
+        $this->client->loginUser($this->user('autre@example.org'));
+        $crawler = $this->client->request('GET', '/vols/'.$id);
+        self::assertSelectorNotExists('form[action$="/public"]');
+        $this->client->request('POST', '/vols/'.$id.'/public', ['public' => '1']);
+        self::assertResponseStatusCodeSame(403);
+
+        // Private: visitors are asked to log in
+        $this->client->restart();
+        $this->client->request('GET', '/vols/'.$id);
+        self::assertResponseRedirects('/connexion');
+        $this->client->request('GET', '/');
+        self::assertSelectorNotExists('.p-home-flights');
+
+        $this->client->loginUser($pilot);
+        $crawler = $this->client->request('GET', '/vols/'.$id);
+        $this->client->submit($crawler->selectButton('Rendre public')->form());
+        self::assertResponseRedirects('/vols/'.$id);
+
+        // Public: on the home page, and seen by visitors without the comments
+        $this->client->restart();
+        $this->client->request('GET', '/');
+        self::assertSelectorTextContains('.p-home-flights', 'Jeanne Pilote');
+        $this->client->request('GET', '/vols/'.$id);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.p-flight__links', 'Public');
+        self::assertSelectorNotExists('#commentaires');
+        self::assertSelectorTextNotContains('body', 'Note du pilote.');
+        $this->client->request('GET', '/vols/'.$id.'/analyse.json');
+        self::assertResponseIsSuccessful();
+        $this->client->request('GET', '/vols/'.$id.'/session');
+        self::assertResponseRedirects('/connexion', null, 'The rest of the viewer needs an account');
+    }
+
     /** The sample IGC flight uploaded by a pilot, who stays logged in. */
     private function uploadSample(User $pilot): int
     {

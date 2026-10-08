@@ -13,33 +13,45 @@
              data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id}) }}">
         <div class="l-container p-flight__head">
             <div class="l-stack l-stack--sm">
-                <twig:Ui:Link href="{{ path('app_flight_index') }}">Tous les vols</twig:Ui:Link>
+                {% if app.user %}<twig:Ui:Link href="{{ path('app_flight_index') }}">Tous les vols</twig:Ui:Link>{% endif %}
                 <twig:Ui:Eyebrow>Analyse de vol · {{ flight.simulator }}</twig:Ui:Eyebrow>
                 <twig:Ui:Heading level="1" size="h2">{{ flight.pilot }}{% if flight.competitionId %} <span class="p-flight__cn">{{ flight.competitionId }}</span>{% endif %}</twig:Ui:Heading>
                 <p class="p-flight__meta">
                     {{ [flight.glider, flight.landscape, flight.flightPlan, flight.flownOn ? flight.flownOn|format_date('long', locale: 'fr') : null]|filter(v => v)|join(' · ') }}
                 </p>
-                {% if flight.launch or flight.flightPlan or flight.owner %}
+                {% if flight.launch or flight.flightPlan or flight.owner or flight.public %}
                     <p class="p-flight__links">
                         {% if flight.launch %}<twig:Ui:Tag variant="soft" title="Lu sur le début de la trace">{{ flight.launch.label }}</twig:Ui:Tag>{% endif %}
-                        {% if flight.flightPlan %}<twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">{{ session_size > 1 ? 'Session : ' ~ session_size ~ ' vols sur ce plan de vol' : 'Session de ce plan de vol' }}</twig:Ui:Link>{% endif %}
+                        {% if flight.public %}<twig:Ui:Tag title="Visible des visiteurs du site, sans les commentaires">Public</twig:Ui:Tag>{% endif %}
+                        {% if flight.flightPlan and app.user %}<twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">{{ session_size > 1 ? 'Session : ' ~ session_size ~ ' vols sur ce plan de vol' : 'Session de ce plan de vol' }}</twig:Ui:Link>{% endif %}
                         {% if flight.owner and is_granted('LOGBOOK_VIEW', flight.owner) %}<twig:Ui:Link href="{{ flight.owner == app.user ? path('app_flight_logbook') : path('app_flight_logbook_pilot', {id: flight.owner.id}) }}">{{ flight.owner == app.user ? 'Mon carnet de vol' : 'Carnet de vol du pilote' }}</twig:Ui:Link>{% endif %}
-                        {% if session_size > 1 and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare_pick', {id: flight.id}) }}">Comparer avec un autre pilote</twig:Ui:Link>{% endif %}
+                        {% if app.user and session_size > 1 and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare_pick', {id: flight.id}) }}">Comparer avec un autre pilote</twig:Ui:Link>{% endif %}
                     </p>
                 {% endif %}
                 {% for message in app.flashes('info') %}
                     <div class="c-alert" role="status">{{ message }}</div>
                 {% endfor %}
                 {% if not analysis.exactTimes %}
-                    <p class="u-note">Trace Condor (.ftr) : Condor chiffre l’heure de chaque point, les durées et les vitesses sont estimées (à quelques pourcents près). Les positions et altitudes sont exactes.</p>
+                    <p class="u-note">Les heures de cette trace n’ont pas pu être lues : les durées et les vitesses sont estimées (à quelques pourcents près). Les positions et altitudes sont exactes.</p>
                 {% endif %}
             </div>
-            {% if is_granted('FLIGHT_DELETE', flight) %}
-                <form method="post" action="{{ path('app_flight_delete', {id: flight.id}) }}" class="p-flight__delete"
-                      onsubmit="return confirm('Supprimer ce vol ?')">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete_flight_' ~ flight.id) }}">
-                    <twig:Ui:Button type="submit" variant="outline" size="sm" icon="trash">Supprimer</twig:Ui:Button>
-                </form>
+            {% if is_granted('FLIGHT_PUBLISH', flight) or is_granted('FLIGHT_DELETE', flight) %}
+                <div class="p-flight__actions">
+                    {% if is_granted('FLIGHT_PUBLISH', flight) %}
+                        <form method="post" action="{{ path('app_flight_publish', {id: flight.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('publish_flight_' ~ flight.id) }}">
+                            <input type="hidden" name="public" value="{{ flight.public ? '0' : '1' }}">
+                            <twig:Ui:Button type="submit" variant="outline" size="sm" title="{{ flight.public ? 'Ne plus montrer ce vol aux visiteurs' : 'Montrer ce vol aux visiteurs du site, sans les commentaires' }}">{{ flight.public ? 'Rendre privé' : 'Rendre public' }}</twig:Ui:Button>
+                        </form>
+                    {% endif %}
+                    {% if is_granted('FLIGHT_DELETE', flight) %}
+                        <form method="post" action="{{ path('app_flight_delete', {id: flight.id}) }}" class="p-flight__delete"
+                              onsubmit="return confirm('Supprimer ce vol ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_flight_' ~ flight.id) }}">
+                            <twig:Ui:Button type="submit" variant="outline" size="sm" icon="trash">Supprimer</twig:Ui:Button>
+                        </form>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
 
@@ -92,6 +104,7 @@
                         </select>
                     </label>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
+                    <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="pilot" data-action="flight-viewer#togglePilot" title="En 3D, la caméra dans le planeur, inclinée avec lui"><twig:ux:icon name="glider" /> Vue pilote</button>
                 </div>
                 <p class="p-flight__loading" data-flight-viewer-target="status" role="status">Chargement du vol…</p>
             </div>
@@ -132,6 +145,9 @@
                 <label class="p-flight__select">
                     <span class="u-visually-hidden">Vitesse de lecture</span>
                     <select data-flight-viewer-target="rate">
+                        <option value="1">× 1</option>
+                        <option value="2">× 2</option>
+                        <option value="3">× 3</option>
                         <option value="10">× 10</option>
                         <option value="30" selected>× 30</option>
                         <option value="60">× 60</option>
@@ -141,6 +157,10 @@
                 </label>
                 <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="1" aria-label="Position dans le vol"
                        data-flight-viewer-target="seek" data-action="input->flight-viewer#seek">
+                <button type="button" class="p-flight__moment" data-action="flight-viewer#copyMoment" title="Copier l’adresse de ce vol à l’instant affiché">
+                    <twig:ux:icon name="link" /><span class="u-visually-hidden">Lien vers cet instant</span>
+                </button>
+                <span class="p-flight__moment-status" data-flight-viewer-target="momentStatus" role="status"></span>
             </div>
 
             <div class="p-flight__charts">
@@ -150,6 +170,14 @@
             </div>
         </div>
 
+        <section class="l-container p-flight__thermals" data-flight-viewer-target="thermals" hidden aria-labelledby="thermals-title">
+            <twig:Ui:Heading level="2" size="h3" id="thermals-title">Deux thermiques côte à côte</twig:Ui:Heading>
+            <p class="u-note" data-flight-viewer-target="thermalHint">Choisissez un deuxième thermique dans la liste (« Comparer »).</p>
+            <div class="c-data-table p-flight__thermal-table" data-flight-viewer-target="thermalTable"></div>
+            <figure class="p-flight__chart"><figcaption>Gain depuis l’entrée dans chaque thermique (m)</figcaption><div data-flight-viewer-target="thermalChart"></div></figure>
+        </section>
+
+        {% if app.user %}
         <div class="l-container p-flight__comments" id="commentaires">
             <twig:Ui:Heading level="2" size="h3">Commentaires</twig:Ui:Heading>
             {% if flight.comments is empty %}
@@ -195,5 +223,6 @@
                 {{ form_end(comment_form) }}
             {% endif %}
         </div>
+        {% endif %}
     </section>
 {% endblock %}

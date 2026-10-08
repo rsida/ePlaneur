@@ -701,7 +701,7 @@
 }
 
 /* Logbook (templates/flight/logbook.html.twig, logbook-chart controller) */
-.p-logbook__tips {
+.p-flight-logbook__tips {
     display: grid;
     gap: var(--space-2);
     margin: 0;
@@ -709,14 +709,105 @@
     list-style: none;
 }
 
-.p-logbook__charts {
+.p-flight-logbook__charts {
     display: grid;
     gap: var(--space-3);
     width: 100%;
 }
 
 @media (width >= 64em) {
-    .p-logbook__charts {
+    .p-flight-logbook__charts {
         grid-template-columns: 1fr 1fr;
     }
+}
+
+.p-flight__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* Link to a moment, thermals side by side (flight page) */
+.p-flight__replay {
+    flex-wrap: wrap;
+}
+
+.p-flight__moment {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.p-flight__moment-status {
+    flex-basis: 100%;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+}
+
+.p-flight__moment-status:empty {
+    display: none;
+}
+
+.p-flight__phases li {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.p-flight__phases .p-flight__phase-item {
+    flex: 1;
+    min-width: 0;
+}
+
+.p-flight__phase-pick {
+    flex: none;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--text-xs);
+    cursor: pointer;
+}
+
+.p-flight__phase-pick[aria-pressed='true'] {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.p-flight__thermals {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-7);
+}
+
+.p-flight__thermals[hidden] {
+    display: none;
+}
+
+.p-flight__thermal-table:empty {
+    display: none;
+}
+
+.p-flight__thermal-table th[scope='row'] {
+    font-weight: 600;
+    text-align: left;
+}
+
+.p-flight__thermal-key {
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    margin-right: var(--space-1-5);
+    border-radius: 50%;
+    /* Readable on the dark head of the table */
+    outline: 1px solid var(--color-on-dark);
 }

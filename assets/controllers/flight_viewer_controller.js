@@ -4,6 +4,7 @@ import { LineLayer, PathLayer, ScatterplotLayer } from '@deck.gl/layers';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
+import { bearing, distance } from '../flight/geo.js';
 import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
 
 /*
@@ -15,6 +16,9 @@ import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap
  * - The task is drawn by the map itself, so it lies on the relief.
  * - Charts (uPlot) share the cursor with the map; clicking a chart, the seek bar or a phase moves
  *   the glider there.
+ * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
+ * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
+ * - Two thermals picked in the list are compared: figures and the height gained over time.
  */
 
 /* Track colors by vario class, from strong sink to strong climb */
@@ -26,9 +30,14 @@ const VARIO_CLASSES = [
     { max: Infinity, color: [36, 140, 72] },
 ];
 const CURTAIN_STEP = 5; // seconds between the lines down to the ground in 3D
+// Pilot view: looking ahead and a little down (fewer far tiles than the horizon, which MapLibre
+// draws with stretched walls while they load)
+const PILOT_PITCH = 75;
+// Metres the pilot view keeps above the relief of the map
+const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'follow', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime'];
+    static targets = ['map', 'view', 'follow', 'pilot', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint'];
 
     static values = { url: String };
 
@@ -37,6 +46,8 @@ export default class extends Controller {
         this.playing = false;
         this.is3d = false;
         this.following = false;
+        this.pilotView = false;
+        this.compared = [];
         this.charts = [];
         try {
             const response = await fetch(this.urlValue, { headers: { Accept: 'application/json' } });
@@ -56,13 +67,17 @@ export default class extends Controller {
         this.buildPhases();
         this.resizeObserver = new ResizeObserver(() => this.resizeCharts());
         this.resizeObserver.observe(this.element);
-        this.moveTo(this.flight.statistics.takeoff ?? 0);
+        // A link to a moment of the flight: #t=seconds
+        const moment = /^#t=(\d+)$/.exec(window.location.hash);
+        this.moveTo(moment ? Math.min(this.count - 1, Number(moment[1])) : (this.flight.statistics.takeoff ?? 0));
+        if (moment) this.map.once('load', () => this.centerOnGlider());
     }
 
     disconnect() {
         cancelAnimationFrame(this.frame);
         this.resizeObserver?.disconnect();
         this.charts.forEach((chart) => chart.destroy());
+        this.thermalPlot?.destroy();
         this.map?.remove();
     }
 
@@ -131,8 +146,10 @@ export default class extends Controller {
                 data: this.trackSegments,
                 getPath: (segment) => segment.indexes.map((k) => this.position(k)),
                 getColor: (segment) => segment.color,
-                getWidth: 3,
-                widthUnits: 'pixels',
+                // From the glider, a ribbon of 4 m: a width in pixels would fill the view up close
+                getWidth: this.pilotView ? 4 : 3,
+                widthUnits: this.pilotView ? 'meters' : 'pixels',
+                widthMinPixels: this.pilotView ? 1.5 : 0,
                 capRounded: true,
                 jointRounded: true,
                 parameters,
@@ -140,6 +157,8 @@ export default class extends Controller {
             }),
             new ScatterplotLayer({
                 id: 'glider',
+                // In the pilot view the camera is in the glider
+                visible: !this.pilotView,
                 data: [i],
                 getPosition: (k) => this.position(k),
                 getRadius: 7,
@@ -160,6 +179,8 @@ export default class extends Controller {
             }
             layers.unshift(new LineLayer({
                 id: 'curtain',
+                // Seen from the glider they become bars across the view
+                visible: !this.pilotView,
                 data: this.curtain,
                 getSourcePosition: (k) => this.position(k),
                 getTargetPosition: (k) => this.position(k, true),
@@ -168,6 +189,7 @@ export default class extends Controller {
             }));
             layers.push(new LineLayer({
                 id: 'glider-stem',
+                visible: !this.pilotView,
                 data: [i],
                 getSourcePosition: (k) => this.position(k),
                 getTargetPosition: (k) => this.position(k, true),
@@ -180,14 +202,18 @@ export default class extends Controller {
     }
 
     setView({ currentTarget }) {
-        this.is3d = currentTarget.dataset.view === '3d';
-        this.viewTargets.forEach((button) => button.setAttribute('aria-pressed', String(button === currentTarget)));
-        if (this.is3d) {
-            setTerrain(this.map, true);
-            easeAt(this.map, { pitch: 62, bearing: this.map.getBearing() || -20, duration: 800 }, this.series.altitude[Math.round(this.index)]);
-        } else {
-            setTerrain(this.map, false);
-            easeAt(this.map, { pitch: 0, bearing: 0, duration: 600 }, 0);
+        if (this.pilotView) this.togglePilot();
+        this.show3d(currentTarget.dataset.view === '3d');
+    }
+
+    show3d(on, { animate = true } = {}) {
+        this.is3d = on;
+        this.viewTargets.forEach((button) => button.setAttribute('aria-pressed', String((button.dataset.view === '3d') === on)));
+        setTerrain(this.map, on);
+        if (animate && on) {
+            easeAt(this.map, { pitch: 62, bearing: this.map.getBearing() || -20, roll: 0, duration: 800 }, this.series.altitude[Math.round(this.index)]);
+        } else if (animate) {
+            easeAt(this.map, { pitch: 0, bearing: 0, roll: 0, duration: 600 }, 0);
         }
         this.render();
     }
@@ -205,6 +231,91 @@ export default class extends Controller {
     centerOnGlider() {
         const [lon, lat, altitude] = this.position(Math.round(this.index));
         this.map.jumpTo({ center: [lon, lat], elevation: altitude });
+    }
+
+    /* ---------- Pilot view ---------- */
+
+    togglePilot() {
+        this.pilotView = !this.pilotView;
+        this.pilotTarget.setAttribute('aria-pressed', String(this.pilotView));
+        this.camera = null;
+        if (this.pilotView) {
+            if (!this.is3d) this.show3d(true, { animate: false });
+            // Real time or close to it: faster, the view turns too quickly to follow
+            if (Number(this.rateTarget.value) > 3) this.rateTarget.value = '2';
+            this.pilotCamera();
+        } else {
+            this.bankCanvas(0);
+            const [lon, lat, altitude] = this.position(Math.round(this.index));
+            easeAt(this.map, { center: [lon, lat], pitch: 62, zoom: 12, duration: 800 }, altitude);
+        }
+        this.render();
+    }
+
+    /**
+     * Camera in the glider: at its position between two seconds of the series, looking along its
+     * track, the picture banked like the glider in a turn (tan(bank) = v·ω / g). Heading and bank are
+     * interpolated between two seconds, then smoothed from one frame to the next.
+     *
+     * The bank turns the canvas of the map, not the camera: deck.gl follows the bearing and pitch of
+     * the map but not its roll, so a rolled camera would draw the track off the relief.
+     */
+    pilotCamera() {
+        const { latitude, longitude, altitude, speed } = this.series;
+        const last = this.count - 1;
+        const a = Math.floor(this.index);
+        const b = Math.min(last, a + 1);
+        const f = this.index - a;
+        const lerp = (values) => values[a] + (values[b] - values[a]) * f;
+        const heading = (k) => {
+            const from = Math.max(0, k - 2);
+            const to = Math.min(last, k + 2);
+
+            return bearing(latitude[from], longitude[from], latitude[to], longitude[to]);
+        };
+        // Turn to the right positive, in degrees per second
+        const turnRate = (k) => angleDifference(heading(Math.max(0, k - 1)), heading(Math.min(last, k + 1))) / 2;
+        const bankAt = (k) => {
+            const omega = turnRate(k) * Math.PI / 180;
+
+            return Math.max(-60, Math.min(60, Math.atan((speed[k] / 3.6) * omega / 9.81) * 180 / Math.PI));
+        };
+        const target = {
+            heading: heading(a) + angleDifference(heading(a), heading(b)) * f,
+            bank: bankAt(a) + (bankAt(b) - bankAt(a)) * f,
+        };
+        // Smoothing: a quarter of the way to the target at each frame
+        this.camera = this.camera
+            ? { heading: this.camera.heading + angleDifference(this.camera.heading, target.heading) * 0.25, bank: this.camera.bank + (target.bank - this.camera.bank) * 0.25 }
+            : target;
+        // The relief of the map is the real one, not Condor's: low over a ridge the glider can be
+        // under it by a few tens of metres, and the camera would see the inside of the mountain
+        const position = [lerp(longitude), lerp(latitude)];
+        const ground = this.map.queryTerrainElevation(position) ?? -Infinity;
+        const camera = this.map.calculateCameraOptionsFromCameraLngLatAltRotation(position, Math.max(lerp(altitude) + 1.5, ground + PILOT_GROUND_CLEARANCE), (this.camera.heading + 360) % 360, PILOT_PITCH, 0);
+        this.map.jumpTo(camera);
+        this.bankCanvas(this.camera.bank);
+    }
+
+    /** Turns the picture of the map: banked right, the horizon turns to the left. */
+    bankCanvas(bank) {
+        const canvas = this.map.getCanvasContainer();
+        // Enlarged so the corners stay covered
+        canvas.style.transform = bank ? `rotate(${-bank}deg) scale(${1 + Math.abs(Math.sin(bank * Math.PI / 180)) * 0.9})` : '';
+    }
+
+    /* ---------- Link to a moment ---------- */
+
+    async copyMoment() {
+        const i = Math.round(this.index);
+        const url = `${window.location.origin}${window.location.pathname}#t=${i}`;
+        window.history.replaceState(null, '', `#t=${i}`);
+        try {
+            await navigator.clipboard.writeText(url);
+            this.momentStatusTarget.textContent = `Lien vers ${formatTime(this.series.time[i])} copié`;
+        } catch {
+            this.momentStatusTarget.textContent = url;
+        }
     }
 
     /* ---------- Charts ---------- */
@@ -290,6 +401,17 @@ export default class extends Controller {
             button.textContent = describePhase(phase);
             button.addEventListener('click', () => this.showPhase(p));
             li.append(button);
+            if (phase.type === 'thermal') {
+                const pick = document.createElement('button');
+                pick.type = 'button';
+                pick.className = 'p-flight__phase-pick';
+                pick.dataset.pick = String(p);
+                pick.setAttribute('aria-pressed', 'false');
+                pick.title = 'Comparer ce thermique avec un autre';
+                pick.textContent = 'Comparer';
+                pick.addEventListener('click', () => this.pickThermal(p));
+                li.append(pick);
+            }
 
             return li;
         });
@@ -312,6 +434,130 @@ export default class extends Controller {
             this.map.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 600 });
         }
         this.moveTo(phase.start);
+    }
+
+    /* ---------- Two thermals side by side ---------- */
+
+    pickThermal(p) {
+        this.compared = this.compared.includes(p) ? this.compared.filter((q) => q !== p) : [...this.compared, p].slice(-2);
+        this.phasesTarget.querySelectorAll('[data-pick]').forEach((pick) => pick.setAttribute('aria-pressed', String(this.compared.includes(Number(pick.dataset.pick)))));
+        this.thermalsTarget.hidden = this.compared.length === 0;
+        this.thermalHintTarget.hidden = this.compared.length === 2;
+        this.thermalPlot?.destroy();
+        this.thermalPlot = null;
+        this.thermalTableTarget.replaceChildren();
+        if (this.compared.length < 2) return;
+
+        const [a, b] = this.compared.map((q) => this.describeThermal(q));
+        const style = getComputedStyle(this.element);
+        const colors = [style.getPropertyValue('--color-pilot-a').trim(), style.getPropertyValue('--color-pilot-b').trim()];
+        const rows = [
+            ['Début', (t) => formatTime(t.time)],
+            ['Durée', (t) => formatTime(t.duration)],
+            ['Gain', (t) => `${t.gain >= 0 ? '+' : ''}${Math.round(t.gain).toLocaleString('fr-FR')} m`],
+            ['Vario moyen', (t) => FORMATS.vario(t.climb)],
+            ['Meilleures 30 s', (t) => FORMATS.vario(t.best)],
+            ['Altitude', (t) => `${FORMATS.altitude(t.from)} → ${FORMATS.altitude(t.to)}`],
+            ['Rayon de spirale', (t) => (t.radius ? `${Math.round(t.radius)} m` : '—')],
+            ['Inclinaison', (t) => (t.bank ? `${Math.round(t.bank)}°` : '—')],
+            ['Sens', (t) => (t.direction === 'left' ? 'à gauche' : 'à droite')],
+            ['Dérive (vent)', (t) => `${Math.round(t.drift)} km/h`],
+        ];
+        const table = document.createElement('table');
+        const head = table.createTHead().insertRow();
+        ['', `Thermique ${a.number}`, `Thermique ${b.number}`].forEach((text, n) => {
+            const th = document.createElement('th');
+            th.scope = 'col';
+            if (n > 0) {
+                const key = document.createElement('span');
+                key.className = 'p-flight__thermal-key';
+                key.style.backgroundColor = colors[n - 1];
+                th.append(key);
+            }
+            th.append(text);
+            head.append(th);
+        });
+        const body = table.createTBody();
+        rows.forEach(([label, value]) => {
+            const row = body.insertRow();
+            const th = document.createElement('th');
+            th.scope = 'row';
+            th.textContent = label;
+            row.append(th);
+            row.insertCell().textContent = value(a);
+            row.insertCell().textContent = value(b);
+        });
+        this.thermalTableTarget.append(table);
+
+        // Height gained since the entry of each thermal, second by second
+        const length = Math.max(a.gains.length, b.gains.length);
+        const x = Array.from({ length }, (_, t) => t);
+        const pad = (gains) => x.map((t) => (t < gains.length ? gains[t] : null));
+        const line = (thermal, color, t) => ({ text: `Thermique ${thermal.number} : ${t < thermal.gains.length ? `${thermal.gains[t] >= 0 ? '+' : ''}${Math.round(thermal.gains[t])} m` : 'sorti'}`, color });
+        this.thermalPlot = new uPlot({
+            width: this.thermalChartTarget.clientWidth || 600,
+            height: 180,
+            legend: { show: false },
+            cursor: { drag: { x: false, y: false }, points: { size: 6 } },
+            scales: { x: { time: false } },
+            axes: [
+                { values: (u, ticks) => ticks.map((t) => formatTime(t)), size: 28, font: '11px Inter, sans-serif' },
+                { size: 46, font: '11px Inter, sans-serif' },
+            ],
+            series: [{}, { stroke: colors[0], width: 2, points: { show: false } }, { stroke: colors[1], width: 2, points: { show: false } }],
+            plugins: [valueTip((u, t) => [`${formatTime(t)} après l’entrée`, line(a, colors[0], t), line(b, colors[1], t)])],
+        }, [x, pad(a.gains), pad(b.gains)], this.thermalChartTarget);
+    }
+
+    /** Figures of a thermal: climbs, radius and bank from the turn rate, drift of the circles. */
+    describeThermal(p) {
+        const phase = this.flight.phases[p];
+        const { time, latitude, longitude, altitude, speed } = this.series;
+        const number = this.flight.phases.slice(0, p + 1).filter((other) => other.type === 'thermal').length;
+        let turned = 0;
+        let previous = null;
+        for (let i = phase.start + 1; i <= phase.end; i += 1) {
+            const now = bearing(latitude[i - 1], longitude[i - 1], latitude[i], longitude[i]);
+            if (previous !== null) turned += Math.abs(((now - previous + 540) % 360) - 180);
+            previous = now;
+        }
+        const duration = phase.end - phase.start;
+        const omega = duration > 0 ? (turned / duration) * Math.PI / 180 : 0;
+        let meanSpeed = 0;
+        for (let i = phase.start; i <= phase.end; i += 1) meanSpeed += speed[i] / 3.6 / (duration + 1);
+        let best = -Infinity;
+        for (let i = phase.start; i + 30 <= phase.end; i += 1) best = Math.max(best, (altitude[i + 30] - altitude[i]) / 30);
+        // Drift: from the centre of the first circle to the centre of the last one
+        const circle = omega > 0 ? Math.min(duration, Math.round((2 * Math.PI) / omega)) : duration;
+        const centre = (from) => {
+            let lat = 0;
+            let lon = 0;
+            for (let i = from; i < from + circle; i += 1) {
+                lat += latitude[i] / circle;
+                lon += longitude[i] / circle;
+            }
+
+            return [lat, lon];
+        };
+        const [lat1, lon1] = centre(phase.start);
+        const [lat2, lon2] = centre(phase.end - circle);
+        const drift = duration > circle ? (distance(lat1, lon1, lat2, lon2) / (duration - circle)) * 3.6 : 0;
+
+        return {
+            number,
+            time: time[phase.start],
+            duration,
+            gain: phase.gain,
+            climb: phase.vario,
+            best: best === -Infinity ? phase.vario : best,
+            from: altitude[phase.start],
+            to: altitude[phase.end],
+            radius: omega > 0 ? meanSpeed / omega : null,
+            bank: omega > 0 ? Math.atan((meanSpeed * omega) / 9.81) * 180 / Math.PI : null,
+            direction: phase.direction,
+            drift,
+            gains: Array.from({ length: duration + 1 }, (_, t) => altitude[phase.start + t] - altitude[phase.start]),
+        };
     }
 
     /* ---------- Comments ---------- */
@@ -374,12 +620,22 @@ export default class extends Controller {
         if (!fromChart) {
             this.charts.forEach((chart) => chart.setCursor({ left: chart.valToPos(time[i], 'x'), top: chart.valToPos(chart.data[1][i], 'y') }, false));
         }
-        if (this.following && this.map) this.centerOnGlider();
+        if (this.pilotView && this.map) {
+            // Smoothed during the replay only: a jump shows the new place at once
+            if (!this.playing) this.camera = null;
+            this.pilotCamera();
+        }
+        else if (this.following && this.map) this.centerOnGlider();
         this.render();
     }
 }
 
 
+
+/** Signed difference from one heading to another, in degrees (-180 to 180, positive to the right). */
+function angleDifference(from, to) {
+    return ((to - from + 540) % 360) - 180;
+}
 
 /** One line describing a thermal or a glide. */
 function describePhase(phase) {

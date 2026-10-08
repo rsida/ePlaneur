@@ -308,3 +308,34 @@
         --split-aside: 28.125rem;  /* 450 */
     }
 }
+
+/* Public flights of the members (logbook section): cards opening the flight viewer */
+.p-home-flights {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (width >= 48em) {
+    .p-home-flights {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.p-home-flights__card {
+    display: block;
+    height: 100%;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.p-home-flights__pilot {
+    font-size: var(--text-title-xs);
+}
+
+.p-home-flights__values {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}

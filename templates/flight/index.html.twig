@@ -27,7 +27,7 @@
                                       data-action="change->autosubmit#submit" />
                     <input type="hidden" name="_token" value="{{ csrf_token(upload_token) }}">
                     <div><twig:Ui:Button type="submit" data-autosubmit-target="button">Analyser le vol</twig:Ui:Button></div>
-                    <p class="u-note">Les vols ajoutés sont visibles par les membres connectés. Avec une trace Condor (.ftr), les durées sont estimées : Condor y chiffre l’heure de chaque point.</p>
+                    <p class="u-note">Les vols ajoutés sont visibles par les membres connectés. Depuis la page d’un vol, son pilote peut aussi le rendre public : les visiteurs du site le voient alors, sans les commentaires.</p>
                 </div>
             </form>
 

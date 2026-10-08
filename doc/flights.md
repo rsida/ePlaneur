@@ -2,7 +2,9 @@
 
 Roadmap step 7: Condor Club-like flight analysis, focused on training. Logged-in users upload a
 Condor flight track at `/vols`; any logged-in user sees the flights of the club on a map, in 3D at
-their real altitude over the relief, with their charts, phases, task legs and a replay.
+their real altitude over the relief, with their charts, phases, task legs and a replay. A pilot can
+make a flight public: visitors then see its page (without the comments), and the home page shows
+the latest public flights.
 
 | What | Where |
 |---|---|
@@ -129,7 +131,23 @@ stored flights again from their files (in production too, after the deployment).
   hovering or clicking a chart, the seek bar or a phase moves the glider. Every chart of the flight
   pages has a label next to the cursor with the exact values of the point (`valueTip()` of
   `assets/flight/chart.js`): add it to any new chart.
-- Replay ×10 to ×300, "Suivre" keeps the glider in the centre.
+- Replay ×1 to ×300, "Suivre" keeps the glider in the centre.
+- "Vue pilote" (3D): the camera sits in the glider (`calculateCameraOptionsFromCameraLngLatAltRotation`
+  of MapLibre 5), looks along its track, 15° below the horizon (fewer far tiles to load), at least
+  30 m above the relief of the map (the real one, not Condor's: low over a ridge the glider can be
+  under it). Bank: tan(bank) = speed × turn rate / g, shown by turning the canvas of the map (deck.gl
+  follows the bearing and pitch of MapLibre, not its roll: a rolled camera drew the track off the
+  relief). Heading and bank are interpolated between two seconds and smoothed during the replay;
+  the replay goes ×2 when the view starts (×1, ×2 and ×3 are offered for it). The lines down to the
+  ground are hidden and the track is a 4 m ribbon (a width in pixels filled the view up close).
+- Link to a moment: `#t=<seconds>` opens the flight there; the link button copies it.
+- Two thermals side by side: "Comparer" on two thermals of the list shows their figures (duration,
+  gain, average and best 30 s climb, altitudes, radius and bank from the turn rate and the speed,
+  direction, drift of the circles, i.e. the wind) and the height gained since their entry. Legs are
+  compared between flights (comparison page), not within a flight.
+- Public flights (`Flight::$public`, "Rendre public" for the pilot, `FLIGHT_PUBLISH`): their page
+  and its data are open to visitors (`FLIGHT_VIEW`); comments, sessions, comparisons and logbooks
+  still need an account. The home page lists the latest three (`FlightRepository::findPublic()`).
 
 ## Session
 

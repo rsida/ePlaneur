@@ -42,7 +42,10 @@ export function createMap(container, bounds) {
         },
         bounds,
         fitBoundsOptions: { padding: 40 },
-        maxPitch: 80,
+        // Up to the horizon for the pilot view
+        maxPitch: 85,
+        // The pilot view turns all around in a thermal: keep the tiles of the whole circle
+        maxTileCacheSize: 2000,
         // In 3D the camera looks at the glider in the air, not at the ground below it
         centerClampedToGround: false,
         attributionControl: { compact: true },

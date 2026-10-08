@@ -66,4 +66,15 @@ class FlightRepository extends ServiceEntityRepository
 
         return $flights;
     }
+
+    /**
+     * Flights their pilots made public, the latest first (showcase of the home page).
+     *
+     * @return list<Flight>
+     */
+    public function findPublic(int $limit): array
+    {
+        /* @var list<Flight> */
+        return $this->findBy(['public' => true], ['uploadedAt' => 'DESC', 'id' => 'DESC'], $limit);
+    }
 }

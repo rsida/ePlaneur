@@ -85,6 +85,10 @@ class Flight
     #[ORM\Column]
     private \DateTimeImmutable $uploadedAt;
 
+    /** Shown to visitors too (chosen by the pilot): showcase of the club. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $public = false;
+
     /** @var Collection<int, FlightComment> */
     #[ORM\OneToMany(targetEntity: FlightComment::class, mappedBy: 'flight')]
     #[ORM\OrderBy(['at' => 'ASC', 'createdAt' => 'ASC'])]
@@ -211,6 +215,18 @@ class Flight
     public function getOriginalName(): string
     {
         return $this->originalName;
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->public;
+    }
+
+    public function setPublic(bool $public): static
+    {
+        $this->public = $public;
+
+        return $this;
     }
 
     /** Day of the flight: the date in the file, or the upload date when the file has none (.ftr). */

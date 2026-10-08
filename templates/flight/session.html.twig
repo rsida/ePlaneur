@@ -17,7 +17,7 @@
                 <twig:Ui:Heading level="1" size="h2">{{ session.flightPlan ?? 'Vol sans plan de vol' }}</twig:Ui:Heading>
                 <p class="p-flight__meta">{{ flights|length }} {{ flights|length > 1 ? 'vols' : 'vol' }} sur ce plan de vol</p>
                 {% if not exact %}
-                    <p class="u-note">Traces Condor (.ftr) : les temps et les vitesses sont estimés (à quelques pourcents près), les positions et altitudes sont exactes.</p>
+                    <p class="u-note">Les heures de certaines traces n’ont pas pu être lues : leurs temps et leurs vitesses sont estimés (à quelques pourcents près).</p>
                 {% endif %}
             </div>
         </div>

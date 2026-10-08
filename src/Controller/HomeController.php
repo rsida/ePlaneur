@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\FlightRepository;
 use App\Repository\PostRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,8 +16,11 @@ final class HomeController extends AbstractController
     /** Posts of the "Ça bouge au club" section: the featured post and the latest ones. */
     private const int NEWS_COUNT = 3;
 
+    /** Flights their pilots made public, shown in the logbook section. */
+    private const int PUBLIC_FLIGHT_COUNT = 3;
+
     #[Route('/', name: 'app_home', methods: ['GET'])]
-    public function index(PostRepository $posts): Response
+    public function index(PostRepository $posts, FlightRepository $flights): Response
     {
         $reader = $this->getUser();
         $reader = $reader instanceof User ? $reader : null;
@@ -25,6 +29,7 @@ final class HomeController extends AbstractController
         return $this->render('home/index.html.twig', [
             'featured' => $featured,
             'latest' => $posts->findLatest($reader, self::NEWS_COUNT - (null !== $featured ? 1 : 0), $featured),
+            'public_flights' => $flights->findPublic(self::PUBLIC_FLIGHT_COUNT),
         ]);
     }
 }

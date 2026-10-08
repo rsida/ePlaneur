@@ -31,9 +31,9 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Flight viewer (roadmap step 7): logged-in users upload their Condor flight tracks and see any
- * flight of the club on a map, in 3D, with its charts and analysis.
+ * flight of the club on a map, in 3D, with its charts and analysis. Every page needs an account,
+ * except the flights their pilots made public (FLIGHT_VIEW).
  */
-#[IsGranted('ROLE_USER')]
 #[Route('/vols', name: 'app_flight_')]
 final class FlightController extends AbstractController
 {
@@ -41,6 +41,7 @@ final class FlightController extends AbstractController
 
     /** Flights uploaded by the user, and the latest of the club; a track dropped here is analysed. */
     #[Route('', name: 'index', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_USER')]
     public function index(Request $request, FlightRepository $flights, FlightImporter $importer, ValidatorInterface $validator): Response
     {
         $user = $this->getUser();
@@ -79,6 +80,7 @@ final class FlightController extends AbstractController
 
     /** The flights of a pilot over time: totals, trends and the advice that comes back most. */
     #[Route('/carnet', name: 'logbook', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function logbook(FlightRepository $flights, FlightAdvisor $advisor): Response
     {
         $user = $this->getUser();
@@ -88,6 +90,7 @@ final class FlightController extends AbstractController
     }
 
     #[Route('/carnet/{id<\d+>}', name: 'logbook_pilot', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     #[IsGranted(FlightVoter::LOGBOOK, 'pilot')]
     public function pilotLogbook(#[MapEntity(id: 'id')] User $pilot, FlightRepository $flights, FlightAdvisor $advisor): Response
     {
@@ -95,6 +98,7 @@ final class FlightController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'show', methods: ['GET'])]
+    #[IsGranted(FlightVoter::VIEW, 'flight')]
     public function show(Flight $flight, FlightRepository $flights, FlightAdvisor $advisor): Response
     {
         return $this->renderFlight($flight, $flights, $advisor);
@@ -102,6 +106,7 @@ final class FlightController extends AbstractController
 
     /** Comment of the pilot or a trainer, at the moment shown in the viewer or on the whole flight. */
     #[Route('/{id<\d+>}/commentaires', name: 'comment', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     #[IsGranted(FlightVoter::COMMENT, 'flight')]
     public function comment(Flight $flight, Request $request, FlightRepository $flights, FlightAdvisor $advisor, EntityManagerInterface $entityManager, ClockInterface $clock): Response
     {
@@ -126,6 +131,7 @@ final class FlightController extends AbstractController
     }
 
     #[Route('/commentaires/{id<\d+>}/supprimer', name: 'comment_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     #[IsGranted(FlightVoter::COMMENT_DELETE, 'comment')]
     public function deleteComment(FlightComment $comment, Request $request, EntityManagerInterface $entityManager): Response
     {
@@ -197,6 +203,7 @@ final class FlightController extends AbstractController
 
     /** Every flight on the flight plan of this one: ranking, podium and replay of all pilots. */
     #[Route('/{id<\d+>}/session', name: 'session', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function session(Flight $flight, FlightRepository $flights): Response
     {
         return $this->render('flight/session.html.twig', ['flight' => $flight, 'session' => FlightSession::of($flights->findSession($flight))]);
@@ -207,6 +214,7 @@ final class FlightController extends AbstractController
      * from `start`, seconds since the beginning of the recording) and the time it started the task.
      */
     #[Route('/{id<\d+>}/session.json', name: 'session_data', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function sessionData(Flight $flight, FlightRepository $flights): JsonResponse
     {
         $session = FlightSession::of($flights->findSession($flight));
@@ -237,6 +245,7 @@ final class FlightController extends AbstractController
 
     /** What the viewer draws: 1 s series, phases, statistics and task (FlightAnalysis::toArray()). */
     #[Route('/{id<\d+>}/analyse.json', name: 'analysis', methods: ['GET'])]
+    #[IsGranted(FlightVoter::VIEW, 'flight')]
     public function analysis(Flight $flight): JsonResponse
     {
         $response = new JsonResponse($flight->getAnalysis());
@@ -251,6 +260,7 @@ final class FlightController extends AbstractController
      * the session.
      */
     #[Route('/{id<\d+>}/comparer', name: 'compare_pick', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function comparePick(Flight $flight, Request $request, FlightRepository $flights): Response
     {
         $others = array_values(array_filter(FlightSession::of($flights->findSession($flight))->flights, static fn (Flight $other): bool => $other->getId() !== $flight->getId()));
@@ -267,6 +277,7 @@ final class FlightController extends AbstractController
 
     /** Where along the task the flight gains or loses time on another flight of the same task. */
     #[Route('/{id<\d+>}/comparer/{other<\d+>}', name: 'compare', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function compare(Flight $flight, #[MapEntity(id: 'other')] Flight $reference, FlightRepository $flights): Response
     {
         $comparison = FlightComparison::of($flight, $reference);
@@ -289,6 +300,7 @@ final class FlightController extends AbstractController
      * the task distance reaches each FlightComparison::STEP.
      */
     #[Route('/{id<\d+>}/comparer/{other<\d+>}.json', name: 'compare_data', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function compareData(Flight $flight, #[MapEntity(id: 'other')] Flight $reference): JsonResponse
     {
         $comparison = FlightComparison::of($flight, $reference) ?? throw $this->createNotFoundException();
@@ -312,7 +324,23 @@ final class FlightController extends AbstractController
         return $response;
     }
 
+    /** The pilot shows the flight to visitors too (home page showcase), or stops. */
+    #[Route('/{id<\d+>}/public', name: 'publish', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    #[IsGranted(FlightVoter::PUBLISH, 'flight')]
+    public function publish(Flight $flight, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        if ($this->isCsrfTokenValid('publish_flight_'.$flight->getId(), $request->request->getString('_token'))) {
+            $flight->setPublic($request->request->getBoolean('public'));
+            $entityManager->flush();
+            $this->addFlash('info', $flight->isPublic() ? 'Le vol est public : les visiteurs du site peuvent le voir, sans les commentaires.' : 'Le vol n’est plus visible que des membres connectés.');
+        }
+
+        return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId()]);
+    }
+
     #[Route('/{id<\d+>}/supprimer', name: 'delete', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     #[IsGranted(FlightVoter::DELETE, 'flight')]
     public function delete(Flight $flight, Request $request, FlightImporter $importer): Response
     {
