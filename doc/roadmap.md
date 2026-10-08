@@ -60,7 +60,7 @@ treasurer's agreement before any code.
 | 7c | Comparison | Compare a flight with another of the same race (the winner by default): time gained or lost leg by leg and along the track, thermals taken by each | Done (2026-10-08), see [flights](flights.md); IGC files now join sessions through their task name |
 | 7d | Progression | Rule-based advice tied to the training path (time spent circling, weak thermals accepted, always turning the same way, speed to fly); pilot logbook (average speed, climb rate and glide ratio over the weeks); instructor comments at a moment of a flight, linked to a step of the training path | Done (2026-10-08), see [flights](flights.md#progression); trainers: a group with `FLIGHT_REVIEW` |
 | 7e | Viewer extras | Cockpit camera in 3D replay; link to a moment of a flight (debriefings); two thermals or legs side by side; public flights chosen by the pilot (showcase on the home page) | Done (2026-10-08), see [flights](flights.md#viewer); legs are compared between flights (7c), not within one; the pilot view is to be taken up again (smoothness and loading of the relief in thermals, to judge on a real machine) |
-| 7f | Club life | Club records per task or landscape, badges (first 300 km, first 5 h flight), season ranking; kept modest so that the site stays a training tool, not a game | Later |
+| 7f | Club life | Club records per task or landscape, badges (first 300 km, first 5 h flight), season ranking; kept modest so that the site stays a training tool, not a game | Done (2026-10-08), see [flights](flights.md#club-life); a season is a calendar year for now (the club season may start in September) |
 | 8 | Membership and finances (replaces Yapla) | Membership campaigns per season with online payment through **HelloAsso Checkout** (no card handled by the site), automatic "Membre" group with an expiry date, membership certificate, renewal reminders; then the treasurer's books (income and expenses, receipts, budget vs actual, exports for the general meeting); import of the Yapla history | Proposed: needs the treasurer's needs first |
 
 Why this order: restricted content (committee minutes, 4th-level pages) and the back-office both need
@@ -106,6 +106,8 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
 - Flight tracks: the task time of C3-c060 is 63 s shorter than the Condor result while two other
   races match within 3 s; a penalty in the results? And a flight with a crash in the middle
   (C3-c058: 500 m higher, then a fast fall) keeps only one of its parts: how should it be shown?
+- Season ranking: a season is a calendar year. Does the club count its seasons from September, like
+  the membership? Should the ranking stay at all once the committee has seen it?
 - Flight sessions: flights are grouped by flight plan. Do two pilots of the same network race get the
   same race id in their `.ftr`? If they do, a flight plan flown on several days could be split into
   sessions. Needs the tracks of two pilots of one race.

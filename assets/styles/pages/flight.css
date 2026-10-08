@@ -811,3 +811,54 @@
     /* Readable on the dark head of the table */
     outline: 1px solid var(--color-on-dark);
 }
+
+/* Badges (logbook) and records page */
+.p-flight-logbook__badges {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-flight-logbook__badge {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+}
+
+.p-flight-logbook__badge svg {
+    flex: none;
+    width: var(--icon-md);
+    height: var(--icon-md);
+}
+
+.p-flight-logbook__badge.is-earned {
+    color: var(--color-text);
+    outline-color: var(--color-success);
+}
+
+.p-flight-logbook__badge.is-earned svg {
+    color: var(--color-success);
+}
+
+.p-flight-logbook__badge-text {
+    display: grid;
+}
+
+.p-flight-records__season-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}

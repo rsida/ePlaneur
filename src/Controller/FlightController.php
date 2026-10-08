@@ -8,6 +8,8 @@ use App\Entity\Flight;
 use App\Entity\FlightComment;
 use App\Entity\User;
 use App\Flight\Advice\FlightAdvisor;
+use App\Flight\Club\Badge;
+use App\Flight\Club\ClubRecords;
 use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
 use App\Flight\FlightSession;
@@ -76,6 +78,24 @@ final class FlightController extends AbstractController
             'error' => $error,
             'upload_token' => self::UPLOAD_TOKEN,
         ], new Response(status: null !== $error ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    }
+
+    /** Records of the club per task and per landscape, and the ranking of a season (`?saison=`). */
+    #[Route('/records', name: 'records', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function records(Request $request, FlightRepository $flights, ClockInterface $clock): Response
+    {
+        $all = $flights->findAll();
+        $seasons = ClubRecords::seasons($all);
+        $season = $request->query->getInt('saison') ?: ($seasons[0] ?? (int) $clock->now()->format('Y'));
+
+        return $this->render('flight/records.html.twig', [
+            'tasks' => ClubRecords::byTask($all),
+            'landscapes' => ClubRecords::byLandscape($all),
+            'ranking' => ClubRecords::season($all, $season),
+            'season' => $season,
+            'seasons' => $seasons,
+        ]);
     }
 
     /** The flights of a pilot over time: totals, trends and the advice that comes back most. */
@@ -179,6 +199,7 @@ final class FlightController extends AbstractController
             'hours' => array_sum(array_map(static fn (Flight $flight): int => $flight->getDuration(), $logbook)),
             'distance' => array_sum(array_map(static fn (Flight $flight): int => $flight->getDistance(), $logbook)),
             'tasks' => \count(array_filter($logbook, static fn (Flight $flight): bool => null !== $flight->getTaskSpeed())),
+            'badges' => Badge::earned($logbook),
         ]);
     }
 

@@ -1,0 +1,107 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Records du club{% endblock %}
+{% block description %}Les records du club par circuit et par paysage, et le classement de la saison {{ season }}.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-flight-records">
+        <div class="l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_flight_index') }}">Analyse de vols</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Vie du club</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">Records et classement</twig:Ui:Heading>
+                <p class="u-lead">Calculés sur les vols déposés sur le site : pour se situer et se donner des objectifs, pas pour se mesurer à tout prix.</p>
+            </div>
+
+            <section class="l-stack l-stack--sm" aria-labelledby="season-title">
+                <div class="p-flight-records__season-head">
+                    <twig:Ui:Heading level="2" size="h3" id="season-title">Saison {{ season }}</twig:Ui:Heading>
+                    {% if seasons|length > 1 %}
+                        <form method="get" data-controller="autosubmit" class="p-flight__select">
+                            <label class="u-visually-hidden" for="season">Saison</label>
+                            <select id="season" name="saison" data-action="autosubmit#submit">
+                                {% for year in seasons %}<option value="{{ year }}"{% if year == season %} selected{% endif %}>{{ year }}</option>{% endfor %}
+                            </select>
+                        </form>
+                    {% endif %}
+                </div>
+                {% if ranking is empty %}
+                    <p class="u-note">Aucun vol déposé pour cette saison.</p>
+                {% else %}
+                    <figure class="c-data-table">
+                        <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Classement de la saison {{ season }}">
+                            <table>
+                                <thead><tr><th scope="col">#</th><th scope="col">Pilote</th><th scope="col">Kilomètres de circuits terminés</th><th scope="col">Circuits</th><th scope="col">Vols</th><th scope="col">Heures</th><th scope="col">Meilleure vitesse</th></tr></thead>
+                                <tbody>
+                                    {% for row in ranking %}
+                                        <tr{% if row.pilot == app.user %} aria-current="true"{% endif %}>
+                                            <td>{{ loop.index }}</td>
+                                            <td>{% if is_granted('LOGBOOK_VIEW', row.pilot) %}<a href="{{ row.pilot == app.user ? path('app_flight_logbook') : path('app_flight_logbook_pilot', {id: row.pilot.id}) }}">{{ row.pilot.displayName }}</a>{% else %}{{ row.pilot.displayName }}{% endif %}</td>
+                                            <td>{{ row.kilometres|number_format(1, ',', ' ') }} km</td>
+                                            <td>{{ row.tasks }}</td>
+                                            <td>{{ row.flights }}</td>
+                                            <td>{{ row.hours|flight_duration }}</td>
+                                            <td>{{ row.bestSpeed ? row.bestSpeed|number_format(1, ',', ' ') ~ ' km/h' : '—' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </figure>
+                    <p class="u-note">Classement par kilomètres de circuits terminés dans l’année (date du vol, ou du dépôt pour les traces sans date).</p>
+                {% endif %}
+            </section>
+
+            <section class="l-stack l-stack--sm" aria-labelledby="tasks-title">
+                <twig:Ui:Heading level="2" size="h3" id="tasks-title">Records par circuit</twig:Ui:Heading>
+                {% if tasks is empty %}
+                    <p class="u-note">Aucun circuit terminé pour l’instant.</p>
+                {% else %}
+                    <figure class="c-data-table">
+                        <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Records par circuit">
+                            <table>
+                                <thead><tr><th scope="col">Plan de vol</th><th scope="col">Meilleure vitesse</th><th scope="col">Pilote</th><th scope="col">Vols</th><th scope="col"><span class="u-visually-hidden">Session</span></th></tr></thead>
+                                <tbody>
+                                    {% for task in tasks %}
+                                        <tr>
+                                            <td>{{ task.plan }}</td>
+                                            <td><a href="{{ path('app_flight_show', {id: task.best.id}) }}">{{ task.best.taskSpeed|number_format(1, ',', ' ') }} km/h</a></td>
+                                            <td>{{ task.best.pilot }}{% if task.best.competitionId %} ({{ task.best.competitionId }}){% endif %}</td>
+                                            <td>{{ task.count }}</td>
+                                            <td><a href="{{ path('app_flight_session', {id: task.best.id}) }}">Session</a></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </figure>
+                {% endif %}
+            </section>
+
+            <section class="l-stack l-stack--sm" aria-labelledby="landscapes-title">
+                <twig:Ui:Heading level="2" size="h3" id="landscapes-title">Records par paysage</twig:Ui:Heading>
+                {% if landscapes is empty %}
+                    <p class="u-note">Aucun vol pour l’instant.</p>
+                {% else %}
+                    <figure class="c-data-table">
+                        <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Records par paysage">
+                            <table>
+                                <thead><tr><th scope="col">Paysage</th><th scope="col">Plus longue distance</th><th scope="col">Plus long vol</th><th scope="col">Plus haute altitude</th></tr></thead>
+                                <tbody>
+                                    {% for record in landscapes %}
+                                        <tr>
+                                            <td>{{ record.landscape }}</td>
+                                            <td><a href="{{ path('app_flight_show', {id: record.distance.id}) }}">{{ record.distance.distance|flight_distance }}</a> · {{ record.distance.pilot }}</td>
+                                            <td><a href="{{ path('app_flight_show', {id: record.duration.id}) }}">{{ record.duration.duration|flight_duration }}</a> · {{ record.duration.pilot }}</td>
+                                            <td><a href="{{ path('app_flight_show', {id: record.altitude.id}) }}">{{ record.altitudeMax|number_format(0, ',', ' ') }} m</a> · {{ record.altitude.pilot }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </figure>
+                {% endif %}
+            </section>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

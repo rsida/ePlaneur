@@ -318,6 +318,25 @@ final class FlightTest extends WebTestCase
         self::assertResponseRedirects('/connexion', null, 'The rest of the viewer needs an account');
     }
 
+    public function testRecordsSeasonRankingAndBadges(): void
+    {
+        $file = sys_get_temp_dir().'/task.igc';
+        file_put_contents($file, FlightSamples::igc(FlightSamples::glideThermalGlide(), extraHeaders: FlightSamples::igcTask('Tâche test', [0, 0, 7000])));
+        $pilot = $this->user('pilote@example.org');
+        $this->client->loginUser($pilot);
+        $crawler = $this->client->request('GET', '/vols');
+        $this->client->request('POST', '/vols', ['_token' => $crawler->filter('input[name="_token"]')->attr('value')], ['trace' => $this->upload($file, 'task.igc')]);
+
+        $this->client->request('GET', '/vols/records?saison=2026');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Records et classement');
+        self::assertSelectorTextContains('[aria-labelledby="season-title"] tbody', 'pilote@example.org');
+        self::assertSelectorTextContains('[aria-labelledby="tasks-title"] tbody', 'Tâche test');
+
+        $this->client->request('GET', '/vols/carnet');
+        self::assertSelectorTextContains('.p-flight-logbook__badge.is-earned', 'Premier circuit terminé');
+    }
+
     /** The sample IGC flight uploaded by a pilot, who stays logged in. */
     private function uploadSample(User $pilot): int
     {

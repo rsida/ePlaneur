@@ -17,6 +17,7 @@ the latest public flights.
 | Viewer | `assets/flight/map.js` (map shared by the viewers), `assets/flight/chart.js` (value label of every chart, formats), `assets/controllers/flight_viewer_controller.js` and `session_viewer_controller.js` (lazy), `templates/flight/`, `assets/styles/pages/flight.css` |
 | Session | `App\Flight\FlightSession` (ranking, podium), `FlightRepository::findSession()` |
 | Comparison | `App\Flight\FlightComparison`, `assets/controllers/compare_viewer_controller.js` |
+| Club life | `App\Flight\Club\ClubRecords` (records, season ranking), `Badge`, `App\Flight\Analysis\FlightMarks`, `/vols/records` |
 | Progression | `App\Flight\Advice\FlightAdvisor` (advice), `App\Training\TrainingStep`, `FlightComment` (comments), `/vols/carnet` and `/vols/carnet/{user}` (logbook, `logbook_chart_controller.js`), `FlightVoter` (`FLIGHT_COMMENT`, `FLIGHT_COMMENT_DELETE`, `LOGBOOK_VIEW`) |
 
 ## Files
@@ -210,7 +211,18 @@ rather than in time (`FlightComparison`):
   them; clicking the moment of a comment moves the glider there. Their author (or an administrator)
   deletes them.
 
-## Next
+## Club life
 
-See the roadmap, steps 7e and 7f: comparison with another flight, progression (advice, logbook,
+Kept modest, so that the site stays a training tool rather than a game; everything is computed from
+the uploaded flights, nothing is stored.
+
+- **Records** (`/vols/records`, logged-in users): per flight plan the best task speed (with its
+  pilot, the number of flights and a link to the session); per landscape the longest distance flown,
+  the longest flight and the highest altitude.
+- **Season ranking** (same page, `?saison=`): pilots (accounts) of a calendar year by kilometres of
+  finished tasks, with their tasks, flights, hours and best speed. The date of a flight is the one
+  of its file, or of its upload when the file has none (`.ftr`).
+- **Badges** (logbook): first task finished, 100, 300 and 500 km flown in one flight, 3 h and 5 h
+  flights, 1,000 m gained from a low point, the three Silver badge marks in one flight; each with
+  the first flight that earned it (`Badge::earned()`, from `FlightMarks`).: comparison with another flight, progression (advice, logbook,
 instructor comments), viewer extras, club life.

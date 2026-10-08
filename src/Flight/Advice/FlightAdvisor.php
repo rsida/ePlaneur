@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Flight\Advice;
 
-use App\Flight\Geo\Geo;
+use App\Flight\Analysis\FlightMarks;
 use App\Training\TrainingStep;
 
 /**
@@ -117,20 +117,10 @@ final class FlightAdvisor
      */
     private static function silverBadge(array $analysis): ?Advice
     {
-        $series = $analysis['series'];
+        $flight = FlightMarks::of($analysis);
+        $gain = $flight->gain;
+        $distance = $flight->farthest;
         $statistics = $analysis['statistics'];
-        $from = (int) ($statistics['takeoff'] ?? 0);
-        $to = (int) ($statistics['landing'] ?? \count($series['time']) - 1);
-        $low = \INF;
-        $gain = 0.0;
-        $distance = 0.0;
-        for ($i = $from; $i <= $to; ++$i) {
-            $low = min($low, $series['altitude'][$i]);
-            $gain = max($gain, $series['altitude'][$i] - $low);
-            if (0 === $i % 10) {
-                $distance = max($distance, Geo::distance($series['latitude'][$from], $series['longitude'][$from], $series['latitude'][$i], $series['longitude'][$i]));
-            }
-        }
         $marks = [
             ['1 h de vol', $statistics['duration'] >= 3600, self::minutes($statistics['duration'])],
             ['1 000 m de gain', $gain >= 1000, \sprintf('%s m', number_format($gain, 0, ',', ' '))],

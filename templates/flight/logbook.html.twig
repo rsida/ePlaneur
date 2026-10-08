@@ -22,6 +22,25 @@
                     <twig:Ui:Stat label="Distance parcourue" value="{{ distance|flight_distance }}" />
                 </div>
 
+                <section class="l-stack l-stack--sm">
+                    <twig:Ui:Heading level="2" size="h4">Badges</twig:Ui:Heading>
+                    <ul class="p-flight-logbook__badges">
+                        {% for item in badges %}
+                            <li class="p-flight-logbook__badge{{ item.flight ? ' is-earned' : '' }}" title="{{ item.badge.description }}">
+                                <twig:ux:icon name="{{ item.flight ? 'trophy' : 'lock-keyhole' }}" />
+                                <span class="p-flight-logbook__badge-text">
+                                    <strong>{{ item.badge.label }}</strong>
+                                    {% if item.flight %}
+                                        <a href="{{ path('app_flight_show', {id: item.flight.id}) }}">{{ item.flight.date|format_date('medium', locale: 'fr') }}</a>
+                                    {% else %}
+                                        <span class="u-note">{{ item.badge.description }}</span>
+                                    {% endif %}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+
                 {% if tips is not empty %}
                     <section class="l-stack l-stack--sm">
                         <twig:Ui:Heading level="2" size="h4">Ce qui revient le plus</twig:Ui:Heading>
