@@ -1,0 +1,81 @@
+/*
+ * Embedded PDF reader (Block:Pdf).
+ */
+
+.c-pdf {
+    overflow: hidden;
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    border-radius: var(--block-radius);
+    background-color: var(--color-tint-cool);
+}
+
+.c-pdf__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    background-color: var(--color-dark);
+    color: var(--color-on-dark);
+    line-height: normal;
+}
+
+.c-pdf__icon {
+    font-size: var(--icon-lg);
+    color: var(--color-accent);
+}
+
+.c-pdf__name {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.c-pdf__meta {
+    color: var(--color-on-dark-muted);
+    font-size: var(--text-micro);
+}
+
+.c-pdf__tools {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4-5);
+    padding: var(--space-3) var(--space-5);
+    background-color: var(--color-paper);
+}
+
+.c-pdf__tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4375rem;
+    color: var(--color-primary);
+    font-size: var(--text-eyebrow);
+    font-weight: 600;
+}
+
+.c-pdf__tool svg {
+    font-size: var(--icon-md);
+}
+
+.c-pdf__viewer {
+    padding: var(--space-7);
+}
+
+.c-pdf__viewer iframe {
+    display: block;
+    width: 100%;
+    height: min(80vh, 60rem);
+    border: 0;
+    background-color: var(--color-paper);
+    box-shadow: 0 4px 16px rgb(25 38 48 / 7%);
+}
+
+@media (width < 48em) {
+/* Mobile browsers rarely display PDF inline: the tools above open or download the file */
+    .c-pdf__viewer {
+        display: none;
+    }
+}

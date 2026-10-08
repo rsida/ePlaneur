@@ -1,0 +1,22 @@
+/*
+ * Picture with caption, also used by other blocks for their figures (Block:Image).
+ */
+
+.c-block-figure {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2-5);
+}
+
+.c-block-figure__img {
+    width: 100%;
+    border-radius: var(--block-radius);
+}
+
+.c-block-figure__caption {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--text-xs);
+    line-height: 1.6;
+    color: var(--on-surface-muted);
+}

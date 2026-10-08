@@ -13,7 +13,7 @@ export default class extends Controller {
 
     connect() {
         // The mobile panel does not exist on wide screens (site.css, 64em)
-        this.wide = window.matchMedia('(min-width: 64em)');
+        this.wide = window.matchMedia('(width >= 64em)');
         this.onWide = () => {
             if (this.wide.matches && this.element.hasAttribute('data-open')) this.close();
         };

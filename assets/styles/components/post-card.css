@@ -1,0 +1,82 @@
+/*
+ * Post card of the news lists (Card:Post).
+ */
+
+.c-post-card {
+    position: relative;
+}
+
+.c-post-card__media {
+    width: 100%;
+    aspect-ratio: 416 / 230;
+    border-radius: var(--card-radius);
+    object-fit: cover;
+}
+
+.c-post-card .c-card__body {
+    gap: var(--space-3-5);
+}
+
+.c-post-card__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3);
+    line-height: 1.15;
+}
+
+/* The whole card is clickable through its title link */
+.c-post-card__title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+}
+
+.c-post-card__excerpt {
+    color: var(--color-text-muted);
+    font-size: var(--text-body);
+    line-height: 1.7;
+}
+
+.c-post-card__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    width: 100%;
+    margin-top: auto;
+}
+
+.c-post-card__more {
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}
+
+.c-post-card__date {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+}
+
+/* Reserved post the reader may not open: a lock and its audience instead of the picture */
+.c-post-card__lock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    aspect-ratio: 416 / 230;
+    border-radius: var(--card-radius);
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+}
+
+.c-post-card__lock-icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-page);
+    font-size: var(--icon-xl);
+}

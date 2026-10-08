@@ -1,0 +1,30 @@
+/*
+ * Avatar of a person (author, comment).
+ */
+
+.c-avatar {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+    font-size: var(--text-eyebrow);
+    font-weight: 700;
+    object-fit: cover;
+}
+
+img.c-avatar,
+.p-article__author .c-avatar {
+    width: 3rem;
+    height: 3rem;
+}
+
+.c-avatar--lg,
+img.c-avatar--lg {
+    width: 5.25rem;
+    height: 5.25rem;
+    font-size: var(--text-title-xs);
+}

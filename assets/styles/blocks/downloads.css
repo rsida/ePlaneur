@@ -1,0 +1,71 @@
+/*
+ * Files to download (Block:Downloads).
+ */
+
+.c-downloads {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.c-downloads__list {
+    display: grid;
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+}
+
+@media (width >= 40em) {
+    .c-downloads__list {
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    }
+}
+
+.c-download {
+    display: flex;
+    gap: var(--space-3-5);
+    padding: var(--space-5);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    border-radius: var(--block-radius);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+}
+
+.c-download__format {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.8125rem;
+    height: 3.25rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+    font-size: var(--text-micro);
+    font-weight: 700;
+}
+
+.c-download__info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5);
+    min-width: 0;
+}
+
+.c-download__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-xs);
+    line-height: normal;
+}
+
+.c-download__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-eyebrow);
+}
+
+.c-download__link {
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}

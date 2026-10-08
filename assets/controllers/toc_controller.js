@@ -8,7 +8,7 @@ export default class extends Controller {
     static targets = ['bar', 'percent', 'link'];
 
     connect() {
-        this.wide = window.matchMedia('(min-width: 64em)');
+        this.wide = window.matchMedia('(width >= 64em)');
         this.syncOpen = () => { this.element.open = this.wide.matches; };
         this.syncOpen();
         this.wide.addEventListener('change', this.syncOpen);

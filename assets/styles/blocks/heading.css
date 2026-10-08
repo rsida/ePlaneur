@@ -1,0 +1,15 @@
+/*
+ * Heading block, h3 to h4 (Block:Heading).
+ */
+
+.c-block-heading {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3-xs);
+    line-height: 1.2;
+}
+
+.c-block-heading--lg {
+    font-weight: 800;
+    font-size: var(--text-h2);
+}

@@ -45,7 +45,7 @@
 .c-button--sm {
     gap: var(--space-2);
     min-height: 0;
-    padding: 0.8125rem 1.125rem; /* 13 18 */
+    padding: 0.8125rem var(--space-4-5); /* 13 18 */
     font-size: var(--text-sm);
     font-weight: 600;
 }
@@ -77,7 +77,7 @@
     width: 100%;
 }
 
-@media (min-width: 40em) {
+@media (width >= 40em) {
     .c-button--block {
         width: auto;
     }

@@ -3,7 +3,7 @@
 .c-figure {
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
+    gap: var(--space-2-5);
     width: 100%;
 }
 
@@ -15,7 +15,7 @@
     overflow: hidden;
     padding: var(--space-5);
     border-radius: var(--radius-md);
-    background-color: var(--palette-ink);
+    background-color: var(--color-dark);
 }
 
 .c-figure__img {

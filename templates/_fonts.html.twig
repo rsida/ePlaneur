@@ -1,4 +1,8 @@
-{# Web fonts of the identity (Barlow, Inter, Oswald), shared by the site and the back-office. #}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Oswald:wght@400;500;600&display=swap">
+{#
+    Preloads the main web fonts (Latin subsets), declared in assets/styles/fonts.css: they are needed
+    on every page and would otherwise be found only after the style sheets. Shared by the site, the
+    editor canvas and the back-office.
+#}
+{% for file in ['fonts/inter-variable-latin.woff2', 'fonts/barlow-700-latin.woff2', 'fonts/barlow-800-latin.woff2', 'fonts/oswald-variable-latin.woff2'] %}
+    <link rel="preload" href="{{ asset(file) }}" as="font" type="font/woff2" crossorigin>
+{% endfor %}

@@ -1,0 +1,54 @@
+/*
+ * Data table (Block:Table).
+ */
+
+.c-data-table {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+}
+
+.c-data-table__scroll {
+    overflow-x: auto;
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    border-radius: var(--block-radius);
+}
+
+.c-data-table table {
+    width: 100%;
+    min-width: 36rem; /* below, the table scrolls rather than squeezing its columns */
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: var(--color-text-muted);
+}
+
+.c-data-table th,
+.c-data-table td {
+    padding: var(--space-4) var(--space-5);
+    text-align: left;
+    vertical-align: top;
+}
+
+.c-data-table thead th {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: 700;
+    line-height: normal;
+}
+
+.c-data-table tbody tr {
+    border-bottom: 1px solid var(--color-line);
+    background-color: var(--color-paper);
+}
+
+.c-data-table tbody tr:nth-child(even) {
+    background-color: var(--color-page);
+}
+
+.c-data-table tbody th {
+    color: var(--color-text);
+    font-weight: 600;
+}

@@ -1,0 +1,35 @@
+/*
+ * Glossary (Block:Glossary).
+ */
+
+.c-glossary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.c-glossary__list {
+    gap: 0;
+}
+
+.c-glossary__entry {
+    padding-block: var(--space-3-5);
+}
+
+.c-glossary__entry dt {
+    color: var(--color-primary);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-sm);
+    line-height: normal;
+}
+
+.c-glossary__entry dd {
+    font-size: var(--text-md);
+    line-height: 1.75;
+}
+
+@media (width >= 40em) {
+/* 150 */
+    .c-glossary__entry { grid-template-columns: 8.75rem 1fr; column-gap: var(--space-6); }
+}

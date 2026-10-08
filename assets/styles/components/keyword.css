@@ -1,0 +1,12 @@
+/*
+ * Keywords of an article.
+ */
+
+.c-keyword {
+    padding: 0.4375rem var(--space-3);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    color: var(--color-primary);
+    font-size: var(--text-eyebrow);
+    line-height: normal;
+}

@@ -1,0 +1,41 @@
+/*
+ * Rich text: "text" block and the limited HTML of other blocks (Block:Text).
+ */
+
+.c-rich-text {
+    font-size: var(--text-lead);
+    line-height: var(--leading-reading);
+}
+
+.c-rich-text > * + * {
+    margin-top: var(--block-gap);
+}
+
+.c-rich-text--sm {
+    font-size: var(--text-body);
+    line-height: 1.75;
+}
+
+.c-rich-text--sm > * + * {
+    margin-top: var(--space-3);
+}
+
+.c-rich-text--muted {
+    color: var(--on-surface-muted);
+    font-size: var(--text-md);
+    line-height: 1.75;
+}
+
+.c-rich-text strong, .c-rich-text b {
+    font-weight: 700;
+}
+
+.c-rich-text a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.c-rich-text ul, .c-rich-text ol {
+    padding-left: 1.25em;
+}

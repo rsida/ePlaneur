@@ -1,0 +1,19 @@
+/*
+ * Grid of pictures (Block:ImageGrid).
+ */
+
+.c-image-grid {
+    display: grid;
+    gap: var(--space-5);
+}
+
+@media (width >= 40em) {
+    .c-image-grid {
+        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    }
+}
+
+.c-image-grid__img {
+    aspect-ratio: 400 / 265;
+    object-fit: cover;
+}

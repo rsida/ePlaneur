@@ -1,0 +1,66 @@
+/*
+ * Cards of the sub-pages of a page (Block:ChildPages).
+ */
+
+/* Child page cards */
+.c-page-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.c-page-cards__list {
+    display: grid;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+}
+
+@media (width >= 40em) {
+    .c-page-cards__list {
+        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    }
+}
+
+@media (width >= 64em) {
+    .p-page__body--wide .c-page-cards__list {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.c-page-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4-5);
+    padding: var(--space-6);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    border-radius: var(--radius-md);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+}
+
+@media (width >= 64em) {
+    .p-page__body--wide .c-page-card {
+        min-height: 23.125rem; /* 370 */
+    }
+}
+
+.c-page-card__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3-xs);
+    line-height: 1.2;
+}
+
+.c-page-card__text {
+    color: var(--color-text-muted);
+    font-size: var(--text-lead);
+    line-height: var(--leading-reading);
+}
+
+.c-page-card__link {
+    margin-top: auto;
+    padding-top: var(--space-2);
+}

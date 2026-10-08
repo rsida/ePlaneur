@@ -1,0 +1,28 @@
+/*
+ * Highlighted document (Block:Document).
+ */
+
+/* Highlighted document */
+.c-document-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--block-radius);
+    background-color: var(--color-tint-warm);
+    color: var(--color-text);
+}
+
+.c-document-card__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-md);
+    line-height: 1.2;
+}
+
+.c-document-card__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+}

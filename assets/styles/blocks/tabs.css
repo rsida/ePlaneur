@@ -1,0 +1,78 @@
+/*
+ * Tabs (Block:Tabs, tabs controller).
+ */
+
+.c-tabs {
+    overflow: hidden;
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    border-radius: var(--block-radius);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+}
+
+.c-tabs__list {
+    display: flex;
+    overflow-x: auto;
+    background-color: var(--color-tint-cool);
+}
+
+.c-tabs__tab {
+    flex-shrink: 0;
+    padding: 1.0625rem var(--space-6);
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: normal;
+}
+
+.c-tabs__tab[aria-selected='true'] {
+    border-bottom-color: var(--color-primary);
+    background-color: var(--color-paper);
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.c-tabs__panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4-5);
+    padding: var(--space-7);
+}
+
+.c-tabs__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3-sm);
+    line-height: normal;
+}
+
+.c-tabs__facts {
+    display: grid;
+    gap: var(--space-5) var(--space-7);
+    width: 100%;
+    margin: 0;
+}
+
+@media (width >= 40em) {
+    .c-tabs__facts {
+        grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    }
+}
+
+.c-tabs__facts dt {
+    margin-bottom: var(--space-2);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 700;
+}
+
+.c-tabs__facts dd {
+    margin: 0;
+    font-size: var(--text-body);
+    line-height: 1.7;
+}

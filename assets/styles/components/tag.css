@@ -3,8 +3,8 @@
 :root {
     --tag-bg: var(--color-primary);
     --tag-fg: var(--color-on-primary);
-    --tag-muted-bg: var(--palette-ink-soft);
-    --tag-muted-fg: var(--palette-white);
+    --tag-muted-bg: var(--color-dark-soft);
+    --tag-muted-fg: var(--color-on-dark);
     --tag-soft-bg: var(--color-tint-cool);
     --tag-soft-fg: var(--color-primary);
 }
@@ -73,7 +73,7 @@ button.c-tag[aria-pressed='false'] {
     --_bg: var(--color-paper);
     --_fg: var(--color-primary);
 
-    outline: 1px solid var(--palette-line);
+    outline: 1px solid var(--color-line);
     outline-offset: -1px;
 }
 

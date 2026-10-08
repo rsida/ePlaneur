@@ -1,0 +1,36 @@
+/*
+ * Author card at the end of an article.
+ */
+
+.c-author-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-6);
+    padding: var(--space-7);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    border-radius: var(--block-radius);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+}
+
+.c-author-card__profile {
+    display: flex;
+    flex: 1 1 16rem;
+    flex-direction: column;
+    gap: var(--space-2-5);
+}
+
+.c-author-card__name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3-xs);
+    line-height: normal;
+}
+
+.c-author-card__bio {
+    color: var(--color-text-muted);
+    font-size: var(--text-body);
+    line-height: 1.75;
+}

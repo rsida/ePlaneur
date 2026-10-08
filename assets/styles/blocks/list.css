@@ -1,0 +1,38 @@
+/*
+ * Bulleted or numbered list (Block:List).
+ */
+
+.c-block-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    counter-reset: block-list;
+}
+
+.c-block-list__item {
+    position: relative;
+    padding-left: var(--space-6);
+    font-size: var(--text-lead);
+    line-height: 1.7;
+}
+
+.c-block-list__item::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+    font-size: var(--icon-md);
+}
+
+.c-block-list--ordered .c-block-list__item::before {
+    content: counter(block-list) '.';
+    counter-increment: block-list;
+    font-size: inherit;
+    font-weight: 700;
+}
+
+.c-block-list__item strong {
+    font-weight: 700;
+}

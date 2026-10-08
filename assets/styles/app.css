@@ -2,6 +2,7 @@
  * ePlaneur toolkit entry point. Order matters: tokens → base → layout → components → pages.
  * See doc/design-system.md.
  */
+@import url('./fonts.css');
 @import url('./tokens.css');
 @import url('./base.css');
 @import url('./layout.css');
@@ -13,7 +14,44 @@
 @import url('./components/data.css');
 @import url('./components/media.css');
 @import url('./components/form.css');
-@import url('./components/content.css');
+/* Content blocks and article components, in cascade order */
+@import url('./blocks/flow.css');
+@import url('./components/breadcrumb.css');
+@import url('./blocks/text.css');
+@import url('./blocks/section.css');
+@import url('./blocks/heading.css');
+@import url('./blocks/callout.css');
+@import url('./blocks/image.css');
+@import url('./blocks/image-grid.css');
+@import url('./blocks/carousel.css');
+@import url('./blocks/video.css');
+@import url('./blocks/quote.css');
+@import url('./blocks/list.css');
+@import url('./blocks/steps.css');
+@import url('./blocks/tabs.css');
+@import url('./blocks/checklist.css');
+@import url('./blocks/table.css');
+@import url('./blocks/pdf.css');
+@import url('./blocks/downloads.css');
+@import url('./blocks/notes.css');
+@import url('./blocks/glossary.css');
+@import url('./blocks/faq.css');
+@import url('./blocks/links.css');
+@import url('./blocks/resource.css');
+@import url('./blocks/takeaways.css');
+@import url('./components/toc.css');
+@import url('./components/share.css');
+@import url('./components/avatar.css');
+@import url('./components/level-badge.css');
+@import url('./components/keyword.css');
+@import url('./components/author-card.css');
+@import url('./components/post-card.css');
+@import url('./components/comment.css');
+@import url('./components/feedback.css');
+@import url('./blocks/documents.css');
+@import url('./blocks/excerpt.css');
+@import url('./blocks/document.css');
+@import url('./blocks/child-pages.css');
 @import url('./components/pagination.css');
 @import url('./components/site.css');
 

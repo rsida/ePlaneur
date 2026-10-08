@@ -3,7 +3,7 @@
 .c-logo {
     display: inline-flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: var(--space-2-5);
     color: var(--on-surface);
     font-family: var(--font-heading);
     font-weight: 800;
@@ -59,7 +59,7 @@
 }
 
 .c-header__toggle-icon {
-    font-size: 1.375rem;
+    font-size: var(--icon-xl);
 }
 
 .c-header[data-open] .c-header__toggle-label--open,
@@ -150,7 +150,7 @@
 
 .c-nav__chevron {
     flex-shrink: 0;
-    font-size: 1.125rem;
+    font-size: var(--icon-md);
     color: var(--color-primary);
     transition: transform var(--transition);
 }
@@ -209,7 +209,7 @@
 }
 
 .c-mega__title .c-nav__chevron {
-    font-size: 1rem;
+    font-size: var(--icon-sm);
 }
 
 .c-mega__title--mobile[aria-expanded='false'] + .c-mega__links {
@@ -233,7 +233,7 @@
 
 .c-mega__link {
     align-self: stretch;
-    padding: 0.625rem;
+    padding: var(--space-2-5);
     border-radius: var(--radius-sm);
     color: var(--on-surface);
     font-size: var(--text-sm);
@@ -254,17 +254,17 @@
 }
 
 .c-mega__note {
-    padding: 0 0.625rem 0.375rem;
+    padding: 0 var(--space-2-5) var(--space-1-5);
     color: var(--on-surface-muted);
     font-size: var(--text-micro);
     line-height: 1.5;
 }
 
 .c-mega__access {
-    margin: 0 0.625rem 0.375rem;
+    margin: 0 var(--space-2-5) var(--space-1-5);
 }
 
-@media (min-width: 64em) {
+@media (width >= 64em) {
     .c-header {
         position: sticky;
         top: 0;
@@ -445,8 +445,8 @@
 .c-access {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.4375rem 0.625rem;
+    gap: var(--space-1-5);
+    padding: 0.4375rem var(--space-2-5);
     border-radius: var(--radius-sm);
     background-color: var(--color-tint-cool);
     color: var(--color-primary);
@@ -458,7 +458,7 @@
 
 .c-access__icon {
     flex-shrink: 0;
-    font-size: 0.8125rem;
+    font-size: var(--icon-xs);
 }
 
 /* ---------- Footer ---------- */
@@ -486,10 +486,10 @@
 }
 
 .c-footer__title {
-    margin-bottom: 0.875rem;
+    margin-bottom: var(--space-3-5);
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1.375rem;
+    font-size: var(--text-title-xs);
     line-height: normal;
     color: var(--color-accent);
 }
@@ -497,7 +497,7 @@
 .c-footer__links {
     display: flex;
     flex-direction: column;
-    gap: 0.875rem;
+    gap: var(--space-3-5);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -525,7 +525,7 @@
     flex: 1 1 100%;
 }
 
-@media (min-width: 64em) {
+@media (width >= 64em) {
     .c-footer__top {
         grid-template-columns: 20rem 1fr;
         gap: var(--space-10);

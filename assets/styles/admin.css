@@ -11,6 +11,7 @@
  * Variables are declared on `:root, .ea-dark-scheme` (light) and `.ea-dark-scheme` (dark), as
  * EasyAdmin requires: the dark scheme is a class on <body>.
  */
+@import url('./fonts.css');
 @import url('./tokens.css');
 
 /* ---------- 1. Aliases (Figma "Planche de styles — Clair") ---------- */

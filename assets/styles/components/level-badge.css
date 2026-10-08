@@ -1,0 +1,13 @@
+/*
+ * Level badge of an article ("Débutant").
+ */
+
+.c-level-badge {
+    padding: 0.3125rem var(--space-2-5);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-warm);
+    color: var(--color-text);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    line-height: normal;
+}

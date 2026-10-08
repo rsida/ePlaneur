@@ -1,0 +1,52 @@
+/*
+ * Notes (Block:Notes).
+ */
+
+.c-notes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4-5);
+    padding: var(--space-7);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    border-radius: var(--block-radius);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+}
+
+.c-notes__rows,
+.c-glossary__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4-5);
+    margin: 0;
+}
+
+.c-notes__row,
+.c-glossary__entry {
+    display: grid;
+    gap: var(--space-1) var(--space-5);
+    padding-bottom: var(--space-3-5);
+    border-bottom: 1px solid var(--color-line);
+}
+
+.c-notes__row dt {
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    line-height: 1.7;
+}
+
+.c-notes__row dd,
+.c-glossary__entry dd {
+    margin: 0;
+}
+
+.c-notes__row dd {
+    font-size: var(--text-body);
+    line-height: 1.7;
+}
+
+@media (width >= 40em) {
+    .c-notes__row { grid-template-columns: 9.375rem 1fr; }
+}

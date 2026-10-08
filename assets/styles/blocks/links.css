@@ -1,0 +1,63 @@
+/*
+ * Links, as a list or compact arrow links (Block:Links).
+ */
+
+.c-link-list {
+    margin: 0;
+    padding: 0;
+}
+
+.c-link-list__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding-block: var(--space-4);
+    border-bottom: 1px solid var(--rule);
+}
+
+.c-link-list__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-1-5);
+}
+
+.c-link-list__title {
+    color: var(--color-primary);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-sm);
+    line-height: normal;
+}
+
+.c-link-list__description {
+    color: var(--on-surface-muted);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+}
+
+.c-link-list__icon {
+    flex-shrink: 0;
+    font-size: var(--icon-xl);
+    color: var(--color-primary);
+    transition: transform var(--transition);
+}
+
+.c-link-list__item:hover .c-link-list__icon {
+    transform: translate(2px, -2px);
+}
+
+/* Compact arrow links */
+.c-arrow-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.c-arrow-links__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+}

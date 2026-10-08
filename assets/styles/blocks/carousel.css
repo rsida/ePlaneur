@@ -1,0 +1,91 @@
+/*
+ * Carousel of pictures (Block:Carousel, carousel controller).
+ */
+
+.c-carousel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.c-carousel__stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--block-radius);
+    background-color: var(--color-dark);
+}
+
+.c-carousel__slide {
+    width: 100%;
+    aspect-ratio: 820 / 400;
+    object-fit: cover;
+}
+
+.c-carousel__counter {
+    position: absolute;
+    top: var(--space-5);
+    right: var(--space-5);
+    padding: var(--space-2) 0.8125rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-dark);
+    color: var(--color-on-dark);
+    font-size: var(--text-eyebrow);
+    font-weight: 600;
+    line-height: normal;
+}
+
+.c-carousel__nav {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border: 0;
+    border-radius: 50%;
+    background-color: var(--color-paper);
+    color: var(--color-primary);
+    font-size: var(--icon-xl);
+    transform: translateY(-50%);
+}
+
+.c-carousel__nav--prev { left: var(--space-5); }
+
+.c-carousel__nav--next { right: var(--space-5); }
+
+.c-carousel__thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+    gap: var(--space-3);
+}
+
+.c-carousel__thumb {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4375rem;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--on-surface-muted);
+    font-size: var(--text-eyebrow);
+    text-align: left;
+}
+
+.c-carousel__thumb img {
+    width: 100%;
+    aspect-ratio: 190 / 86;
+    padding: 3px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.c-carousel__thumb[aria-current='true'] {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.c-carousel__thumb[aria-current='true'] img {
+    border-color: var(--color-primary);
+}

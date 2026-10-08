@@ -3,10 +3,10 @@
 :root {
     --input-height: 3rem;          /* 48 */
     --input-radius: var(--radius-sm);
-    --input-border: var(--palette-line);
+    --input-border: var(--color-line);
     --input-border-focus: var(--color-primary);
     --input-bg: var(--color-paper);
-    --input-fg: var(--palette-ink);
+    --input-fg: var(--color-text);
 }
 
 /* Stack of fields with the submit button */
@@ -85,7 +85,7 @@
     border-left: 4px solid var(--_alert-color, var(--color-primary));
     border-radius: var(--radius-sm);
     background-color: var(--_alert-bg, var(--color-tint-cool));
-    color: var(--palette-ink);
+    color: var(--color-text);
     font-size: var(--text-sm);
 }
 

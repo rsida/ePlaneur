@@ -150,7 +150,7 @@ that is not a path, an anchor, a web address or an e-mail into `#`.
    library group, icon (`assets/icons/admin/`) and one-line description.
 3. Create its component `templates/components/Block/<Name>.html.twig` (`{% props placed %}`,
    `{% set data = placed.block %}`; do not name the variable `block`, Twig reserves it inside
-   components) and its styles in `assets/styles/components/content.css`. Mark the elements whose
+   components) and its styles in `assets/styles/blocks/<type>.css` (imported in `app.css`). Mark the elements whose
    text can be edited in place: `<h3{{ edit_field(placed, 'title') }}>`,
    `<div{{ edit_field(placed, 'html', 'rich') }}>`, `'items.' ~ loop.index0` inside loops; it prints
    nothing on the site. A field marked `inline: true` in `#[Field]` is only edited in place, so its

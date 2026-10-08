@@ -1,0 +1,38 @@
+/*
+ * Sidebar resource (Block:Resource).
+ */
+
+.c-resource {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3-5);
+    padding: var(--space-5);
+    border-radius: var(--block-radius);
+    background-color: var(--color-tint-warm);
+    color: var(--color-text);
+}
+
+.c-resource__icon {
+    font-size: var(--icon-2xl);
+    color: var(--color-primary);
+}
+
+.c-resource__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-xs);
+    line-height: normal;
+}
+
+.c-resource__text {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+}
+
+.c-resource__link {
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}

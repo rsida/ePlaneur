@@ -14,13 +14,13 @@
     color: var(--on-surface);
 }
 
-.c-card--outlined { outline: 1px solid var(--palette-line); outline-offset: -1px; }
+.c-card--outlined { outline: 1px solid var(--color-line); outline-offset: -1px; }
 .c-card--raised { box-shadow: var(--shadow-raised); }
 
 /* Tinted feature cards keep light-theme text whatever the section */
 .c-card--warm, .c-card--cool {
-    --on-surface: var(--palette-ink);
-    --on-surface-muted: var(--palette-slate);
+    --on-surface: var(--color-text);
+    --on-surface-muted: var(--color-text-muted);
 }
 .c-card--warm { background-color: var(--color-tint-warm); }
 .c-card--cool { background-color: var(--color-tint-cool); }
@@ -64,9 +64,9 @@
     width: 3rem;
     height: 3rem;
     border-radius: var(--radius-sm);
-    background-color: var(--palette-cream);
+    background-color: var(--color-page);
     color: var(--color-primary);
-    font-size: 1.5625rem;
+    font-size: var(--icon-tile-size, 1.5625rem); /* 25, Figma */
 }
 
 /* Network session card: date header + content */
@@ -104,7 +104,7 @@
 .c-session .c-card__footer,
 .c-news .c-card__footer {
     display: flex;
-    padding-top: 1.125rem;
+    padding-top: var(--space-4-5);
     border-top: 1px solid var(--rule);
 }
 
@@ -137,7 +137,7 @@
 
 .c-guide__icon {
     color: var(--color-primary);
-    font-size: 1.75rem;
+    font-size: var(--icon-3xl);
 }
 
 /* Editorial card with picture */
@@ -147,49 +147,14 @@
     object-fit: cover;
 }
 
-/* Featured news: big year poster */
-.c-news--featured .c-news__poster {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    min-height: 13.75rem;
-    padding: var(--card-padding);
-    background-color: var(--color-dark);
-    color: var(--color-accent);
-}
-
 .c-news .c-card__body {
     --card-gap: 1.125rem;
 }
 
-.c-news--featured {
-    --card-padding: 1.75rem;
-}
-
 .c-news__title {
-    font-size: var(--news-title-size, var(--text-h3));
+    font-size: var(--text-h3-sm);
     font-weight: 800;
     line-height: var(--leading-tight);
-}
-
-.c-news--featured .c-news__title {
-    --news-title-size: var(--text-h2-lg);
-}
-
-.c-news:not(.c-news--featured) .c-news__title {
-    --news-title-size: var(--text-h3-sm);
-}
-
-.c-news__poster-label {
-    color: inherit;
-    line-height: normal;
-}
-
-.c-news__poster-year {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: clamp(4.5rem, 3rem + 5vw, 7.125rem);
-    line-height: 1;
 }
 
 /* Numbered step (getting started path) */
@@ -315,7 +280,7 @@
 }
 
 .c-featured-post__more svg {
-    font-size: 1.25rem;
+    font-size: var(--icon-lg);
 }
 
 /* Stacked: a 220 px band above the panel, which takes the remaining height */
@@ -327,7 +292,7 @@
     height: 13.75rem;
 }
 
-@media (min-width: 48em) {
+@media (width >= 48em) {
     /* Figma 552 / 744 */
     .c-featured-post--split {
         grid-template-columns: minmax(0, 552fr) minmax(0, 744fr);

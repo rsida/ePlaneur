@@ -26,10 +26,18 @@ Add each new component there.
 
 | Level | Prefix | Use |
 |---|---|---|
-| Primitives | `--palette-*`, `--font-*` | Raw Figma values. Never used directly by components |
-| Semantic | `--color-*`, `--text-*`, `--space-*`, `--radius-*`, `--shadow-*`, `--leading-*` | Intent-based aliases used by components |
+| Primitives | `--palette-*`, `--font-*` | Raw Figma values. Only `tokens.css` and `admin.css` (EasyAdmin mapping) read `--palette-*` |
+| Semantic | `--color-*`, `--text-*`, `--icon-*`, `--space-*`, `--radius-*`, `--shadow-*`, `--leading-*` | Intent-based aliases used by components |
 | Component | `--button-*`, `--tag-*`, `--card-*` | Knobs declared at the top of each component file |
 | Surface | `--surface`, `--on-surface`, `--on-surface-muted`, `--eyebrow`, `--link`, `--rule`, `--focus-color` | Set by theme classes |
+
+Neutral colors that do not follow the surface: `--color-text`, `--color-text-muted`,
+`--color-on-dark-muted`, `--color-page` (cream), `--color-dark-soft`, `--color-line`,
+`--color-line-strong`; inside a themed section prefer `--on-surface` and `--rule`. Icons are sized
+with `--icon-xs` (13px) to `--icon-4xl` (30px). Spacing follows the Figma 4px grid (`--space-1` 4px
+to `--space-10` 80px), with the half steps the mock-up uses (`--space-1-5` 6px, `--space-2-5` 10px,
+`--space-3-5` 14px, `--space-4-5` 18px, `--space-5-5` 22px). A value used by one component only
+stays in it, with its Figma size in a comment.
 
 Keyboard focus is a 2px outline in `--focus-color` (`base.css`): navy on light surfaces, sand on
 `t-dark` and `t-primary`, so it keeps a 3:1 contrast and stays visible in forced-colors mode.
@@ -38,8 +46,10 @@ Palette (Figma): ink `#192630`, ink-soft `#273642`, navy `#3e5d83` (primary), sa
 (accent), sand-soft `#f1ded2`, sky-soft `#e5ebf1`, cream `#f7f5ef`, slate `#586772` (muted text),
 mist `#ced8df`, line `#d8ddd9`.
 
-Fonts (Google Fonts, loaded in `base.html.twig`): **Oswald** 500/600 for display titles and big
-numbers, **Barlow** 700/800 for headings, **Inter** 400–800 for text and UI.
+Fonts, served by the site (`assets/fonts/`, `@font-face` in `styles/fonts.css`, Latin and Latin
+Extended subsets, main files preloaded by `_fonts.html.twig`): **Oswald** 500/600 for display titles
+and big numbers, **Barlow** 700/800 for headings, **Inter** 400–800 for text and UI. No request to
+Google Fonts, so no consent is needed for them.
 
 Line heights follow Figma: where a Figma text layer uses the "Auto" line height, the CSS uses
 `line-height: normal` (the font's own metrics, about 1.48 for Oswald and 1.2 for Barlow), not a fixed
@@ -63,11 +73,15 @@ add to their size. Heading sizes beyond the four levels (`--text-h2-lg` 32px, `-
 ```
 assets/styles/
   app.css             entry point, imports everything in order
-  tokens.css          tokens + surface themes
+  fonts.css           @font-face of the self-hosted fonts (assets/fonts/)
+  tokens.css          tokens + surface themes, breakpoints in its header
   base.css            reset and element defaults
   layout.css          l-* layout primitives, u-* utilities
-  components/         c-* component styles (typography, button, tag, card, data, media, form, site)
-  pages/              p-* page compositions (home.css, account.css, article.css, page.css)
+  components/         c-* component styles, one file per component (typography, button, card, toc,
+                      post-card, breadcrumb...)
+  blocks/             one file per content block type (text.css, callout.css, faq.css...) and
+                      flow.css, the gaps between blocks
+  pages/              p-* page compositions (home.css, account.css, article.css, page.css, news.css)
 assets/icons/         SVG icons (currentColor), used with <twig:ux:icon name="..."/>
 assets/images/        pictures (home/ = Figma mock-up visuals)
 templates/components/ Twig components: Ui/ (atoms), Card/ (patterns), Layout/, Site/ (header, footer)
@@ -75,6 +89,11 @@ templates/components/ Twig components: Ui/ (atoms), Card/ (patterns), Layout/, S
 
 Naming: `l-` layout, `c-` component (BEM: `c-card__body`, `c-button--accent`), `p-` page-specific,
 `t-` theme, `u-` utility.
+
+Breakpoints, mobile first and always in the range syntax (custom properties cannot be used in media
+queries): `(width >= 40em)` two columns of cards, `(width >= 48em)` tablets, `(width >= 64em)` desktop
+(mega-menu, article sidebars); `(width < 75em)` only in the back-office block editor. The JS uses the
+same queries (`matchMedia`).
 
 ## Layout primitives
 
@@ -116,7 +135,7 @@ usage example.
 | `Card:Feature` | Tinted card with icon tile | `icon`, `title`, `text`, `tone` (warm, cool) |
 | `Card:Session` | Network flight session | `day`, `month`, `year`, `version`, `schedule`, `title`, `level`, `text`, `href` |
 | `Card:Guide` | Guide with chapters and CTA | `eyebrow`, `title`, `text`, `chapters`, `ctaLabel`, `ctaHref` |
-| `Card:News` | Editorial card, image or featured poster | `eyebrow`, `title`, `text`, `image`, `featured`, `poster`, `posterLabel`, `href`, `linkLabel` |
+| `Card:News` | Editorial card with an optional picture (the featured post is `Card:PostFeatured`) | `eyebrow`, `title`, `text`, `image`, `imageAlt`, `href`, `linkLabel` |
 | `Card:Step` | Numbered step of a path | `number`, `title`, `text`, `linkLabel`, `href` |
 | `Card:Post` | Article card: picture, category, title, date, excerpt, reading time; a reserved post the reader may not open shows a lock and its audience | `post`, `readingMinutes`, `dated` |
 | `Card:PostFeatured` | Featured post ("À la une"): cover or year poster next to (`split`) or above (`stacked`) a navy panel | `post`, `readingMinutes`, `layout`, `level` |
@@ -133,7 +152,7 @@ Other CSS-only components: `c-display`, `c-tagline`, `c-motto`, `c-callout`, `c-
 `c-icon-tile`, `c-definition-list`, `c-level-badge`, `c-keyword`, `c-avatar`, `c-tag--outline` (unselected
 filter), `c-pagination` (pages of a list).
 
-Content blocks (`Block:*` components, one per block type, styles in `components/content.css`) are
+Content blocks (`Block:*` components, one per block type, styles in `blocks/<type>.css`) are
 described in [content](content.md). Article typography tokens: `--text-article-title`,
 `--text-article-lead`, `--text-section-title`, `--text-band-title`, `--text-quote`,
 `--text-title-md/sm/xs`, `--leading-reading`; layout tokens `--article-sidebar`, `--article-gap`,

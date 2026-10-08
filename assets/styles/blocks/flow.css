@@ -1,0 +1,20 @@
+/*
+ * Flow of content blocks in an article or page body: gaps between blocks and before sections.
+ * Values follow the Figma "Article desktop" frame (node 29-4356).
+ */
+
+:root {
+    --block-gap: 1.625rem;        /* 26: between blocks */
+    --section-gap: var(--space-9); /* 64: before each numbered section */
+    --block-radius: var(--radius-md);
+}
+
+.p-article__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-gap);
+}
+
+.p-article__body > .c-block-section:not(:first-child) {
+    margin-top: calc(var(--section-gap) - var(--block-gap));
+}

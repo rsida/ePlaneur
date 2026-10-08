@@ -49,12 +49,12 @@
 .l-grid--tight { --grid-gap: var(--space-4); }
 .l-grid--loose { --grid-gap: var(--space-8); }
 
-@media (min-width: 40em) {
+@media (width >= 40em) {
     .l-grid--2,
     .l-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (min-width: 64em) {
+@media (width >= 64em) {
     .l-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .l-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
@@ -84,7 +84,7 @@
     scroll-snap-align: start;
 }
 
-@media (min-width: 64em) {
+@media (width >= 64em) {
     .l-rail {
         grid-auto-flow: row;
         grid-template-columns: var(--rail-columns, repeat(3, minmax(0, 1fr)));
@@ -103,7 +103,7 @@
     align-items: var(--split-align, center);
 }
 
-@media (min-width: 64em) {
+@media (width >= 64em) {
     .l-split {
         grid-template-columns: minmax(0, 1fr) var(--split-aside, minmax(0, 1fr));
         gap: var(--split-gap-lg, var(--space-9));

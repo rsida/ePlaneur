@@ -73,7 +73,7 @@
     max-width: 66rem;
 }
 
-@media (min-width: 64em) {
+@media (width >= 64em) {
     .c-section-header--with-aside {
         flex-direction: row;
         align-items: flex-end;

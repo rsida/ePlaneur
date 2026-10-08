@@ -1,0 +1,32 @@
+/*
+ * Excerpt of a reference text (Block:Excerpt).
+ */
+
+/* Excerpt of a reference text */
+.c-excerpt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3-5);
+    margin: 0;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--rule);
+}
+
+.c-excerpt__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3-xs);
+    line-height: 1.2;
+}
+
+.c-excerpt__text {
+    margin: 0;
+    font-size: var(--text-lead);
+    line-height: var(--leading-reading);
+}
+
+.c-excerpt__reference {
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: 600;
+}

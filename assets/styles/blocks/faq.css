@@ -1,0 +1,66 @@
+/*
+ * Questions and answers (Block:Faq).
+ */
+
+.c-faq {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.c-faq__list {
+    overflow: hidden;
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    border-radius: var(--block-radius);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+}
+
+.c-faq__item + .c-faq__item {
+    border-top: 1px solid var(--color-line);
+}
+
+.c-faq__item[open] {
+    background-color: var(--color-tint-cool);
+}
+
+.c-faq__question {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-5-5);
+    font-size: var(--text-md);
+    font-weight: 600;
+    line-height: 1.5;
+    list-style: none;
+    cursor: pointer;
+}
+
+.c-faq__question::-webkit-details-marker {
+    display: none;
+}
+
+.c-faq__question span {
+    flex: 1;
+}
+
+.c-faq__item[open] .c-faq__question {
+    color: var(--color-primary);
+}
+
+.c-faq__icon {
+    flex-shrink: 0;
+    font-size: var(--icon-lg);
+    color: var(--color-primary);
+}
+
+.c-faq__item[open] .c-faq__icon--closed,
+.c-faq__item:not([open]) .c-faq__icon--open {
+    display: none;
+}
+
+.c-faq__answer {
+    padding: 0 var(--space-5-5) var(--space-5-5);
+    line-height: var(--leading-reading);
+}

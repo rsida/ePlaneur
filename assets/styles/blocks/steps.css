@@ -1,0 +1,46 @@
+/*
+ * Numbered steps (Block:Steps).
+ */
+
+.c-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+}
+
+.c-steps__item {
+    display: flex;
+    gap: var(--space-5-5);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--rule);
+}
+
+.c-steps__number {
+    flex-shrink: 0;
+    width: 2.875rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.875rem, 1.5rem + 1vw, 2.375rem);
+    line-height: 1.15;
+    color: var(--color-primary);
+}
+
+.c-steps__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5);
+}
+
+.c-steps__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-md);
+    line-height: normal;
+}
+
+.c-steps__text {
+    font-size: var(--text-md);
+    line-height: 1.75;
+    color: var(--on-surface-muted);
+}

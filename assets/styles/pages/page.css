@@ -54,7 +54,7 @@
     max-width: none;
 }
 
-@media (min-width: 64em) {
+@media (width >= 64em) {
     .p-page__layout {
         grid-template-columns: var(--article-sidebar) minmax(0, 1fr);
         column-gap: var(--article-gap);
@@ -116,7 +116,7 @@
 
 .c-subnav__lock {
     flex-shrink: 0;
-    font-size: 0.8125rem;
+    font-size: var(--icon-xs);
 }
 
 /* ---------- "Contenu réservé" ---------- */
@@ -160,7 +160,7 @@
     border-radius: var(--radius-sm);
     background-color: var(--surface);
     color: var(--color-primary);
-    font-size: 1.5rem;
+    font-size: var(--icon-2xl);
 }
 
 .c-restricted__title {
