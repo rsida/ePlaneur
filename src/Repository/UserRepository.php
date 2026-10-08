@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\Group;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -37,5 +38,19 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
         $user->setPassword($newHashedPassword);
         $this->getEntityManager()->flush();
+    }
+
+    /**
+     * Accounts put directly in a group (not through a group that includes it).
+     *
+     * @return list<User>
+     */
+    public function findInGroup(Group $group): array
+    {
+        /* @var list<User> */
+        return $this->createQueryBuilder('user')
+            ->join('user.groups', 'grp')
+            ->andWhere('grp = :group')->setParameter('group', $group)
+            ->getQuery()->getResult();
     }
 }

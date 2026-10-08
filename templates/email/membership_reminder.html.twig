@@ -1,0 +1,7 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block content %}
+    <p>Bonjour {{ membership.firstName }},</p>
+    <p>Merci d’avoir été membre du Club ePlaneur en {{ membership.season.year }}. Les adhésions pour la saison {{ season.year }} sont ouvertes : renouvelez la vôtre pour continuer à voler avec le club et garder l’accès aux contenus réservés aux membres.</p>
+    <p style="margin:24px 0;"><a href="{{ url('app_membership') }}" style="display:inline-block;padding:14px 20px;border-radius:4px;background:#3e5d83;color:#ffffff;font-weight:700;text-decoration:none;">Renouveler mon adhésion</a></p>
+{% endblock %}

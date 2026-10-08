@@ -61,7 +61,10 @@ treasurer's agreement before any code.
 | 7d | Progression | Rule-based advice tied to the training path (time spent circling, weak thermals accepted, always turning the same way, speed to fly); pilot logbook (average speed, climb rate and glide ratio over the weeks); instructor comments at a moment of a flight, linked to a step of the training path | Done (2026-10-08), see [flights](flights.md#progression); trainers: a group with `FLIGHT_REVIEW` |
 | 7e | Viewer extras | Cockpit camera in 3D replay; link to a moment of a flight (debriefings); two thermals or legs side by side; public flights chosen by the pilot (showcase on the home page) | Done (2026-10-08), see [flights](flights.md#viewer); legs are compared between flights (7c), not within one; the pilot view is to be taken up again (smoothness and loading of the relief in thermals, to judge on a real machine) |
 | 7f | Club life | Club records per task or landscape, badges (first 300 km, first 5 h flight), season ranking; kept modest so that the site stays a training tool, not a game | Done (2026-10-08), see [flights](flights.md#club-life); a season is a calendar year for now (the club season may start in September) |
-| 8 | Membership and finances (replaces Yapla) | Membership campaigns per season with online payment through **HelloAsso Checkout** (no card handled by the site), automatic "Membre" group with an expiry date, membership certificate, renewal reminders; then the treasurer's books (income and expenses, receipts, budget vs actual, exports for the general meeting); import of the Yapla history | Proposed: needs the treasurer's needs first |
+| 8 | Membership and finances (replaces Yapla) | Membership campaigns per season with online payment through **HelloAsso Checkout** (no card handled by the site), automatic "Membre" group with an expiry date, membership certificate, renewal reminders; then the treasurer's books (income and expenses, receipts, budget vs actual, exports for the general meeting); import of the Yapla history | Split below |
+| 8a | Memberships | Seasons and fees, requests on `/adhesion` with the data of the membership form, payment recorded by the treasurer, validation into the "Membre" group, certificate, end of membership after a grace month, renewal reminders, CSV export | Done (2026-10-08, started before the treasurer's input at the user's request), see [membership](membership.md) |
+| 8b | Online payment | HelloAsso Checkout: the request redirects to the payment page, the payment notification marks the membership paid | To do: needs the club's HelloAsso API keys |
+| 8c | Treasurer's books | Income and expenses, receipts, budget against actual, general meeting exports, import of the Yapla history | Waiting for the treasurer's needs |
 
 Why this order: restricted content (committee minutes, 4th-level pages) and the back-office both need
 accounts and roles first; EasyAdmin gives a usable back-office quickly, a custom admin is only worth it
@@ -116,8 +119,9 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
 - Flight viewer: should it live on the club site or on eplaneur.fr, which hosts the flight plans and
   sessions database (see [ecosystem](project/ecosystem.md))?
 
-- Member validation: the committee adds the "Membre" group by hand after the Yapla payment; a yearly
-  expiry of membership is not modelled yet.
+- Memberships (8a): what does the membership form of the internal rules ask exactly (fields sent to
+  the FFVP, image rights, emergency contact)? Is the club year the calendar year (assumed), and is a
+  grace month right? The age limit of the reduced rate is checked on 1 January of the season.
 - Article comments and feedback: who can comment, moderation, notifications (after step 4); their
   visual components already exist (`Content:Comment`, `Content:Feedback`).
 - Editor canvas width: next to both panels the canvas is narrower than the site's desktop

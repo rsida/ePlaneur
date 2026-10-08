@@ -1,0 +1,22 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block content %}
+    {% set season = membership.season %}
+    <p>Bonjour {{ membership.firstName }},</p>
+    <p>Nous avons bien reçu votre demande d’adhésion au Club ePlaneur pour la saison {{ season.year }} :</p>
+    <p style="margin:16px 0;padding:16px;background:#f7f5ef;border-radius:4px;">
+        {{ membership.type.name }} : {{ (membership.fee / 100)|number_format(2, ',', ' ') }} €
+        {%- if membership.donation > 0 %}<br>Soutien volontaire : {{ (membership.donation / 100)|number_format(2, ',', ' ') }} €{% endif %}<br>
+        <strong>Total : {{ (membership.total / 100)|number_format(2, ',', ' ') }} €</strong>
+    </p>
+    {% if membership.paidAt %}
+        <p>Votre paiement est enregistré. Le club valide votre adhésion dans les prochains jours : vous recevrez alors un e-mail de bienvenue.</p>
+    {% elseif season.paymentInstructions %}
+        <p>Pour régler votre adhésion :</p>
+        <p style="white-space:pre-line;">{{ season.paymentInstructions }}</p>
+        <p>Le club valide votre adhésion dès réception du paiement.</p>
+    {% else %}
+        <p>Le trésorier vous contactera pour le règlement ; le club valide ensuite votre adhésion.</p>
+    {% endif %}
+    <p><a href="{{ url('app_membership') }}" style="color:#3e5d83;font-weight:700;">Suivre ma demande</a></p>
+{% endblock %}

@@ -26,7 +26,9 @@ Permissions and default groups are described in [accounts](accounts.md).
 | Documents officiels | `/admin/document` | `DOCUMENT_MANAGE` | The file is chosen from the media library; dated mentions = one line each; the file takes the document's visibility |
 | Catégories de documents | `/admin/document-category` | `DOCUMENT_MANAGE` | Name, identifier, order |
 | Menus | `/admin/menu-item` | `MENU_MANAGE` | Header (3 levels) and footer links: page or address, note, order, visibility; the parent must be in the same menu |
-| Comptes | `/admin/user` | `USER_MANAGE` | No creation (accounts come from registration); validating a membership = adding the "Membre" group; an administrator cannot delete their own account; passwords are never shown |
+| Adhésions | `/admin/membership` | `MEMBERSHIP_MANAGE` | Requests made on `/adhesion` (no creation, no deletion): "Paiement reçu", "Valider" (adds the "Membre" group, welcome e-mail), "Refuser"; filters by season, state and type; "Exporter la saison (CSV)"; the number of requests to process shows in the menu (see [membership](membership.md)) |
+| Saisons et tarifs | `/admin/membership-season` | `MEMBERSHIP_MANAGE` | Year, requests open or not, payment instructions, membership types with price and age limit; not deletable |
+| Comptes | `/admin/user` | `USER_MANAGE` | No creation (accounts come from registration); memberships are validated in "Adhésions" (accounts of the Yapla years: add the "Membre" group by hand); an administrator cannot delete their own account; passwords are never shown |
 | Groupes et droits | `/admin/group` | `GROUP_MANAGE` | Permissions as checkboxes; "Inclut les groupes" (its members get the access and rights of those groups: Comité includes Membre); the code is set once at creation; default groups cannot be deleted |
 
 Pictures are displayed through resized versions (see [content](content.md#resized-pictures)).

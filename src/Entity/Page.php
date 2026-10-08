@@ -29,7 +29,7 @@ class Page implements EditableContentInterface
     public const int MAX_DEPTH = 4;
 
     /** First URL segments used by the application: a root page cannot take them. */
-    public const array RESERVED_SLUGS = ['actualites', 'connexion', 'deconnexion', 'inscription', 'mot-de-passe-oublie', 'mon-compte', 'media', 'admin', 'vols'];
+    public const array RESERVED_SLUGS = ['actualites', 'connexion', 'deconnexion', 'inscription', 'mot-de-passe-oublie', 'mon-compte', 'media', 'admin', 'vols', 'adhesion'];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

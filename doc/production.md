@@ -107,9 +107,12 @@ Every command below is run on the server, in the project directory.
 | `make console c="messenger:failed:show"` | Messages that failed after 3 retries |
 | `make console c="messenger:failed:retry"` | Retry them |
 
-Backups are not scheduled automatically, for instance with cron:
+Backups and the membership tasks are not scheduled automatically, for instance with cron (end of
+memberships after the grace month, renewal reminders when the next season is open, see
+[membership](membership.md)):
 
 ```cron
+30 6 * * * cd /path/to/ePlaneur && make console c="app:membership:expire" >/dev/null 2>&1 && make console c="app:membership:remind" >/dev/null 2>&1
 0 3 * * * cd /path/to/ePlaneur && make db-dump media-dump >/dev/null 2>&1 && find backups \( -name '*.sql.gz' -o -name '*.tar.gz' \) -mtime +14 -delete
 ```
 

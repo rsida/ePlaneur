@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Repository\MembershipRepository;
 use App\Security\Permission;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
@@ -32,6 +33,7 @@ final class DashboardController extends AbstractDashboardController
 {
     public function __construct(
         private readonly Environment $twig,
+        private readonly MembershipRepository $memberships,
     ) {
     }
 
@@ -92,6 +94,14 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkTo(MenuItemCrudController::class, 'Menus', 'list-tree')
             ->setPermission(Permission::MenuManage->value);
 
+        yield MenuItem::section('Adhésions');
+        $toProcess = $this->isGranted(Permission::MembershipManage->value) ? $this->memberships->countToProcess() : 0;
+        yield MenuItem::linkTo(MembershipCrudController::class, 'Adhésions', 'id-card')
+            ->setPermission(Permission::MembershipManage->value)
+            ->setBadge($toProcess > 0 ? $toProcess : false, 'warning');
+        yield MenuItem::linkTo(MembershipSeasonCrudController::class, 'Saisons et tarifs', 'calendar-clock')
+            ->setPermission(Permission::MembershipManage->value);
+
         yield MenuItem::section('Comptes');
         yield MenuItem::linkTo(UserCrudController::class, 'Comptes', 'users')
             ->setPermission(Permission::UserManage->value);
@@ -116,7 +126,8 @@ final class DashboardController extends AbstractDashboardController
             ['label' => 'Documents officiels', 'text' => 'Statuts, règlement, décisions : version, mentions datées, visibilité.', 'icon' => 'files', 'route' => 'admin_document_index', 'permission' => Permission::DocumentManage->value],
             ['label' => 'Menus', 'text' => 'Liens de l’en-tête et du pied de page, réservés ou non.', 'icon' => 'list-tree', 'route' => 'admin_menu_item_index', 'permission' => Permission::MenuManage->value],
             ['label' => 'Catégories d’articles', 'text' => 'Classer les actualités.', 'icon' => 'tags', 'route' => 'admin_category_index', 'permission' => Permission::CategoryManage->value],
-            ['label' => 'Comptes', 'text' => 'Valider les adhésions en ajoutant le groupe « Membre ».', 'icon' => 'users', 'route' => 'admin_user_index', 'permission' => Permission::UserManage->value],
+            ['label' => 'Adhésions', 'text' => 'Enregistrer les paiements, valider les demandes, exporter une saison.', 'icon' => 'id-card', 'route' => 'admin_membership_index', 'permission' => Permission::MembershipManage->value],
+            ['label' => 'Comptes', 'text' => 'Les comptes du site et leurs groupes.', 'icon' => 'users', 'route' => 'admin_user_index', 'permission' => Permission::UserManage->value],
             ['label' => 'Groupes et droits', 'text' => 'Choisir ce que chaque groupe peut faire.', 'icon' => 'shield-check', 'route' => 'admin_group_index', 'permission' => Permission::GroupManage->value],
         ];
     }

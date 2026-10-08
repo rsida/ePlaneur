@@ -1,0 +1,100 @@
+/*
+ * Membership (templates/membership/): fees, the member's memberships, the request form, the
+ * certificate (printable).
+ */
+
+.p-membership__fees,
+.p-membership__mine {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (width >= 48em) {
+    .p-membership__fees {
+        grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    }
+}
+
+.p-membership__fee-name {
+    font-size: var(--text-title-xs);
+}
+
+.p-membership__fee-price {
+    color: var(--color-primary);
+    font-size: var(--text-h3);
+    font-weight: 700;
+}
+
+.p-membership__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.p-membership__instructions p {
+    margin: var(--space-1) 0 0;
+}
+
+.p-membership__form,
+.p-membership__mine,
+.p-membership__fees {
+    width: 100%;
+    max-width: var(--article-column);
+}
+
+.p-membership__form .c-card__body {
+    align-items: stretch;
+}
+
+.p-membership__pair {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 40em) {
+    .p-membership__pair {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.p-membership__types {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.p-membership__types label {
+    display: inline-flex;
+    gap: var(--space-2);
+    font-size: var(--text-body);
+}
+
+.p-membership__types input {
+    accent-color: var(--color-primary);
+}
+
+.p-certificate__sheet {
+    max-width: var(--article-column);
+}
+
+.p-certificate__club {
+    font-weight: 700;
+}
+
+@media print {
+    .c-header,
+    .c-footer,
+    .p-certificate__actions,
+    .sf-toolbar {
+        display: none !important;
+    }
+
+    .p-certificate__sheet {
+        border: 0;
+        box-shadow: none;
+    }
+}

@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Attestation d’adhésion {{ membership.season.year }}{% endblock %}
+{% block description %}Attestation d’adhésion au Club ePlaneur.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-certificate">
+        <div class="l-stack l-stack--lg">
+            <p class="p-certificate__actions"><twig:Ui:Button type="button" onclick="window.print()" variant="outline" icon="">Imprimer ou enregistrer en PDF</twig:Ui:Button></p>
+            <article class="c-card c-card--outlined t-paper p-certificate__sheet">
+                <div class="c-card__body l-stack">
+                    <p class="p-certificate__club">Club ePlaneur<br><span class="u-note">Association loi 1901 · RNA W9R1011072 · SIREN 100726348<br>Saint-Denis, La Réunion</span></p>
+                    <twig:Ui:Heading level="1" size="h2">Attestation d’adhésion</twig:Ui:Heading>
+                    <p>Le Club ePlaneur atteste que <strong>{{ membership.fullName }}</strong>{% if membership.birthDate %}, né(e) le {{ membership.birthDate|format_date('long', locale: 'fr') }},{% endif %} est membre de l’association pour la saison {{ membership.season.year }}, du 1<sup>er</sup> janvier {{ membership.season.year }} au {{ membership.season.endsOn|format_date('long', locale: 'fr') }}.</p>
+                    <dl class="c-definition-list">
+                        <dt>Type d’adhésion</dt><dd>{{ membership.type.name }}</dd>
+                        <dt>Cotisation réglée</dt><dd>{{ (membership.fee / 100)|number_format(2, ',', ' ') }} €</dd>
+                        {% if membership.donation > 0 %}<dt>Soutien volontaire</dt><dd>{{ (membership.donation / 100)|number_format(2, ',', ' ') }} € (sans reçu fiscal)</dd>{% endif %}
+                        <dt>Adhésion validée le</dt><dd>{{ membership.validatedAt ? membership.validatedAt|format_date('long', locale: 'fr') : '—' }}</dd>
+                        <dt>Référence</dt><dd>ADH-{{ membership.season.year }}-{{ '%05d'|format(membership.id) }}</dd>
+                    </dl>
+                    <p class="u-note">Attestation établie depuis le site du club, le {{ 'now'|format_date('long', locale: 'fr') }}.</p>
+                </div>
+            </article>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

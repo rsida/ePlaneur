@@ -10,6 +10,16 @@
         <dd>{{ user.email }}</dd>
         <dt>Compte créé le</dt>
         <dd>{{ user.createdAt|date('d/m/Y') }}</dd>
+        <dt>Adhésion</dt>
+        <dd>
+            {% if membership %}
+                {{ membership.season.label }} · {{ membership.status.label }}
+                {% if membership.status.value == 'validated' %} · <a href="{{ path('app_membership_certificate', {id: membership.id}) }}">attestation</a>{% endif %}
+            {% else %}
+                Pas d’adhésion enregistrée sur le site.
+            {% endif %}
+            · <a href="{{ path('app_membership') }}">{{ membership ? 'Mes adhésions' : 'Adhérer au club' }}</a>
+        </dd>
         <dt>Groupes</dt>
         <dd>
             {% if user.groups is empty %}

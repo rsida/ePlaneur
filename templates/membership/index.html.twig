@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Adhésion au club{% endblock %}
+{% block description %}Adhérer au Club ePlaneur : tarifs de la saison, demande d’adhésion en ligne et suivi.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-membership">
+        <div class="l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Eyebrow>Le club</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h1">Adhérer au club</twig:Ui:Heading>
+                <p class="u-lead">L’adhésion ouvre l’accès aux outils et aux contenus réservés aux membres, et soutient le club : hébergement du site, licences, formation et vols en réseau.</p>
+            </div>
+
+            {% for message in app.flashes('success') %}
+                <div class="c-alert c-alert--success" role="status">{{ message }}</div>
+            {% endfor %}
+
+            {% if open is empty %}
+                <p class="u-note">Les adhésions ne sont pas ouvertes en ce moment. Revenez en fin d’année pour la prochaine saison.</p>
+            {% else %}
+                {% for open_season in open %}
+                    <section class="l-stack l-stack--sm" aria-label="Tarifs {{ open_season.label }}">
+                        <twig:Ui:Heading level="2" size="h3">Tarifs · {{ open_season.label }}</twig:Ui:Heading>
+                        <ul class="p-membership__fees">
+                            {% for type in open_season.types %}
+                                <li class="c-card c-card--outlined t-paper">
+                                    <span class="c-card__body l-stack l-stack--xs">
+                                        <strong class="p-membership__fee-name">{{ type.name }}</strong>
+                                        <span class="p-membership__fee-price">{{ type.price|euros }}</span>
+                                        {% if type.description %}<span class="u-note">{{ type.description }}</span>{% endif %}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <p class="u-note">Adhésion valable jusqu’au 31 décembre {{ open_season.year }}. Un soutien volontaire peut s’ajouter à la cotisation.</p>
+                    </section>
+                {% endfor %}
+            {% endif %}
+
+            {% if not app.user %}
+                <div class="c-callout l-stack l-stack--sm">
+                    <p>L’adhésion se fait depuis votre compte sur le site : créez-le gratuitement, ou connectez-vous.</p>
+                    <p class="l-cluster">
+                        <twig:Ui:Button href="{{ path('app_register') }}">Créer mon compte</twig:Ui:Button>
+                        <twig:Ui:Button href="{{ path('app_login', {_target_path: path('app_membership')}) }}" variant="outline">Me connecter</twig:Ui:Button>
+                    </p>
+                </div>
+            {% else %}
+                {% if memberships is not empty %}
+                    <section class="l-stack l-stack--sm" aria-labelledby="mine-title">
+                        <twig:Ui:Heading level="2" size="h3" id="mine-title">Mes adhésions</twig:Ui:Heading>
+                        <ul class="p-membership__mine">
+                            {% for membership in memberships %}
+                                <li class="c-card c-card--outlined t-paper">
+                                    <div class="c-card__body p-membership__row">
+                                        <span class="l-stack l-stack--xs">
+                                            <strong>{{ membership.season.label }} · {{ membership.type.name }}</strong>
+                                            <span class="u-note">{{ membership.total|euros }}{% if membership.donation > 0 %} dont {{ membership.donation|euros }} de soutien{% endif %} · demande du {{ membership.requestedAt|format_date('medium', locale: 'fr') }}</span>
+                                        </span>
+                                        <span class="l-cluster">
+                                            <twig:Ui:Tag variant="{{ membership.status.value == 'validated' ? 'default' : 'soft' }}">{{ membership.status.label }}</twig:Ui:Tag>
+                                            {% if membership.status.value == 'validated' %}<twig:Ui:Link href="{{ path('app_membership_certificate', {id: membership.id}) }}">Attestation</twig:Ui:Link>{% endif %}
+                                        </span>
+                                    </div>
+                                    {% if membership.status.value == 'requested' and membership.season.paymentInstructions %}
+                                        <div class="c-card__body p-membership__instructions">
+                                            <strong>Pour régler votre adhésion</strong>
+                                            <p>{{ membership.season.paymentInstructions|nl2br }}</p>
+                                        </div>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                {% endif %}
+
+                {% if form %}
+                    <section class="l-stack l-stack--sm" aria-labelledby="request-title">
+                        <twig:Ui:Heading level="2" size="h3" id="request-title">{{ memberships is empty ? 'Demande d’adhésion' : 'Renouveler mon adhésion' }} · {{ season.label }}</twig:Ui:Heading>
+                        {{ form_start(form, {attr: {class: 'c-card c-card--outlined t-paper p-membership__form'}}) }}
+                            <div class="c-card__body c-form">
+                                {{ form_row(form.type, {attr: {class: 'p-membership__types'}}) }}
+                                <div class="p-membership__pair">{{ form_row(form.firstName) }}{{ form_row(form.lastName) }}</div>
+                                {{ form_row(form.birthDate) }}
+                                {{ form_row(form.address) }}
+                                <div class="p-membership__pair">{{ form_row(form.postalCode) }}{{ form_row(form.city) }}</div>
+                                {{ form_row(form.country) }}
+                                {{ form_row(form.phone) }}
+                                {{ form_row(form.donation) }}
+                                {{ form_row(form.rulesAccepted) }}
+                                <p class="u-note">Ces informations servent à la gestion des adhésions du club, et en partie à la Fédération française de vol en planeur (affiliation). Les statuts et le règlement intérieur sont dans les textes officiels du club.</p>
+                                <div><twig:Ui:Button type="submit">Envoyer ma demande</twig:Ui:Button></div>
+                            </div>
+                        {{ form_end(form) }}
+                    </section>
+                {% endif %}
+            {% endif %}
+        </div>
+    </twig:Layout:Section>
+{% endblock %}
