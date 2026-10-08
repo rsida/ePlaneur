@@ -48,7 +48,10 @@ Do the steps in this order: each one depends on the previous ones.
 
 ## Next: proposals for the committee (steps 7 and 8, proposed on 2026-10-08)
 
-Replacing the WordPress site is not decided yet: the committee first has to be convinced. These two
+Replacing the WordPress site is not decided yet: the committee first has to be convinced. A briefing
+for the committee (what the site brings, a 15-minute demo scenario, the decisions to take, the
+questions for the treasurer) was written on 2026-10-09 as a private page:
+https://claude.ai/artifact/4EZDZFXH8wzvbM33wmnELQ (share it from its page). These two
 steps show what a custom site brings that WordPress cannot; step 8 needs the committee's and the
 treasurer's agreement before any code.
 
