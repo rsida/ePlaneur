@@ -21,6 +21,10 @@ Default groups, created by the first migration and by the dev fixtures (`App\Sec
 | `committee` | Comité, includes Membre | `ADMIN_ACCESS`, `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE`, `PAGE_MANAGE`, `DOCUMENT_MANAGE` |
 | `admin` | Administrateur | all (`all_permissions` flag: includes permissions added later, and sees every content) |
 
+`FLIGHT_REVIEW` (trainers: comment the flights of every pilot and see their logbook, see
+[flights](flights.md#progression)) is held by no default group: create a "Formateur" group with it
+(`make console c="app:group:permissions formateur --grant=FLIGHT_REVIEW"` once the group exists).
+
 Administrators can create other groups (Rédacteur, Bienfaiteur, Bénévole...) and change which
 permissions each group holds. A registered user without any group is a free account ("inscrit").
 

@@ -25,6 +25,25 @@
     {{- parent() -}}
 {%- endblock form_widget_simple -%}
 
+{%- block textarea_widget -%}
+    {%- set attr = attr|merge({class: html_classes('c-input', attr.class|default(''))}) -%}
+    {{- parent() -}}
+{%- endblock textarea_widget -%}
+
+{%- block choice_widget_collapsed -%}
+    {%- set attr = attr|merge({class: html_classes('c-input', attr.class|default(''))}) -%}
+    {{- parent() -}}
+{%- endblock choice_widget_collapsed -%}
+
+{# A checkbox inside its label (.c-check), then its help and errors #}
+{%- block checkbox_row -%}
+    <div class="{{ html_classes('c-field', {'c-field--invalid': errors|length > 0}) }}">
+        <label class="c-check">{{- form_widget(form) -}}<span>{{ label is not same as(false) ? label|default(name|humanize) }}</span></label>
+        {{- form_help(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock checkbox_row -%}
+
 {% block form_help -%}
     {%- if help -%}
         <p id="{{ id }}_help" class="c-field__help">{{- block('form_help_content') -}}</p>

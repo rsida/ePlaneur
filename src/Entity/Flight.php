@@ -7,6 +7,8 @@ namespace App\Entity;
 use App\Flight\Analysis\FlightAnalysis;
 use App\Flight\Analysis\Launch;
 use App\Repository\FlightRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -83,8 +85,14 @@ class Flight
     #[ORM\Column]
     private \DateTimeImmutable $uploadedAt;
 
+    /** @var Collection<int, FlightComment> */
+    #[ORM\OneToMany(targetEntity: FlightComment::class, mappedBy: 'flight')]
+    #[ORM\OrderBy(['at' => 'ASC', 'createdAt' => 'ASC'])]
+    private Collection $comments;
+
     public function __construct(FlightAnalysis $analysis, string $fileName, string $originalName, ?User $owner, \DateTimeImmutable $uploadedAt)
     {
+        $this->comments = new ArrayCollection();
         $this->setAnalysis($analysis);
         $this->fileName = $fileName;
         $this->originalName = mb_substr($originalName, 0, 255);
@@ -205,8 +213,24 @@ class Flight
         return $this->originalName;
     }
 
+    /** Day of the flight: the date in the file, or the upload date when the file has none (.ftr). */
+    public function getDate(): \DateTimeImmutable
+    {
+        return $this->flownOn ?? $this->uploadedAt;
+    }
+
     public function getUploadedAt(): \DateTimeImmutable
     {
         return $this->uploadedAt;
+    }
+
+    /**
+     * Comments by the moment of the flight they are about (general ones first), then by date.
+     *
+     * @return Collection<int, FlightComment>
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
     }
 }

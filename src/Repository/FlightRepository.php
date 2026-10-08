@@ -53,4 +53,17 @@ class FlightRepository extends ServiceEntityRepository
     {
         return null === $flight->getFlightPlan() ? 1 : $this->count(['flightPlan' => $flight->getFlightPlan()]);
     }
+
+    /**
+     * Every flight of a pilot (uploaded with their account), oldest first.
+     *
+     * @return list<Flight>
+     */
+    public function findLogbook(User $owner): array
+    {
+        $flights = $this->findBy(['owner' => $owner]);
+        usort($flights, static fn (Flight $a, Flight $b): int => [$a->getDate(), $a->getId()] <=> [$b->getDate(), $b->getId()]);
+
+        return $flights;
+    }
 }

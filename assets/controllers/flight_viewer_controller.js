@@ -28,7 +28,7 @@ const VARIO_CLASSES = [
 const CURTAIN_STEP = 5; // seconds between the lines down to the ground in 3D
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'follow', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart'];
+    static targets = ['map', 'view', 'follow', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime'];
 
     static values = { url: String };
 
@@ -314,6 +314,19 @@ export default class extends Controller {
         this.moveTo(phase.start);
     }
 
+    /* ---------- Comments ---------- */
+
+    /** A comment's moment: the glider there, the map in view. */
+    goTo({ params: { at } }) {
+        this.moveTo(Math.min(this.count - 1, Number(at)));
+        if (this.following) this.centerOnGlider();
+        else {
+            const [lon, lat, altitude] = this.position(Math.round(this.index));
+            this.map.jumpTo({ center: [lon, lat], elevation: altitude });
+        }
+        this.mapTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     /* ---------- Replay ---------- */
 
     seek() {
@@ -348,6 +361,9 @@ export default class extends Controller {
         const { time, altitude, speed, vario } = this.series;
         this.seekTarget.value = String(i);
         this.nowTimeTarget.textContent = formatTime(time[i]);
+        // The comment form takes the moment shown
+        if (this.hasCommentAtTarget) this.commentAtTarget.value = String(i);
+        if (this.hasCommentTimeTarget) this.commentTimeTarget.textContent = formatTime(time[i]);
         this.nowAltitudeTarget.textContent = FORMATS.altitude(altitude[i]);
         this.nowSpeedTarget.textContent = FORMATS.speed(speed[i]);
         this.nowVarioTarget.textContent = FORMATS.vario(vario[i]);

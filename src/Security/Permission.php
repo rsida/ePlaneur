@@ -28,6 +28,7 @@ enum Permission: string implements TranslatableInterface
     case PageManage = 'PAGE_MANAGE';
     case MenuManage = 'MENU_MANAGE';
     case DocumentManage = 'DOCUMENT_MANAGE';
+    case FlightReview = 'FLIGHT_REVIEW';
 
     public function label(): string
     {
@@ -44,6 +45,7 @@ enum Permission: string implements TranslatableInterface
             self::PageManage => 'Gérer les pages et voir les pages non publiées',
             self::MenuManage => 'Gérer les menus de navigation',
             self::DocumentManage => 'Gérer les documents officiels',
+            self::FlightReview => 'Commenter les vols des pilotes et suivre leur carnet de vol (formateurs)',
         };
     }
 

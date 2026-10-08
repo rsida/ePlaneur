@@ -8,7 +8,8 @@ use Twig\Attribute\AsTwigFilter;
 
 /**
  * Flight values for people: `3725|flight_duration` → "1 h 02 min", `182408|flight_distance` →
- * "182,4 km", `125|flight_gap` → "+2 min 05 s", `95|flight_time` → "1 min 35 s".
+ * "182,4 km", `125|flight_gap` → "+2 min 05 s", `95|flight_time` → "1 min 35 s", `3725|flight_clock` →
+ * "1:02:05" (a moment of the flight, as the viewer shows it).
  */
 final class FlightExtension
 {
@@ -59,5 +60,15 @@ final class FlightExtension
             $seconds >= 60 => \sprintf('%d min %02d s', intdiv($seconds, 60), $seconds % 60),
             default => $seconds.' s',
         };
+    }
+
+    /** A moment of the flight as the viewer shows it: "1:02:05", "21:49". */
+    #[AsTwigFilter('flight_clock')]
+    public static function clock(int $seconds): string
+    {
+        $hours = intdiv($seconds, 3600);
+        $minutes = intdiv($seconds % 3600, 60);
+
+        return $hours > 0 ? \sprintf('%d:%02d:%02d', $hours, $minutes, $seconds % 60) : \sprintf('%d:%02d', $minutes, $seconds % 60);
     }
 }

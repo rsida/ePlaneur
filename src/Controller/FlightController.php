@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Flight;
+use App\Entity\FlightComment;
 use App\Entity\User;
+use App\Flight\Advice\FlightAdvisor;
 use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
 use App\Flight\FlightSession;
 use App\Flight\Reader\InvalidTrackException;
+use App\Form\FlightCommentType;
 use App\Repository\FlightRepository;
 use App\Security\Voter\FlightVoter;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -71,10 +77,122 @@ final class FlightController extends AbstractController
         ], new Response(status: null !== $error ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
-    #[Route('/{id<\d+>}', name: 'show', methods: ['GET'])]
-    public function show(Flight $flight, FlightRepository $flights): Response
+    /** The flights of a pilot over time: totals, trends and the advice that comes back most. */
+    #[Route('/carnet', name: 'logbook', methods: ['GET'])]
+    public function logbook(FlightRepository $flights, FlightAdvisor $advisor): Response
     {
-        return $this->render('flight/show.html.twig', ['flight' => $flight, 'session_size' => $flights->countSession($flight)]);
+        $user = $this->getUser();
+        \assert($user instanceof User);
+
+        return $this->renderLogbook($user, $flights, $advisor);
+    }
+
+    #[Route('/carnet/{id<\d+>}', name: 'logbook_pilot', methods: ['GET'])]
+    #[IsGranted(FlightVoter::LOGBOOK, 'pilot')]
+    public function pilotLogbook(#[MapEntity(id: 'id')] User $pilot, FlightRepository $flights, FlightAdvisor $advisor): Response
+    {
+        return $this->renderLogbook($pilot, $flights, $advisor);
+    }
+
+    #[Route('/{id<\d+>}', name: 'show', methods: ['GET'])]
+    public function show(Flight $flight, FlightRepository $flights, FlightAdvisor $advisor): Response
+    {
+        return $this->renderFlight($flight, $flights, $advisor);
+    }
+
+    /** Comment of the pilot or a trainer, at the moment shown in the viewer or on the whole flight. */
+    #[Route('/{id<\d+>}/commentaires', name: 'comment', methods: ['POST'])]
+    #[IsGranted(FlightVoter::COMMENT, 'flight')]
+    public function comment(Flight $flight, Request $request, FlightRepository $flights, FlightAdvisor $advisor, EntityManagerInterface $entityManager, ClockInterface $clock): Response
+    {
+        $user = $this->getUser();
+        \assert($user instanceof User);
+        $comment = new FlightComment($flight, $user, $clock->now());
+        $form = $this->createForm(FlightCommentType::class, $comment, ['action' => $this->generateUrl('app_flight_comment', ['id' => $flight->getId()])]);
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $count = \count($flight->getAnalysis()['series']['time']);
+            if (!$form->get('atMoment')->getData() || null === $comment->getAt() || $comment->getAt() >= $count) {
+                $comment->setAt(null);
+            }
+            $entityManager->persist($comment);
+            $entityManager->flush();
+            $this->addFlash('info', 'Commentaire ajouté.');
+
+            return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId(), '_fragment' => 'commentaires']);
+        }
+
+        return $this->renderFlight($flight, $flights, $advisor, $form);
+    }
+
+    #[Route('/commentaires/{id<\d+>}/supprimer', name: 'comment_delete', methods: ['POST'])]
+    #[IsGranted(FlightVoter::COMMENT_DELETE, 'comment')]
+    public function deleteComment(FlightComment $comment, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $flight = $comment->getFlight();
+        if ($this->isCsrfTokenValid('delete_comment_'.$comment->getId(), $request->request->getString('_token'))) {
+            $entityManager->remove($comment);
+            $entityManager->flush();
+            $this->addFlash('info', 'Commentaire supprimé.');
+        }
+
+        return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId(), '_fragment' => 'commentaires']);
+    }
+
+    private function renderLogbook(User $pilot, FlightRepository $flights, FlightAdvisor $advisor): Response
+    {
+        $logbook = $flights->findLogbook($pilot);
+        $points = [];
+        $tips = [];
+        foreach ($logbook as $flight) {
+            $statistics = $flight->getAnalysis()['statistics'];
+            $points[] = [
+                'url' => $this->generateUrl('app_flight_show', ['id' => $flight->getId()]),
+                'date' => $flight->getDate()->format('d/m/Y'),
+                'plan' => $flight->getFlightPlan() ?? $flight->getOriginalName(),
+                'taskSpeed' => $flight->getTaskSpeed(),
+                'climb' => $statistics['climbAverage'] ?? null,
+                'glideRatio' => $statistics['glideRatio'] ?? null,
+                'circling' => null !== ($statistics['circlingShare'] ?? null) ? round($statistics['circlingShare'] * 100) : null,
+            ];
+            foreach ($advisor->advise($flight->getAnalysis()) as $advice) {
+                if ('tip' === $advice->kind) {
+                    $tips[$advice->title] ??= ['title' => $advice->title, 'step' => $advice->step, 'count' => 0];
+                    ++$tips[$advice->title]['count'];
+                }
+            }
+        }
+        usort($tips, static fn (array $a, array $b): int => $b['count'] <=> $a['count']);
+
+        return $this->render('flight/logbook.html.twig', [
+            'pilot' => $pilot,
+            'own' => $pilot === $this->getUser(),
+            'flights' => $logbook,
+            'points' => $points,
+            'tips' => $tips,
+            'hours' => array_sum(array_map(static fn (Flight $flight): int => $flight->getDuration(), $logbook)),
+            'distance' => array_sum(array_map(static fn (Flight $flight): int => $flight->getDistance(), $logbook)),
+            'tasks' => \count(array_filter($logbook, static fn (Flight $flight): bool => null !== $flight->getTaskSpeed())),
+        ]);
+    }
+
+    /**
+     * @param FormInterface<FlightComment>|null $form the comment form, with its errors
+     */
+    private function renderFlight(Flight $flight, FlightRepository $flights, FlightAdvisor $advisor, ?FormInterface $form = null): Response
+    {
+        if (null === $form && $this->isGranted(FlightVoter::COMMENT, $flight)) {
+            $user = $this->getUser();
+            \assert($user instanceof User);
+            $form = $this->createForm(FlightCommentType::class, new FlightComment($flight, $user, new \DateTimeImmutable()), ['action' => $this->generateUrl('app_flight_comment', ['id' => $flight->getId()])]);
+        }
+
+        return $this->render('flight/show.html.twig', [
+            'flight' => $flight,
+            'session_size' => $flights->countSession($flight),
+            'advice' => $advisor->advise($flight->getAnalysis()),
+            'comment_form' => $form?->createView(),
+        ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
     /** Every flight on the flight plan of this one: ranking, podium and replay of all pilots. */

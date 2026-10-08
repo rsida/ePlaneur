@@ -9,7 +9,8 @@
 {% block description %}Analyse du vol de {{ flight.pilot }}{% if flight.flightPlan %} : {{ flight.flightPlan }}{% endif %}.{% endblock %}
 
 {% block body %}
-    <section class="p-flight t-light">
+    <section class="p-flight t-light" data-controller="flight-viewer"
+             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id}) }}">
         <div class="l-container p-flight__head">
             <div class="l-stack l-stack--sm">
                 <twig:Ui:Link href="{{ path('app_flight_index') }}">Tous les vols</twig:Ui:Link>
@@ -18,10 +19,11 @@
                 <p class="p-flight__meta">
                     {{ [flight.glider, flight.landscape, flight.flightPlan, flight.flownOn ? flight.flownOn|format_date('long', locale: 'fr') : null]|filter(v => v)|join(' · ') }}
                 </p>
-                {% if flight.launch or flight.flightPlan %}
+                {% if flight.launch or flight.flightPlan or flight.owner %}
                     <p class="p-flight__links">
                         {% if flight.launch %}<twig:Ui:Tag variant="soft" title="Lu sur le début de la trace">{{ flight.launch.label }}</twig:Ui:Tag>{% endif %}
                         {% if flight.flightPlan %}<twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">{{ session_size > 1 ? 'Session : ' ~ session_size ~ ' vols sur ce plan de vol' : 'Session de ce plan de vol' }}</twig:Ui:Link>{% endif %}
+                        {% if flight.owner and is_granted('LOGBOOK_VIEW', flight.owner) %}<twig:Ui:Link href="{{ flight.owner == app.user ? path('app_flight_logbook') : path('app_flight_logbook_pilot', {id: flight.owner.id}) }}">{{ flight.owner == app.user ? 'Mon carnet de vol' : 'Carnet de vol du pilote' }}</twig:Ui:Link>{% endif %}
                         {% if session_size > 1 and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare_pick', {id: flight.id}) }}">Comparer avec un autre pilote</twig:Ui:Link>{% endif %}
                     </p>
                 {% endif %}
@@ -57,8 +59,23 @@
             </div>
         </div>
 
-        <div class="p-flight__viewer" data-controller="flight-viewer"
-             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id}) }}">
+        {% if advice is not empty %}
+            <div class="l-container p-flight__advice">
+                <twig:Ui:Heading level="2" size="h4">Conseils</twig:Ui:Heading>
+                <ul class="p-flight__advice-list">
+                    {% for item in advice %}
+                        <li class="p-flight__advice-item p-flight__advice-item--{{ item.kind }}">
+                            <strong class="p-flight__advice-title">{{ item.title }}</strong>
+                            <p>{{ item.text }}</p>
+                            {% if item.step %}<twig:Ui:Tag variant="soft">{{ item.step.title }}</twig:Ui:Tag>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p class="u-note">Repères calculés sur la trace, à discuter avec un formateur : ils signalent où regarder, pas une note.</p>
+            </div>
+        {% endif %}
+
+        <div class="p-flight__viewer">
             <div class="p-flight__map-wrap">
                 <div class="p-flight__map" data-flight-viewer-target="map" role="region" aria-label="Carte du vol"></div>
                 <div class="p-flight__map-tools">
@@ -131,6 +148,52 @@
                 <figure class="p-flight__chart"><figcaption>Vario sur 4 s (m/s)</figcaption><div data-flight-viewer-target="chart" data-series="vario"></div></figure>
                 <figure class="p-flight__chart"><figcaption>Vitesse sol (km/h)</figcaption><div data-flight-viewer-target="chart" data-series="speed"></div></figure>
             </div>
+        </div>
+
+        <div class="l-container p-flight__comments" id="commentaires">
+            <twig:Ui:Heading level="2" size="h3">Commentaires</twig:Ui:Heading>
+            {% if flight.comments is empty %}
+                <p class="u-note">Aucun commentaire pour l’instant.{% if comment_form %} Le pilote et les formateurs peuvent commenter le vol, ou un instant précis : placez le planeur au bon endroit avec la carte, les courbes ou la barre de lecture.{% endif %}</p>
+            {% else %}
+                <ol class="p-flight__comment-list">
+                    {% for comment in flight.comments %}
+                        <li class="p-flight__comment">
+                            <div class="p-flight__comment-head">
+                                <strong>{{ comment.author ? comment.author.displayName : 'Compte supprimé' }}</strong>
+                                <span class="u-note">{{ comment.createdAt|format_datetime('medium', 'short', locale: 'fr') }}</span>
+                                {% if comment.at is not null %}
+                                    <button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ comment.at }}">
+                                        <twig:ux:icon name="crosshair" /> {{ comment.at|flight_clock }}
+                                    </button>
+                                {% endif %}
+                                {% if comment.step %}<twig:Ui:Tag variant="soft">{{ comment.step.title }}</twig:Ui:Tag>{% endif %}
+                            </div>
+                            <p class="p-flight__comment-body">{{ comment.body|nl2br }}</p>
+                            {% if is_granted('FLIGHT_COMMENT_DELETE', comment) %}
+                                <form method="post" action="{{ path('app_flight_comment_delete', {id: comment.id}) }}" onsubmit="return confirm('Supprimer ce commentaire ?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete_comment_' ~ comment.id) }}">
+                                    <button type="submit" class="p-flight__comment-delete">Supprimer</button>
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% endif %}
+
+            {% if comment_form %}
+                {{ form_start(comment_form, {attr: {class: 'c-card c-card--outlined t-paper p-flight__comment-form'}}) }}
+                    <div class="c-card__body c-form">
+                        {{ form_row(comment_form.body) }}
+                        {{ form_row(comment_form.step) }}
+                        <div class="p-flight__comment-moment">
+                            {{ form_row(comment_form.atMoment) }}
+                            <span class="p-flight__comment-time" data-flight-viewer-target="commentTime" title="Instant affiché par la carte et les courbes">—</span>
+                        </div>
+                        {{ form_widget(comment_form.at) }}
+                        <div><twig:Ui:Button type="submit">Commenter</twig:Ui:Button></div>
+                    </div>
+                {{ form_end(comment_form) }}
+            {% endif %}
         </div>
     </section>
 {% endblock %}

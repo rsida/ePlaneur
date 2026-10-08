@@ -567,3 +567,156 @@
     padding: 0;
     list-style: none;
 }
+
+/* Advice and comments (flight page) */
+.p-flight__advice {
+    display: grid;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+}
+
+.p-flight__advice-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (width >= 64em) {
+    .p-flight__advice-list {
+        grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    }
+}
+
+.p-flight__advice-item {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--_advice-color);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    font-size: var(--text-sm);
+}
+
+.p-flight__advice-item p {
+    margin: 0;
+}
+
+.p-flight__advice-item--tip {
+    --_advice-color: var(--color-pilot-a);
+}
+
+.p-flight__advice-item--good {
+    --_advice-color: var(--color-success);
+}
+
+.p-flight__advice-item--info {
+    --_advice-color: var(--color-pilot-b);
+}
+
+.p-flight__advice-title {
+    font-size: var(--text-md);
+}
+
+.p-flight__comments {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-7);
+    max-width: var(--article-column);
+}
+
+.p-flight__comment-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-flight__comment {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+}
+
+.p-flight__comment-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+.p-flight__comment-at {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.p-flight__comment-body {
+    margin: 0;
+}
+
+.p-flight__comment-delete {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.p-flight__comment-form .c-card__body {
+    align-items: stretch;
+}
+
+.p-flight__comment-moment {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.p-flight__comment-time {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Logbook (templates/flight/logbook.html.twig, logbook-chart controller) */
+.p-logbook__tips {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-logbook__charts {
+    display: grid;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+@media (width >= 64em) {
+    .p-logbook__charts {
+        grid-template-columns: 1fr 1fr;
+    }
+}

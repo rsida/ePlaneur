@@ -15,6 +15,7 @@ their real altitude over the relief, with their charts, phases, task legs and a 
 | Viewer | `assets/flight/map.js` (map shared by the viewers), `assets/flight/chart.js` (value label of every chart, formats), `assets/controllers/flight_viewer_controller.js` and `session_viewer_controller.js` (lazy), `templates/flight/`, `assets/styles/pages/flight.css` |
 | Session | `App\Flight\FlightSession` (ranking, podium), `FlightRepository::findSession()` |
 | Comparison | `App\Flight\FlightComparison`, `assets/controllers/compare_viewer_controller.js` |
+| Progression | `App\Flight\Advice\FlightAdvisor` (advice), `App\Training\TrainingStep`, `FlightComment` (comments), `/vols/carnet` and `/vols/carnet/{user}` (logbook, `logbook_chart_controller.js`), `FlightVoter` (`FLIGHT_COMMENT`, `FLIGHT_COMMENT_DELETE`, `LOGBOOK_VIEW`) |
 
 ## Files
 
@@ -170,7 +171,28 @@ rather than in time (`FlightComparison`):
   The colors of the two pilots are the tokens `--color-pilot-a` and `--color-pilot-b`, read by the
   JavaScript.
 
+## Progression
+
+- **Advice** on the flight page (`FlightAdvisor`, from the stored analysis, so it applies to every
+  flight already uploaded), each tied to a step of the training path (`TrainingStep`): too much
+  time circling (over 40 %) or little (under 25 %, task done); weak thermals taken (a minute or more
+  under 1 m/s or under half the average climb); circling without gain (three or more under 50 m);
+  always turning the same way (85 %, four thermals or more); slow glides (20 km/h under the
+  MacCready speed of a 15 m glider, about 95 km/h + 20 km/h per m/s of climb); marks of the Silver
+  badge (1 h, 1,000 m gained from a low point, 50 km from the take-off). No advice on flying too fast:
+  straight flight includes ridge running, and ballasted gliders fly much faster. Kinds: something
+  to work on, something done well, or where the flight stands (badge marks reached in part).
+- **Logbook** (`/vols/carnet`, linked from the flight list and from each flight): the pilot's
+  flights from the oldest, totals, the advice that comes back most, and one chart per value (task
+  speed, average climb, glide ratio, time circling) with the date, flight plan and value of each
+  flight under the cursor. Seen by the pilot and by trainers (`/vols/carnet/{user}`).
+- **Comments** (`FlightComment`): by the pilot of the flight or a trainer (`FLIGHT_REVIEW`), on the
+  whole flight or on the moment shown by the viewer (the form takes it from the map, the charts or
+  the slider), about a step of the training path or not. Every member who sees the flight reads
+  them; clicking the moment of a comment moves the glider there. Their author (or an administrator)
+  deletes them.
+
 ## Next
 
-See the roadmap, steps 7d to 7f: comparison with another flight, progression (advice, logbook,
+See the roadmap, steps 7e and 7f: comparison with another flight, progression (advice, logbook,
 instructor comments), viewer extras, club life.

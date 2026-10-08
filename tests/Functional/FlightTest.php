@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\Entity\Flight;
+use App\Entity\FlightComment;
+use App\Entity\Group;
 use App\Entity\User;
 use App\Repository\GroupRepository;
+use App\Security\Permission;
 use App\Tests\Unit\Flight\FlightSamples;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Field\ChoiceFormField;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
@@ -187,6 +191,110 @@ final class FlightTest extends WebTestCase
         self::assertResponseRedirects('/vols/'.$id);
         $this->client->followRedirect();
         self::assertSelectorTextContains('.c-alert', 'rien à comparer');
+    }
+
+    public function testThePilotAndTrainersCommentAMomentOfTheFlight(): void
+    {
+        $pilot = $this->user('pilote@example.org');
+        $id = $this->uploadSample($pilot);
+
+        $crawler = $this->client->request('GET', '/vols/'.$id);
+        self::assertSelectorExists('.p-flight__advice', 'Advice on the flight');
+        $this->client->submit($crawler->selectButton('Commenter')->form([
+            'flight_comment[body]' => 'Spirale décentrée ici.',
+            'flight_comment[step]' => '5',
+            'flight_comment[at]' => '120',
+        ]));
+        self::assertResponseRedirects('/vols/'.$id.'#commentaires');
+        $crawler = $this->client->followRedirect();
+        self::assertSelectorTextContains('.p-flight__comment', 'Spirale décentrée ici.');
+        self::assertSelectorTextContains('.p-flight__comment-at', '2:00');
+        self::assertSelectorTextContains('.p-flight__comment', 'Étape 5 · Voler à la vitesse MacCready');
+
+        // Another member sees the comment but may not comment
+        $this->client->loginUser($this->user('autre@example.org'));
+        $crawler = $this->client->request('GET', '/vols/'.$id);
+        self::assertSelectorTextContains('.p-flight__comment', 'Spirale décentrée ici.');
+        self::assertSelectorNotExists('.p-flight__comment-form');
+        self::assertSelectorNotExists('.p-flight__comment form');
+        $this->client->request('POST', '/vols/'.$id.'/commentaires', ['flight_comment' => ['body' => 'Non']]);
+        self::assertResponseStatusCodeSame(403);
+
+        // A trainer comments the whole flight: the moment is left out
+        $trainer = $this->user('formateur@example.org');
+        $trainer->addGroup($this->trainers());
+        $this->entityManager->flush();
+        $this->client->loginUser($trainer);
+        $crawler = $this->client->request('GET', '/vols/'.$id);
+        $form = $crawler->selectButton('Commenter')->form(['flight_comment[body]' => 'Bon vol dans l’ensemble.', 'flight_comment[at]' => '60']);
+        $atMoment = $form['flight_comment[atMoment]'];
+        \assert($atMoment instanceof ChoiceFormField);
+        $atMoment->untick();
+        $this->client->submit($form);
+        $this->entityManager->clear();
+        $comments = $this->entityManager->getRepository(FlightComment::class)->findBy([], ['id' => 'ASC']);
+        self::assertSame([120, null], array_map(static fn (FlightComment $comment): ?int => $comment->getAt(), $comments));
+
+        // Only its author deletes a comment
+        $crawler = $this->client->request('GET', '/vols/'.$id);
+        self::assertCount(1, $crawler->filter('.p-flight__comment-delete'));
+        $this->client->submit($crawler->filter('.p-flight__comment-delete')->form());
+        $this->entityManager->clear();
+        self::assertCount(1, $this->entityManager->getRepository(FlightComment::class)->findAll());
+    }
+
+    public function testAnEmptyCommentIsRefused(): void
+    {
+        $id = $this->uploadSample($this->user('pilote@example.org'));
+        $crawler = $this->client->request('GET', '/vols/'.$id);
+        $this->client->submit($crawler->selectButton('Commenter')->form(['flight_comment[body]' => '  ']));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('.c-field__errors', 'Écrivez votre commentaire.');
+    }
+
+    public function testTheLogbookIsSeenByThePilotAndTrainers(): void
+    {
+        $pilot = $this->user('pilote@example.org');
+        $this->uploadSample($pilot);
+
+        $this->client->request('GET', '/vols/carnet');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Mon carnet de vol');
+        self::assertSelectorTextContains('.p-flight__stats', 'Vols 1');
+        self::assertSelectorExists('[data-controller="logbook-chart"]');
+
+        $this->client->loginUser($this->user('autre@example.org'));
+        $this->client->request('GET', '/vols/carnet/'.$pilot->getId());
+        self::assertResponseStatusCodeSame(403);
+
+        $trainer = $this->user('formateur@example.org');
+        $trainer->addGroup($this->trainers());
+        $this->entityManager->flush();
+        $this->client->loginUser($trainer);
+        $this->client->request('GET', '/vols/carnet/'.$pilot->getId());
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'pilote@example.org');
+    }
+
+    /** The sample IGC flight uploaded by a pilot, who stays logged in. */
+    private function uploadSample(User $pilot): int
+    {
+        $file = sys_get_temp_dir().'/sample.igc';
+        file_put_contents($file, FlightSamples::igc(FlightSamples::glideThermalGlide()));
+        $this->client->loginUser($pilot);
+        $crawler = $this->client->request('GET', '/vols');
+        $this->client->request('POST', '/vols', ['_token' => $crawler->filter('input[name="_token"]')->attr('value')], ['trace' => $this->upload($file, 'sample.igc')]);
+
+        return (int) $this->entityManager->getRepository(Flight::class)->findOneBy([], ['id' => 'DESC'])?->getId();
+    }
+
+    private function trainers(): Group
+    {
+        $group = (new Group('trainer', 'Formateur'))->grant(Permission::FlightReview);
+        $this->entityManager->persist($group);
+
+        return $group;
     }
 
     private function user(string $email, string ...$groups): User

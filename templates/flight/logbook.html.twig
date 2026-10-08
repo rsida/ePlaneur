@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ own ? 'Mon carnet de vol' : 'Carnet de vol de ' ~ pilot.displayName }}{% endblock %}
+{% block description %}Les vols Condor de {{ pilot.displayName }} au fil du temps : vitesse, thermiques, finesse, et les points à travailler.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-logbook">
+        <div class="l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_flight_index') }}">Analyse de vols</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Carnet de vol</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ own ? 'Mon carnet de vol' : pilot.displayName }}</twig:Ui:Heading>
+                <p class="u-lead">Les vols {{ own ? 'que vous avez' : 'que ce pilote a' }} déposés, du plus ancien au plus récent : la progression se lit sur les courbes.</p>
+            </div>
+
+            {% if flights is empty %}
+                <p class="u-note">Aucun vol pour l’instant. <a href="{{ path('app_flight_index') }}">Ajoutez une trace</a> pour commencer le carnet.</p>
+            {% else %}
+                <div class="p-flight__stats">
+                    <twig:Ui:Stat label="Vols" value="{{ flights|length }}" unit="{{ tasks }} {{ tasks > 1 ? 'circuits terminés' : 'circuit terminé' }}" />
+                    <twig:Ui:Stat label="Heures de vol" value="{{ hours|flight_duration }}" />
+                    <twig:Ui:Stat label="Distance parcourue" value="{{ distance|flight_distance }}" />
+                </div>
+
+                {% if tips is not empty %}
+                    <section class="l-stack l-stack--sm">
+                        <twig:Ui:Heading level="2" size="h4">Ce qui revient le plus</twig:Ui:Heading>
+                        <ul class="p-logbook__tips">
+                            {% for tip in tips|slice(0, 4) %}
+                                <li><strong>{{ tip.title }}</strong> · {{ tip.count }} {{ tip.count > 1 ? 'vols' : 'vol' }} sur {{ flights|length }}{% if tip.step %} <twig:Ui:Tag variant="soft">{{ tip.step.title }}</twig:Ui:Tag>{% endif %}</li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                {% endif %}
+
+                <div class="p-logbook__charts" data-controller="logbook-chart" data-logbook-chart-points-value="{{ points|json_encode }}">
+                    <figure class="p-flight__chart"><figcaption>Vitesse circuit (km/h)</figcaption><div data-logbook-chart-target="chart" data-series="taskSpeed"></div></figure>
+                    <figure class="p-flight__chart"><figcaption>Vario moyen en thermique (m/s)</figcaption><div data-logbook-chart-target="chart" data-series="climb"></div></figure>
+                    <figure class="p-flight__chart"><figcaption>Finesse en transition</figcaption><div data-logbook-chart-target="chart" data-series="glideRatio"></div></figure>
+                    <figure class="p-flight__chart"><figcaption>Temps en spirale (% du vol)</figcaption><div data-logbook-chart-target="chart" data-series="circling"></div></figure>
+                </div>
+
+                <section class="l-stack l-stack--sm">
+                    <twig:Ui:Heading level="2" size="h3">Vols</twig:Ui:Heading>
+                    {{ include('flight/_list.html.twig', {flights: flights|reverse, caption: 'Vols du carnet'}) }}
+                </section>
+            {% endif %}
+        </div>
+    </twig:Layout:Section>
+{% endblock %}
