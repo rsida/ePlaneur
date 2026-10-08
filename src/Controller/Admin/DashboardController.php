@@ -59,7 +59,7 @@ final class DashboardController extends AbstractDashboardController
         return Crud::new()
             ->setDateFormat('dd/MM/yyyy')
             ->setDateTimeFormat('dd/MM/yyyy HH:mm')
-            ->setTimezone('Europe/Paris')
+            ->setTimezone(date_default_timezone_get())
             ->setPaginatorPageSize(30);
     }
 

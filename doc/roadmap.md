@@ -43,7 +43,7 @@ Do the steps in this order: each one depends on the previous ones.
 | # | Batch | Status |
 |---|---|---|
 | 6a | Editor UX (see the batch below) | Done |
-| 6b | Code | To do |
+| 6b | Code | Done |
 | 6c | CSS | To do |
 
 Why this order: restricted content (committee minutes, 4th-level pages) and the back-office both need
@@ -60,7 +60,7 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
 | Batch | Content |
 |---|---|
 | Editor UX (done 2026-10-07) | Warn that saving a published post updates the site at once; open the tab and highlight the field of a validation error; choose the visibility of files uploaded from the editor; state filter and "À la une" column in the post list; keyboard and ARIA for the block menus and format buttons; focus management of the tablet panels and of the site's mobile menu; draft backup in the browser |
-| Code | One base controller and shared form fields for the post and page editors; one access-label service (done 2026-10-07); N+1 queries on the groups of reserved content; author field only with POST_EDIT; unpublished sections hide their sub-pages; editor preview banner only for unpublished content; slug length and page number validation; `ClockInterface` instead of hard-coded `Europe/Paris`; tests for the category and menu screens |
+| Code (done 2026-10-07) | One base controller and shared form fields for the post and page editors; one access-label service (done 2026-10-07); N+1 queries on the groups of reserved content; author field only with POST_EDIT; unpublished sections hide their sub-pages; editor preview banner only for unpublished content; slug length and page number validation; `ClockInterface` instead of hard-coded `Europe/Paris`; tests for the category and menu screens |
 | CSS | Split `content.css` into one file per component; semantic tokens instead of `--palette-*` and literal sizes; one set of breakpoints; merge `c-news--featured` into `c-featured-post`; self-hosted fonts instead of Google Fonts |
 
 ## Decisions

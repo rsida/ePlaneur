@@ -34,6 +34,7 @@
          media_update: path('admin_editor_media_update', {id: 0})|replace({'/0': '/__id__'}),
      })|json_encode }}"
      data-block-editor-zones-value="{{ zones|json_encode }}"
+     data-block-editor-timezone-value="{{ 'now'|date('e') }}"
      data-block-editor-live-value="{{ state == 'published' ? 'true' : 'false' }}"
      data-action="keydown@window->block-editor#shortcut beforeunload@window->block-editor#confirmLeave">
     {{ form_start(form, {attr: {class: 'ep-editor__form', novalidate: 'novalidate', 'data-block-editor-target': 'form', 'data-action': 'submit->block-editor#beforeSubmit input->block-editor#formChanged change->block-editor#formChanged'}}) }}
@@ -58,7 +59,7 @@
             {% if state == 'draft' %}
                 <span class="badge badge-info">Brouillon</span>
             {% elseif state == 'scheduled' %}
-                <span class="badge badge-warning">Programmé le {{ published_at|format_datetime(pattern: "dd/MM 'à' HH:mm", locale: 'fr', timezone: 'Europe/Paris') }}</span>
+                <span class="badge badge-warning">Programmé le {{ published_at|format_datetime(pattern: "dd/MM 'à' HH:mm", locale: 'fr') }}</span>
             {% else %}
                 <span class="badge badge-success">Publié</span>
             {% endif %}
@@ -182,7 +183,7 @@
                     <p class="ep-editor__path" data-block-editor-target="path">{{ urls.path_prefix }}{{ form.slug.vars.value }}</p>
                     {{ form_row(form.category) }}
                     {{ form_row(form.keywords) }}
-                    {{ form_row(form.author) }}
+                    {% if form.author is defined %}{{ form_row(form.author) }}{% endif %}
                     {{ form_row(form.badge) }}
                     <fieldset class="ep-editor__fieldset">
                         <legend>Couverture et légende</legend>
@@ -242,7 +243,7 @@
                 <label class="ep-choice"><input type="radio" name="ep_publish_when" value="later" data-action="block-editor#publishWhen" {{ state == 'scheduled' ? 'checked' }}> À une date et une heure</label>
             </fieldset>
             <div data-block-editor-target="publishDate" {{ state != 'scheduled' ? 'hidden' }}>
-                {{ form_row(form.publishedAt, {label: 'Date et heure', help: 'France métropolitaine · Europe/Paris'}) }}
+                {{ form_row(form.publishedAt, {label: 'Date et heure', help: 'France métropolitaine · ' ~ 'now'|date('e')}) }}
             </div>
             <div class="ep-dialog__summary" data-block-editor-target="publishVisibility"></div>
             <div class="ep-dialog__actions">

@@ -11,10 +11,12 @@ use EasyCorp\Bundle\EasyAdminBundle\Dto\FieldDto;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\FilterDataDto;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\FilterTrait;
 use EasyCorp\Bundle\EasyAdminBundle\Form\Filter\Type\NullFilterType;
+use Symfony\Component\Clock\Clock;
 
 /**
  * "État" filter of a list of posts or pages, on their publication date: draft (no date), scheduled
  * (date to come) or published (date passed), as shown by admin/field/post_state.html.twig.
+ * Not a service: the time comes from the global clock (Clock::get()), mocked by the tests.
  */
 final class PublicationStateFilter implements FilterInterface
 {
@@ -48,8 +50,8 @@ final class PublicationStateFilter implements FilterInterface
 
         match ($filterDataDto->getValue()) {
             self::DRAFT => $queryBuilder->andWhere($date.' IS NULL'),
-            self::SCHEDULED => $queryBuilder->andWhere($date.' > :'.$parameter)->setParameter($parameter, new \DateTimeImmutable()),
-            self::PUBLISHED => $queryBuilder->andWhere($date.' <= :'.$parameter)->setParameter($parameter, new \DateTimeImmutable()),
+            self::SCHEDULED => $queryBuilder->andWhere($date.' > :'.$parameter)->setParameter($parameter, Clock::get()->now()),
+            self::PUBLISHED => $queryBuilder->andWhere($date.' <= :'.$parameter)->setParameter($parameter, Clock::get()->now()),
             default => null,
         };
     }

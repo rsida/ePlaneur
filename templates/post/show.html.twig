@@ -11,8 +11,13 @@
 
 {% block body %}
     {% if preview %}
+        {# Preview from the editor: what is not on the site yet, the content or only its changes #}
         <p class="p-article__preview" role="status">
-            Aperçu : cet article n’est pas publié{% if post.publishedAt %} (publication prévue le {{ post.publishedAt|format_datetime('long', 'short', locale: 'fr') }}){% endif %}.
+            {%- if post.published -%}
+                Aperçu des modifications non enregistrées : l’article en ligne n’a pas changé.
+            {%- else -%}
+                Aperçu : cet article n’est pas publié{% if post.publishedAt %} (publication prévue le {{ post.publishedAt|format_datetime('long', 'short', locale: 'fr') }}){% endif %}.
+            {%- endif -%}
         </p>
     {% endif %}
 

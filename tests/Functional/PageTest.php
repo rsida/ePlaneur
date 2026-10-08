@@ -25,6 +25,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 final class PageTest extends WebTestCase
 {
+    use CountsQueries;
+
     private KernelBrowser $client;
     private EntityManagerInterface $entityManager;
 
@@ -257,6 +259,43 @@ final class PageTest extends WebTestCase
         $this->entityManager->flush();
         self::assertSame(Visibility::Public, $private->getFile()->getVisibility());
         self::assertCount(0, $private->getFile()->getAllowedGroups());
+    }
+
+    public function testAnUnpublishedSectionHidesItsSubPages(): void
+    {
+        $section = $this->page('Rubrique en préparation', 'en-preparation', published: false);
+        $child = $this->page('Sous-page publiée', 'sous-page', $section);
+        $this->link('Sous-page publiée', page: $child);
+
+        $this->client->request('GET', '/en-preparation/sous-page');
+        self::assertResponseStatusCodeSame(404);
+        $this->client->request('GET', '/');
+        self::assertNotContains('Sous-page publiée', $this->headerLinks(), 'Nor linked in the menu');
+
+        $this->client->loginUser($this->user('comite@example.org', 'committee'));
+        $this->client->request('GET', '/en-preparation/sous-page');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.p-article__preview', 'une rubrique au-dessus d’elle ne l’est pas', 'Page managers get a preview');
+    }
+
+    public function testTheNumberOfQueriesDoesNotGrowWithReservedSubPages(): void
+    {
+        $this->page('Le Club', 'le-club');
+        $count = function (int $pages): int {
+            $club = $this->entityManager->getRepository(Page::class)->findOneBy(['slug' => 'le-club']);
+            $committee = static::getContainer()->get(GroupRepository::class)->findOneByCode('committee');
+            for ($i = 0; $i < $pages; ++$i) {
+                $page = $this->page('Réservée '.$i, uniqid('reservee-'), $club)->setVisibility(Visibility::Groups)->addAllowedGroup($committee);
+                $this->link($page->getTitle(), page: $page)->setVisibility(Visibility::Groups)->addAllowedGroup($committee);
+            }
+            $this->entityManager->flush();
+            $this->entityManager->clear();
+
+            return $this->countReads($this->client, '/le-club');
+        };
+
+        $count(1);
+        self::assertSame($count(2), $count(5), 'The groups of the sub-pages and menu links are loaded at once');
     }
 
     /**

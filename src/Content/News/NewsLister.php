@@ -60,17 +60,15 @@ final readonly class NewsLister
         }
 
         $periods = [];
-        $paris = new \DateTimeZone('Europe/Paris');
         foreach ($this->posts->publishedDates($reader) as $date) {
-            $local = $date->setTimezone($paris);
-            $periods[(int) $local->format('Y')][(int) $local->format('n')] = (int) $local->format('n');
+            $periods[(int) $date->format('Y')][(int) $date->format('n')] = (int) $date->format('n');
         }
 
         return new NewsView(
             $filter,
             $category,
             $featured,
-            iterator_to_array($page, false),
+            $this->posts->loadAllowedGroups($page),
             $total + (null !== $featured ? 1 : 0),
             $pages,
             self::PER_PAGE,

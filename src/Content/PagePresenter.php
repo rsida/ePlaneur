@@ -60,7 +60,7 @@ final readonly class PagePresenter
      */
     private function visible(array $pages): array
     {
-        return array_values(array_filter($pages, fn (Page $page): bool => $page->isPublished()
+        return array_values(array_filter($this->pages->loadAllowedGroups($pages), fn (Page $page): bool => $page->isPublished()
             && $this->authorizationChecker->isGranted(ContentVoter::LIST, $page)));
     }
 }

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Content\EditableContentInterface;
 use App\Repository\PostRepository;
-use App\Security\RestrictedContentInterface;
 use App\Security\Visibility;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Clock\Clock;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -23,7 +24,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: PostRepository::class)]
 #[ORM\Index(name: 'post_published_at_idx', columns: ['published_at'])]
 #[UniqueEntity(fields: ['slug'], message: 'Cette adresse est déjà utilisée par un autre article.')]
-class Post implements RestrictedContentInterface
+class Post implements EditableContentInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -124,6 +125,7 @@ class Post implements RestrictedContentInterface
         private string $title,
         #[ORM\Column(length: 160, unique: true)]
         #[Assert\NotBlank]
+        #[Assert\Length(max: 160)]
         #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', message: 'Lettres minuscules, chiffres et tirets uniquement.')]
         private string $slug,
     ) {
@@ -301,7 +303,7 @@ class Post implements RestrictedContentInterface
 
     public function isPublished(?\DateTimeImmutable $now = null): bool
     {
-        return null !== $this->publishedAt && $this->publishedAt <= ($now ?? new \DateTimeImmutable());
+        return null !== $this->publishedAt && $this->publishedAt <= ($now ?? Clock::get()->now());
     }
 
     public function getCreatedAt(): \DateTimeImmutable

@@ -5,5 +5,5 @@
 {% elseif content.published %}
     <span class="badge badge-success">Publié</span>
 {% else %}
-    <span class="badge badge-warning" title="{{ content.publishedAt|format_datetime('short', 'short', locale: 'fr', timezone: 'Europe/Paris') }}">Programmé</span>
+    <span class="badge badge-warning" title="{{ content.publishedAt|format_datetime('short', 'short', locale: 'fr') }}">Programmé</span>
 {% endif %}

@@ -4,33 +4,25 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Content\Editor\BlockSchema;
-use App\Content\Editor\CanvasRenderer;
+use App\Content\EditableContentInterface;
 use App\Content\PostPresenter;
 use App\Controller\Admin\Filter\PublicationStateFilter;
 use App\Entity\Post;
 use App\Entity\User;
 use App\Form\Admin\PostEditorType;
-use App\Repository\PostRepository;
 use App\Security\Permission;
 use App\Security\Voter\PostVoter;
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
-use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
-use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
-use EasyCorp\Bundle\EasyAdminBundle\Exception\ForbiddenActionException;
-use EasyCorp\Bundle\EasyAdminBundle\Exception\InsufficientEntityPermissionException;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
-use EasyCorp\Bundle\EasyAdminBundle\Security\Permission as EaPermission;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -40,26 +32,16 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * News posts. The list is an EasyAdmin index; creating and editing a post open the block editor
- * (templates/admin/editor/), whose canvas shows the post with the site styles.
+ * (AbstractEditorCrudController), whose canvas shows the post with the site styles.
  *
- * Rights: POST_CREATE writes posts and edits one's own, POST_EDIT edits every post (PostVoter),
- * POST_PUBLISH sets the publication date, POST_DELETE deletes.
+ * Rights: POST_CREATE writes posts and edits one's own, POST_EDIT edits every post (PostVoter) and
+ * chooses their author, POST_PUBLISH sets the publication date, POST_DELETE deletes.
  *
- * @extends AbstractCrudController<Post>
+ * @extends AbstractEditorCrudController<Post>
  */
 #[IsGranted(new Expression('is_granted("POST_CREATE") or is_granted("POST_EDIT")'))]
-final class PostCrudController extends AbstractCrudController
+final class PostCrudController extends AbstractEditorCrudController
 {
-    /** Block zones of a post, in reading order, with their label in the editor. */
-    private const array ZONES = ['body' => 'Corps (lecture)', 'aside' => 'Barre latérale', 'outro' => 'Bande finale · Pleine largeur'];
-
-    public function __construct(
-        private readonly BlockSchema $schema,
-        private readonly CanvasRenderer $canvas,
-        private readonly EntityManagerInterface $entityManager,
-    ) {
-    }
-
     public static function getEntityFqcn(): string
     {
         return Post::class;
@@ -121,144 +103,81 @@ final class PostCrudController extends AbstractCrudController
         yield ChoiceField::new('visibility', 'Visibilité')->renderAsBadges(VisibilityFields::BADGES);
     }
 
-    /** The editor replaces EasyAdmin's form pages. */
-    public function new(AdminContext $context): Response
-    {
-        if (!$this->isGranted(EaPermission::EA_EXECUTE_ACTION, ['action' => Action::NEW, 'entity' => null, 'entityFqcn' => Post::class])) {
-            throw new ForbiddenActionException($context);
-        }
-
-        return $this->editor($context->getRequest(), $this->createEntity(Post::class));
-    }
-
-    public function edit(AdminContext $context): Response
-    {
-        $entity = $context->getEntity();
-        if (!$this->isGranted(EaPermission::EA_EXECUTE_ACTION, ['action' => Action::EDIT, 'entity' => $entity, 'entityFqcn' => Post::class])) {
-            throw new ForbiddenActionException($context);
-        }
-        if (!$entity->isAccessible()) {
-            throw new InsufficientEntityPermissionException($context);
-        }
-        $post = $entity->getInstance();
-        \assert($post instanceof Post);
-
-        return $this->editor($context->getRequest(), $post);
-    }
-
     /** Empty article layout loaded in the editor iframe; the editor fills it with render(). */
     #[AdminRoute('/canvas', name: 'canvas', options: ['methods' => ['GET']])]
     public function canvas(): Response
     {
-        return $this->render('admin/editor/canvas_post.html.twig', ['zones' => self::ZONES]);
+        return $this->render('admin/editor/canvas_post.html.twig', ['zones' => $this->zones()]);
     }
 
-    /**
-     * Header and blocks of the canvas for the current state of the editor (form fields and zones
-     * sent as JSON). Nothing is saved.
-     */
     #[AdminRoute('/render', name: 'render', options: ['methods' => ['POST']])]
-    public function renderCanvas(Request $request, PostRepository $posts): JsonResponse
+    public function renderCanvas(Request $request): JsonResponse
     {
-        $post = $this->editedPost($request, $posts);
-        $this->createEditorForm($post)->submit($this->formValues($request), false);
-        $rendered = $this->canvas->render(CanvasRenderer::decodeZones($request->request->getString('zones', '{}'), array_keys(self::ZONES)));
-
-        return new JsonResponse([
-            ...$rendered,
-            'header' => $this->renderView('post/_header.html.twig', ['post' => $post, 'readingMinutes' => PostPresenter::readingMinutes($post), 'editing' => true]),
-        ]);
+        return $this->renderEditorCanvas($request);
     }
 
     /** The article page as readers would see it with the unsaved changes. */
     #[AdminRoute('/preview', name: 'preview', options: ['methods' => ['POST']])]
-    public function preview(Request $request, PostRepository $posts, PostPresenter $presenter): Response
+    public function preview(Request $request, PostPresenter $presenter): Response
     {
-        $post = $this->editedPost($request, $posts);
-        $this->createEditorForm($post)->handleRequest($request);
+        $post = $this->editedContent($request, withZones: true);
 
         return $this->render('post/show.html.twig', ['article' => $presenter->present($post), 'preview' => true]);
     }
 
-    private function editor(Request $request, Post $post): Response
+    protected function kind(): string
     {
-        $wasPublished = $post->getPublishedAt();
-        $form = $this->createEditorForm($post);
-        $form->handleRequest($request);
+        return 'post';
+    }
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $post->setUpdatedAt(new \DateTimeImmutable());
-            if (null === $post->getId()) {
-                $this->entityManager->persist($post);
-            }
-            $this->entityManager->flush();
-            $this->addFlash('success', self::savedMessage($post, $wasPublished));
+    protected function zones(): array
+    {
+        return PostEditorType::ZONES;
+    }
 
-            return $this->redirectToRoute('admin_post_edit', ['entityId' => $post->getId()]);
-        }
+    protected function createEditorForm(EditableContentInterface $content): FormInterface
+    {
+        return $this->createForm(PostEditorType::class, $content, [
+            'can_publish' => $this->canPublish(),
+            'can_choose_author' => $this->isGranted(Permission::PostEdit->value),
+        ]);
+    }
 
-        return $this->render('admin/editor/editor.html.twig', [
-            'form' => $form,
-            'kind' => 'post',
-            'entity' => $post,
-            'zones' => self::ZONES,
-            'schema' => $this->schema->describe('post'),
-            'can_publish' => $this->isGranted(Permission::PostPublish->value),
-            'urls' => [
-                'index' => $this->generateUrl('admin_post_index'),
-                'canvas' => $this->generateUrl('admin_post_canvas'),
-                'render' => $this->generateUrl('admin_post_render', ['id' => $post->getId()]),
-                'preview' => $this->generateUrl('admin_post_preview', ['id' => $post->getId()]),
-                'path_prefix' => '/actualites/',
-            ],
-        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    protected function canPublish(): bool
+    {
+        return $this->isGranted(Permission::PostPublish->value);
+    }
+
+    protected function denyWriteUnlessGranted(EditableContentInterface $content): void
+    {
+        $this->denyAccessUnlessGranted(PostVoter::WRITE, $content);
+    }
+
+    protected function savedMessages(): array
+    {
+        return [
+            'saved' => 'Article enregistré.',
+            'unpublished' => 'Article enregistré et dépublié : il redevient un brouillon.',
+            'published' => 'Article publié.',
+            'scheduled' => 'Article programmé : il paraîtra le %s.',
+        ];
     }
 
     /**
-     * @return FormInterface<Post>
+     * @param Post $content
      */
-    private function createEditorForm(Post $post): FormInterface
+    protected function canvasHeader(EditableContentInterface $content): string
     {
-        return $this->createForm(PostEditorType::class, $post, ['can_publish' => $this->isGranted(Permission::PostPublish->value)]);
+        return $this->renderView('post/_header.html.twig', ['post' => $content, 'readingMinutes' => PostPresenter::readingMinutes($content), 'editing' => true]);
     }
 
-    private function editedPost(Request $request, PostRepository $posts): Post
+    protected function canvasUrl(EditableContentInterface $content): string
     {
-        $id = $request->query->getInt('id');
-        $post = 0 !== $id ? $posts->find($id) : $this->createEntity(Post::class);
-        if (null === $post) {
-            throw $this->createNotFoundException();
-        }
-        $this->denyAccessUnlessGranted(PostVoter::WRITE, $post);
-
-        return $post;
+        return $this->generateUrl('admin_post_canvas');
     }
 
-    /**
-     * Form values posted by the editor, without the block zones (rendered from `zones`).
-     *
-     * @return array<string, mixed>
-     */
-    private function formValues(Request $request): array
+    protected function pathPrefix(EditableContentInterface $content): string
     {
-        $values = $request->request->all('post_editor');
-        unset($values['body'], $values['aside'], $values['outro'], $values['_token']);
-
-        return $values;
-    }
-
-    private static function savedMessage(Post $post, ?\DateTimeImmutable $wasPublishedAt): string
-    {
-        $publishedAt = $post->getPublishedAt();
-        if ($publishedAt == $wasPublishedAt) {
-            return 'Article enregistré.';
-        }
-        if (null === $publishedAt) {
-            return 'Article enregistré et dépublié : il redevient un brouillon.';
-        }
-
-        return $post->isPublished()
-            ? 'Article publié.'
-            : \sprintf('Article programmé : il paraîtra le %s.', $publishedAt->setTimezone(new \DateTimeZone('Europe/Paris'))->format('d/m/Y à H:i'));
+        return '/actualites/';
     }
 }

@@ -18,6 +18,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
@@ -71,9 +72,14 @@ final class DocumentCrudController extends AbstractCrudController
         yield from VisibilityFields::create();
     }
 
+    public function __construct(
+        private readonly ClockInterface $clock,
+    ) {
+    }
+
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        $entityInstance->setUpdatedAt(new \DateTimeImmutable());
+        $entityInstance->setUpdatedAt($this->clock->now());
         parent::updateEntity($entityManager, $entityInstance);
     }
 }

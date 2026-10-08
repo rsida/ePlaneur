@@ -14,7 +14,16 @@
 
 {% block body %}
     {% if preview %}
-        <p class="p-article__preview" role="status">Aperçu : cette page n’est pas publiée.</p>
+        {# Preview from the editor: what is not on the site yet, the content or only its changes #}
+        <p class="p-article__preview" role="status">
+            {%- if page.online -%}
+                Aperçu des modifications non enregistrées : la page en ligne n’a pas changé.
+            {%- elseif page.published -%}
+                Aperçu : cette page est publiée, mais une rubrique au-dessus d’elle ne l’est pas.
+            {%- else -%}
+                Aperçu : cette page n’est pas publiée.
+            {%- endif -%}
+        </p>
     {% endif %}
 
     {% set crumbs = [{label: 'Accueil', href: path('app_home')}] %}

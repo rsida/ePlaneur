@@ -3,7 +3,7 @@ twig:
     form_themes: ['form/theme.html.twig']
     # Dates are shown in metropolitan France time (see CLAUDE.md), whatever the server timezone
     date:
-        timezone: Europe/Paris
+        timezone: '%app.timezone%'
 
 when@test:
     twig:

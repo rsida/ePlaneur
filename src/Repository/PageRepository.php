@@ -13,6 +13,8 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class PageRepository extends ServiceEntityRepository
 {
+    use LoadsAllowedGroups;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Page::class);

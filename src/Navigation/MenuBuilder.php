@@ -95,15 +95,16 @@ final class MenuBuilder implements ResetInterface
     }
 
     /**
-     * The link's own visibility, then its page: published and listed for the reader (an announced
-     * page keeps its link with an access tag, a private one takes it away).
+     * The link's own visibility, then its page: online (published, under published sections) and
+     * listed for the reader (an announced page keeps its link with an access tag, a private one
+     * takes it away).
      */
     private function isVisible(MenuItem $item): bool
     {
         $page = $item->getPage();
 
         return $this->authorizationChecker->isGranted(ContentVoter::VIEW, $item)
-            && (null === $page || ($page->isPublished() && $this->authorizationChecker->isGranted(ContentVoter::LIST, $page)));
+            && (null === $page || ($page->isOnline() && $this->authorizationChecker->isGranted(ContentVoter::LIST, $page)));
     }
 
     /**

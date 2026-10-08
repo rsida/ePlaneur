@@ -23,7 +23,8 @@ final class PageController extends AbstractController
     public function show(string $path, PageRepository $pages, PagePresenter $presenter, RestrictedContentResponder $restricted): Response
     {
         $page = $pages->findOneByPath($path);
-        $preview = null !== $page && !$page->isPublished();
+        // Unpublished, or under an unpublished section: only the editors see it, as a preview
+        $preview = null !== $page && !$page->isOnline();
         if (null === $page || ($preview && !$this->isGranted(Permission::PageManage->value))) {
             throw $this->createNotFoundException('Page introuvable.');
         }

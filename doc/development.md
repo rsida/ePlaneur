@@ -28,6 +28,12 @@ The PHP container runs as your host user, so generated files belong to you.
 
 The Symfony web debug toolbar and the profiler (`/_profiler`) are enabled in dev.
 
+Time: the club lives in metropolitan France time. The parameter `app.timezone` (`Europe/Paris`,
+`config/services.yaml`) is PHP's default timezone (`Kernel::boot()`) and Twig's: dates are stored
+and shown in it, so templates and forms need no explicit timezone. Services read the current time
+from `ClockInterface` (`symfony/clock`), entities and static code from `Clock::get()`, so tests can
+freeze it (`ClockSensitiveTrait`).
+
 ## Database
 
 | Command | Description |

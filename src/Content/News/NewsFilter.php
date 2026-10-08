@@ -23,7 +23,7 @@ final readonly class NewsFilter
         #[SerializedName('mois')]
         #[Assert\Range(min: 1, max: 12)]
         public ?int $month = null,
-        #[Assert\Positive]
+        #[Assert\Range(min: 1, max: 1000)]
         public int $page = 1,
     ) {
     }

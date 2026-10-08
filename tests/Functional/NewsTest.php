@@ -19,6 +19,8 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class NewsTest extends WebTestCase
 {
+    use CountsQueries;
+
     private KernelBrowser $client;
     private EntityManagerInterface $entityManager;
 
@@ -75,7 +77,7 @@ final class NewsTest extends WebTestCase
 
     public function testUnknownFiltersAndPagesAreNotFound(): void
     {
-        foreach (['/actualites?categorie=inconnue', '/actualites?annee=abc', '/actualites?mois=13&annee=2025', '/actualites?page=2'] as $url) {
+        foreach (['/actualites?categorie=inconnue', '/actualites?annee=abc', '/actualites?mois=13&annee=2025', '/actualites?page=2', '/actualites?page=0', '/actualites?page=5000', '/actualites?page=99999999999999999999'] as $url) {
             $this->client->request('GET', $url);
             self::assertResponseStatusCodeSame(404, $url);
         }
@@ -144,6 +146,25 @@ final class NewsTest extends WebTestCase
         self::assertSelectorTextContains('#actualites .c-featured-post', 'Article a-la-une');
         self::assertSame(['Article plus-recent', 'Article recent'], $crawler->filter('#actualites .c-post-card__title')->each(static fn ($node): string => $node->text()));
         self::assertSelectorExists('#actualites a[href="/actualites"]');
+    }
+
+    public function testTheNumberOfQueriesDoesNotGrowWithReservedPosts(): void
+    {
+        $count = function (int $posts): int {
+            $committee = static::getContainer()->get(GroupRepository::class)->findOneByCode('committee');
+            for ($i = 0; $i < $posts; ++$i) {
+                $this->post(uniqid('reserve-'), '2025-09-'.str_pad((string) ($i + 1), 2, '0', \STR_PAD_LEFT).' 20:00')
+                    ->setVisibility(Visibility::Groups)->addAllowedGroup($committee);
+            }
+            $this->entityManager->flush();
+            $this->entityManager->clear();
+
+            return $this->countReads($this->client, '/actualites');
+        };
+
+        $count(1);
+        $few = $count(2);
+        self::assertSame($few, $count(6), 'The groups of the posts are loaded at once');
     }
 
     private function category(string $name, string $slug): Category

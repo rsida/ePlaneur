@@ -51,7 +51,12 @@ Figma frames "Actualités · …" and "Accueil · Ça bouge au club · …" (pag
 
 - Pages are served by `PageController` (`/{path}`, lowest route priority). A root page cannot take a
   slug used by the application (`Page::RESERVED_SLUGS`); a page with children cannot be deleted
-  (`PageDeletionGuard`). Every ancestor of a page must be visible too.
+  (`PageDeletionGuard`). Every ancestor of a page must be visible too, and published: a page under
+  an unpublished section is not online (`Page::isOnline()`), so it answers "not found" and leaves
+  the menus; page managers get a preview.
+- Lists of reserved content load the allowed groups of all their items in one query
+  (`LoadsAllowedGroups::loadAllowedGroups()` on the post and page repositories; menu links and their
+  pages are fetched with their groups), instead of one query per item when access is checked.
 - **Reserved content, announced or private**: every post, page, document and file has its access
   ("Accès" in the editor and the back-office, see [accounts](accounts.md#access-to-content)): who
   may open it ("Ouvert à": everyone, logged-in users, chosen groups) and what the others get ("Pour
@@ -61,7 +66,8 @@ Figma frames "Actualités · …" and "Accueil · Ça bouge au club · …" (pag
   menu links, document lists) and its address answers "not found" (404). Administrators see
   everything.
 - `MenuBuilder` (Twig `menu('main')`, `menu('footer')`) builds the links the reader may see. A link
-  follows its page: hidden when the page is unpublished or private to the reader, shown with an
+  follows its page: hidden when the page is not online (unpublished, or under an unpublished
+  section) or private to the reader, shown with an
   access tag when it is announced. Links to other addresses have their own visibility. A heading whose links are all hidden disappears; the
   current section is `active`, the current link `current`.
 - Header: a first-level link with children opens a mega-menu (one column per second-level link,

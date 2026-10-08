@@ -182,7 +182,7 @@ final class EditorDataController extends AbstractController
             'width' => $media->getWidth(),
             'height' => $media->getHeight(),
             'pages' => $media->getPages(),
-            'uploadedAt' => $media->getUploadedAt()->setTimezone(new \DateTimeZone('Europe/Paris'))->format('d/m/Y'),
+            'uploadedAt' => $media->getUploadedAt()->format('d/m/Y'),
             'alt' => $media->getAlt(),
             'credit' => $media->getCredit(),
             'visibility' => $media->getVisibility()->label(),

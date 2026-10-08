@@ -119,13 +119,20 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
         self::assertSelectorTextSame('[data-block-editor-target="save"]', 'Mettre à jour', 'Saving a published post changes the site at once');
         self::assertSelectorTextContains('.ep-editor__status', 'En ligne');
 
+        $preview = $crawler->filter('form[name="post_editor"]')->form();
+        $this->client->request('POST', '/admin/post/preview?id='.$published->getId(), $preview->getPhpValues());
+        self::assertSelectorTextContains('.p-article__preview', 'l’article en ligne n’a pas changé', 'Not "not published"');
+        $crawler = $this->client->request('GET', $this->generateEditFormUrl($published->getId()));
+
         $form = $crawler->filter('form[name="post_editor"]')->form();
         $values = $form->getPhpValues();
         $values['post_editor']['title'] = '';
+        $values['post_editor']['slug'] = str_repeat('a', 161);
         $crawler = $this->client->request('POST', $form->getUri(), $values);
 
         self::assertResponseStatusCodeSame(422);
-        $link = $crawler->filter('.ep-editor__errors a');
+        self::assertSelectorTextContains('.ep-editor__errors', 'Adresse : Cette chaîne est trop longue.');
+        $link = $crawler->filter('.ep-editor__errors a')->first();
         self::assertSame('#post_editor_title', $link->attr('href'));
         self::assertSame('block-editor#revealField', $link->attr('data-action'));
         self::assertCount(1, $crawler->filter('#post_editor_title'));
@@ -193,7 +200,7 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
         self::assertSame('canevas', $this->entityManager->getRepository(Post::class)->find($post->getId())?->getSlug());
     }
 
-    public function testAuthorsOnlyEditTheirOwnPostsAndCannotPublish(): void
+    public function testAuthorsOnlyEditTheirOwnPostsAndCannotPublishOrReassign(): void
     {
         $writers = (new Group('writers', 'Rédaction'))->setPermissions([Permission::AdminAccess, Permission::PostCreate]);
         $this->entityManager->persist($writers);
@@ -207,6 +214,7 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
         $crawler = $this->client->request('GET', $this->generateEditFormUrl($own->getId()));
         self::assertResponseIsSuccessful();
         self::assertCount(0, $crawler->filter('[name="post_editor[publishedAt]"]'), 'POST_PUBLISH is needed to publish');
+        self::assertCount(0, $crawler->filter('[name="post_editor[author]"]'), 'POST_EDIT is needed to give a post to someone else');
 
         $this->client->request('GET', $this->generateEditFormUrl($other->getId()));
         self::assertResponseStatusCodeSame(403);

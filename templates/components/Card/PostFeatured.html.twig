@@ -12,7 +12,7 @@
             <img class="c-featured-post__media" src="{{ image_url(post.cover, 'wide') }}" alt="" loading="lazy">
         {% else %}
             <p class="c-eyebrow c-featured-post__poster-label">{{ post.kicker ?: 'Les actualités du club ePlaneur' }}</p>
-            {% if post.publishedAt %}<p class="c-featured-post__year">{{ post.publishedAt|date('Y', 'Europe/Paris') }}</p>{% endif %}
+            {% if post.publishedAt %}<p class="c-featured-post__year">{{ post.publishedAt|date('Y') }}</p>{% endif %}
         {% endif %}
     </div>
     <div class="c-featured-post__body t-primary">
@@ -24,7 +24,7 @@
             <p class="c-featured-post__excerpt">{{ post.excerpt|u.truncate(220, '…', false) }}</p>
         {% endif %}
         <p class="c-featured-post__meta">
-            {% if post.publishedAt %}<time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|format_date('long', locale: 'fr', timezone: 'Europe/Paris') }}</time>{% endif %}
+            {% if post.publishedAt %}<time datetime="{{ post.publishedAt|date('c') }}">{{ post.publishedAt|format_date('long', locale: 'fr') }}</time>{% endif %}
             {% if readingMinutes and not locked %}<span>Lecture estimée : {{ readingMinutes }} min</span>{% endif %}
         </p>
         <span class="c-featured-post__more" aria-hidden="true">{{ locked ? 'Lecture réservée' : 'Lire l’article' }} <twig:ux:icon name="arrow-right" /></span>

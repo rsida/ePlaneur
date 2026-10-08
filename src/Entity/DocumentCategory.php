@@ -31,6 +31,7 @@ class DocumentCategory
         private string $name,
         #[ORM\Column(length: 120, unique: true)]
         #[Assert\NotBlank]
+        #[Assert\Length(max: 120)]
         #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/')]
         private string $slug,
     ) {

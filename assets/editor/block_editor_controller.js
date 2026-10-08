@@ -28,7 +28,7 @@ export default class extends Controller {
         'errors', 'backup', 'backupDate',
     ];
 
-    static values = { kind: String, formName: String, schema: Object, urls: Object, zones: Object, live: Boolean };
+    static values = { kind: String, formName: String, schema: Object, urls: Object, zones: Object, live: Boolean, timezone: String };
 
     connect() {
         this.types = new Map(this.schemaValue.types.map((type) => [type.type, type]));
@@ -242,7 +242,7 @@ export default class extends Controller {
         const backup = this.readBackup();
         // A refused save already shows the submitted values
         if (!this.hasBackupTarget || !backup?.blocks || this.hasErrorsTarget) return;
-        this.backupDateTarget.textContent = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Paris' }).format(new Date(backup.savedAt));
+        this.backupDateTarget.textContent = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short', timeZone: this.timezoneValue }).format(new Date(backup.savedAt));
         this.backupTarget.hidden = false;
     }
 
@@ -804,7 +804,7 @@ export default class extends Controller {
         const input = this.field('publishedAt');
         const later = this.publishDialogTarget.querySelector('input[name="ep_publish_when"]:checked')?.value === 'later';
         if (!later) {
-            input.value = parisNow();
+            input.value = localNow(this.timezoneValue);
         } else if (input.value === '') {
             input.focus();
             input.setCustomValidity('Choisissez la date et l’heure de publication.');
@@ -853,10 +853,10 @@ export default class extends Controller {
     }
 }
 
-/** Current date and time in metropolitan France, as a datetime-local value ("2026-10-12T20:30"). */
-function parisNow() {
+/** Current date and time in the club's time zone, as a datetime-local value ("2026-10-12T20:30"). */
+function localNow(timeZone) {
     const parts = Object.fromEntries(new Intl.DateTimeFormat('fr-FR', {
-        timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+        timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
     }).formatToParts(new Date()).map((part) => [part.type, part.value]));
 
     return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;

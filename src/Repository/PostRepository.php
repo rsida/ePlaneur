@@ -12,14 +12,19 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Clock\ClockInterface;
 
 /**
  * @extends ServiceEntityRepository<Post>
  */
 class PostRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    use LoadsAllowedGroups;
+
+    public function __construct(
+        ManagerRegistry $registry,
+        private readonly ClockInterface $clock,
+    ) {
         parent::__construct($registry, Post::class);
     }
 
@@ -38,7 +43,7 @@ class PostRepository extends ServiceEntityRepository
             ->andWhere('p.id != :id')
             ->andWhere('p.publishedAt IS NOT NULL AND p.publishedAt <= :now')
             ->setParameter('id', $post->getId())
-            ->setParameter('now', new \DateTimeImmutable())
+            ->setParameter('now', $this->clock->now())
             ->setMaxResults($limit);
 
         if (null !== $post->getCategory()) {
@@ -79,7 +84,7 @@ class PostRepository extends ServiceEntityRepository
         }
 
         /* @var list<Post> */
-        return $qb->getQuery()->getResult();
+        return $this->loadAllowedGroups($qb->getQuery()->getResult());
     }
 
     /**
@@ -95,12 +100,10 @@ class PostRepository extends ServiceEntityRepository
             $qb->andWhere('p.category = :category')->setParameter('category', $category);
         }
         if (null !== $year) {
-            $paris = new \DateTimeZone('Europe/Paris');
-            $start = new \DateTimeImmutable(\sprintf('%d-%02d-01 00:00', $year, $month ?? 1), $paris);
-            $end = $start->modify(null !== $month ? '+1 month' : '+1 year');
+            $start = new \DateTimeImmutable(\sprintf('%d-%02d-01 00:00', $year, $month ?? 1));
             $qb->andWhere('p.publishedAt >= :start AND p.publishedAt < :end')
-                ->setParameter('start', $start->setTimezone(new \DateTimeZone(date_default_timezone_get())))
-                ->setParameter('end', $end->setTimezone(new \DateTimeZone(date_default_timezone_get())));
+                ->setParameter('start', $start)
+                ->setParameter('end', $start->modify(null !== $month ? '+1 month' : '+1 year'));
         }
         if (null !== $exclude) {
             $qb->andWhere('p != :exclude')->setParameter('exclude', $exclude);
@@ -158,7 +161,7 @@ class PostRepository extends ServiceEntityRepository
             ->leftJoin('p.cover', 'cover')
             ->leftJoin('p.category', 'category')
             ->andWhere('p.publishedAt IS NOT NULL AND p.publishedAt <= :now')
-            ->setParameter('now', new \DateTimeImmutable())
+            ->setParameter('now', $this->clock->now())
             ->orderBy('p.publishedAt', 'DESC')
             ->addOrderBy('p.id', 'DESC');
 

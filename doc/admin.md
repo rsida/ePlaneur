@@ -34,8 +34,11 @@ Pictures are displayed through resized versions (see [content](content.md#resize
 ## Block editor
 
 Posts and pages are edited in a WordPress-like editor (Figma "Admin" page, frames `71:3` to
-`71:2740`) that replaces EasyAdmin's form pages (`new()` and `edit()` of `PostCrudController` and
-`PageCrudController`):
+`71:2740`) that replaces EasyAdmin's form pages. `PostCrudController` and `PageCrudController`
+extend `AbstractEditorCrudController` (`new()`, `edit()`, saving, canvas rendering, preview); their
+forms share `EditorFields` (header texts, slug, catchphrase, publication date, block zones) and
+`AccessFields`. The author of a post is only chosen with `POST_EDIT`. The preview banner says
+whether the content is not published yet or only shows unsaved changes:
 
 | Part | What it does |
 |---|---|

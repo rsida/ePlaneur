@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Content\EditableContentInterface;
 use App\Repository\PageRepository;
-use App\Security\RestrictedContentInterface;
 use App\Security\Visibility;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Clock\Clock;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -22,7 +23,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 #[ORM\Entity(repositoryClass: PageRepository::class)]
 #[ORM\UniqueConstraint(name: 'page_parent_slug', columns: ['parent_id', 'slug'])]
 #[UniqueEntity(fields: ['parent', 'slug'], message: 'Une page porte déjà cette adresse à cet endroit.', ignoreNull: false)]
-class Page implements RestrictedContentInterface
+class Page implements EditableContentInterface
 {
     /** Maximum depth of the tree (the current site uses 3 levels, 4 for committee pages). */
     public const int MAX_DEPTH = 4;
@@ -111,6 +112,7 @@ class Page implements RestrictedContentInterface
         /** URL segment, unique among siblings */
         #[ORM\Column(length: 120)]
         #[Assert\NotBlank]
+        #[Assert\Length(max: 120)]
         #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', message: 'Lettres minuscules, chiffres et tirets uniquement.')]
         private string $slug,
     ) {
@@ -308,7 +310,15 @@ class Page implements RestrictedContentInterface
 
     public function isPublished(?\DateTimeImmutable $now = null): bool
     {
-        return null !== $this->publishedAt && $this->publishedAt <= ($now ?? new \DateTimeImmutable());
+        return null !== $this->publishedAt && $this->publishedAt <= ($now ?? Clock::get()->now());
+    }
+
+    /** Published, and so are all its ancestors: an unpublished section hides its sub-pages. */
+    public function isOnline(?\DateTimeImmutable $now = null): bool
+    {
+        $now ??= Clock::get()->now();
+
+        return array_all($this->getLineage(), static fn (self $page): bool => $page->isPublished($now));
     }
 
     public function getUpdatedAt(): \DateTimeImmutable

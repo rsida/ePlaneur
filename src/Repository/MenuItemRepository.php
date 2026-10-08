@@ -29,8 +29,11 @@ class MenuItemRepository extends ServiceEntityRepository
     {
         /* @var list<MenuItem> */
         return $this->createQueryBuilder('m')
-            ->addSelect('page')
+            // Groups of the links and of their pages: menus check access to every link
+            ->addSelect('page', 'itemGroup', 'pageGroup')
             ->leftJoin('m.page', 'page')
+            ->leftJoin('m.allowedGroups', 'itemGroup')
+            ->leftJoin('page.allowedGroups', 'pageGroup')
             ->andWhere('m.location = :location')
             ->setParameter('location', $location)
             ->orderBy('m.position', 'ASC')
