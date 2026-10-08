@@ -1,0 +1,79 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Flight;
+
+use App\Entity\Flight;
+use App\Entity\User;
+use App\Flight\Analysis\FlightAnalyzer;
+use App\Flight\Reader\InvalidTrackException;
+use App\Flight\Reader\TrackReader;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Filesystem\Filesystem;
+
+/**
+ * Adds a flight track to the flight viewer: reads it, analyses it and keeps the file (to analyse it
+ * again when the analysis improves).
+ */
+final readonly class FlightImporter
+{
+    public function __construct(
+        private TrackReader $reader,
+        private FlightAnalyzer $analyzer,
+        private EntityManagerInterface $entityManager,
+        private ClockInterface $clock,
+        #[Autowire('%app.flights_dir%')]
+        private string $directory,
+    ) {
+    }
+
+    /**
+     * @throws InvalidTrackException when the file is not a readable flight track
+     */
+    public function import(string $path, string $originalName, ?User $owner): Flight
+    {
+        $content = (string) file_get_contents($path);
+        $analysis = $this->analyzer->analyze($this->reader->read($content));
+
+        $extension = str_starts_with($content, 'FTR') ? 'ftr' : 'igc';
+        $fileName = bin2hex(random_bytes(16)).'.'.$extension;
+        $filesystem = new Filesystem();
+        $filesystem->mkdir($this->directory);
+        $filesystem->copy($path, $this->directory.'/'.$fileName);
+
+        $flight = new Flight($analysis, $fileName, $originalName, $owner, $this->clock->now());
+        $this->entityManager->persist($flight);
+        $this->entityManager->flush();
+
+        return $flight;
+    }
+
+    /**
+     * Reads the stored file again with the current analysis.
+     *
+     * @throws InvalidTrackException when the file is missing or can no longer be read
+     */
+    public function reanalyse(Flight $flight): void
+    {
+        $path = $this->pathOf($flight);
+        if (!is_file($path)) {
+            throw new InvalidTrackException(\sprintf('The file %s is missing.', $path));
+        }
+        $flight->setAnalysis($this->analyzer->analyze($this->reader->read((string) file_get_contents($path))));
+    }
+
+    public function pathOf(Flight $flight): string
+    {
+        return $this->directory.'/'.$flight->getFileName();
+    }
+
+    public function delete(Flight $flight): void
+    {
+        (new Filesystem())->remove($this->pathOf($flight));
+        $this->entityManager->remove($flight);
+        $this->entityManager->flush();
+    }
+}

@@ -1,0 +1,396 @@
+/*
+ * Flight viewer: list of flights (templates/flight/index.html.twig) and flight page
+ * (templates/flight/show.html.twig, flight-viewer controller).
+ */
+
+.p-flights__upload {
+    max-width: var(--article-column);
+}
+
+.p-flight {
+    --flight-map-height: min(70vh, 40rem);
+    padding-block: var(--space-7) var(--section-padding);
+    background-color: var(--surface);
+}
+
+.p-flight__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.p-flight__cn {
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.p-flight__meta {
+    color: var(--on-surface-muted);
+}
+
+.p-flight__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: var(--space-3);
+    margin-block: var(--space-6);
+}
+
+.p-flight__stats .c-stat {
+    background-color: var(--color-paper);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+}
+
+.p-flight__stats .c-stat__value {
+    font-size: var(--text-h4);
+}
+
+/* Map, side panel, replay bar and charts */
+.p-flight__viewer {
+    display: grid;
+    grid-template-areas: 'map' 'replay' 'side' 'charts';
+    gap: var(--space-4);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    max-width: calc(var(--container-max) + 2 * var(--gutter));
+}
+
+@media (width >= 64em) {
+    .p-flight__viewer {
+        grid-template-areas: 'map side' 'replay side' 'charts charts';
+        grid-template-columns: minmax(0, 1fr) 20rem;
+    }
+}
+
+.p-flight__map-wrap {
+    grid-area: map;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    outline: 1px solid var(--color-line);
+}
+
+.p-flight__map {
+    height: var(--flight-map-height);
+    background-color: var(--color-tint-cool);
+}
+
+.p-flight__map-tools {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.p-flight__toggles {
+    display: flex;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-raised);
+}
+
+.p-flight__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    background-color: var(--color-paper);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.p-flight__toggle[aria-pressed='true'] {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.p-flight__follow {
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-raised);
+}
+
+.p-flight__select select {
+    height: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    box-shadow: var(--shadow-raised);
+}
+
+.p-flight__loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background-color: rgb(247 245 239 / 70%);
+    font-weight: 600;
+}
+
+.p-flight__loading[hidden] {
+    display: none;
+}
+
+/* Values at the cursor, task legs and phases */
+.p-flight__side {
+    grid-area: side;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+}
+
+@media (width >= 64em) {
+    .p-flight__side {
+        max-height: calc(var(--flight-map-height) + 4rem);
+        overflow-y: auto;
+    }
+}
+
+.p-flight__now {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.p-flight__now div {
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+}
+
+.p-flight__now dt {
+    color: var(--color-text-muted);
+    font-size: var(--text-eyebrow);
+}
+
+.p-flight__now dd {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.p-flight__phase {
+    min-height: 1.5em;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.p-flight__side-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-md);
+}
+
+.p-flight__legs,
+.p-flight__phases {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+}
+
+.p-flight__legs li {
+    display: flex;
+    flex-direction: column;
+    padding-block: var(--space-1-5);
+    border-bottom: 1px solid var(--color-line);
+}
+
+.p-flight__leg-name {
+    font-weight: 600;
+}
+
+.p-flight__leg-values {
+    color: var(--color-text-muted);
+}
+
+.p-flight__phase-item {
+    width: 100%;
+    padding: var(--space-1-5) var(--space-2) var(--space-1-5) var(--space-3);
+    border: 0;
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.p-flight__phase-item--thermal {
+    border-left-color: var(--color-success);
+}
+
+.p-flight__phase-item:hover,
+.p-flight__phase-item[aria-current='true'] {
+    background-color: var(--color-paper);
+}
+
+/* Replay bar */
+.p-flight__replay {
+    grid-area: replay;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.p-flight__play {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    font-size: var(--icon-lg);
+    cursor: pointer;
+}
+
+.p-flight__play-icon--pause,
+.p-flight__play.is-playing .p-flight__play-icon--play {
+    display: none;
+}
+
+.p-flight__play.is-playing .p-flight__play-icon--pause {
+    display: block;
+}
+
+.p-flight__seek {
+    flex: 1;
+    accent-color: var(--color-primary);
+}
+
+/* Charts */
+.p-flight__charts {
+    grid-area: charts;
+    display: grid;
+    gap: var(--space-3);
+}
+
+.p-flight__chart {
+    margin: 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: var(--color-paper);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+}
+
+.p-flight__chart figcaption {
+    margin-bottom: var(--space-1);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+}
+
+.p-flight__chart .u-over {
+    cursor: pointer;
+}
+
+.p-flight__chart-tip {
+    position: absolute;
+    z-index: 1;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-dark);
+    color: var(--color-on-dark);
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.p-flight__links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* Session page (templates/flight/session.html.twig, session-viewer controller) */
+.p-session__ranking {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-7);
+}
+
+.p-session__ranking tr[aria-current='true'] {
+    font-weight: 600;
+}
+
+.p-session__dot {
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    margin-right: var(--space-1-5);
+    border-radius: 50%;
+    background-color: var(--pilot-color, var(--color-line-strong));
+    vertical-align: baseline;
+}
+
+.p-session__pilots {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-session__pilot {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
+    cursor: pointer;
+}
+
+.p-session__pilot:hover,
+.p-session__pilot[aria-pressed='true'] {
+    background-color: var(--color-paper);
+}
+
+.p-session__pilot-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.p-session__pilot-values {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.p-session__pilot .p-session__dot {
+    margin-right: 0;
+}

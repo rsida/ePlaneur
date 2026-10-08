@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Analyse de vols{% endblock %}
+{% block description %}Déposez vos traces Condor pour revoir vos vols sur la carte et en 3D, et analyser vos thermiques et vos transitions.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-flights">
+        <div class="l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Eyebrow>Voler</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h1">Analyse de vols</twig:Ui:Heading>
+                <p class="u-lead">Revoyez vos vols Condor sur la carte et en 3D, à leur vraie altitude, et repérez où vous avez gagné ou perdu du temps : thermiques, transitions, branches du circuit.</p>
+            </div>
+
+            {% for message in app.flashes('success') %}
+                <div class="c-alert c-alert--success" role="status">{{ message }}</div>
+            {% endfor %}
+
+            <form class="c-card c-card--outlined t-paper p-flights__upload" method="post" enctype="multipart/form-data"
+                  data-controller="autosubmit">
+                <div class="c-card__body l-stack">
+                    <twig:Ui:Heading level="2" size="h3">Ajouter un vol</twig:Ui:Heading>
+                    {% if error %}<div class="c-alert c-alert--error" role="alert">{{ error }}</div>{% endif %}
+                    <twig:Ui:Dropzone name="trace" accept=".ftr,.igc" title="Choisissez ou glissez votre trace"
+                                      hint="Condor 3 : le fichier .ftr du dossier Documents › Condor3 › FlightTracks. Condor 2 ou autre : un fichier IGC (Analyser le vol › Export IGC). 20 Mo au plus."
+                                      data-action="change->autosubmit#submit" />
+                    <input type="hidden" name="_token" value="{{ csrf_token(upload_token) }}">
+                    <div><twig:Ui:Button type="submit" data-autosubmit-target="button">Analyser le vol</twig:Ui:Button></div>
+                    <p class="u-note">Les vols ajoutés sont visibles par les membres connectés. Avec une trace Condor (.ftr), les durées sont estimées : Condor y chiffre l’heure de chaque point.</p>
+                </div>
+            </form>
+
+            <section class="l-stack" aria-labelledby="mine-title">
+                <twig:Ui:Heading level="2" size="h3" id="mine-title">Mes vols</twig:Ui:Heading>
+                {% if mine is empty %}
+                    <p class="u-note">Vous n’avez pas encore ajouté de vol.</p>
+                {% else %}
+                    {{ include('flight/_list.html.twig', {flights: mine, caption: 'Mes vols'}) }}
+                {% endif %}
+            </section>
+
+            <section class="l-stack" aria-labelledby="latest-title">
+                <twig:Ui:Heading level="2" size="h3" id="latest-title">Derniers vols du club</twig:Ui:Heading>
+                {% if latest is empty %}
+                    <p class="u-note">Aucun vol pour l’instant.</p>
+                {% else %}
+                    {{ include('flight/_list.html.twig', {flights: latest, caption: 'Derniers vols du club'}) }}
+                {% endif %}
+            </section>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

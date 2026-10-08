@@ -1,0 +1,132 @@
+{% extends 'base.html.twig' %}
+
+{% set analysis = flight.analysis %}
+{% set stats = analysis.statistics %}
+{% set task = analysis.task %}
+{% set approx = analysis.exactTimes ? '' : ' (estimée)' %}
+
+{% block title %}Vol de {{ flight.pilot }}{% endblock %}
+{% block description %}Analyse du vol de {{ flight.pilot }}{% if flight.flightPlan %} : {{ flight.flightPlan }}{% endif %}.{% endblock %}
+
+{% block body %}
+    <section class="p-flight t-light">
+        <div class="l-container p-flight__head">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_flight_index') }}">Tous les vols</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Analyse de vol · {{ flight.simulator }}</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ flight.pilot }}{% if flight.competitionId %} <span class="p-flight__cn">{{ flight.competitionId }}</span>{% endif %}</twig:Ui:Heading>
+                <p class="p-flight__meta">
+                    {{ [flight.glider, flight.landscape, flight.flightPlan, flight.flownOn ? flight.flownOn|format_date('long', locale: 'fr') : null]|filter(v => v)|join(' · ') }}
+                </p>
+                {% if flight.launch or flight.flightPlan %}
+                    <p class="p-flight__links">
+                        {% if flight.launch %}<twig:Ui:Tag variant="soft" title="Lu sur le début de la trace">{{ flight.launch.label }}</twig:Ui:Tag>{% endif %}
+                        {% if flight.flightPlan %}<twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">{{ session_size > 1 ? 'Session : ' ~ session_size ~ ' vols sur ce plan de vol' : 'Session de ce plan de vol' }}</twig:Ui:Link>{% endif %}
+                    </p>
+                {% endif %}
+                {% if not analysis.exactTimes %}
+                    <p class="u-note">Trace Condor (.ftr) : Condor chiffre l’heure de chaque point, les durées et les vitesses sont estimées (à quelques pourcents près). Les positions et altitudes sont exactes.</p>
+                {% endif %}
+            </div>
+            {% if is_granted('FLIGHT_DELETE', flight) %}
+                <form method="post" action="{{ path('app_flight_delete', {id: flight.id}) }}" class="p-flight__delete"
+                      onsubmit="return confirm('Supprimer ce vol ?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_flight_' ~ flight.id) }}">
+                    <twig:Ui:Button type="submit" variant="outline" size="sm" icon="trash">Supprimer</twig:Ui:Button>
+                </form>
+            {% endif %}
+        </div>
+
+        <div class="l-container">
+            <div class="p-flight__stats">
+                <twig:Ui:Stat label="Durée{{ approx }}" value="{{ stats.duration|flight_duration }}" />
+                <twig:Ui:Stat label="Distance parcourue" value="{{ stats.distance|flight_distance }}" />
+                {% if task and task.completed %}
+                    <twig:Ui:Stat label="Vitesse circuit{{ approx }}" value="{{ task.speed|number_format(1, ',', ' ') }}" unit="km/h sur {{ task.distance|flight_distance }}" />
+                {% else %}
+                    <twig:Ui:Stat label="Vitesse moyenne{{ approx }}" value="{{ stats.speedAverage|number_format(1, ',', ' ') }}" unit="km/h" />
+                {% endif %}
+                <twig:Ui:Stat label="Altitude max" value="{{ stats.altitudeMax|number_format(0, ',', ' ') }}" unit="m" />
+                <twig:Ui:Stat label="Thermiques" value="{{ stats.thermals }}" unit="{{ stats.climbAverage is not null ? 'à ' ~ stats.climbAverage|number_format(1, ',', ' ') ~ ' m/s de moyenne' : '' }}" />
+                <twig:Ui:Stat label="Temps en spirale" value="{{ stats.circlingShare is not null ? (stats.circlingShare * 100)|round ~ ' %' : '—' }}" unit="{{ stats.leftShare is not null ? (stats.leftShare * 100)|round ~ ' % à gauche' : '' }}" />
+                <twig:Ui:Stat label="Finesse en transition" value="{{ stats.glideRatio is not null ? stats.glideRatio|number_format(0, ',', ' ') : '—' }}" unit="{{ stats.glideSpeed is not null ? 'à ' ~ stats.glideSpeed|number_format(0, ',', ' ') ~ ' km/h' : '' }}" />
+            </div>
+        </div>
+
+        <div class="p-flight__viewer" data-controller="flight-viewer"
+             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id}) }}">
+            <div class="p-flight__map-wrap">
+                <div class="p-flight__map" data-flight-viewer-target="map" role="region" aria-label="Carte du vol"></div>
+                <div class="p-flight__map-tools">
+                    <div class="p-flight__toggles" role="group" aria-label="Vue">
+                        <button type="button" class="p-flight__toggle" aria-pressed="true" data-flight-viewer-target="view" data-view="2d" data-action="flight-viewer#setView"><twig:ux:icon name="map" /> Carte</button>
+                        <button type="button" class="p-flight__toggle" aria-pressed="false" data-flight-viewer-target="view" data-view="3d" data-action="flight-viewer#setView"><twig:ux:icon name="mountain" /> 3D</button>
+                    </div>
+                    <label class="p-flight__select">
+                        <span class="u-visually-hidden">Fond de carte</span>
+                        <select data-action="flight-viewer#setBasemap">
+                            <option value="topo">Relief</option>
+                            <option value="satellite">Satellite</option>
+                            <option value="osm">Plan</option>
+                        </select>
+                    </label>
+                    <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
+                </div>
+                <p class="p-flight__loading" data-flight-viewer-target="status" role="status">Chargement du vol…</p>
+            </div>
+
+            <aside class="p-flight__side" aria-label="Valeurs au point courant">
+                <dl class="p-flight__now">
+                    <div><dt>Temps{{ approx }}</dt><dd data-flight-viewer-target="nowTime">—</dd></div>
+                    <div><dt>Altitude</dt><dd data-flight-viewer-target="nowAltitude">—</dd></div>
+                    <div><dt>Vitesse sol</dt><dd data-flight-viewer-target="nowSpeed">—</dd></div>
+                    <div><dt>Vario (4 s)</dt><dd data-flight-viewer-target="nowVario">—</dd></div>
+                </dl>
+                <p class="p-flight__phase" data-flight-viewer-target="nowPhase"></p>
+
+                {% if task %}
+                    <section class="l-stack l-stack--sm">
+                        <h2 class="p-flight__side-title">Circuit · {{ task.distance|flight_distance }}</h2>
+                        <ol class="p-flight__legs">
+                            {% for leg in task.legs %}
+                                <li>
+                                    <span class="p-flight__leg-name">{{ leg.from }} → {{ leg.to }}</span>
+                                    <span class="p-flight__leg-values">{{ leg.distance|flight_distance }} · {{ leg.duration is not null ? leg.duration|flight_duration ~ ' · ' ~ leg.speed|number_format(0, ',', ' ') ~ ' km/h' : 'non atteint' }}</span>
+                                </li>
+                            {% endfor %}
+                        </ol>
+                    </section>
+                {% endif %}
+
+                <section class="l-stack l-stack--sm">
+                    <h2 class="p-flight__side-title">Thermiques et transitions</h2>
+                    <ol class="p-flight__phases" data-flight-viewer-target="phases"></ol>
+                </section>
+            </aside>
+
+            <div class="p-flight__replay">
+                <button type="button" class="p-flight__play" data-flight-viewer-target="play" data-action="flight-viewer#togglePlay" aria-label="Rejouer le vol">
+                    <twig:ux:icon name="play" class="p-flight__play-icon--play" /><twig:ux:icon name="pause" class="p-flight__play-icon--pause" />
+                </button>
+                <label class="p-flight__select">
+                    <span class="u-visually-hidden">Vitesse de lecture</span>
+                    <select data-flight-viewer-target="rate">
+                        <option value="10">× 10</option>
+                        <option value="30" selected>× 30</option>
+                        <option value="60">× 60</option>
+                        <option value="120">× 120</option>
+                        <option value="300">× 300</option>
+                    </select>
+                </label>
+                <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="1" aria-label="Position dans le vol"
+                       data-flight-viewer-target="seek" data-action="input->flight-viewer#seek">
+            </div>
+
+            <div class="p-flight__charts">
+                <figure class="p-flight__chart"><figcaption>Altitude (m) — en vert les thermiques</figcaption><div data-flight-viewer-target="chart" data-series="altitude"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Vario sur 4 s (m/s)</figcaption><div data-flight-viewer-target="chart" data-series="vario"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Vitesse sol (km/h)</figcaption><div data-flight-viewer-target="chart" data-series="speed"></div></figure>
+            </div>
+        </div>
+    </section>
+{% endblock %}

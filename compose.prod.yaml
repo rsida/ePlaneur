@@ -20,6 +20,8 @@ x-php-prod: &php-prod
   volumes:
     # Uploaded media (images, PDF...): must survive deployments, back it up with the database
     - uploads:/app/var/uploads
+    # Flight tracks of the flight viewer: same rules
+    - flights:/app/var/flights
   depends_on:
     database:
       condition: service_healthy
@@ -77,3 +79,4 @@ services:
 volumes:
   traefik_letsencrypt:
   uploads:
+  flights:

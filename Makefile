@@ -128,9 +128,9 @@ db-dump: ## Dump the database into backups/
 	$(DC) exec -T database sh -c 'mariadb-dump -u"$$MARIADB_USER" -p"$$MARIADB_PASSWORD" --single-transaction --routines "$$MARIADB_DATABASE"' | gzip > backups/$(ENV)-$$(date +%Y%m%d-%H%M%S).sql.gz
 	@ls -t backups/*.sql.gz | head -1
 
-media-dump: ## Archive the uploaded media (var/uploads) into backups/
+media-dump: ## Archive the uploaded media and flight tracks (var/uploads, var/flights) into backups/
 	@mkdir -p backups
-	$(DC) exec -T php tar -czf - -C var uploads > backups/$(ENV)-media-$$(date +%Y%m%d-%H%M%S).tar.gz
+	$(DC) exec -T php sh -c 'mkdir -p var/flights && tar -czf - -C var uploads flights' > backups/$(ENV)-media-$$(date +%Y%m%d-%H%M%S).tar.gz
 	@ls -t backups/*-media-*.tar.gz | head -1
 
 db-restore: ## Restore a dump: make db-restore file=backups/xxx.sql.gz

@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repository;
+
+use App\Entity\Flight;
+use App\Entity\User;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
+
+/**
+ * @extends ServiceEntityRepository<Flight>
+ */
+class FlightRepository extends ServiceEntityRepository
+{
+    public function __construct(ManagerRegistry $registry)
+    {
+        parent::__construct($registry, Flight::class);
+    }
+
+    /**
+     * @return list<Flight>
+     */
+    public function findLatest(int $limit, ?User $owner = null): array
+    {
+        $qb = $this->createQueryBuilder('flight')->orderBy('flight.uploadedAt', 'DESC')->addOrderBy('flight.id', 'DESC')->setMaxResults($limit);
+        if (null !== $owner) {
+            $qb->andWhere('flight.owner = :owner')->setParameter('owner', $owner);
+        }
+
+        /* @var list<Flight> */
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * The flights of the session of a flight: same flight plan (FlightSession).
+     *
+     * @return list<Flight>
+     */
+    public function findSession(Flight $flight): array
+    {
+        if (null === $flight->getFlightPlan()) {
+            return [$flight];
+        }
+
+        /* @var list<Flight> */
+        return $this->findBy(['flightPlan' => $flight->getFlightPlan()], ['id' => 'ASC']);
+    }
+
+    /** Number of flights of the session of a flight. */
+    public function countSession(Flight $flight): int
+    {
+        return null === $flight->getFlightPlan() ? 1 : $this->count(['flightPlan' => $flight->getFlightPlan()]);
+    }
+}

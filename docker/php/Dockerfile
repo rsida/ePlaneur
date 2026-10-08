@@ -55,7 +55,7 @@ COPY . .
 RUN composer dump-autoload --no-dev --classmap-authoritative \
     && composer run-script --no-dev post-install-cmd \
     && php bin/console asset-map:compile \
-    && mkdir -p var/uploads \
+    && mkdir -p var/uploads var/flights \
     && chown -R www-data:www-data var
 
 # ---------------------------------------------------------------------------

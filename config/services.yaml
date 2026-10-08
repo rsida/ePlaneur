@@ -9,6 +9,8 @@
 parameters:
     # Uploaded media (MediaStorage). A Docker volume in production; tests use their own directory.
     app.uploads_dir: '%kernel.project_dir%/var/uploads'
+    # Flight tracks of the flight viewer (FlightImporter). A Docker volume in production as well.
+    app.flights_dir: '%kernel.project_dir%/var/flights'
     # Time of the club: metropolitan France (see CLAUDE.md). PHP's default timezone (Kernel::boot()),
     # so dates are stored and shown in it whatever the server, and Twig's.
     app.timezone: Europe/Paris
@@ -30,3 +32,4 @@ services:
 when@test:
     parameters:
         app.uploads_dir: '%kernel.project_dir%/var/test-uploads'
+        app.flights_dir: '%kernel.project_dir%/var/test-flights'

@@ -1,0 +1,135 @@
+{% extends 'base.html.twig' %}
+
+{% set flights = session.flights %}
+{% set exact = flights|filter(f => not f.analysis.exactTimes) is empty %}
+{% set approx = exact ? '' : ' (estimée)' %}
+
+{% block title %}Session {{ session.flightPlan ?? flight.pilot }}{% endblock %}
+{% block description %}Classement et replay des vols de la session {{ session.flightPlan }}.{% endblock %}
+
+{% block body %}
+    <section class="p-flight t-light" data-controller="session-viewer"
+             data-session-viewer-url-value="{{ path('app_flight_session_data', {id: flight.id}) }}">
+        <div class="l-container p-flight__head">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_flight_index') }}">Tous les vols</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Session · {{ flight.landscape ?? flight.simulator }}</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ session.flightPlan ?? 'Vol sans plan de vol' }}</twig:Ui:Heading>
+                <p class="p-flight__meta">{{ flights|length }} {{ flights|length > 1 ? 'vols' : 'vol' }} sur ce plan de vol</p>
+                {% if not exact %}
+                    <p class="u-note">Traces Condor (.ftr) : les temps et les vitesses sont estimés (à quelques pourcents près), les positions et altitudes sont exactes.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% set podium = session.podium %}
+        {% if flights|length > 1 and podium is not empty %}
+            <div class="l-container">
+                <div class="p-flight__stats p-session__podium" aria-label="Podium de la session">
+                    {% for title in podium %}
+                        <twig:Ui:Stat label="{{ title.title }}" value="{{ title.value|number_format(title.decimals, ',', ' ') }}" unit="{{ title.unit }} · {{ title.flight.pilot }}" />
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="p-flight__viewer p-session__viewer">
+            <div class="p-flight__map-wrap">
+                <div class="p-flight__map" data-session-viewer-target="map" role="region" aria-label="Carte de la session"></div>
+                <div class="p-flight__map-tools">
+                    <div class="p-flight__toggles" role="group" aria-label="Vue">
+                        <button type="button" class="p-flight__toggle" aria-pressed="true" data-session-viewer-target="view" data-view="2d" data-action="session-viewer#setView"><twig:ux:icon name="map" /> Carte</button>
+                        <button type="button" class="p-flight__toggle" aria-pressed="false" data-session-viewer-target="view" data-view="3d" data-action="session-viewer#setView"><twig:ux:icon name="mountain" /> 3D</button>
+                    </div>
+                    <label class="p-flight__select">
+                        <span class="u-visually-hidden">Fond de carte</span>
+                        <select data-action="session-viewer#setBasemap">
+                            <option value="topo">Relief</option>
+                            <option value="satellite">Satellite</option>
+                            <option value="osm">Plan</option>
+                        </select>
+                    </label>
+                    <label class="p-flight__select">
+                        <span class="u-visually-hidden">Synchroniser les vols</span>
+                        <select data-session-viewer-target="align" data-action="session-viewer#setAlign">
+                            <option value="race">Heure de course</option>
+                            <option value="task">Départ du circuit ensemble</option>
+                        </select>
+                    </label>
+                </div>
+                <p class="p-flight__loading" data-session-viewer-target="status" role="status">Chargement des vols…</p>
+            </div>
+
+            <aside class="p-flight__side" aria-label="Pilotes au temps courant">
+                <h2 class="p-flight__side-title">Pilotes · <span data-session-viewer-target="clock">—</span>{{ approx }}</h2>
+                <ol class="p-session__pilots" data-session-viewer-target="pilots"></ol>
+            </aside>
+
+            <div class="p-flight__replay">
+                <button type="button" class="p-flight__play" data-session-viewer-target="play" data-action="session-viewer#togglePlay" aria-label="Rejouer la session">
+                    <twig:ux:icon name="play" class="p-flight__play-icon--play" /><twig:ux:icon name="pause" class="p-flight__play-icon--pause" />
+                </button>
+                <label class="p-flight__select">
+                    <span class="u-visually-hidden">Vitesse de lecture</span>
+                    <select data-session-viewer-target="rate">
+                        <option value="10">× 10</option>
+                        <option value="30">× 30</option>
+                        <option value="60" selected>× 60</option>
+                        <option value="120">× 120</option>
+                        <option value="300">× 300</option>
+                    </select>
+                </label>
+                <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="1" aria-label="Temps dans la session"
+                       data-session-viewer-target="seek" data-action="input->session-viewer#seek">
+            </div>
+        </div>
+
+        <div class="l-container p-session__ranking">
+            <twig:Ui:Heading level="2" size="h3">Classement</twig:Ui:Heading>
+            <figure class="c-data-table">
+                <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Classement de la session">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Pilote</th>
+                                <th scope="col">Planeur</th>
+                                <th scope="col">Départ</th>
+                                <th scope="col">Vitesse circuit{{ approx }}</th>
+                                <th scope="col">Temps circuit{{ approx }}</th>
+                                <th scope="col">Distance</th>
+                                <th scope="col">Vario moyen en thermique</th>
+                                <th scope="col">Finesse en transition</th>
+                                <th scope="col">Temps en spirale</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in flights %}
+                                {% set stats = member.analysis.statistics %}
+                                {% set task = member.analysis.task %}
+                                <tr{% if member.id == flight.id %} aria-current="true"{% endif %}>
+                                    <td>{{ member.taskSpeed ? loop.index : '—' }}</td>
+                                    <td>
+                                        <span class="p-session__dot" data-session-viewer-target="dot" data-flight="{{ member.id }}"></span>
+                                        <a href="{{ path('app_flight_show', {id: member.id}) }}">{{ member.pilot }}{% if member.competitionId %} ({{ member.competitionId }}){% endif %}</a>
+                                    </td>
+                                    <td>{{ member.glider ?: '—' }}</td>
+                                    <td>{{ member.launch ? member.launch.label : '—' }}</td>
+                                    <td>{{ member.taskSpeed ? member.taskSpeed|number_format(1, ',', ' ') ~ ' km/h' : (task ? 'non terminé' : '—') }}</td>
+                                    <td>{{ task and task.duration ? task.duration|flight_duration : '—' }}</td>
+                                    <td>{{ member.distance|flight_distance }}</td>
+                                    <td>{{ stats.climbAverage is not null ? stats.climbAverage|number_format(1, ',', ' ') ~ ' m/s' : '—' }}</td>
+                                    <td>{{ stats.glideRatio is not null ? stats.glideRatio|number_format(0, ',', ' ') : '—' }}</td>
+                                    <td>{{ stats.circlingShare is not null ? (stats.circlingShare * 100)|round ~ ' %' : '—' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </figure>
+            {% if flights|length == 1 %}
+                <p class="u-note">Seul ce vol est enregistré sur ce plan de vol pour l’instant : les vols des autres pilotes de la session apparaîtront ici dès qu’ils les auront ajoutés.</p>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

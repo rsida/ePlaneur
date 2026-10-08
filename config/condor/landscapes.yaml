@@ -1,0 +1,11 @@
+# Condor landscapes the flight viewer can place on the map (App\Flight\Condor\LandscapeRegistry).
+#
+# Condor positions are metres in a UTM zone, measured from the south-east corner of the landscape:
+# easting = easting_origin - x, northing = northing_origin + y. The values come from the header of
+# the landscape's <Name>.trn file (Landscapes/<Name>/ in the Condor folder); print the line for a
+# new landscape with `make console c="app:condor:landscape /path/to/Name.trn"`.
+landscapes:
+    AA3: { utm_zone: 32, northern: true, easting_origin: 1059840, northing_origin: 4786560 }
+    BigPyrenees2: { utm_zone: 31, northern: true, easting_origin: 513039, northing_origin: 4664672 }
+    Slovenia2: { utm_zone: 33, northern: true, easting_origin: 616140, northing_origin: 5040540 }
+    Slovenia3: { utm_zone: 33, northern: true, easting_origin: 645120, northing_origin: 5022720 }

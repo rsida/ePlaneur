@@ -1,0 +1,35 @@
+{# Table of flights: pilot, task, launch, glider, landscape, duration, distance, task speed. #}
+<figure class="c-data-table">
+    <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="{{ caption }}">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Pilote</th>
+                    <th scope="col">Plan de vol</th>
+                    <th scope="col">Départ</th>
+                    <th scope="col">Planeur</th>
+                    <th scope="col">Paysage</th>
+                    <th scope="col">Durée</th>
+                    <th scope="col">Distance</th>
+                    <th scope="col">Vitesse circuit</th>
+                    <th scope="col">Ajouté le</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flight in flights %}
+                    <tr>
+                        <td><a href="{{ path('app_flight_show', {id: flight.id}) }}">{{ flight.pilot }}{% if flight.competitionId %} ({{ flight.competitionId }}){% endif %}</a></td>
+                        <td>{{ flight.flightPlan ?: '—' }}</td>
+                        <td>{% if flight.launch %}<twig:Ui:Tag variant="soft">{{ flight.launch.label }}</twig:Ui:Tag>{% else %}—{% endif %}</td>
+                        <td>{{ flight.glider ?: '—' }}</td>
+                        <td>{{ flight.landscape ?: '—' }}</td>
+                        <td>{{ flight.duration|flight_duration }}</td>
+                        <td>{{ flight.distance|flight_distance }}</td>
+                        <td>{{ flight.taskSpeed ? flight.taskSpeed|number_format(1, ',', ' ') ~ ' km/h' : '—' }}</td>
+                        <td>{{ flight.uploadedAt|date('d/m/Y') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</figure>
