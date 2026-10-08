@@ -81,6 +81,15 @@ Credentials are applied when the volume is created only (see [installation](inst
 | `MAILER_FROM` | `"Club ePlaneur <no-reply@club.eplaneur.fr>"` | Sender of every e-mail; use an address the provider is allowed to send from |
 | `MESSENGER_TRANSPORT_DSN` | `doctrine://default?auto_setup=0`, dev: `sync://`, test: `in-memory://` | Async transport, consumed by the `worker` service in prod |
 
+### Online payment of memberships (HelloAsso)
+
+| Variable | Default | Description |
+|---|---|---|
+| `HELLOASSO_API_URL` | `https://api.helloasso.com` | HelloAsso API for the online payment of memberships; sandbox: `https://api.helloasso-sandbox.com` (see [membership](membership.md#online-payment)) |
+| `HELLOASSO_ORGANIZATION` | (empty) | Slug of the club's organization on HelloAsso; empty: no online payment |
+| `HELLOASSO_CLIENT_ID` | (empty) | HelloAsso API client id (HelloAsso back-office > Mon compte > Intégrations et API) |
+| `HELLOASSO_CLIENT_SECRET` | (empty) | Its secret: `.env.local` or `secrets:set`, never `.env` |
+
 ### WordPress import
 
 | Variable | Default | Description |

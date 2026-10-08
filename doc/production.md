@@ -107,6 +107,9 @@ Every command below is run on the server, in the project directory.
 | `make console c="messenger:failed:show"` | Messages that failed after 3 retries |
 | `make console c="messenger:failed:retry"` | Retry them |
 
+Online payment of memberships: set the HelloAsso keys (`HELLOASSO_*`, the secret in the server's
+`.env.local`) and the notification URL in HelloAsso, see [membership](membership.md#online-payment).
+
 Backups and the membership tasks are not scheduled automatically, for instance with cron (end of
 memberships after the grace month, renewal reminders when the next season is open, see
 [membership](membership.md)):

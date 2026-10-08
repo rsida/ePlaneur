@@ -113,6 +113,10 @@ class Membership
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $paymentMethod = null;
 
+    /** Online payment opened on HelloAsso (checkout intent id), to check its state there. */
+    #[ORM\Column(length: 40, nullable: true)]
+    private ?string $checkoutIntentId = null;
+
     /** Reference of the payment: online payment id, transfer label... */
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $paymentReference = null;
@@ -337,6 +341,18 @@ class Membership
     public function getPaymentMethodLabel(): ?string
     {
         return false !== ($label = array_search($this->paymentMethod, self::PAYMENT_METHODS, true)) ? $label : null;
+    }
+
+    public function getCheckoutIntentId(): ?string
+    {
+        return $this->checkoutIntentId;
+    }
+
+    public function setCheckoutIntentId(?string $checkoutIntentId): static
+    {
+        $this->checkoutIntentId = $checkoutIntentId;
+
+        return $this;
     }
 
     public function getPaymentReference(): ?string

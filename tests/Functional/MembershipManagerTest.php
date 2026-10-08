@@ -10,6 +10,7 @@ use App\Entity\MembershipType;
 use App\Entity\User;
 use App\Membership\MembershipMailer;
 use App\Membership\MembershipManager;
+use App\Membership\Payment\HelloAssoClient;
 use App\Repository\GroupRepository;
 use App\Repository\MembershipRepository;
 use App\Repository\MembershipSeasonRepository;
@@ -78,6 +79,7 @@ final class MembershipManagerTest extends KernelTestCase
             $container->get(UserRepository::class),
             $container->get(MembershipMailer::class),
             new MockClock($now),
+            $container->get(HelloAssoClient::class),
         );
     }
 

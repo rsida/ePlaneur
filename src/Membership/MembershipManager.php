@@ -8,6 +8,7 @@ use App\Entity\Group;
 use App\Entity\Membership;
 use App\Entity\MembershipSeason;
 use App\Entity\User;
+use App\Membership\Payment\HelloAssoClient;
 use App\Repository\GroupRepository;
 use App\Repository\MembershipRepository;
 use App\Repository\MembershipSeasonRepository;
@@ -38,7 +39,50 @@ final readonly class MembershipManager
         private UserRepository $users,
         private MembershipMailer $mailer,
         private ClockInterface $clock,
+        private HelloAssoClient $helloAsso,
     ) {
+    }
+
+    public function isOnlinePaymentEnabled(): bool
+    {
+        return $this->helloAsso->isEnabled();
+    }
+
+    /** Whether the member may pay this request online now. */
+    public function canPayOnline(Membership $membership): bool
+    {
+        return $this->helloAsso->isEnabled() && MembershipStatus::Requested === $membership->getStatus() && $membership->getTotal() > 0;
+    }
+
+    /**
+     * Opens the payment of a request on HelloAsso.
+     *
+     * @param array{return: string, back: string, error: string} $urls
+     *
+     * @return string the HelloAsso page to send the member to
+     */
+    public function payOnline(Membership $membership, array $urls): string
+    {
+        $checkout = $this->helloAsso->createCheckout($membership, $urls);
+        $membership->setCheckoutIntentId($checkout['id']);
+        $this->entityManager->flush();
+
+        return $checkout['redirectUrl'];
+    }
+
+    /** Records the online payment once HelloAsso says it is done; false while it is not. */
+    public function confirmOnlinePayment(Membership $membership): bool
+    {
+        if (null !== $membership->getPaidAt()) {
+            return true;
+        }
+        $order = null !== $membership->getCheckoutIntentId() ? $this->helloAsso->paidOrder($membership->getCheckoutIntentId()) : null;
+        if (null === $order) {
+            return false;
+        }
+        $this->markPaid($membership, Membership::PAYMENT_ONLINE, 'HelloAsso '.$order);
+
+        return true;
     }
 
     /** A new request, ready for the form (the data of the account's last membership copied). */

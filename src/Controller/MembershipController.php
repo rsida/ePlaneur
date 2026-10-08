@@ -17,6 +17,7 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Membership of the club (roadmap step 8a): the fees of the open season for everyone; for a
@@ -50,18 +51,84 @@ final class MembershipController extends AbstractController
             }
             if ($form->isSubmitted() && $form->isValid()) {
                 $manager->request($membership);
+                if ($manager->canPayOnline($membership)) {
+                    return $this->redirect($manager->payOnline($membership, $this->paymentUrls()));
+                }
                 $this->addFlash('success', 'Votre demande d’adhésion est enregistrée : un e-mail récapitulatif vous a été envoyé.');
 
                 return $this->redirectToRoute('app_membership');
             }
         }
 
+        $mine = $user instanceof User ? $memberships->findByUser($user) : [];
+
         return $this->render('membership/index.html.twig', [
             'open' => $open,
             'season' => $season,
             'form' => $form?->createView(),
-            'memberships' => $user instanceof User ? $memberships->findByUser($user) : [],
+            'memberships' => $mine,
+            // Requests the member can pay online now
+            'payable' => array_values(array_filter($mine, $manager->canPayOnline(...))),
+            'online_payment' => $manager->isOnlinePaymentEnabled(),
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    }
+
+    /** Pays a request online (again): the member is sent to HelloAsso. */
+    #[Route('/adhesion/{id<\d+>}/payer', name: 'app_membership_pay', methods: ['POST'])]
+    public function pay(Membership $membership, Request $request, MembershipManager $manager): Response
+    {
+        if ($membership->getUser() !== $this->getUser() || !$this->isCsrfTokenValid('pay'.$membership->getId(), $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+        if (!$manager->canPayOnline($membership)) {
+            return $this->redirectToRoute('app_membership');
+        }
+
+        return $this->redirect($manager->payOnline($membership, $this->paymentUrls()));
+    }
+
+    /** Back from HelloAsso: the payment is checked with HelloAsso before being recorded. */
+    #[Route('/adhesion/paiement/retour', name: 'app_membership_payment_return', methods: ['GET'])]
+    public function paymentReturn(Request $request, MembershipRepository $memberships, MembershipManager $manager): Response
+    {
+        $membership = $memberships->findOneBy(['checkoutIntentId' => $request->query->getString('checkoutIntentId')]);
+        if (null === $membership || $membership->getUser() !== $this->getUser()) {
+            throw $this->createNotFoundException('Unknown payment.');
+        }
+        if ($manager->confirmOnlinePayment($membership)) {
+            $this->addFlash('success', 'Merci ! Votre paiement est enregistré : le club valide votre adhésion dans les prochains jours.');
+        } else {
+            $this->addFlash('success', 'Votre paiement est en cours de traitement par HelloAsso : il apparaîtra ici dès qu’il sera confirmé.');
+        }
+
+        return $this->redirectToRoute('app_membership');
+    }
+
+    /** The member left the HelloAsso page, or the payment failed: they can try again. */
+    #[Route('/adhesion/paiement/annule', name: 'app_membership_payment_cancelled', methods: ['GET'])]
+    public function paymentCancelled(): Response
+    {
+        $this->addFlash('success', 'Le paiement n’a pas abouti. Votre demande est conservée : vous pouvez réessayer quand vous voulez.');
+
+        return $this->redirectToRoute('app_membership');
+    }
+
+    /**
+     * Notification of HelloAsso (to set in its back-office: Mon compte > Intégrations et API). Its
+     * content is not trusted: only the membership id of its metadata is read, and the payment is
+     * checked with HelloAsso.
+     */
+    #[Route('/adhesion/paiement/notification', name: 'app_membership_payment_notification', methods: ['POST'])]
+    public function paymentNotification(Request $request, MembershipRepository $memberships, MembershipManager $manager): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+        $id = \is_array($payload) ? ($payload['metadata']['membership'] ?? null) : null;
+        $membership = is_numeric($id) ? $memberships->find((int) $id) : null;
+        if (null !== $membership) {
+            $manager->confirmOnlinePayment($membership);
+        }
+
+        return new Response(status: Response::HTTP_NO_CONTENT);
     }
 
     /** Certificate of a validated membership, to print: for its member and the club. */
@@ -77,5 +144,17 @@ final class MembershipController extends AbstractController
         }
 
         return $this->render('membership/certificate.html.twig', ['membership' => $membership]);
+    }
+
+    /**
+     * @return array{return: string, back: string, error: string}
+     */
+    private function paymentUrls(): array
+    {
+        return [
+            'return' => $this->generateUrl('app_membership_payment_return', [], UrlGeneratorInterface::ABSOLUTE_URL),
+            'back' => $this->generateUrl('app_membership_payment_cancelled', [], UrlGeneratorInterface::ABSOLUTE_URL),
+            'error' => $this->generateUrl('app_membership_payment_cancelled', [], UrlGeneratorInterface::ABSOLUTE_URL),
+        ];
     }
 }

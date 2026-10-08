@@ -63,7 +63,15 @@
                                             {% if membership.status.value == 'validated' %}<twig:Ui:Link href="{{ path('app_membership_certificate', {id: membership.id}) }}">Attestation</twig:Ui:Link>{% endif %}
                                         </span>
                                     </div>
-                                    {% if membership.status.value == 'requested' and membership.season.paymentInstructions %}
+                                    {% if membership in payable %}
+                                        <div class="c-card__body p-membership__instructions">
+                                            <form method="post" action="{{ path('app_membership_pay', {id: membership.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('pay' ~ membership.id) }}">
+                                                <twig:Ui:Button type="submit">Payer {{ membership.total|euros }} en ligne</twig:Ui:Button>
+                                            </form>
+                                            <p class="u-note">Paiement sécurisé par HelloAsso, la plateforme de paiement des associations. HelloAsso vous propose une contribution facultative à son fonctionnement.</p>
+                                        </div>
+                                    {% elseif membership.status.value == 'requested' and membership.season.paymentInstructions %}
                                         <div class="c-card__body p-membership__instructions">
                                             <strong>Pour régler votre adhésion</strong>
                                             <p>{{ membership.season.paymentInstructions|nl2br }}</p>
@@ -90,7 +98,7 @@
                                 {{ form_row(form.donation) }}
                                 {{ form_row(form.rulesAccepted) }}
                                 <p class="u-note">Ces informations servent à la gestion des adhésions du club, et en partie à la Fédération française de vol en planeur (affiliation). Les statuts et le règlement intérieur sont dans les textes officiels du club.</p>
-                                <div><twig:Ui:Button type="submit">Envoyer ma demande</twig:Ui:Button></div>
+                                <div><twig:Ui:Button type="submit">{{ online_payment ? 'Envoyer ma demande et payer en ligne' : 'Envoyer ma demande' }}</twig:Ui:Button></div>
                             </div>
                         {{ form_end(form) }}
                     </section>
