@@ -76,14 +76,29 @@ final class FlightAnalyzerTest extends TestCase
         $analysis = (new FlightAnalyzer())->analyze(self::track(FlightSamples::glideThermalGlide(), $task));
 
         self::assertNotNull($analysis->task);
-        // Leaves the start cylinder at x = 1,000 m (33 s), enters the finish one at x = 6,500 m (398 s)
-        self::assertSame([null, 33, 398], $analysis->task->reached);
+        // Out of the start cylinder at x = 1,000 m (first point out: 34 s), enters the finish one at
+        // x = 6,500 m (398 s)
+        self::assertSame([null, 34, 398], $analysis->task->reached);
         self::assertEqualsWithDelta(7000, $analysis->task->distance, 1);
 
         $task = $analysis->toArray()['task'];
         self::assertTrue($task['completed']);
-        self::assertSame(365, $task['duration']);
-        self::assertEqualsWithDelta(69.0, $task['speed'], 0.1, '7 km in 365 s');
+        self::assertSame(364, $task['duration']);
+        self::assertEqualsWithDelta(69.2, $task['speed'], 0.1, '7 km in 364 s');
+    }
+
+    public function testHalfDiscStartAndFinishOfCondor(): void
+    {
+        // Start and finish of 180°: half discs behind the line across the leg. The start zone lies
+        // west of x = 1,000 m, left at once when crossing it; the finish zone lies west of x = 6,500 m,
+        // entered 400 m before the point
+        $point = static fn (string $name, float $x, float $radius, float $angle = 360.0): Turnpoint => new Turnpoint($name, ...FlightSamples::toLatLon($x, 0), altitude: 0.0, radius: $radius, angle: $angle);
+        $task = [$point('Terrain', 0, 3000), $point('Départ', 1000, 2000, 180), $point('Arrivée', 6500, 400, 180)];
+        $analysis = (new FlightAnalyzer())->analyze(self::track(FlightSamples::glideThermalGlide(), $task));
+
+        self::assertNotNull($analysis->task);
+        // x = 1,000 m at 33.3 s; x = 6,100 m at 384.3 s
+        self::assertSame([null, 34, 385], $analysis->task->reached);
     }
 
     public function testAFlightBeginningInTheAirIsAnAirborneStart(): void

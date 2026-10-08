@@ -20,8 +20,9 @@ use App\Flight\Turnpoint;
  *    are thermals, the rest glides; short pieces are merged into their neighbours (a thermal being
  *    re-centred stays one thermal);
  * 4. statistics are computed between take-off and landing (ground speed above 40 km/h);
- * 5. with a task, each point is reached when the track enters its cylinder, the start being the
- *    last exit of the start cylinder;
+ * 5. with a task, each point is reached when the track enters its zone (a cylinder, or a half
+ *    disc for Condor's 180° start and finish), the start being the last exit of the start zone
+ *    before the first turnpoint;
  * 6. the launch is read from the beginning of the track: airborne when it does not begin on the
  *    ground, winch when the glider climbs fast after lift-off, aerotow otherwise.
  */
@@ -139,7 +140,20 @@ final class FlightAnalyzer
     }
 
     /**
-     * One point per second, from the first fix to the last.
+     * Metres east and north of a point (flat earth: enough for the size of a turnpoint zone).
+     *
+     * @return array{float, float}
+     */
+    private static function metres(Turnpoint $origin, float $latitude, float $longitude): array
+    {
+        return [
+            ($longitude - $origin->longitude) * 111320.0 * cos(deg2rad($origin->latitude)),
+            ($latitude - $origin->latitude) * 110540.0,
+        ];
+    }
+
+    /**
+     * One point per second, from the first fix to the last (the last point is the last fix).
      *
      * @param list<Fix> $fixes
      *
@@ -149,7 +163,8 @@ final class FlightAnalyzer
     {
         usort($fixes, static fn (Fix $a, Fix $b): int => $a->time <=> $b->time);
         $first = $fixes[0]->time;
-        $duration = (int) floor(end($fixes)->time - $first);
+        // Up to the second after the last fix: a track cut just after the finish still reaches it
+        $duration = (int) ceil(end($fixes)->time - $first);
         $points = [];
         $j = 0;
         $last = \count($fixes) - 1;
@@ -349,12 +364,27 @@ final class FlightAnalyzer
     private static function task(array $turnpoints, array $latitude, array $longitude): TaskResult
     {
         $count = \count($latitude);
-        $inside = static fn (int $i, Turnpoint $point): bool => Geo::distance($latitude[$i], $longitude[$i], $point->latitude, $point->longitude) <= $point->radius;
+        $last = \count($turnpoints) - 1;
+        // Zone of a point: a cylinder, or for 180° a half disc on the side of the leg the glider comes
+        // from (finish) or goes to the start from (start), i.e. behind the line across the leg
+        $inside = static function (int $i, Turnpoint $point, ?Turnpoint $from = null, ?Turnpoint $to = null) use ($latitude, $longitude): bool {
+            if (Geo::distance($latitude[$i], $longitude[$i], $point->latitude, $point->longitude) > $point->radius) {
+                return false;
+            }
+            if (!$point->isLine() || null === $from || null === $to) {
+                return true;
+            }
+            [$x, $y] = self::metres($point, $latitude[$i], $longitude[$i]);
+            [$ux, $uy] = self::metres($from, $to->latitude, $to->longitude);
+
+            return $x * $ux + $y * $uy <= 0;
+        };
 
         $reached = array_fill(0, \count($turnpoints), null);
         $from = 0;
-        for ($k = 2; $k < \count($turnpoints); ++$k) {
-            for ($i = $from; $i < $count && !$inside($i, $turnpoints[$k]); ++$i) {
+        for ($k = 2; $k <= $last; ++$k) {
+            $point = $turnpoints[$k];
+            for ($i = $from; $i < $count && !$inside($i, $point, $turnpoints[$k - 1], $point); ++$i) {
             }
             if ($i >= $count) {
                 break;
@@ -362,10 +392,11 @@ final class FlightAnalyzer
             $reached[$k] = $i;
             $from = $i;
         }
-        // Start: last exit of the start cylinder before the first turnpoint (or the end of the track)
-        for ($s = $reached[2] ?? $count - 1; $s >= 0 && !$inside($s, $turnpoints[1]); --$s) {
+        // Start: the last exit of the start zone before the first turnpoint (or the end of the track)
+        $next = $turnpoints[2] ?? null;
+        for ($s = $reached[2] ?? $count - 1; $s >= 0 && !$inside($s, $turnpoints[1], $turnpoints[1], $next); --$s) {
         }
-        $reached[1] = $s >= 0 ? $s : null;
+        $reached[1] = $s >= 0 ? min($s + 1, $count - 1) : null;
 
         $distance = 0.0;
         for ($k = 1; $k < \count($turnpoints) - 1; ++$k) {

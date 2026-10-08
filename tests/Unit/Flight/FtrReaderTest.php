@@ -37,17 +37,27 @@ final class FtrReaderTest extends TestCase
         self::assertSame('AA3', $track->landscape);
         self::assertSame(1930306707, $track->raceId);
         self::assertStringStartsWith('C3-c060_Laragne-Ventoux-Fayence', (string) $track->flightPlan);
-        self::assertFalse($track->exactTimes, 'Condor encrypts the time of each record');
+        self::assertTrue($track->exactTimes, 'Times decoded from the records');
 
         self::assertSame(['NewTP', 'Laragne Chp', 'Ventoux', 'Le Laser', 'Lachens Mont Ant', 'Fayence'], array_map(static fn ($point): string => $point->name, $track->turnpoints));
         $ventoux = $track->turnpoints[2];
         self::assertLessThan(200, Geo::distance($ventoux->latitude, $ventoux->longitude, 44.1739, 5.2786), 'Mont Ventoux');
         self::assertSame(1896.0, $ventoux->altitude);
         self::assertSame(3000.0, $track->turnpoints[0]->radius);
+        self::assertTrue($track->turnpoints[1]->isLine(), 'Start: 180°');
+        self::assertSame(360.0, $ventoux->angle);
 
         self::assertCount(3000, $track->fixes);
+        // Times decoded from the records: the IGC export of the flight has these 3,000 records over
+        // its first 305 s; records are 0.06 to 0.6 s apart
+        self::assertSame(0.0, $track->fixes[0]->time);
+        self::assertEqualsWithDelta(305.0, $track->fixes[2999]->time, 1.0);
+        foreach ($track->fixes as $i => $fix) {
+            if ($i > 0) {
+                self::assertGreaterThan($track->fixes[$i - 1]->time, $fix->time);
+            }
+        }
         self::assertEqualsWithDelta(1730.3, $track->fixes[0]->altitude, 0.1);
-        self::assertEqualsWithDelta(FtrReader::RECORD_INTERVAL, $track->fixes[1]->time, 1e-9);
         self::assertLessThan(500, Geo::distance($track->fixes[0]->latitude, $track->fixes[0]->longitude, $track->turnpoints[0]->latitude, $track->turnpoints[0]->longitude), 'The flight starts at the departure point');
     }
 

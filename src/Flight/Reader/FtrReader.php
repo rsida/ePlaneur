@@ -17,17 +17,29 @@ use App\Flight\Turnpoint;
  * - header of fixed size: "FTR", Condor version (int at 3), pilot first name, last name, country,
  *   competition id, registration and landscape (Pascal short strings at 0x9b, 0xac, 0xbd, 0xce, 0xd6,
  *   0xdf); task: count (int at 0xf3), then 84 bytes per point from 0xf7 (name, x, y, z as floats,
- *   radius as int at +44); glider class and model (short strings at 0x52eb and 0x52fc), then the
+ *   radius and angle as ints at +44 and +48: 360° for a cylinder, 180° for a start or finish line); glider class and model (short strings at 0x52eb and 0x52fc), then the
  *   flight plan name;
  * - at 0x549b: six ints (1, -1, race id, 0, number of records, ?), then the records;
- * - records of 64 bytes from 0x54b3: x, y, altitude as floats at +4, +8, +12 (landscape metres,
- *   converted with the landscape's projection), the attitude, and 24 bytes that look encrypted,
- *   holding the time. Records are taken about every 0.104 s (RECORD_INTERVAL): times are estimates.
+ * - records of 64 bytes from 0x54b3: the time at +0, x, y, altitude as floats at +4, +8, +12
+ *   (landscape metres, converted with the landscape's projection), the attitude, and 24 bytes that
+ *   look encrypted.
+ *
+ * The time is a float in units of 32 hours (115,200 s), stored with 0x500000 subtracted from its
+ * bits: adding it back gives a value growing linearly with the time (found on 2026-10-08 against
+ * the IGC export of the same flight: 5,911 s, every IGC fix within 1.5 m of the record of its
+ * time). Records come every 0.06 to 1.2 s, about 0.1 s. Should a file not decode to growing times,
+ * an even interval (RECORD_INTERVAL) is used and the times are flagged as estimates.
  */
 final readonly class FtrReader
 {
-    /** Average seconds between records: Condor race times over records between start and finish, on four flights (0.1037 to 0.1068 s). */
+    /** Average seconds between records, for files whose times do not decode (0.1013 to 0.1062 s on a 1 h 38 flight). */
     public const float RECORD_INTERVAL = 0.104;
+
+    /** Seconds in one unit of the time of the records. */
+    private const float TIME_UNIT = 115200.0;
+
+    /** What the bits of the time of the records lack. */
+    private const int TIME_BITS_OFFSET = 0x500000;
 
     private const int TASK_COUNT = 0xF3;
     private const int TASK_POINTS = 0xF7;
@@ -62,6 +74,7 @@ final readonly class FtrReader
 
         $count = self::int($content, self::RECORDS_HEADER + 16);
         $count = min($count, intdiv(\strlen($content) - self::RECORDS, self::RECORD_SIZE));
+        $times = self::times($content, $count);
         $fixes = [];
         for ($i = 0; $i < $count; ++$i) {
             $offset = self::RECORDS + $i * self::RECORD_SIZE;
@@ -70,7 +83,7 @@ final readonly class FtrReader
                 continue;
             }
             [$latitude, $longitude] = $landscape->toLatLon($x, $y);
-            $fixes[] = new Fix($i * self::RECORD_INTERVAL, $latitude, $longitude, $altitude);
+            $fixes[] = new Fix($times[$i] ?? $i * self::RECORD_INTERVAL, $latitude, $longitude, $altitude);
         }
         if (\count($fixes) < 2) {
             throw new InvalidTrackException('La trace ne contient aucune position.');
@@ -90,8 +103,33 @@ final readonly class FtrReader
             flightPlan: self::flightPlan($content),
             turnpoints: self::turnpoints($content, $landscape),
             fixes: $fixes,
-            exactTimes: false,
+            exactTimes: null !== $times,
         );
+    }
+
+    /**
+     * Seconds of each record since the first one, or null when they do not decode to times growing
+     * by less than 5 s between two records.
+     *
+     * @return list<float>|null
+     */
+    private static function times(string $content, int $count): ?array
+    {
+        $times = [];
+        $first = null;
+        for ($i = 0; $i < $count; ++$i) {
+            $bits = (int) (unpack('V', $content, self::RECORDS + $i * self::RECORD_SIZE)[1] ?? 0);
+            $value = (float) (unpack('g', pack('V', ($bits + self::TIME_BITS_OFFSET) & 0xFFFFFFFF))[1] ?? \NAN);
+            $first ??= $value;
+            $time = ($value - $first) * self::TIME_UNIT;
+            $previous = $times[$i - 1] ?? 0.0;
+            if (!is_finite($time) || $time < $previous || $time - $previous > 5.0) {
+                return null;
+            }
+            $times[] = $time;
+        }
+
+        return $times;
     }
 
     /**
@@ -105,7 +143,7 @@ final readonly class FtrReader
             $offset = self::TASK_POINTS + $i * self::TASK_POINT_SIZE;
             [$x, $y, $altitude] = array_values(unpack('g3', $content, $offset + 17) ?: []);
             [$latitude, $longitude] = $landscape->toLatLon($x, $y);
-            $turnpoints[] = new Turnpoint(self::shortString($content, $offset), $latitude, $longitude, $altitude, (float) self::int($content, $offset + 44));
+            $turnpoints[] = new Turnpoint(self::shortString($content, $offset), $latitude, $longitude, $altitude, (float) self::int($content, $offset + 44), (float) self::int($content, $offset + 48));
         }
 
         return $turnpoints;

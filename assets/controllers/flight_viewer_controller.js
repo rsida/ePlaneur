@@ -3,6 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 import { LineLayer, PathLayer, ScatterplotLayer } from '@deck.gl/layers';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
+import { FORMATS, valueTip } from '../flight/chart.js';
 import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
 
 /*
@@ -220,9 +221,6 @@ export default class extends Controller {
 
         this.charts = this.chartTargets.map((target) => {
             const name = target.dataset.series;
-            const tip = document.createElement('div');
-            tip.className = 'p-flight__chart-tip';
-            tip.hidden = true;
             const options = {
                 width: target.clientWidth || 600,
                 height: 130,
@@ -234,6 +232,7 @@ export default class extends Controller {
                     { size: 46, font: '11px Inter, sans-serif' },
                 ],
                 series: [{}, { ...settings[name], width: 1.5, points: { show: false } }],
+                plugins: [valueTip((u, i) => [`${FORMATS[name](u.data[1][i])} · ${formatTime(u.data[0][i])}`])],
                 hooks: {
                     // Thermals shaded behind the altitude
                     drawClear: name === 'altitude' ? [(u) => {
@@ -248,14 +247,12 @@ export default class extends Controller {
                         ctx.restore();
                     }] : [],
                     setCursor: [(u) => {
-                        showValue(u, tip, FORMATS[name]);
                         if (u.cursor.idx != null && !this.playing && this.hovering === u) this.moveTo(u.cursor.idx, { fromChart: true });
                     }],
                 },
             };
             if (name === 'vario') options.scales.y = { range: (u, min, max) => [Math.min(min, -4), Math.max(max, 4)] };
             const chart = new uPlot(options, [time, this.series[name]], target);
-            chart.over.append(tip);
             sync.sub(chart);
             chart.over.addEventListener('mouseenter', () => { this.hovering = chart; });
             chart.over.addEventListener('mouseleave', () => { this.hovering = null; });
@@ -366,30 +363,7 @@ export default class extends Controller {
     }
 }
 
-/** Value of each series as shown in the side panel and on the charts. */
-const FORMATS = {
-    altitude: (value) => `${Math.round(value).toLocaleString('fr-FR')} m`,
-    vario: (value) => `${value > 0 ? '+' : ''}${value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m/s`,
-    speed: (value) => `${Math.round(value)} km/h`,
-};
 
-/** Label next to the cursor of a chart: value and time of the point, kept inside the plot. */
-function showValue(u, tip, format) {
-    const i = u.cursor.idx;
-    if (i == null || u.cursor.left < 0) {
-        tip.hidden = true;
-
-        return;
-    }
-    const x = u.valToPos(u.data[0][i], 'x');
-    const y = u.valToPos(u.data[1][i], 'y');
-    tip.hidden = false;
-    tip.textContent = `${format(u.data[1][i])} · ${formatTime(u.data[0][i])}`;
-    const width = u.over.clientWidth;
-    const flip = x + 8 + tip.offsetWidth > width;
-    tip.style.left = `${flip ? x - 8 - tip.offsetWidth : x + 8}px`;
-    tip.style.top = `${Math.min(Math.max(y - tip.offsetHeight - 6, 0), u.over.clientHeight - tip.offsetHeight)}px`;
-}
 
 /** One line describing a thermal or a glide. */
 function describePhase(phase) {

@@ -101,6 +101,7 @@
                                 <th scope="col">Vario moyen en thermique</th>
                                 <th scope="col">Finesse en transition</th>
                                 <th scope="col">Temps en spirale</th>
+                                <th scope="col"><span class="u-visually-hidden">Comparaison</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -121,6 +122,11 @@
                                     <td>{{ stats.climbAverage is not null ? stats.climbAverage|number_format(1, ',', ' ') ~ ' m/s' : '—' }}</td>
                                     <td>{{ stats.glideRatio is not null ? stats.glideRatio|number_format(0, ',', ' ') : '—' }}</td>
                                     <td>{{ stats.circlingShare is not null ? (stats.circlingShare * 100)|round ~ ' %' : '—' }}</td>
+                                    <td>
+                                        {% if not loop.first and task and task.turnpoints[1].reached is not null and flights|first.analysis.task.turnpoints[1].reached is not null %}
+                                            <a href="{{ path('app_flight_compare', {id: member.id, other: (flights|first).id}) }}">Comparer au 1<sup>er</sup></a>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>

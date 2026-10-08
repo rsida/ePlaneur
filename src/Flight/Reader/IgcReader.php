@@ -10,8 +10,10 @@ use App\Flight\Turnpoint;
 
 /**
  * IGC flight recorder file (FAI standard), as exported by Condor ("Analyse du vol" > "Export IGC")
- * or by a real logger: B records give one fix per second with its time, C records the task, H
- * records the pilot, glider and date. GNSS altitude is used, pressure altitude when it is missing.
+ * or by a real logger: B records give one fix per second with its time, C records the task (the
+ * first one declares it, with its name: the flight plan; then take-off, start, turnpoints, finish
+ * and landing), LSEEYOU lines the zones of the task points (500 m cylinders otherwise), H records the
+ * pilot, glider and date. GNSS altitude is used, pressure altitude when it is missing.
  */
 final readonly class IgcReader
 {
@@ -27,6 +29,8 @@ final readonly class IgcReader
         $headers = [];
         $fixes = [];
         $turnpoints = [];
+        $taskName = null;
+        $zones = [];
         $firstTime = null;
         $previousTime = null;
         $dayOffset = 0;
@@ -44,7 +48,21 @@ final readonly class IgcReader
                 $firstTime ??= $time;
                 $previousTime = $time;
                 $altitude = (int) $match[8] ?: (int) $match[7];
-                $fixes[] = new Fix((float) ($time - $firstTime), self::latitude($match[4]), self::longitude($match[5]), (float) $altitude);
+                $seconds = (float) ($time - $firstTime);
+                // Times are whole seconds: Condor, recording a bit more often, writes two fixes in the
+                // same second now and then; the second one is put half a second later
+                if ([] !== $fixes && $seconds <= $fixes[\count($fixes) - 1]->time) {
+                    $seconds = $fixes[\count($fixes) - 1]->time + 0.5;
+                }
+                $fixes[] = new Fix($seconds, self::latitude($match[4]), self::longitude($match[5]), (float) $altitude);
+            } elseif (1 === preg_match('/^C\d{6}\d{6}\d{6}\d{4}[-\d]\d(.*)$/', $line, $match)) {
+                // Declaration: date and time, flight date, task number, number of points, then the name
+                // (kept when it has letters: some loggers write digits only)
+                $taskName = 1 === preg_match('/\p{L}/u', $match[1]) ? trim($match[1]) : null;
+            } elseif (1 === preg_match('/^LSEEYOU OZ=(-?\d+),.*?R1=(\d+(?:\.\d+)?)m(?:,A1=(\d+(?:\.\d+)?))?/', $line, $match)) {
+                // Zone of a task point (SeeYou extension, written by Condor): OZ=-1 is the start;
+                // A1 is half the angle
+                $zones[(int) $match[1]] = [(float) $match[2], isset($match[3]) ? 2 * (float) $match[3] : 360.0];
             } elseif (1 === preg_match('/^C(\d{7}[NS])(\d{8}[EW])(.*)$/', $line, $match)) {
                 $latitude = self::latitude($match[1]);
                 $longitude = self::longitude($match[2]);
@@ -56,6 +74,17 @@ final readonly class IgcReader
 
         if (\count($fixes) < 2) {
             throw new InvalidTrackException('Ce fichier IGC ne contient aucune position.');
+        }
+
+        // C records: take-off, start, turnpoints, finish, landing; the task ends at the finish
+        if (\count($turnpoints) >= 4) {
+            array_pop($turnpoints);
+        }
+        foreach ($turnpoints as $k => $point) {
+            if (isset($zones[$k - 2])) {
+                [$radius, $angle] = $zones[$k - 2];
+                $turnpoints[$k] = new Turnpoint($point->name, $point->latitude, $point->longitude, $point->altitude, $radius, $angle);
+            }
         }
 
         $type = $headers['FTY'] ?? '';
@@ -72,7 +101,7 @@ final readonly class IgcReader
             glider: ($headers['GTY'] ?? '') ?: null,
             landscape: null,
             raceId: null,
-            flightPlan: null,
+            flightPlan: null !== $taskName ? mb_substr($taskName, 0, 160) : null,
             turnpoints: $turnpoints,
             fixes: $fixes,
             exactTimes: true,

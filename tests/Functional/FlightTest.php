@@ -55,15 +55,15 @@ final class FlightTest extends WebTestCase
         self::assertSelectorTextContains('h1', 'Romain SIDA');
         self::assertSelectorTextContains('.p-flight__meta', 'Diana2 · AA3 · C3-c060_Laragne-Ventoux-Fayence');
         self::assertSelectorTextContains('.p-flight__head .c-tag', 'Départ en vol');
-        self::assertSelectorTextContains('body', 'les durées et les vitesses sont estimées');
+        self::assertSelectorTextNotContains('body', 'sont estimées', 'Times decoded from the records');
         self::assertSelectorTextContains('.p-flight__legs', 'Laragne Chp → Ventoux');
 
         $this->client->request('GET', '/vols/'.$flight->getId().'/analyse.json');
         self::assertResponseIsSuccessful();
         /** @var array{series: array{time: list<int>}, exactTimes: bool} $analysis */
         $analysis = json_decode((string) $this->client->getResponse()->getContent(), true);
-        self::assertCount(312, $analysis['series']['time'], '3,000 records of 0.104 s, one point per second');
-        self::assertFalse($analysis['exactTimes']);
+        self::assertCount(306, $analysis['series']['time'], '3,000 records over 305 s, one point per second');
+        self::assertTrue($analysis['exactTimes']);
     }
 
     public function testAnIgcFileIsUploaded(): void
@@ -140,8 +140,53 @@ final class FlightTest extends WebTestCase
         $session = json_decode((string) $this->client->getResponse()->getContent(), true);
         self::assertCount(2, $session['flights']);
         self::assertNotNull($session['task']);
-        self::assertCount(312, $session['flights'][0]['altitude']);
+        self::assertCount(306, $session['flights'][0]['altitude']);
         self::assertSame(0, $session['flights'][0]['start']);
+    }
+
+    public function testTwoFlightsOfASessionAreCompared(): void
+    {
+        // The sample flight on a task from x = 0 (start) to x = 7,000 m, uploaded by two pilots
+        $file = sys_get_temp_dir().'/task.igc';
+        file_put_contents($file, FlightSamples::igc(FlightSamples::glideThermalGlide(), extraHeaders: FlightSamples::igcTask('Tâche test', [0, 0, 7000])));
+        foreach (['pilote@example.org', 'autre@example.org'] as $email) {
+            $this->client->loginUser($this->user($email));
+            $crawler = $this->client->request('GET', '/vols');
+            $this->client->request('POST', '/vols', ['_token' => $crawler->filter('input[name="_token"]')->attr('value')], ['trace' => $this->upload($file, 'task.igc')]);
+        }
+        [$first, $second] = $this->entityManager->getRepository(Flight::class)->findBy([], ['id' => 'ASC']);
+        self::assertSame('Tâche test', $first->getFlightPlan());
+
+        $this->client->request('GET', '/vols/'.$second->getId());
+        $this->client->clickLink('Comparer avec un autre pilote');
+        self::assertResponseRedirects('/vols/'.$second->getId().'/comparer/'.$first->getId());
+        $this->client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Jeanne Pilote face à Jeanne Pilote');
+        self::assertSelectorTextContains('.p-compare__verdict', 'les deux pilotes sont à égalité');
+        self::assertSelectorTextContains('.p-compare__summary', 'Vario moyen en thermique');
+
+        $this->client->request('GET', '/vols/'.$second->getId().'/comparer/'.$first->getId().'.json');
+        self::assertResponseIsSuccessful();
+        /** @var array{step: int, flights: list<array{times: list<int>}>} $data */
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame(250, $data['step']);
+        self::assertCount(2, $data['flights']);
+        self::assertSame($data['flights'][0]['times'], $data['flights'][1]['times'], 'The same track');
+        self::assertGreaterThan(20, \count($data['flights'][0]['times']), 'From the start to the finish, 250 m apart');
+    }
+
+    public function testAFlightAloneHasNothingToCompare(): void
+    {
+        $this->client->loginUser($this->user('pilote@example.org'));
+        $crawler = $this->client->request('GET', '/vols');
+        $this->client->request('POST', '/vols', ['_token' => $crawler->filter('input[name="_token"]')->attr('value')], ['trace' => $this->upload(\dirname(__DIR__).'/fixtures/flights/aa3-laragne-start.ftr', 'C3-c060-1.ftr')]);
+        $id = $this->entityManager->getRepository(Flight::class)->findOneBy([])?->getId();
+
+        $this->client->request('GET', '/vols/'.$id.'/comparer');
+        self::assertResponseRedirects('/vols/'.$id);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.c-alert', 'rien à comparer');
     }
 
     private function user(string $email, string ...$groups): User

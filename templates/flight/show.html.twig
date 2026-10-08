@@ -22,8 +22,12 @@
                     <p class="p-flight__links">
                         {% if flight.launch %}<twig:Ui:Tag variant="soft" title="Lu sur le début de la trace">{{ flight.launch.label }}</twig:Ui:Tag>{% endif %}
                         {% if flight.flightPlan %}<twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">{{ session_size > 1 ? 'Session : ' ~ session_size ~ ' vols sur ce plan de vol' : 'Session de ce plan de vol' }}</twig:Ui:Link>{% endif %}
+                        {% if session_size > 1 and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare_pick', {id: flight.id}) }}">Comparer avec un autre pilote</twig:Ui:Link>{% endif %}
                     </p>
                 {% endif %}
+                {% for message in app.flashes('info') %}
+                    <div class="c-alert" role="status">{{ message }}</div>
+                {% endfor %}
                 {% if not analysis.exactTimes %}
                     <p class="u-note">Trace Condor (.ftr) : Condor chiffre l’heure de chaque point, les durées et les vitesses sont estimées (à quelques pourcents près). Les positions et altitudes sont exactes.</p>
                 {% endif %}

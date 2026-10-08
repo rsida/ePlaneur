@@ -36,6 +36,8 @@
     --palette-red-soft: #f6e2df;
     --palette-green: #2f6b4f;
     --palette-green-soft: #e1eee6;
+    /* Data colors (flight comparison): not in the Figma file */
+    --palette-orange: #d9822b;
 
     --font-display: 'Oswald', 'Arial Narrow', sans-serif;
     --font-heading: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
@@ -55,6 +57,9 @@
     --color-danger-soft: var(--palette-red-soft);
     --color-success: var(--palette-green);
     --color-success-soft: var(--palette-green-soft);
+    /* The two pilots of a flight comparison, on the map, the charts and the tables */
+    --color-pilot-a: var(--palette-orange);
+    --color-pilot-b: var(--palette-navy);
 
     /* ---------- 2. Semantic: neutrals ---------- */
     /* Fixed colors, whatever the surface; inside a themed section prefer --on-surface and --rule */

@@ -6,11 +6,13 @@ namespace App\Controller;
 
 use App\Entity\Flight;
 use App\Entity\User;
+use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
 use App\Flight\FlightSession;
 use App\Flight\Reader\InvalidTrackException;
 use App\Repository\FlightRepository;
 use App\Security\Voter\FlightVoter;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -122,6 +124,72 @@ final class FlightController extends AbstractController
         $response = new JsonResponse($flight->getAnalysis());
         $response->setPrivate();
         $response->setMaxAge(3600);
+
+        return $response;
+    }
+
+    /**
+     * Comparison with the flight chosen in the form (`?avec=`), by default the best other flight of
+     * the session.
+     */
+    #[Route('/{id<\d+>}/comparer', name: 'compare_pick', methods: ['GET'])]
+    public function comparePick(Flight $flight, Request $request, FlightRepository $flights): Response
+    {
+        $others = array_values(array_filter(FlightSession::of($flights->findSession($flight))->flights, static fn (Flight $other): bool => $other->getId() !== $flight->getId()));
+        $chosen = $request->query->getInt('avec');
+        $reference = array_find($others, static fn (Flight $other): bool => $other->getId() === $chosen) ?? $others[0] ?? null;
+        if (null === $reference) {
+            $this->addFlash('info', 'Aucun autre vol n’est enregistré sur ce plan de vol : rien à comparer pour l’instant.');
+
+            return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId()]);
+        }
+
+        return $this->redirectToRoute('app_flight_compare', ['id' => $flight->getId(), 'other' => $reference->getId()]);
+    }
+
+    /** Where along the task the flight gains or loses time on another flight of the same task. */
+    #[Route('/{id<\d+>}/comparer/{other<\d+>}', name: 'compare', methods: ['GET'])]
+    public function compare(Flight $flight, #[MapEntity(id: 'other')] Flight $reference, FlightRepository $flights): Response
+    {
+        $comparison = FlightComparison::of($flight, $reference);
+        if (null === $comparison) {
+            $this->addFlash('info', 'Ces deux vols ne peuvent pas être comparés : ils doivent suivre le même plan de vol et avoir passé la ligne de départ.');
+
+            return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId()]);
+        }
+
+        return $this->render('flight/compare.html.twig', [
+            'flight' => $flight,
+            'reference' => $reference,
+            'comparison' => $comparison,
+            'session' => FlightSession::of($flights->findSession($flight)),
+        ]);
+    }
+
+    /**
+     * What the comparison viewer draws: the task, both tracks, and the index in each track where
+     * the task distance reaches each FlightComparison::STEP.
+     */
+    #[Route('/{id<\d+>}/comparer/{other<\d+>}.json', name: 'compare_data', methods: ['GET'])]
+    public function compareData(Flight $flight, #[MapEntity(id: 'other')] Flight $reference): JsonResponse
+    {
+        $comparison = FlightComparison::of($flight, $reference) ?? throw $this->createNotFoundException();
+        $tracks = [];
+        foreach ([$flight, $reference] as $k => $member) {
+            $analysis = $member->getAnalysis();
+            $tracks[] = [
+                'pilot' => $member->getPilot(),
+                'competitionId' => $member->getCompetitionId(),
+                'start' => $comparison->starts[$k],
+                'times' => $comparison->times[$k],
+                'latitude' => $analysis['series']['latitude'],
+                'longitude' => $analysis['series']['longitude'],
+                'altitude' => $analysis['series']['altitude'],
+            ];
+        }
+        $response = new JsonResponse(['task' => $flight->getAnalysis()['task'], 'step' => FlightComparison::STEP, 'flights' => $tracks]);
+        $response->setPrivate();
+        $response->setMaxAge(300);
 
         return $response;
     }

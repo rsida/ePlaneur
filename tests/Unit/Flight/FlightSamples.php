@@ -77,6 +77,23 @@ final class FlightSamples
         return implode("\r\n", $lines)."\r\n";
     }
 
+    /**
+     * C records of a task named `$name` along the x axis: take-off, start and the other points at
+     * these distances east, in metres (IGC points get a 500 m radius).
+     *
+     * @param list<float> $distances
+     */
+    public static function igcTask(string $name, array $distances): string
+    {
+        $lines = [\sprintf('C1902261000001902260001%02d%s', \count($distances) - 2, $name)];
+        foreach ($distances as $k => $x) {
+            ['latitude' => $latitude, 'longitude' => $longitude] = self::toLatLon($x, 0);
+            $lines[] = 'C'.self::coordinate($latitude, 2, 'N', 'S').self::coordinate($longitude, 3, 'E', 'W').'Point '.$k;
+        }
+
+        return implode("\r\n", $lines);
+    }
+
     private static function coordinate(float $value, int $degreeDigits, string $positive, string $negative): string
     {
         $absolute = abs($value);

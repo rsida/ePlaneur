@@ -1,0 +1,201 @@
+{% extends 'base.html.twig' %}
+
+{#
+    Comparison of two flights of the same task (FlightComparison): `flight` against `reference`.
+    Gaps are those of `flight`: positive means time lost on the reference.
+#}
+{% set a = flight.analysis %}
+{% set b = reference.analysis %}
+{% set approx = a.exactTimes and b.exactTimes ? '' : ' (estimé)' %}
+{% set gaps = comparison.gaps %}
+{% set finishGap = a.task.completed and b.task.completed ? a.task.duration - b.task.duration : null %}
+{% set nameA = flight.competitionId ?: flight.pilot %}
+{% set nameB = reference.competitionId ?: reference.pilot %}
+
+{% block title %}{{ flight.pilot }} face à {{ reference.pilot }}{% endblock %}
+{% block description %}Comparaison des vols de {{ flight.pilot }} et {{ reference.pilot }} sur {{ flight.flightPlan }}.{% endblock %}
+
+{% macro row(label, valueA, valueB, gap = null) %}
+    <tr>
+        <th scope="row">{{ label }}</th>
+        <td>{{ valueA }}</td>
+        <td>{{ valueB }}</td>
+        {% if gap is not null %}<td>{{ gap }}</td>{% else %}<td></td>{% endif %}
+    </tr>
+{% endmacro %}
+
+{# What a pilot did on a stretch (FlightComparison::moments()), in one sentence. #}
+{% macro what(side) -%}
+    {{ side.duration|flight_time }}
+    {%- if side.circling > 0 %}, dont {{ side.circling|flight_time }} en spirale ({{ side.thermals }} {{ side.thermals > 1 ? 'thermiques' : 'thermique' }}{% if side.climb is not null %} à {{ side.climb|number_format(1, ',', ' ') }} m/s{% endif %}){% else %}, sans spirale{% endif %}
+    {%- if side.glideSpeed is not null %}, transitions à {{ side.glideSpeed|number_format(0, ',', ' ') }} km/h{% endif %} · altitude {{ side.from|number_format(0, ',', ' ') }} → {{ side.to|number_format(0, ',', ' ') }} m
+{%- endmacro %}
+
+{% block body %}
+    <section class="p-flight t-light" data-controller="compare-viewer"
+             data-compare-viewer-url-value="{{ path('app_flight_compare_data', {id: flight.id, other: reference.id}) }}">
+        <div class="l-container p-flight__head">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">Session {{ flight.flightPlan }}</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Comparaison de vols</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">
+                    <span class="p-compare__pilot p-compare__pilot--a">{{ flight.pilot }}</span> face à
+                    <span class="p-compare__pilot p-compare__pilot--b">{{ reference.pilot }}</span>
+                </twig:Ui:Heading>
+                <p class="p-compare__verdict">
+                    {% if finishGap is not null %}
+                        À l’arrivée,
+                        {% if finishGap > 0 %}{{ flight.pilot }} a <strong class="p-compare__lost">{{ finishGap|flight_time }} de retard</strong>{% elseif finishGap < 0 %}{{ flight.pilot }} a <strong class="p-compare__won">{{ (-finishGap)|flight_time }} d’avance</strong>{% else %}les deux pilotes sont à égalité{% endif %}{{ approx }}.
+                    {% elseif gaps is not empty %}
+                        Au dernier point atteint par les deux pilotes (km {{ ((gaps|length - 1) * constant('App\\Flight\\FlightComparison::STEP') / 1000)|number_format(1, ',', ' ') }}), l’écart est de {{ gaps|last|flight_gap }}{{ approx }}.
+                    {% endif %}
+                </p>
+            </div>
+            {% set others = session.flights|filter(f => f.id != flight.id) %}
+            {% if others|length > 1 %}
+                <form method="get" action="{{ path('app_flight_compare_pick', {id: flight.id}) }}" class="p-compare__pick" data-controller="autosubmit">
+                    <label class="c-field__label" for="compare-with">Comparer avec</label>
+                    <div class="p-flight__select">
+                        <select id="compare-with" name="avec" data-action="autosubmit#submit">
+                            {% for other in others %}
+                                <option value="{{ other.id }}"{% if other.id == reference.id %} selected{% endif %}>{{ other.pilot }}{% if other.competitionId %} ({{ other.competitionId }}){% endif %}{% if other.taskSpeed %} · {{ other.taskSpeed|number_format(1, ',', ' ') }} km/h{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <noscript><twig:Ui:Button type="submit" size="sm">Comparer</twig:Ui:Button></noscript>
+                </form>
+            {% endif %}
+        </div>
+
+        <div class="l-container p-compare__summary">
+            <figure class="c-data-table">
+                <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Chiffres des deux vols">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col"><span class="p-compare__key p-compare__key--a"></span>{{ nameA }}</th>
+                                <th scope="col"><span class="p-compare__key p-compare__key--b"></span>{{ nameB }}</th>
+                                <th scope="col">Écart</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set sa = a.statistics %}
+                            {% set sb = b.statistics %}
+                            {{ _self.row('Temps circuit' ~ approx, a.task.duration|flight_time, b.task.duration|flight_time, finishGap is not null ? finishGap|flight_gap : null) }}
+                            {{ _self.row('Vitesse circuit' ~ approx, a.task.speed ? a.task.speed|number_format(1, ',', ' ') ~ ' km/h' : 'non terminé', b.task.speed ? b.task.speed|number_format(1, ',', ' ') ~ ' km/h' : 'non terminé') }}
+                            {{ _self.row('Temps en spirale', sa.circlingShare is not null ? (sa.circlingShare * 100)|round ~ ' %' : '—', sb.circlingShare is not null ? (sb.circlingShare * 100)|round ~ ' %' : '—') }}
+                            {{ _self.row('Thermiques', sa.thermals, sb.thermals) }}
+                            {{ _self.row('Vario moyen en thermique', sa.climbAverage is not null ? sa.climbAverage|number_format(1, ',', ' ') ~ ' m/s' : '—', sb.climbAverage is not null ? sb.climbAverage|number_format(1, ',', ' ') ~ ' m/s' : '—') }}
+                            {{ _self.row('Vitesse en transition', sa.glideSpeed is not null ? sa.glideSpeed|number_format(0, ',', ' ') ~ ' km/h' : '—', sb.glideSpeed is not null ? sb.glideSpeed|number_format(0, ',', ' ') ~ ' km/h' : '—') }}
+                            {{ _self.row('Finesse en transition', sa.glideRatio is not null ? sa.glideRatio|number_format(0, ',', ' ') : '—', sb.glideRatio is not null ? sb.glideRatio|number_format(0, ',', ' ') : '—') }}
+                            {{ _self.row('Distance parcourue', flight.distance|flight_distance, reference.distance|flight_distance) }}
+                        </tbody>
+                    </table>
+                </div>
+            </figure>
+        </div>
+
+        {% set losses = comparison.moments(true) %}
+        {% set wins = comparison.moments(false) %}
+        {% if losses is not empty or wins is not empty %}
+            <div class="l-container p-compare__moments">
+                {% for list in [{title: 'Où ' ~ nameA ~ ' perd du temps', items: losses, class: 'lost'}, {title: 'Où ' ~ nameA ~ ' gagne du temps', items: wins, class: 'won'}] %}
+                    {% if list.items is not empty %}
+                        <section class="l-stack l-stack--sm">
+                            <twig:Ui:Heading level="2" size="h4">{{ list.title }}</twig:Ui:Heading>
+                            <ol class="p-compare__moment-list">
+                                {% for moment in list.items %}
+                                    <li class="p-compare__moment p-compare__moment--{{ list.class }}">
+                                        <button type="button" class="p-compare__moment-head" data-action="compare-viewer#showStretch"
+                                                data-from="{{ moment.from }}" data-to="{{ moment.to }}">
+                                            <span>Du km {{ (moment.from / 1000)|number_format(1, ',', ' ') }} au km {{ (moment.to / 1000)|number_format(1, ',', ' ') }}</span>
+                                            <strong>{{ moment.gap|flight_gap }}</strong>
+                                        </button>
+                                        <dl class="p-compare__moment-detail">
+                                            <div><dt><span class="p-compare__key p-compare__key--a"></span>{{ nameA }}</dt><dd>{{ _self.what(moment.flight) }}</dd></div>
+                                            <div><dt><span class="p-compare__key p-compare__key--b"></span>{{ nameB }}</dt><dd>{{ _self.what(moment.reference) }}</dd></div>
+                                        </dl>
+                                    </li>
+                                {% endfor %}
+                            </ol>
+                        </section>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="p-flight__viewer p-compare__viewer">
+            <div class="p-flight__map-wrap">
+                <div class="p-flight__map" data-compare-viewer-target="map" role="region" aria-label="Carte des deux vols"></div>
+                <div class="p-flight__map-tools">
+                    <div class="p-flight__toggles" role="group" aria-label="Vue">
+                        <button type="button" class="p-flight__toggle" aria-pressed="true" data-compare-viewer-target="view" data-view="2d" data-action="compare-viewer#setView"><twig:ux:icon name="map" /> Carte</button>
+                        <button type="button" class="p-flight__toggle" aria-pressed="false" data-compare-viewer-target="view" data-view="3d" data-action="compare-viewer#setView"><twig:ux:icon name="mountain" /> 3D</button>
+                    </div>
+                    <label class="p-flight__select">
+                        <span class="u-visually-hidden">Fond de carte</span>
+                        <select data-action="compare-viewer#setBasemap">
+                            <option value="topo">Relief</option>
+                            <option value="satellite">Satellite</option>
+                            <option value="osm">Plan</option>
+                        </select>
+                    </label>
+                </div>
+                <p class="p-flight__loading" data-compare-viewer-target="status" role="status">Chargement des vols…</p>
+            </div>
+
+            <aside class="p-flight__side" aria-label="Valeurs à la distance courante">
+                <dl class="p-flight__now">
+                    <div><dt>Distance du circuit</dt><dd data-compare-viewer-target="nowDistance">—</dd></div>
+                    <div><dt>Écart{{ approx }}</dt><dd data-compare-viewer-target="nowGap">—</dd></div>
+                    <div><dt><span class="p-compare__key p-compare__key--a"></span>Altitude {{ nameA }}</dt><dd data-compare-viewer-target="nowAltitudeA">—</dd></div>
+                    <div><dt><span class="p-compare__key p-compare__key--b"></span>Altitude {{ nameB }}</dt><dd data-compare-viewer-target="nowAltitudeB">—</dd></div>
+                </dl>
+
+                <section class="l-stack l-stack--sm">
+                    <h2 class="p-flight__side-title">Branches · écart de {{ nameA }}</h2>
+                    <ol class="p-flight__legs">
+                        {% for leg in comparison.legs %}
+                            <li>
+                                <span class="p-flight__leg-name">{{ leg.from }} → {{ leg.to }}</span>
+                                <span class="p-flight__leg-values">{{ leg.flight|flight_time }} contre {{ leg.reference|flight_time }}
+                                    {%- if leg.gap is not null %} · <strong class="{{ leg.gap > 0 ? 'p-compare__lost' : (leg.gap < 0 ? 'p-compare__won' : '') }}">{{ leg.gap|flight_gap }}</strong>{% endif %}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </section>
+            </aside>
+
+            <div class="p-flight__replay">
+                <input type="range" class="p-flight__seek" min="0" max="{{ gaps|length - 1 }}" value="0" step="1" aria-label="Distance du circuit"
+                       data-compare-viewer-target="seek" data-action="input->compare-viewer#seek">
+            </div>
+
+            <div class="p-flight__charts">
+                <figure class="p-flight__chart"><figcaption>Écart de {{ nameA }} (s) selon la distance du circuit (km) — au-dessus de zéro : retard</figcaption><div data-compare-viewer-target="chart" data-series="gap"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Altitude (m) selon la distance du circuit (km)</figcaption><div data-compare-viewer-target="chart" data-series="altitude"></div></figure>
+            </div>
+        </div>
+
+        <div class="l-container p-compare__thermals">
+            <twig:Ui:Heading level="2" size="h3">Thermiques pris par chacun</twig:Ui:Heading>
+            <div class="p-compare__columns">
+                {% for side in [{name: nameA, thermals: comparison.thermals(0), key: 'a'}, {name: nameB, thermals: comparison.thermals(1), key: 'b'}] %}
+                    <section class="l-stack l-stack--sm">
+                        <h3 class="p-flight__side-title"><span class="p-compare__key p-compare__key--{{ side.key }}"></span>{{ side.name }} · {{ side.thermals|length }} {{ side.thermals|length > 1 ? 'thermiques' : 'thermique' }}</h3>
+                        <ol class="p-compare__thermal-list">
+                            {% for thermal in side.thermals %}
+                                <li>
+                                    <button type="button" class="p-flight__phase-item p-flight__phase-item--thermal" data-action="compare-viewer#showDistance" data-at="{{ thermal.at }}">
+                                        km {{ (thermal.at / 1000)|number_format(1, ',', ' ') }} · {{ thermal.duration|flight_time }} · {{ thermal.gain >= 0 ? '+' : '' }}{{ thermal.gain|number_format(0, ',', ' ') }} m · {{ thermal.vario|number_format(1, ',', ' ') }} m/s
+                                    </button>
+                                </li>
+                            {% endfor %}
+                        </ol>
+                    </section>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

@@ -57,7 +57,7 @@ treasurer's agreement before any code.
 | 7 | Flight viewer | Condor Club-like flight analysis focused on training: upload a Condor flight track, see it on a map from above and in 3D at its real altitude over the relief, replay it, read the computed values (ground speed, altitude, vario, thermals, glides, task legs), then replay a whole network session with every pilot, compare flights and follow each pilot's progression | In progress, split below; order of 7b to 7f chosen on 2026-10-08 (the session page first: the most telling demo for the committee) |
 | 7a | One flight | Read Condor 3 `.ftr` files and IGC files; exact coordinates from the landscape projection; analysis (1 s series, speed, vario, circling and glide phases, statistics); flight page with 2D map, 3D view, charts and replay; upload by logged-in users; launch (airborne, aerotow, winch) read from the track | Done (2026-10-08), see [flights](flights.md); to try with the committee |
 | 7b | Network session | Flights of the same flight plan grouped automatically on a session page: ranking by task speed, replay of all pilots together on the map and in 3D, session podium beyond speed (best climber, best glide ratio, least time circling) | Done (2026-10-08), sessions grouped by flight plan (see [flights](flights.md)); to try with the tracks of several pilots of one race |
-| 7c | Comparison | Compare a flight with another of the same race (the winner by default): time gained or lost leg by leg and along the track, thermals taken by each | To do |
+| 7c | Comparison | Compare a flight with another of the same race (the winner by default): time gained or lost leg by leg and along the track, thermals taken by each | Done (2026-10-08), see [flights](flights.md); IGC files now join sessions through their task name |
 | 7d | Progression | Rule-based advice tied to the training path (time spent circling, weak thermals accepted, always turning the same way, speed to fly); pilot logbook (average speed, climb rate and glide ratio over the weeks); instructor comments at a moment of a flight, linked to a step of the training path | To do |
 | 7e | Viewer extras | Cockpit camera in 3D replay; link to a moment of a flight (debriefings); two thermals or legs side by side; public flights chosen by the pilot (showcase on the home page) | To do |
 | 7f | Club life | Club records per task or landscape, badges (first 300 km, first 5 h flight), season ranking; kept modest so that the site stays a training tool, not a game | Later |
@@ -98,13 +98,14 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
 | 2026-10-06 | News list: reserved posts are listed with their access tag (lock and audience instead of cover and excerpt), like reserved pages; the featured post leads the unfiltered list and is not repeated |
 | 2026-10-06 | LiipImagine is only the filter engine: resized WebP versions are stored under `var/uploads/cache/` and served by `MediaController` with the access rules of the original, so restricted pictures stay restricted (the bundle's public cache would bypass them); GD added to the `php` image |
 | 2026-10-08 | Flight viewer: reads Condor 3 `.ftr` files (reverse-engineered: fixed header, 64-byte records; positions converted exactly with the UTM projection stored in each landscape's `.trn` header) and IGC files; 2D and 3D with MapLibre GL, deck.gl for the track at its real altitude and AWS Terrain Tiles for the relief (no API key) |
+| 2026-10-08 | Times of the `.ftr` records decoded (float of 32-hour units, bits offset by 0x500000), checked against the IGC export of the same flight: durations and speeds are exact; Condor's 180° start and finish zones are half discs |
 | 2026-10-04 | Comments and "was this article useful?" feedback come later (moderation rules to define); step 2 split into 2a (posts, blocks) and 2b (pages, menus, documents) |
 
 ## Open questions
 
-- Flight tracks: the time of each `.ftr` record is encrypted. Positions are exact, times are
-  estimated from an average interval (about 0.104 s, measured on four flights against the race
-  results); an IGC export of the same flight would calibrate it. IGC files have exact times.
+- Flight tracks: the task time of C3-c060 is 63 s shorter than the Condor result while two other
+  races match within 3 s; a penalty in the results? And a flight with a crash in the middle
+  (C3-c058: 500 m higher, then a fast fall) keeps only one of its parts: how should it be shown?
 - Flight sessions: flights are grouped by flight plan. Do two pilots of the same network race get the
   same race id in their `.ftr`? If they do, a flight plan flown on several days could be split into
   sessions. Needs the tracks of two pilots of one race.

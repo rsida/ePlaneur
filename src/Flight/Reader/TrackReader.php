@@ -51,6 +51,11 @@ final readonly class TrackReader
             $horizontal = Geo::distance($previous->latitude, $previous->longitude, $fix->latitude, $fix->longitude) / $elapsed;
             $vertical = abs($fix->altitude - $previous->altitude) / $elapsed;
             if ($horizontal > self::MAX_HORIZONTAL_SPEED || $vertical > self::MAX_VERTICAL_SPEED) {
+                if ($horizontal <= self::MAX_HORIZONTAL_SPEED) {
+                    // A jump upwards only: Condor lifts the glider at the very fix where it crosses
+                    // the finish line. That position ends the part, at the altitude it had
+                    $parts[\count($parts) - 1][] = new Fix($fix->time, $fix->latitude, $fix->longitude, $previous->altitude);
+                }
                 $parts[] = [];
             }
             $parts[\count($parts) - 1][] = $fix;

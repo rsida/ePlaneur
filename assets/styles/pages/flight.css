@@ -309,6 +309,8 @@
 
 .p-flight__chart-tip {
     position: absolute;
+    display: grid;
+    gap: 2px;
     z-index: 1;
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-sm);
@@ -319,6 +321,23 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     pointer-events: none;
+}
+
+.p-flight__chart-tip[hidden] {
+    display: none;
+}
+
+.p-flight__chart-tip-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+}
+
+.p-flight__chart-tip-key {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    outline: 1px solid var(--color-on-dark);
 }
 
 .p-flight__links {
@@ -393,4 +412,158 @@
 
 .p-session__pilot .p-session__dot {
     margin-right: 0;
+}
+
+/* Comparison page (templates/flight/compare.html.twig, compare-viewer controller) */
+.p-compare__pilot--a {
+    color: var(--color-pilot-a);
+}
+
+.p-compare__pilot--b {
+    color: var(--color-pilot-b);
+}
+
+.p-compare__key {
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    margin-right: var(--space-1-5);
+    border-radius: 50%;
+    vertical-align: baseline;
+}
+
+.p-compare__key--a {
+    background-color: var(--color-pilot-a);
+}
+
+.p-compare__key--b {
+    background-color: var(--color-pilot-b);
+}
+
+.p-compare__verdict {
+    font-size: var(--text-lead);
+}
+
+.p-compare__lost,
+[data-sign='lost'] {
+    color: var(--color-danger);
+}
+
+.p-compare__won,
+[data-sign='won'] {
+    color: var(--color-success);
+}
+
+.p-compare__pick {
+    display: grid;
+    gap: var(--space-1-5);
+}
+
+.p-compare__summary {
+    margin-block: var(--space-6);
+}
+
+.p-compare__summary th[scope='row'] {
+    font-weight: 600;
+    text-align: left;
+}
+
+.p-compare__moments {
+    display: grid;
+    gap: var(--space-5);
+    margin-bottom: var(--space-6);
+}
+
+@media (width >= 64em) {
+    .p-compare__moments {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.p-compare__moment-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-compare__moment {
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--_moment-color);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+}
+
+.p-compare__moment--lost {
+    --_moment-color: var(--color-danger);
+}
+
+.p-compare__moment--won {
+    --_moment-color: var(--color-success);
+}
+
+.p-compare__moment-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text);
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.p-compare__moment-head strong {
+    color: var(--_moment-color);
+    white-space: nowrap;
+}
+
+.p-compare__moment-head:hover span {
+    text-decoration: underline;
+}
+
+.p-compare__moment-detail {
+    display: grid;
+    gap: var(--space-1-5);
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-sm);
+}
+
+.p-compare__moment-detail dt {
+    font-weight: 600;
+}
+
+.p-compare__moment-detail dd {
+    margin: 0;
+    color: var(--color-text-muted);
+}
+
+.p-compare__thermals {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-7);
+}
+
+.p-compare__columns {
+    display: grid;
+    gap: var(--space-5);
+}
+
+@media (width >= 48em) {
+    .p-compare__columns {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.p-compare__thermal-list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }

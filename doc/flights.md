@@ -6,14 +6,15 @@ their real altitude over the relief, with their charts, phases, task legs and a 
 
 | What | Where |
 |---|---|
-| Pages | `FlightController`: `/vols` (upload, my flights, latest flights), `/vols/{id}` (viewer), `/vols/{id}/analyse.json` (data of the viewer), `/vols/{id}/session` and `/vols/{id}/session.json` (session of the flight: ranking, podium, replay of all pilots), `/vols/{id}/supprimer` (`FLIGHT_DELETE`: the pilot who uploaded it or an administrator, `FlightVoter`) |
+| Pages | `FlightController`: `/vols` (upload, my flights, latest flights), `/vols/{id}` (viewer), `/vols/{id}/analyse.json` (data of the viewer), `/vols/{id}/session` and `/vols/{id}/session.json` (session of the flight: ranking, podium, replay of all pilots), `/vols/{id}/comparer/{other}` and its `.json` (comparison with another flight of the session; `/vols/{id}/comparer` picks the best other one), `/vols/{id}/supprimer` (`FLIGHT_DELETE`: the pilot who uploaded it or an administrator, `FlightVoter`) |
 | Reading files | `App\Flight\Reader\`: `FtrReader` (Condor 3 `.ftr`), `IgcReader` (IGC), `TrackReader` (format from the content, longest continuous part) |
 | Landscapes | `config/condor/landscapes.yaml`, `App\Flight\Condor\LandscapeRegistry`, `app:condor:landscape` |
 | Analysis again | `app:flight:analyse`: every stored flight from its file, after the analysis changed |
 | Analysis | `App\Flight\Analysis\FlightAnalyzer` → `FlightAnalysis` (stored as JSON in `Flight::analysis`) |
 | Storage | `Flight` entity; files in `app.flights_dir` (`var/flights`, Docker volume `flights` in production) through `FlightImporter` |
-| Viewer | `assets/flight/map.js` (map shared by both viewers), `assets/controllers/flight_viewer_controller.js` and `session_viewer_controller.js` (lazy), `templates/flight/`, `assets/styles/pages/flight.css` |
+| Viewer | `assets/flight/map.js` (map shared by the viewers), `assets/flight/chart.js` (value label of every chart, formats), `assets/controllers/flight_viewer_controller.js` and `session_viewer_controller.js` (lazy), `templates/flight/`, `assets/styles/pages/flight.css` |
 | Session | `App\Flight\FlightSession` (ranking, podium), `FlightRepository::findSession()` |
+| Comparison | `App\Flight\FlightComparison`, `assets/controllers/compare_viewer_controller.js` |
 
 ## Files
 
@@ -26,32 +27,38 @@ not documented; what follows was measured on Condor 3.1 files (2026-10-08):
 |---|---|
 | 0 | `FTR`, then the Condor version (int at 3: 3100) |
 | 0x9b, 0xac, 0xbd, 0xce, 0xd6, 0xdf | Pascal short strings: first name, last name, country, competition id, registration, landscape |
-| 0xf3 | Number of task points (int); points of 84 bytes from 0xf7: name (short string), x, y, z (floats at +17), radius (int at +44). The first point is the departure airfield, the second the start, the last the finish |
+| 0xf3 | Number of task points (int); points of 84 bytes from 0xf7: name (short string), x, y, z (floats at +17), radius and angle (ints at +44 and +48: 360° cylinder, 180° half disc for a start or finish), then floats at +52 (1,500), +56 (minimum finish height?) and +60 (maximum height). The first point is the departure airfield, the second the start, the last the finish |
 | 0x52eb, 0x52fc | Glider class and model; the flight plan name follows (first short string after 0x531e) |
 | 0x549b | Six ints: 1, -1, Condor race id, 0, number of records, ? |
-| 0x54b3 | Records of 64 bytes: x, y, altitude (floats at +4, +8, +12), attitude, and 24 bytes that look encrypted |
+| 0x54b3 | Records of 64 bytes: time (+0, see below), x, y, altitude (floats at +4, +8, +12), attitude, and 24 bytes that look encrypted |
 
-The time of each record is not stored in clear. The float at +0 of each record increases strictly
-from one record to the next (about 2.6 to 2.8), but it is not proportional to the race time: its
-ratio to the official task time ranges from 121,000 to 153,000 s per unit over three races, and its
-slope changes within one flight. Positions and altitudes are exact; times are
-estimated from an average interval of **0.104 s** (`FtrReader::RECORD_INTERVAL`), measured on four
-races: records between the start and the finish against the task time of the Condor results
-(0.1037 to 0.1068 s). On the race of 2026-02-19 the estimated task time is 17 s off out of 1 h 22.
-The viewer says durations and speeds are estimated for these files. An IGC export of the same
-flight would calibrate the interval.
+The time of each record is a float in units of 32 hours (115,200 s) whose bits lack 0x500000:
+`unpack('g', pack('V', bits + 0x500000)) × 115,200` grows linearly with the time. Found on
+2026-10-08 against the IGC export of the same flight (C3-c060): every IGC fix lies within 1.5 m of
+the record of its time, and the track lasts 5,911 s in both. Records are 0.06 to 1.2 s apart (about
+0.1 s, more spaced when the simulator is busy), so an even interval is wrong by up to 2 %. A file
+whose times do not decode to growing values falls back on an even interval of 0.104 s
+(`FtrReader::RECORD_INTERVAL`), and the viewer then says durations and speeds are estimated.
+
+Task times checked against the Condor results: s0109 4,524 s (Condor 4,527), LastTrack 4,216 s
+(4,219), c060 4,846 s (4,909: the IGC export gives the same 4,846 s; the 63 s may be a penalty).
 
 Condor 2 tracks are not read (their format differs): pilots export an IGC.
 
 ### IGC
 
 The FAI flight recorder format, exported by Condor ("Analyse du vol" > "Export IGC") or by a real
-logger: B records (one fix per second with its UTC time, GNSS altitude, pressure altitude when it is
-missing), C records (task), H records (pilot, glider, competition id, date). Times are exact.
+logger. Condor writes a fix about every second, sometimes two in the same second (the second one is
+put half a second later), the task in C records (take-off, start, turnpoints, finish, landing: the
+landing is left out) and the zones in `LSEEYOU OZ=` lines (R1 radius, A1 half angle). B records
+give the fixes (UTC time, GNSS altitude, pressure altitude when it is missing), H records the
+pilot, glider, competition id and date. Times are exact.
 
 ### Discontinuities
 
-Condor moves the glider at once in some cases: 500 m higher after a crash, after the finish. Such a
+Condor moves the glider at once in some cases: 500 m higher after a crash, and at the very record
+where it reaches the finish (that position is kept, at the altitude before the jump, so the finish
+is still reached). Such a
 jump would read as a 5,000 m/s climb, so `TrackReader` cuts the track where the speed between two
 fixes is beyond any glider (150 m/s horizontally, 40 m/s vertically) and keeps the longest part.
 
@@ -84,8 +91,11 @@ administrator to add it.
 4. **Statistics** between take-off and landing (ground speed above 40 km/h): duration, distance
    flown, altitudes, maximum and average speeds, varios, thermals (count, time, gain, average
    climb, share of the flight, share circling left), glides (time, distance, glide ratio, speed).
-5. **Task**: each point is reached when the track enters its cylinder (Condor's FAI sectors are
-   approximated by cylinders of their radius), the start being the last exit of the start cylinder
+5. **Task**: each point is reached when the track enters its zone: a cylinder (360°), or for
+   Condor's 180° start and finish a half disc of the radius behind the line across the leg (Condor
+   counts the finish as soon as the glider is within the radius on the side it comes from); other
+   angles (FAI sectors) are approximated by cylinders. The start is the first point out of the start
+   zone, after the last time it was in it
    before the first turnpoint. Legs give their distance (between the centres), time and speed.
    On the race of 2026-02-19 the task distance is 182.4 km (Condor: 182.8 km).
 6. **Launch** ("Départ en vol", "Remorquage", "Treuil", shown as a tag on the flight and in the
@@ -115,8 +125,9 @@ stored flights again from their files (in production too, after the deployment).
   `jumpTo()`, the only camera method that takes it).
 - Task: drawn by MapLibre (dashed line and cylinders), so it lies on the relief.
 - Charts: **uPlot** (altitude with thermals shaded, vario, ground speed), sharing their cursor;
-  hovering or clicking a chart, the seek bar or a phase moves the glider. A label next to the
-  cursor of each chart gives the value and time of the point.
+  hovering or clicking a chart, the seek bar or a phase moves the glider. Every chart of the flight
+  pages has a label next to the cursor with the exact values of the point (`valueTip()` of
+  `assets/flight/chart.js`): add it to any new chart.
 - Replay ×10 to ×300, "Suivre" keeps the glider in the centre.
 
 ## Session
@@ -137,7 +148,29 @@ plan flown again another day joins the same session, which still compares the sa
   list gives the altitude and vario of each pilot at the current time; clicking a pilot centres the
   map on them, highlights their track and follows them during the replay.
 
+## Comparison
+
+Two flights of the same flight plan that both crossed the start line, compared along the task
+rather than in time (`FlightComparison`):
+
+- **Progress**: each point between the start and the finish has the distance of the task done (the
+  legs completed, plus the part of the current leg flown towards its next point, measured between
+  the centres). The time of a flight at a distance is when its progress first reaches it, every
+  250 m, counted from its own start.
+- **Gap** at a distance: the difference of these times (positive: the flight is behind the other).
+  At the finish it is the difference of the task times.
+- **Key moments**: the stretches of 10 km (a quarter of a short task) where the gap grows or shrinks
+  the most, at least 30 s, three at most of each, not overlapping. For each pilot: time, time
+  circling, number of thermals and their climb rate, glide speed (distance of the glides only),
+  altitude in and out.
+- **Thermals** of each pilot between start and finish, with the distance of the task where they
+  begin.
+- **Viewer**: both tracks on the map, a chart of the gap and one of both altitudes along the task;
+  the slider, the charts, the key moments and the thermals move both gliders to the same distance.
+  The colors of the two pilots are the tokens `--color-pilot-a` and `--color-pilot-b`, read by the
+  JavaScript.
+
 ## Next
 
-See the roadmap, steps 7c to 7f: comparison with another flight, progression (advice, logbook,
+See the roadmap, steps 7d to 7f: comparison with another flight, progression (advice, logbook,
 instructor comments), viewer extras, club life.
