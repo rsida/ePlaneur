@@ -8,17 +8,19 @@ use App\Entity\Membership;
 use App\Entity\User;
 use App\Repository\MembershipRepository;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Clock\ClockInterface;
 use Twig\Attribute\AsTwigFunction;
 
 /**
  * What the member space shows around every page (templates/account/_layout.html.twig): the latest
- * membership of the logged-in account.
+ * membership of the logged-in account; and the membership of the year of any account.
  */
 final readonly class AccountExtension
 {
     public function __construct(
         private Security $security,
         private MembershipRepository $memberships,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -28,5 +30,14 @@ final readonly class AccountExtension
         $user = $this->security->getUser();
 
         return $user instanceof User ? ($this->memberships->findByUser($user)[0] ?? null) : null;
+    }
+
+    /** Membership of an account for the current year (back-office list of members). */
+    #[AsTwigFunction('membership_of_year')]
+    public function ofYear(User $user): ?Membership
+    {
+        $year = (int) $this->clock->now()->format('Y');
+
+        return array_find($this->memberships->findByUser($user), static fn (Membership $membership): bool => $membership->getSeason()->getYear() === $year);
     }
 }

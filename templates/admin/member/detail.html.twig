@@ -1,0 +1,71 @@
+{% extends '@EasyAdmin/crud/detail.html.twig' %}
+
+{# Record of a member (MemberCrudController): the account, then memberships, logbook figures and flights. #}
+{% set member = entity.instance %}
+
+{% block detail_fields %}
+    {{ parent() }}
+
+    <section class="ep-member">
+        <h2 class="ep-member__title">Condor</h2>
+        <dl class="ep-member__facts">
+            <div><dt>Nom de pilote</dt><dd>{{ member.condorPilotName ?: '—' }}</dd></div>
+            <div><dt>CN</dt><dd>{{ member.condorCn ?: '—' }}</dd></div>
+            <div><dt>Versions</dt><dd>{{ member.condorVersions is empty ? '—' : member.condorVersions|map(v => 'Condor ' ~ v)|join(', ') }}</dd></div>
+        </dl>
+    </section>
+
+    <section class="ep-member">
+        <h2 class="ep-member__title">Adhésions</h2>
+        {% if memberships is empty %}
+            <p class="ep-member__empty">Aucune adhésion enregistrée sur le site{{ member.groups|filter(g => g.code == 'member') is not empty ? ' (membre ajouté à la main, années Yapla)' : '' }}.</p>
+        {% else %}
+            <table class="table datagrid">
+                <thead><tr><th>Saison</th><th>Type</th><th>État</th><th>Montant</th><th></th></tr></thead>
+                <tbody>
+                    {% for membership in memberships %}
+                        <tr>
+                            <td>{{ membership.season.year }}</td>
+                            <td>{{ membership.type ? membership.type.name : '—' }}</td>
+                            <td>{{ membership.status.label }}</td>
+                            <td>{{ membership.total|euros }}</td>
+                            <td><a href="{{ path('admin_membership_detail', {entityId: membership.id}) }}">Voir</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </section>
+
+    <section class="ep-member">
+        <h2 class="ep-member__title">Carnet de vol</h2>
+        {% if logbook.flights is empty %}
+            <p class="ep-member__empty">Aucun vol déposé.</p>
+        {% else %}
+            <dl class="ep-member__facts">
+                <div><dt>Vols</dt><dd>{{ logbook.flights|length }}</dd></div>
+                <div><dt>Heures de vol</dt><dd>{{ logbook.hours|flight_duration }}</dd></div>
+                <div><dt>Distance</dt><dd>{{ logbook.distance|flight_distance }}</dd></div>
+                <div><dt>Circuits terminés</dt><dd>{{ logbook.tasks }}</dd></div>
+                <div><dt>Badges</dt><dd>{{ logbook.badges|filter(b => b.flight) is empty ? '—' : logbook.badges|filter(b => b.flight)|map(b => b.badge.label)|join(', ') }}</dd></div>
+            </dl>
+            {% if is_granted('LOGBOOK_VIEW', member) %}<p><a href="{{ path('app_flight_logbook_pilot', {id: member.id}) }}" target="_blank" rel="noopener">Ouvrir son carnet sur le site</a></p>{% endif %}
+            <table class="table datagrid">
+                <thead><tr><th>Date</th><th>Plan de vol</th><th>Durée</th><th>Distance</th><th>Vitesse circuit</th><th>Session</th></tr></thead>
+                <tbody>
+                    {% for flight in logbook.flights|reverse|slice(0, 30) %}
+                        <tr>
+                            <td>{{ flight.date|format_date('short', locale: 'fr') }}</td>
+                            <td><a href="{{ path('app_flight_show', {id: flight.id}) }}" target="_blank" rel="noopener">{{ flight.flightPlan ? flight.flightPlan|flight_plan_name : flight.originalName }}</a></td>
+                            <td>{{ flight.duration|flight_duration }}</td>
+                            <td>{{ flight.distance|flight_distance }}</td>
+                            <td>{{ flight.taskSpeed ? flight.taskSpeed|number_format(1, ',', ' ') ~ ' km/h' : '—' }}</td>
+                            <td>{% if flight.session %}<a href="{{ path('app_session_show', {id: flight.session.id}) }}" target="_blank" rel="noopener">{{ flight.session.date|format_date('short', locale: 'fr') }}</a>{% else %}—{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if logbook.flights|length > 30 %}<p class="ep-member__empty">Les 30 derniers vols sur {{ logbook.flights|length }}.</p>{% endif %}
+        {% endif %}
+    </section>
+{% endblock %}

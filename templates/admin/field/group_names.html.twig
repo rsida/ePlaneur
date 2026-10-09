@@ -1,0 +1,2 @@
+{# Groups of an account, by name ("Inscrit" without any). #}
+{{ entity.instance.groups|map(group => group.name)|join(', ') ?: 'Inscrit' }}

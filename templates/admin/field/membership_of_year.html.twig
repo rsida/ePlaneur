@@ -1,0 +1,3 @@
+{# State of the membership of the current year of an account. #}
+{% set membership = membership_of_year(entity.instance) %}
+{{ membership ? membership.status.label : '—' }}

@@ -103,6 +103,8 @@ final class DashboardController extends AbstractDashboardController
             ->setBadge($toProcess > 0 ? $toProcess : false, 'warning');
         yield MenuItem::linkTo(MembershipSeasonCrudController::class, 'Saisons et tarifs', 'calendar-clock')
             ->setPermission(Permission::MembershipManage->value);
+        yield MenuItem::linkTo(MemberCrudController::class, 'Membres', 'users')
+            ->setPermission(Permission::MembershipManage->value);
 
         yield MenuItem::section('Vols en réseau');
         yield MenuItem::linkTo(NetworkSessionCrudController::class, 'Sessions', 'calendar-days')
@@ -139,6 +141,7 @@ final class DashboardController extends AbstractDashboardController
             ['label' => 'Menus', 'text' => 'Liens de l’en-tête et du pied de page, réservés ou non.', 'icon' => 'list-tree', 'route' => 'admin_menu_item_index', 'permission' => Permission::MenuManage->value],
             ['label' => 'Catégories d’articles', 'text' => 'Classer les actualités.', 'icon' => 'tags', 'route' => 'admin_category_index', 'permission' => Permission::CategoryManage->value],
             ['label' => 'Adhésions', 'text' => 'Enregistrer les paiements, valider les demandes, exporter une saison.', 'icon' => 'id-card', 'route' => 'admin_membership_index', 'permission' => Permission::MembershipManage->value],
+            ['label' => 'Membres', 'text' => 'Rechercher un membre, ses adhésions et ses vols.', 'icon' => 'users', 'route' => 'admin_member_index', 'permission' => Permission::MembershipManage->value],
             ['label' => 'Sessions en réseau', 'text' => 'Corriger les sessions, leur organisateur et leurs plans de vol.', 'icon' => 'calendar-days', 'route' => 'admin_network_session_index', 'permission' => Permission::SessionManage->value],
             ['label' => 'Messages de contact', 'text' => 'Lire les messages envoyés au club et noter la suite donnée.', 'icon' => 'inbox', 'route' => 'admin_contact_request_index', 'permission' => Permission::ContactManage->value],
             ['label' => 'Comptes', 'text' => 'Les comptes du site et leurs groupes.', 'icon' => 'users', 'route' => 'admin_user_index', 'permission' => Permission::UserManage->value],

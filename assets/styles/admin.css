@@ -455,3 +455,36 @@ table.datagrid {
     gap: 16px;
     margin-top: 24px;
 }
+
+/* ---------- Record of a member ---------- */
+.ep-member {
+    margin-top: 32px;
+}
+
+.ep-member__title {
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.ep-member__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px 24px;
+    margin-bottom: 16px;
+}
+
+.ep-member__facts dt {
+    color: var(--ep-text-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.ep-member__facts dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+.ep-member__empty {
+    color: var(--ep-text-muted);
+}
