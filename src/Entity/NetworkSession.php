@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\NetworkSessionRepository;
+use App\Session\TaskSettings;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -73,6 +74,14 @@ class NetworkSession
      */
     #[ORM\Column(type: Types::JSON)]
     private array $results = [];
+
+    /**
+     * Settings of the task (TaskSettings::toArray()), from its Condor Club page or its .fpl file.
+     *
+     * @var array<string, mixed>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $taskSettings = null;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -216,6 +225,24 @@ class NetworkSession
     public function getResults(): array
     {
         return $this->results;
+    }
+
+    public function getTaskSettings(): ?TaskSettings
+    {
+        return null !== $this->taskSettings ? TaskSettings::fromArray($this->taskSettings) : null;
+    }
+
+    public function setTaskSettings(?TaskSettings $settings): static
+    {
+        $this->taskSettings = $settings?->toArray();
+
+        return $this;
+    }
+
+    /** Id of the task on Condor Club, read from the address of its page (condor.club/task/<id>). */
+    public function getCondorClubTaskId(): ?int
+    {
+        return null !== $this->condorClubUrl && preg_match('#condor\.club/(?:[a-z]{2}/)?task/(\d+)#i', $this->condorClubUrl, $match) ? (int) $match[1] : null;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

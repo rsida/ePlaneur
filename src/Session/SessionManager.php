@@ -19,6 +19,7 @@ final readonly class SessionManager
     public function __construct(
         private FlightPlans $flightPlans,
         private NetworkSessionRepository $sessions,
+        private CondorClubTasks $condorClub,
         private SessionLinker $linker,
         private EntityManagerInterface $entityManager,
         private ClockInterface $clock,
@@ -50,6 +51,13 @@ final readonly class SessionManager
             ->setCondorClubUrl($data->condorClubUrl)
             ->setNotes($data->notes);
 
+        if (null !== $data->flightPlanFile) {
+            try {
+                $session->setTaskSettings(TaskSettings::fromFpl((string) file_get_contents($data->flightPlanFile->getPathname())));
+            } catch (\InvalidArgumentException) {
+                throw new InvalidSessionException('Ce fichier n’est pas un plan de vol Condor (.fpl).', 'flightPlanFile');
+            }
+        }
         if (null !== $data->results) {
             $name = pathinfo($data->results->getClientOriginalName(), \PATHINFO_FILENAME);
             if (!preg_match('/^[A-Za-z]*Race-\d+-on-\d{4}-\d{2}-\d{2}$/', $name)) {
@@ -70,6 +78,25 @@ final readonly class SessionManager
         $this->entityManager->flush();
 
         return $session;
+    }
+
+    /**
+     * Takes the settings of the task from its Condor Club page, when the session links to one;
+     * false when Condor Club could not give them (the caller flushes).
+     */
+    public function fetchSettings(NetworkSession $session): bool
+    {
+        $id = $session->getCondorClubTaskId();
+        if (null === $id) {
+            return false;
+        }
+        try {
+            $session->setTaskSettings($this->condorClub->settings($id));
+        } catch (\InvalidArgumentException) {
+            return false;
+        }
+
+        return true;
     }
 
     public function delete(NetworkSession $session): void

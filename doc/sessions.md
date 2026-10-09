@@ -57,6 +57,33 @@ a new code the address of its eplaneur.fr page is suggested and can be changed. 
 code of the library. The results file is the CSV written by the dedicated server, uploaded with its
 original name (the race id is read from it); comma, semicolon or tab separated, units allowed.
 
+## Task settings
+
+A session can hold the settings of its task (`App\Session\TaskSettings`, stored as JSON): date and
+time in Condor, start delay, start window (0: regatta start, the task time counts from the opening
+of the gate), launch and its height, maximum start height and ground speed, minimum finish
+altitude, maximum wing loading, penalties, realism options and the weather of each zone (wind,
+thermal strength and activity, cloud base, inversion). Two sources, same values:
+
+- the **Condor Club link** of the session (`condor.club/task/<id>`): saving the form reads
+  `https://condor.club/api/task/<id>`, the public JSON its pages load (`CondorClubTasks`); when
+  Condor Club does not answer, a message asks for the `.fpl`;
+- the **flight plan file** (`.fpl`, an INI file), uploaded in the form: the one of the library, or
+  the one Condor writes for each race in `Documents\Condor3\RaceResults` (`Race <race id> on
+  <date>.fpl`, next to the results `.csv`). It replaces the settings of Condor Club.
+
+How the values read (checked on C3-s117 and C3-c046a against their Condor Club pages): `TaskDate`
+is a Delphi date; `StartTime`, `StartTimeWindow` and `RaceStartDelay` are hours; `StartType` 0 is
+an aerotow, 2 an airborne start (1, a winch, is assumed); the minimum finish altitude is the
+`TPWidth` of the finish, the maximum start height the `TPHeight` of the start; wind speeds are m/s
+in the `.fpl`, km/h on Condor Club; the cloud base is 125 m per degree between temperature and dew
+point; thermal strength 2 is "Faible", activity 3 "Faible" and 4 "Normale".
+
+The session page shows them ("Le circuit dans Condor", "Météo", "Pénalités et options de
+réalisme"), and so does the page of each flight of the session, with the official result of the
+pilot (row of the server results with the same CN), the start ground speed and height against
+their maximum, and the final glide against the minimum finish altitude.
+
 ## History from eplaneur.fr
 
 `make console c="app:sessions:import"` reads the public pages of the eplaneur.fr tools: the session

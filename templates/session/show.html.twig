@@ -44,6 +44,10 @@
             </div>
         {% endif %}
 
+        {% if session.taskSettings %}
+            <div class="l-container">{{ include('session/_settings.html.twig', {settings: session.taskSettings}) }}</div>
+        {% endif %}
+
         {% if past %}
             <div class="l-container p-session__results">
                 <twig:Ui:Heading level="2" size="h3">Résultats</twig:Ui:Heading>

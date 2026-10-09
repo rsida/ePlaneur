@@ -14,6 +14,7 @@ use App\Security\Voter\SessionVoter;
 use App\Session\InvalidSessionException;
 use App\Session\SessionData;
 use App\Session\SessionManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Form\FormError;
@@ -59,14 +60,14 @@ final class SessionController extends AbstractController
 
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
     #[IsGranted(Permission::SessionOrganise->value)]
-    public function new(Request $request, SessionManager $manager): Response
+    public function new(Request $request, SessionManager $manager, EntityManagerInterface $entityManager): Response
     {
         $data = new SessionData();
         if ($request->query->has('plan')) {
             $data->flightPlan = $request->query->getString('plan');
         }
 
-        return $this->edit($request, $data, null, $manager);
+        return $this->edit($request, $data, null, $manager, $entityManager);
     }
 
     #[Route('/{id<\d+>}', name: 'show', methods: ['GET'])]
@@ -103,9 +104,9 @@ final class SessionController extends AbstractController
 
     #[Route('/{id<\d+>}/modifier', name: 'edit', methods: ['GET', 'POST'])]
     #[IsGranted(SessionVoter::EDIT, 'session')]
-    public function editSession(Request $request, NetworkSession $session, SessionManager $manager): Response
+    public function editSession(Request $request, NetworkSession $session, SessionManager $manager, EntityManagerInterface $entityManager): Response
     {
-        return $this->edit($request, SessionData::of($session), $session, $manager);
+        return $this->edit($request, SessionData::of($session), $session, $manager, $entityManager);
     }
 
     #[Route('/{id<\d+>}/supprimer', name: 'delete', methods: ['POST'])]
@@ -121,14 +122,24 @@ final class SessionController extends AbstractController
         return $this->redirectToRoute('app_session_index');
     }
 
-    private function edit(Request $request, SessionData $data, ?NetworkSession $session, SessionManager $manager): Response
+    private function edit(Request $request, SessionData $data, ?NetworkSession $session, SessionManager $manager, EntityManagerInterface $entityManager): Response
     {
         $form = $this->createForm(SessionType::class, $data, ['with_results' => null !== $session]);
+        $previousLink = $data->condorClubUrl;
         $form->handleRequest($request);
+        $linkChanged = $data->condorClubUrl !== $previousLink;
         if ($form->isSubmitted() && $form->isValid()) {
             $user = $this->getUser();
             try {
                 $saved = $manager->save($data, $session, $user instanceof User ? $user : null);
+                // A new Condor Club link gives the settings of the task, unless a .fpl was sent
+                if (null === $data->flightPlanFile && null !== $saved->getCondorClubTaskId() && ($linkChanged || null === $saved->getTaskSettings())) {
+                    if ($manager->fetchSettings($saved)) {
+                        $entityManager->flush();
+                    } else {
+                        $this->addFlash('error', 'Les réglages du circuit n’ont pas pu être lus sur Condor Club : vous pouvez déposer le fichier .fpl de la session.');
+                    }
+                }
                 $this->addFlash('success', null === $session ? 'La session est proposée : elle apparaît dans les prochaines sessions.' : 'La session est enregistrée.');
 
                 return $this->redirectToRoute('app_session_show', ['id' => $saved->getId()]);

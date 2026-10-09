@@ -934,3 +934,16 @@
     height: 0.5rem;
     border-radius: var(--radius-sm);
 }
+
+.p-flight__official {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-cool);
+}
+
+.p-flight__alert {
+    color: var(--color-danger);
+}

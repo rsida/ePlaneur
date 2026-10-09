@@ -15,8 +15,8 @@ use App\Flight\Turnpoint;
  * documented; what is known (measured on Condor 3.1 files):
  *
  * - header of fixed size: "FTR", Condor version (int at 3), pilot first name, last name, country,
- *   competition id, registration and landscape (Pascal short strings at 0x9b, 0xac, 0xbd, 0xce, 0xd6,
- *   0xdf); task: count (int at 0xf3), then 84 bytes per point from 0xf7 (name, x, y, z as floats,
+ *   registration, competition id and landscape (Pascal short strings at 0x9b, 0xac, 0xbd, 0xce, 0xd6,
+ *   0xdf; registration "F-CFDU" and competition id "FDU" on a Condor Club track); task: count (int at 0xf3), then 84 bytes per point from 0xf7 (name, x, y, z as floats,
  *   radius and angle as ints at +44 and +48: 360° for a cylinder, 180° for a start or finish line); glider class and model (short strings at 0x52eb and 0x52fc), the
  *   litres of water ballast (int at 0x532f: 146 on a Diana 2 flight, as Condor Club shows), then
  *   the flight plan name;
@@ -100,7 +100,7 @@ final readonly class FtrReader
             format: 'ftr',
             simulator: 'Condor 3',
             pilot: trim(self::shortString($content, 0x9B).' '.self::shortString($content, 0xAC)),
-            competitionId: self::shortString($content, 0xCE) ?: null,
+            competitionId: self::shortString($content, 0xD6) ?: null,
             glider: self::shortString($content, 0x52FC) ?: null,
             landscape: $landscape->name,
             raceId: 0 !== $raceId ? $raceId : null,

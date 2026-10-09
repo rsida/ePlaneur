@@ -140,6 +140,15 @@ final class SessionTest extends WebTestCase
         $this->client->submit($form);
         self::assertResponseRedirects('/sessions/'.$session->getId());
 
+        // The flight plan of the race gives the settings of the task
+        $crawler = $this->client->request('GET', '/sessions/'.$session->getId().'/modifier');
+        $form = $crawler->selectButton('Enregistrer')->form();
+        $field = $form['session[flightPlanFile]'];
+        \assert($field instanceof FileFormField);
+        $field->upload(\dirname(__DIR__).'/fixtures/condor/Race 560447479 on 2026.03.05.fpl');
+        $this->client->submit($form);
+        self::assertResponseRedirects('/sessions/'.$session->getId());
+
         $this->entityManager->clear();
         $flight = $this->entityManager->find(Flight::class, $flight->getId());
         self::assertSame($session->getId(), $flight?->getSession()?->getId(), 'Same race id');
@@ -150,12 +159,16 @@ final class SessionTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.p-session__results', 'Alice Martin');
         self::assertSelectorTextContains('.p-session__results', 'Arrivé');
+        self::assertSelectorTextContains('.p-session-settings', 'Remorquage');
+        self::assertSelectorTextContains('.p-session-settings', '1 982 m sol');
         self::assertSelectorExists('[data-controller="session-viewer"][data-session-viewer-url-value="/sessions/'.$session->getId().'/traces.json"]');
         $this->client->request('GET', '/sessions/'.$session->getId().'/traces.json');
         self::assertCount(1, json_decode((string) $this->client->getResponse()->getContent(), true)['flights']);
 
         $this->client->request('GET', '/vols/'.$flight->getId());
         self::assertSelectorExists('a[href="/sessions/'.$session->getId().'"]');
+        self::assertSelectorTextContains('.p-flight__official', 'Résultat officiel');
+        self::assertSelectorTextContains('.p-session-settings', 'Fenêtre de 15 min');
         $this->client->request('GET', '/vols/'.$flight->getId().'/session');
         self::assertResponseRedirects('/sessions/'.$session->getId());
         self::assertSelectorNotExists('a[href="/sessions/'.$session->getId().'/modifier"]');
@@ -219,7 +232,7 @@ final class SessionTest extends WebTestCase
     private function results(string $name): string
     {
         $path = sys_get_temp_dir().'/'.$name;
-        file_put_contents($path, "Rank,Status,Player,CN,RN,Plane,Dist,Time,Speed,Penalty,Score\n1,Finished,Alice.Martin,P01,F-C001,Diana2,182.8 km,01:21:49,134.1 km/h,0.0 p,1000.0 p\n");
+        file_put_contents($path, "Rank,Status,Player,CN,RN,Plane,Dist,Time,Speed,Penalty,Score\n1,Finished,Alice.Martin,RS2,F-C001,Diana2,182.8 km,01:21:49,134.1 km/h,0.0 p,1000.0 p\n");
 
         return $path;
     }

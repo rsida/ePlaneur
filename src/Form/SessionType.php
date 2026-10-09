@@ -58,7 +58,13 @@ final class SessionType extends AbstractType
                 'label' => 'Circuit Condor Club',
                 'required' => false,
                 'default_protocol' => 'https',
-                'help' => 'Où les pilotes enregistrent leur performance.',
+                'help' => 'Le lien du circuit (condor.club/task/…) : où les pilotes enregistrent leur performance. Ses réglages (heure, départ, pénalités, météo) sont repris de Condor Club.',
+            ])
+            ->add('flightPlanFile', FileType::class, [
+                'label' => 'Plan de vol Condor (.fpl)',
+                'required' => false,
+                'help' => 'Si le circuit n’est pas sur Condor Club : le fichier .fpl de la session. Ses réglages sont repris de la même façon (ils remplacent ceux de Condor Club).',
+                'attr' => ['accept' => '.fpl'],
             ])
             ->add('notes', TextareaType::class, [
                 'label' => 'Informations pratiques',

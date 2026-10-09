@@ -30,7 +30,7 @@ not documented; what follows was measured on Condor 3.1 files (2026-10-08):
 | Offset | Content |
 |---|---|
 | 0 | `FTR`, then the Condor version (int at 3: 3100) |
-| 0x9b, 0xac, 0xbd, 0xce, 0xd6, 0xdf | Pascal short strings: first name, last name, country, competition id, registration, landscape |
+| 0x9b, 0xac, 0xbd, 0xce, 0xd6, 0xdf | Pascal short strings: first name, last name, country, registration ("F-CFDU"), competition id ("FDU"), landscape |
 | 0xf3 | Number of task points (int); points of 84 bytes from 0xf7: name (short string), x, y, z (floats at +17), radius and angle (ints at +44 and +48: 360° cylinder, 180° half disc for a start or finish), then floats at +52 (1,500), +56 (minimum finish height?) and +60 (maximum height). The first point is the departure airfield, the second the start, the last the finish |
 | 0x52eb, 0x52fc | Glider class and model; the flight plan name follows (first short string after 0x531e) |
 | 0x549b | Six ints: 1, -1, Condor race id, 0, number of records, ? |
@@ -63,8 +63,12 @@ pilot, glider, competition id and date. Times are exact.
 Condor moves the glider at once in some cases: 500 m higher after a crash, and at the very record
 where it reaches the finish (that position is kept, at the altitude before the jump, so the finish
 is still reached). Such a
-jump would read as a 5,000 m/s climb, so `TrackReader` cuts the track where the speed between two
-fixes is beyond any glider (150 m/s horizontally, 40 m/s vertically) and keeps the longest part.
+jump would read as a 5,000 m/s climb, so `TrackReader` cuts the track where the move between two
+fixes is beyond any glider (over 150 m/s horizontally or 80 m/s vertically, and over 30 m) and keeps
+the longest part. A hard pull-up climbs 4 m in the 0.1 s between two Condor records (40 to 50 m/s):
+it is not a jump. A flight with a height or glider recovery (penalised by the server) keeps only its
+longest part, so its task may read as not finished; the official result of its session says what
+the server counted.
 
 ## Landscapes and coordinates
 

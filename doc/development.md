@@ -106,3 +106,12 @@ The container reaches the IDE through `host.docker.internal`, i.e. the Docker ho
 Windows while Docker runs in WSL2 (NAT networking), set `XDEBUG_CLIENT_HOST` in `.env.local` to the
 Windows host IP (`ip route show default | awk '{print $3}'` from WSL), or enable WSL mirrored
 networking.
+
+## Test data from Condor Club (local only)
+
+To test sessions with many pilots, real tracks can be taken from the best times of a Condor Club
+task (`https://condor.club/task/<id>?tab=besttimes`). The list is public JSON
+(`/api/task/<id>/besttimes`); the tracks need a Condor Club account (`/api/download?res=<result
+id>`, after `/api/user/login`, a url-encoded form). These are real pilots: keep such data in `var/`
+(not versioned), never in fixtures, and never commit a password. The scripts used on 2026-10-09 for
+task 27105 (C3-c046a) live in `var/tmp/` on that machine only.

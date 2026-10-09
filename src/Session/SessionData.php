@@ -43,6 +43,9 @@ final class SessionData
     #[Assert\File(maxSize: '1M', extensions: ['csv', 'txt'], extensionsMessage: 'Déposez le fichier CSV écrit par le serveur Condor.')]
     public ?UploadedFile $results = null;
 
+    #[Assert\File(maxSize: '1M', extensions: ['fpl'], extensionsMessage: 'Déposez le plan de vol Condor (fichier .fpl).')]
+    public ?UploadedFile $flightPlanFile = null;
+
     public static function of(NetworkSession $session): self
     {
         $data = new self();

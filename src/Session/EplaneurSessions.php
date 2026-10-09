@@ -38,6 +38,7 @@ final readonly class EplaneurSessions
     {
         $html = $this->httpClient->request('GET', self::BASE_URL.'afficher-sessions.php', [
             'query' => null !== $dedicated ? ['session_dediee' => $dedicated] : [],
+            'headers' => ['User-Agent' => CondorClubTasks::USER_AGENT],
         ])->getContent();
 
         return self::parseSessions($html);
@@ -52,6 +53,7 @@ final readonly class EplaneurSessions
     {
         return SessionResults::fromHtml($this->httpClient->request('GET', self::BASE_URL.'lire-tableau-csv-resultats-session.php', [
             'query' => ['file' => $file, 'folder' => $folder],
+            'headers' => ['User-Agent' => CondorClubTasks::USER_AGENT],
         ])->getContent());
     }
 

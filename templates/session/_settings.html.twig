@@ -1,0 +1,71 @@
+{#
+    Settings of the task of a session (App\Session\TaskSettings): start, weather, penalties and
+    realism options, as Condor Club shows them. Variable: settings.
+#}
+<div class="p-session-settings">
+    <section class="c-card c-card--outlined t-paper" aria-labelledby="settings-task-title">
+        <div class="c-card__body l-stack l-stack--sm">
+            <twig:Ui:Heading level="2" size="h4" id="settings-task-title">Le circuit dans Condor</twig:Ui:Heading>
+            <dl class="p-flight__facts">
+                {% if settings.date %}<div><dt>Date dans Condor</dt><dd>{{ settings.date|format_date('long', locale: 'fr') }}{% if settings.season %} <span class="u-note">({{ settings.season|lower }})</span>{% endif %}</dd></div>{% endif %}
+                {% if settings.startTime is not null %}<div><dt>Heure dans Condor</dt><dd>{{ settings.startTime|day_minutes }}</dd></div>{% endif %}
+                <div><dt>Délai avant le départ</dt><dd>{{ settings.startDelay }} min</dd></div>
+                <div><dt>Départ</dt><dd>{{ settings.regatta ? 'Régate (tous à l’ouverture)' : 'Fenêtre de ' ~ settings.startWindow ~ ' min' }}</dd></div>
+                {% if settings.gateOpening is not null %}<div><dt>Ouverture de la porte</dt><dd>{{ settings.gateOpening|day_minutes }}</dd></div>{% endif %}
+                {% if settings.launch %}<div><dt>Démarrage</dt><dd>{{ settings.launch.label }}{% if settings.startHeight %} <span class="u-note">({{ settings.launch.value == 'aerotow' ? 'largage' : 'altitude' }} {{ settings.startHeight|number_format(0, ',', ' ') }} m)</span>{% endif %}</dd></div>{% endif %}
+                {% if settings.startMaxHeight %}<div><dt>Hauteur maximale au départ</dt><dd>{{ settings.startMaxHeight|number_format(0, ',', ' ') }} m</dd></div>{% endif %}
+                {% if settings.maxStartSpeed %}<div><dt>Vitesse sol maximale au départ</dt><dd>{{ settings.maxStartSpeed }} km/h</dd></div>{% endif %}
+                {% if settings.finishMinHeight %}<div><dt>Altitude minimale à l’arrivée</dt><dd>{{ settings.finishMinHeight|number_format(0, ',', ' ') }} m</dd></div>{% endif %}
+                {% if settings.maxWingLoading %}<div><dt>Charge alaire maximale</dt><dd>{{ settings.maxWingLoading|number_format(1, ',', ' ') }} kg/m²</dd></div>{% endif %}
+            </dl>
+        </div>
+    </section>
+
+    {% if settings.weather is not empty %}
+        <section class="c-card c-card--outlined t-paper" aria-labelledby="settings-weather-title">
+            <div class="c-card__body l-stack l-stack--sm">
+                <twig:Ui:Heading level="2" size="h4" id="settings-weather-title">Météo</twig:Ui:Heading>
+                <figure class="c-data-table">
+                    <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Zones météo">
+                        <table>
+                            <thead><tr><th scope="col">Zone</th><th scope="col">Vent</th><th scope="col">Thermiques</th><th scope="col">Activité</th><th scope="col">Base des nuages</th><th scope="col">Inversion</th></tr></thead>
+                            <tbody>
+                                {% for zone in settings.weather %}
+                                    <tr>
+                                        <th scope="row">{{ loop.first ? 'Générale' : zone.name }}</th>
+                                        <td>{{ zone.windDirection|number_format(0) }}° {{ settings.compass(zone.windDirection) }} · {{ zone.windSpeed|number_format(0, ',', ' ') }} km/h</td>
+                                        <td>{{ settings.strengthLabel(zone.thermalStrength) }}</td>
+                                        <td>{{ settings.activityLabel(zone.thermalActivity) }}</td>
+                                        <td>{{ zone.cloudBase ? zone.cloudBase|number_format(0, ',', ' ') ~ ' m sol' : '—' }}</td>
+                                        <td>{{ zone.inversion ? zone.inversion|number_format(0, ',', ' ') ~ ' m' : '—' }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </figure>
+                {% if settings.weather|length > 1 %}<p class="u-note">La météo générale s’applique hors des zones dessinées par l’auteur du circuit.</p>{% endif %}
+            </div>
+        </section>
+    {% endif %}
+
+    <details class="c-card c-card--outlined t-paper p-session-settings__more">
+        <summary class="c-card__body">Pénalités et options de réalisme</summary>
+        <div class="c-card__body p-session-settings__columns">
+            <dl class="p-flight__facts">
+                {% for key, points in settings.penalties %}
+                    <div><dt>{{ constant('App\\Session\\TaskSettings::PENALTIES')[key] }}{% if key == 'StartSpeed' and settings.maxStartSpeed %} <span class="u-note">(au-delà de {{ settings.maxStartSpeed }} km/h)</span>{% endif %}</dt><dd>{{ points }} pts</dd></div>
+                {% endfor %}
+            </dl>
+            <dl class="p-flight__facts">
+                {% if settings.iconsRange is not null %}<div><dt>Icônes des planeurs visibles à</dt><dd>{{ settings.iconsRange }} km</dd></div>{% endif %}
+                {% if settings.thermalHelpersRange is not null %}<div><dt>Aides thermiques visibles à</dt><dd>{{ settings.thermalHelpersRange|number_format(1, ',', ' ') }} km</dd></div>{% endif %}
+                {% if settings.turnpointHelpersRange is not null %}<div><dt>Points de virage visibles à</dt><dd>{{ settings.turnpointHelpersRange|number_format(1, ',', ' ') }} km</dd></div>{% endif %}
+                {% for key, allowed in settings.options %}
+                    <div><dt>{{ constant('App\\Session\\TaskSettings::OPTIONS')[key] }}</dt><dd>{{ allowed ? 'Autorisé' : 'Interdit' }}</dd></div>
+                {% endfor %}
+            </dl>
+        </div>
+    </details>
+    <p class="u-note">Réglages lus {{ settings.source == 'fpl' ? 'dans le plan de vol (.fpl) de la session' : 'sur Condor Club' }}.</p>
+</div>

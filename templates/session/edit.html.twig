@@ -23,6 +23,7 @@
                 {{ form_row(form.sheetUrl) }}
                 {{ form_row(form.dedicatedTo) }}
                 {{ form_row(form.condorClubUrl) }}
+                {{ form_row(form.flightPlanFile) }}
                 {{ form_row(form.notes) }}
                 {% if form.results is defined %}{{ form_row(form.results) }}{% endif %}
                 <div><twig:Ui:Button type="submit" icon="">{{ session ? 'Enregistrer' : 'Proposer la session' }}</twig:Ui:Button></div>

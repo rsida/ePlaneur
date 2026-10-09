@@ -15,9 +15,17 @@ use App\Flight\Track;
  */
 final readonly class TrackReader
 {
-    /** Speeds no glider reaches: a jump between two fixes beyond them is a discontinuity, m/s. */
+    /**
+     * Speeds no glider reaches, m/s: a jump between two fixes beyond them, and longer than
+     * MIN_JUMP, is a discontinuity. A pull-up at 250 km/h climbs 4 m in the 0.1 s between two
+     * Condor records (40 to 50 m/s), so the vertical limit is the fastest airspeed of a glider; the
+     * jumps of Condor are hundreds of metres at once.
+     */
     private const float MAX_HORIZONTAL_SPEED = 150.0;
-    private const float MAX_VERTICAL_SPEED = 40.0;
+    private const float MAX_VERTICAL_SPEED = 80.0;
+
+    /** Metres under which a move between two fixes is not a jump, whatever its speed. */
+    private const float MIN_JUMP = 30.0;
 
     public function __construct(
         private FtrReader $ftr,
@@ -48,10 +56,12 @@ final readonly class TrackReader
             $previous = $fixes[$i - 1];
             $fix = $fixes[$i];
             $elapsed = max($fix->time - $previous->time, 0.05);
-            $horizontal = Geo::distance($previous->latitude, $previous->longitude, $fix->latitude, $fix->longitude) / $elapsed;
-            $vertical = abs($fix->altitude - $previous->altitude) / $elapsed;
-            if ($horizontal > self::MAX_HORIZONTAL_SPEED || $vertical > self::MAX_VERTICAL_SPEED) {
-                if ($horizontal <= self::MAX_HORIZONTAL_SPEED) {
+            $distance = Geo::distance($previous->latitude, $previous->longitude, $fix->latitude, $fix->longitude);
+            $height = abs($fix->altitude - $previous->altitude);
+            $horizontalJump = $distance / $elapsed > self::MAX_HORIZONTAL_SPEED && $distance > self::MIN_JUMP;
+            $verticalJump = $height / $elapsed > self::MAX_VERTICAL_SPEED && $height > self::MIN_JUMP;
+            if ($horizontalJump || $verticalJump) {
+                if (!$horizontalJump) {
                     // A jump upwards only: Condor lifts the glider at the very fix where it crosses
                     // the finish line. That position ends the part, at the altitude it had
                     $parts[\count($parts) - 1][] = new Fix($fix->time, $fix->latitude, $fix->longitude, $previous->altitude);

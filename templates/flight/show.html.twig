@@ -73,13 +73,27 @@
         </div>
 
         {# Details beyond the key figures (Condor Club parity, roadmap 7g1); older analyses lack them until analysed again #}
+        {% set settings = flight.session ? flight.session.taskSettings : null %}
+        {% set official = flight.session and flight.competitionId ? flight.session.results|filter(row => row.competitionId and row.competitionId|lower == flight.competitionId|lower)|first : null %}
         {% if stats.totalClimb is defined %}
             {% set final = task.finalGlide|default(null) %}
+            {% set start = task ? task.turnpoints[1]|default(null) : null %}
             <div class="l-container p-flight__details">
                 <section class="c-card c-card--outlined t-paper" aria-labelledby="details-title">
                     <div class="c-card__body l-stack l-stack--sm">
                         <twig:Ui:Heading level="2" size="h4" id="details-title">Le vol en détail</twig:Ui:Heading>
+                        {% if official %}
+                            <p class="p-flight__official">
+                                <strong>Résultat officiel : {{ official.rank }}<sup>{{ official.rank == 1 ? 'er' : 'e' }}</sup> · {{ official.status|session_status }}</strong>
+                                <span>{{ [official.time is not null ? official.time|flight_time : null, official.speed ? official.speed|number_format(1, ',', ' ') ~ ' km/h' : null, official.score is not null ? official.score|number_format(1, ',', ' ') ~ ' pts' : null]|filter(v => v)|join(' · ') }}{% if official.penalty %} · <span class="p-flight__alert">pénalités {{ official.penalty|number_format(0, ',', ' ') }} pts</span>{% endif %}</span>
+                                {% if settings and settings.regatta %}<span class="u-note">Départ en régate : le temps officiel court depuis l’ouverture de la porte, pas depuis le passage de la ligne.</span>{% endif %}
+                            </p>
+                        {% endif %}
                         <dl class="p-flight__facts">
+                            {% if start and start.reached is not null and settings %}
+                                {% if settings.maxStartSpeed %}<div><dt>Vitesse sol au départ <span class="u-note">(maximum {{ settings.maxStartSpeed }} km/h ; mesurée sur 4 s, le serveur fait foi)</span></dt><dd>{{ start.reachedSpeed|number_format(0, ',', ' ') }} km/h</dd></div>{% endif %}
+                                {% if settings.startMaxHeight %}<div><dt>Altitude au départ <span class="u-note">(maximum {{ settings.startMaxHeight|number_format(0, ',', ' ') }} m)</span></dt><dd{% if start.reachedAltitude > settings.startMaxHeight %} class="p-flight__alert"{% endif %}>{{ start.reachedAltitude|number_format(0, ',', ' ') }} m</dd></div>{% endif %}
+                            {% endif %}
                             {% if analysis.water is defined and analysis.water is not null %}<div><dt>Eau (ballast) au décollage</dt><dd>{{ analysis.water }} L</dd></div>{% endif %}
                             <div><dt>Temps de vol{{ approx }}</dt><dd>{{ stats.duration|flight_time }}</dd></div>
                             <div><dt>Vitesse sol maximale</dt><dd>{{ stats.speedMax|number_format(0, ',', ' ') }} km/h</dd></div>
@@ -103,15 +117,31 @@
                                 <div><dt>Durée{{ approx }}</dt><dd>{{ final.duration|flight_time }}{% if final.speed %} <span class="u-note">· {{ final.speed|number_format(0, ',', ' ') }} km/h</span>{% endif %}</dd></div>
                                 <div><dt>Altitude au départ de la finale</dt><dd>{{ final.startAltitude|number_format(0, ',', ' ') }} m</dd></div>
                                 <div><dt>Altitude à l’arrivée</dt><dd>{{ final.arrivalAltitude|number_format(0, ',', ' ') }} m</dd></div>
-                                <div><dt>Hauteur au-dessus du point d’arrivée</dt><dd>{{ final.height|number_format(0, ',', ' ') }} m</dd></div>
+                                {% if settings and settings.finishMinHeight %}
+                                    {% set excess = final.arrivalAltitude - settings.finishMinHeight %}
+                                    <div><dt>Altitude minimale du circuit</dt><dd>{{ settings.finishMinHeight|number_format(0, ',', ' ') }} m</dd></div>
+                                    <div><dt>{{ excess >= 0 ? 'Hauteur en trop' : 'Arrivée trop basse' }}</dt><dd{% if excess < 0 %} class="p-flight__alert"{% endif %}>{{ excess >= 0 ? '+' : '' }}{{ excess|number_format(0, ',', ' ') }} m</dd></div>
+                                {% else %}
+                                    <div><dt>Hauteur au-dessus du point d’arrivée</dt><dd>{{ final.height|number_format(0, ',', ' ') }} m</dd></div>
+                                {% endif %}
                             </dl>
-                            {% if final.heightTime %}
-                                <p class="u-note">Au taux de la dernière ascendance, ces {{ final.height|number_format(0, ',', ' ') }} m représentent {{ final.heightTime|flight_time }} de montée. Une arrivée juste au-dessus de la hauteur minimale imposée par le circuit les aurait gagnés.</p>
+                            {% if settings and settings.finishMinHeight %}
+                                {% if excess > 0 and final.climb %}
+                                    <p class="u-note">Au taux de la dernière ascendance ({{ final.climb|number_format(1, ',', ' ') }} m/s), ces {{ excess|number_format(0, ',', ' ') }} m de trop représentent {{ (excess / final.climb)|flight_time }} de montée qui n’ont rien rapporté.</p>
+                                {% elseif excess < 0 %}
+                                    <p class="u-note">L’arrivée sous l’altitude minimale coûte {{ settings.penalties.LowFinish|default(1) }} point par mètre manquant.</p>
+                                {% endif %}
+                            {% elseif final.heightTime %}
+                                <p class="u-note">Au taux de la dernière ascendance, ces {{ final.height|number_format(0, ',', ' ') }} m représentent {{ final.heightTime|flight_time }} de montée. L’altitude minimale d’arrivée du circuit est connue quand la session a ses réglages (lien Condor Club ou fichier .fpl).</p>
                             {% endif %}
                         </div>
                     </section>
                 {% endif %}
             </div>
+        {% endif %}
+
+        {% if settings %}
+            <div class="l-container">{{ include('session/_settings.html.twig') }}</div>
         {% endif %}
 
         {% if advice is not empty %}

@@ -30,6 +30,13 @@ final readonly class SessionExtension
         return $this->sessions->findUpcoming($this->clock->now(), $limit);
     }
 
+    /** A time of day given in minutes after midnight: 765 → "12h45". */
+    #[AsTwigFilter('day_minutes')]
+    public static function dayMinutes(int $minutes): string
+    {
+        return \sprintf('%dh%02d', intdiv($minutes, 60) % 24, $minutes % 60);
+    }
+
     #[AsTwigFilter('session_status')]
     public static function status(string $status): string
     {
