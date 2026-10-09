@@ -31,6 +31,8 @@ enum Permission: string implements TranslatableInterface
     case FlightReview = 'FLIGHT_REVIEW';
     case MembershipManage = 'MEMBERSHIP_MANAGE';
     case ContactManage = 'CONTACT_MANAGE';
+    case SessionOrganise = 'SESSION_ORGANISE';
+    case SessionManage = 'SESSION_MANAGE';
 
     public function label(): string
     {
@@ -50,6 +52,8 @@ enum Permission: string implements TranslatableInterface
             self::FlightReview => 'Commenter les vols des pilotes et suivre leur carnet de vol (formateurs)',
             self::MembershipManage => 'Gérer les saisons et valider les adhésions',
             self::ContactManage => 'Lire et traiter les messages du formulaire de contact',
+            self::SessionOrganise => 'Proposer des sessions de vol en réseau et modifier les siennes',
+            self::SessionManage => 'Gérer toutes les sessions de vol en réseau et les plans de vol',
         };
     }
 

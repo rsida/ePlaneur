@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Flight;
 use App\Entity\FlightComment;
+use App\Entity\FlightPlan;
 use App\Entity\User;
 use App\Flight\Advice\FlightAdvisor;
 use App\Flight\Club\ClubRecords;
@@ -16,6 +17,7 @@ use App\Flight\FlightSession;
 use App\Flight\Logbook;
 use App\Flight\Reader\InvalidTrackException;
 use App\Form\FlightCommentType;
+use App\Repository\FlightPlanRepository;
 use App\Repository\FlightRepository;
 use App\Security\Voter\FlightVoter;
 use Doctrine\ORM\EntityManagerInterface;
@@ -192,42 +194,31 @@ final class FlightController extends AbstractController
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
-    /** Every flight on the flight plan of this one: ranking, podium and replay of all pilots. */
+    /**
+     * Every flight on the flight plan of this one: now the page of its network session, or of its
+     * flight plan when it joined none.
+     */
     #[Route('/{id<\d+>}/session', name: 'session', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function session(Flight $flight, FlightRepository $flights): Response
+    public function session(Flight $flight, FlightRepository $flights, FlightPlanRepository $plans): Response
     {
+        if (null !== $flight->getSession()) {
+            return $this->redirectToRoute('app_session_show', ['id' => $flight->getSession()->getId()]);
+        }
+        $code = FlightPlan::codeIn($flight->getFlightPlan());
+        if (null !== $code && null !== $plans->findOneByCode($code)) {
+            return $this->redirectToRoute('app_flight_plan_show', ['code' => $code]);
+        }
+
         return $this->render('flight/session.html.twig', ['flight' => $flight, 'session' => FlightSession::of($flights->findSession($flight))]);
     }
 
-    /**
-     * What the session replay draws: the task and, for each flight, its track (one point per second
-     * from `start`, seconds since the beginning of the recording) and the time it started the task.
-     */
+    /** Replay data of the flights on the flight plan of this one (flights without a library code). */
     #[Route('/{id<\d+>}/session.json', name: 'session_data', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function sessionData(Flight $flight, FlightRepository $flights): JsonResponse
     {
-        $session = FlightSession::of($flights->findSession($flight));
-        $task = null;
-        $tracks = [];
-        foreach ($session->flights as $member) {
-            $analysis = $member->getAnalysis();
-            $task ??= $analysis['task'] ?? null;
-            $time = $analysis['series']['time'];
-            $started = $analysis['task']['turnpoints'][1]['reached'] ?? null;
-            $tracks[] = [
-                'id' => $member->getId(),
-                'pilot' => $member->getPilot(),
-                'competitionId' => $member->getCompetitionId(),
-                'start' => $time[0] ?? 0,
-                'taskStart' => null !== $started ? $time[$started] : null,
-                'latitude' => $analysis['series']['latitude'],
-                'longitude' => $analysis['series']['longitude'],
-                'altitude' => $analysis['series']['altitude'],
-            ];
-        }
-        $response = new JsonResponse(['task' => $task, 'flights' => $tracks]);
+        $response = new JsonResponse(FlightSession::of($flights->findSession($flight))->replayData());
         $response->setPrivate();
         $response->setMaxAge(300);
 

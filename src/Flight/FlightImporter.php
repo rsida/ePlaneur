@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Flight\Analysis\FlightAnalyzer;
 use App\Flight\Reader\InvalidTrackException;
 use App\Flight\Reader\TrackReader;
+use App\Session\SessionLinker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -25,6 +26,7 @@ final readonly class FlightImporter
         private FlightAnalyzer $analyzer,
         private EntityManagerInterface $entityManager,
         private ClockInterface $clock,
+        private SessionLinker $linker,
         #[Autowire('%app.flights_dir%')]
         private string $directory,
     ) {
@@ -47,6 +49,7 @@ final readonly class FlightImporter
         $flight = new Flight($analysis, $fileName, $originalName, $owner, $this->clock->now());
         // The pilot's choice in "Confidentialité et données"
         $flight->setPublic($owner?->isFlightsPublicByDefault() ?? false);
+        $this->linker->link($flight);
         $this->entityManager->persist($flight);
         $this->entityManager->flush();
 

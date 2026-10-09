@@ -17,8 +17,8 @@ Default groups, created by the first migration and by the dev fixtures (`App\Sec
 
 | Code | Name | Permissions |
 |---|---|---|
-| `member` | Membre | none yet |
-| `committee` | Comité, includes Membre | `ADMIN_ACCESS`, `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE`, `PAGE_MANAGE`, `DOCUMENT_MANAGE`, `MEMBERSHIP_MANAGE` (validates memberships, see [membership](membership.md)) |
+| `member` | Membre | `SESSION_ORGANISE` (propose network sessions, see [sessions](sessions.md)) |
+| `committee` | Comité, includes Membre | `ADMIN_ACCESS`, `POST_CREATE`, `POST_EDIT`, `POST_PUBLISH`, `CATEGORY_MANAGE`, `MEDIA_MANAGE`, `PAGE_MANAGE`, `DOCUMENT_MANAGE`, `MEMBERSHIP_MANAGE` (validates memberships, see [membership](membership.md)), `CONTACT_MANAGE` (contact form), `SESSION_MANAGE` (every session and flight plan) |
 | `admin` | Administrateur | all (`all_permissions` flag: includes permissions added later, and sees every content) |
 
 `FLIGHT_REVIEW` (trainers: comment the flights of every pilot and see their logbook, see

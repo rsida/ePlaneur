@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ session ? 'Modifier la session' : 'Proposer une session' }}{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-form-page">
+        <div class="p-form-page__inner l-stack">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ session ? path('app_session_show', {id: session.id}) : path('app_session_index') }}">{{ session ? 'Retour à la session' : 'Toutes les sessions' }}</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Vols en réseau</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ session ? 'Modifier la session' : 'Proposer une session' }}</twig:Ui:Heading>
+                {% if not session %}
+                    <p class="u-lead">Vous en serez l’organisateur : briefing sur Discord, coordination pendant le vol, rappel d’enregistrer les performances. Annoncez-la aussi dans le groupe WhatsApp des vols.</p>
+                {% endif %}
+            </div>
+            {{ form_start(form, {attr: {'data-controller': 'flight-plan-field', 'data-flight-plan-field-search-url-value': path('app_flight_plan_search'), 'data-flight-plan-field-sheet-value': constant('App\\Entity\\FlightPlan::SHEET_URL'), class: 'l-stack'}}) }}
+                <div class="p-session-form__when">
+                    {{ form_row(form.date) }}
+                    {{ form_row(form.startTime) }}
+                </div>
+                {{ form_row(form.flightPlan) }}
+                <datalist id="flight-plan-suggestions" data-flight-plan-field-target="list"></datalist>
+                {{ form_row(form.sheetUrl) }}
+                {{ form_row(form.dedicatedTo) }}
+                {{ form_row(form.condorClubUrl) }}
+                {{ form_row(form.notes) }}
+                {% if form.results is defined %}{{ form_row(form.results) }}{% endif %}
+                <div><twig:Ui:Button type="submit" icon="">{{ session ? 'Enregistrer' : 'Proposer la session' }}</twig:Ui:Button></div>
+            {{ form_end(form) }}
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

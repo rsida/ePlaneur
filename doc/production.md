@@ -104,18 +104,21 @@ Every command below is run on the server, in the project directory.
 | `make media-dump` | Archive of the uploaded media (Docker volume `uploads`, mounted on `var/uploads`) and of the flight tracks (volume `flights`, `var/flights`) into `backups/prod-media-<date>.tar.gz`. It includes the resized pictures of `var/uploads/cache/`, which are rebuilt on demand if missing |
 | `make db-restore file=...` | Restore a dump |
 | `make console c="app:import-wordpress"` | Import or update the content of the WordPress site, with the redirects of its addresses (see [WordPress import](wordpress-import.md)) |
+| `make console c="app:sessions:import"` | Import the network sessions and their results from eplaneur.fr (see [sessions](sessions.md)) |
 | `make console c="messenger:failed:show"` | Messages that failed after 3 retries |
 | `make console c="messenger:failed:retry"` | Retry them |
 
 Online payment of memberships: set the HelloAsso keys (`HELLOASSO_*`, the secret in the server's
 `.env.local`) and the notification URL in HelloAsso, see [membership](membership.md#online-payment).
 
-Backups and the membership tasks are not scheduled automatically, for instance with cron (end of
-memberships after the grace month, renewal reminders when the next season is open, see
-[membership](membership.md)):
+Backups, the membership tasks and the import of the sessions are not scheduled automatically, for
+instance with cron (end of memberships after the grace month, renewal reminders when the next season
+is open, see [membership](membership.md); new sessions of eplaneur.fr while they are published there,
+see [sessions](sessions.md)):
 
 ```cron
 30 6 * * * cd /path/to/ePlaneur && make console c="app:membership:expire" >/dev/null 2>&1 && make console c="app:membership:remind" >/dev/null 2>&1
+0 7 * * * cd /path/to/ePlaneur && make console c="app:sessions:import --since=$(date -d '-14 days' +\%F)" >/dev/null 2>&1
 0 3 * * * cd /path/to/ePlaneur && make db-dump media-dump >/dev/null 2>&1 && find backups \( -name '*.sql.gz' -o -name '*.tar.gz' \) -mtime +14 -delete
 ```
 

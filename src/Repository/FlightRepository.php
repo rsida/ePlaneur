@@ -48,6 +48,27 @@ class FlightRepository extends ServiceEntityRepository
         return $this->findBy(['flightPlan' => $flight->getFlightPlan()], ['id' => 'ASC']);
     }
 
+    /**
+     * Flights on a flight plan of the library: their Condor task name is its code, or starts with
+     * it followed by "_" or a space ("C3-c060_Laragne...", not "C3-c060a_...").
+     *
+     * @return list<Flight>
+     */
+    public function findOnFlightPlan(string $code): array
+    {
+        $escaped = addcslashes($code, '%_\\');
+
+        /* @var list<Flight> */
+        return $this->createQueryBuilder('f')
+            ->where('f.flightPlan = :code OR f.flightPlan LIKE :underscore OR f.flightPlan LIKE :space')
+            ->setParameter('code', $code)
+            ->setParameter('underscore', $escaped.'\\_%')
+            ->setParameter('space', $escaped.' %')
+            ->orderBy('f.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /** Number of flights of the session of a flight. */
     public function countSession(Flight $flight): int
     {

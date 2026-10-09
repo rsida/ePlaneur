@@ -1,0 +1,107 @@
+{% extends 'base.html.twig' %}
+
+{% set plan = session.flightPlan %}
+{% set day = session.date|format_date(pattern: 'EEEE d MMMM y', locale: 'fr') %}
+
+{% block title %}Session {{ plan.code }} du {{ session.date|format_date('short', locale: 'fr') }}{% endblock %}
+{% block description %}Session de vol en réseau du {{ day }} sur le plan de vol {{ plan.label }} : résultats et traces des pilotes.{% endblock %}
+
+{% block body %}
+    <section class="p-flight p-session t-light">
+        <div class="l-container p-flight__head">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_session_index') }}">Toutes les sessions</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Session · Condor {{ plan.condorVersion }} · {{ plan.category }}{{ session.dedicatedTo ? ' · Dédiée ' ~ session.dedicatedTo : '' }}</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ plan.label }}</twig:Ui:Heading>
+                <p class="p-flight__meta">
+                    <time datetime="{{ session.startsAt|date('c') }}">{{ day|capitalize }}{% if session.startTime %} · briefing à {{ session.startTime|date('H\\hi') }}{% endif %}</time>
+                    {%- if plan.gliders or plan.landscape %} · {{ [plan.gliders, plan.landscape]|filter(v => v)|join(' · ') }}{% endif %}
+                    {%- if session.organiser %} · organisée par {{ session.organiser.displayName }}{% endif %}
+                </p>
+                <div class="l-cluster">
+                    {% if plan.sheetUrl %}<twig:Ui:Button href="{{ plan.sheetUrl }}" variant="outline" size="sm" icon="arrow-up-right" target="_blank" rel="noopener">Fiche du plan de vol</twig:Ui:Button>{% endif %}
+                    {% if session.condorClubUrl %}<twig:Ui:Button href="{{ session.condorClubUrl }}" variant="outline" size="sm" icon="arrow-up-right" target="_blank" rel="noopener">Circuit Condor Club</twig:Ui:Button>{% endif %}
+                    <twig:Ui:Link href="{{ path('app_flight_plan_show', {code: plan.code}) }}">Ce plan de vol au club</twig:Ui:Link>
+                    {% if is_granted('SESSION_EDIT', session) %}<twig:Ui:Link href="{{ path('app_session_edit', {id: session.id}) }}">{{ past and session.results is empty ? 'Ajouter les résultats' : 'Modifier la session' }}</twig:Ui:Link>{% endif %}
+                </div>
+                {% for type, messages in app.flashes(['success', 'error']) %}
+                    {% for message in messages %}<div class="c-alert c-alert--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</div>{% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if session.notes or not past %}
+            <div class="l-container">
+                <div class="c-card c-card--outlined t-paper p-session__notes">
+                    <div class="c-card__body l-stack l-stack--sm">
+                        <twig:Ui:Heading level="2" size="h4">{{ past ? 'Informations pratiques' : 'Pour participer' }}</twig:Ui:Heading>
+                        {% if session.notes %}<p>{{ session.notes|nl2br }}</p>{% endif %}
+                        {% if not past %}
+                            <p class="u-note">Versions de Condor, de la scène et du hangar identiques à celles du serveur, briefing sur Discord 15 minutes avant, puis connexion au serveur pendant le Stop Join. Après le vol, déposez votre trace sur le site : elle rejoint cette session.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if past %}
+            <div class="l-container p-session__results">
+                <twig:Ui:Heading level="2" size="h3">Résultats</twig:Ui:Heading>
+                {% if not app.user %}
+                    <p><a href="{{ path('app_login', {_target_path: app.request.requestUri}) }}">Connectez-vous</a> pour voir les résultats et les traces des pilotes. L’inscription est gratuite.</p>
+                {% elseif session.results is empty %}
+                    <p class="u-note">Les résultats du serveur ne sont pas encore enregistrés{{ is_granted('SESSION_EDIT', session) ? ' : ajoutez-les en modifiant la session.' : '.' }}</p>
+                {% else %}
+                    <figure class="c-data-table">
+                        <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Résultats de la session">
+                            <table>
+                                <thead><tr><th scope="col">#</th><th scope="col">Pilote</th><th scope="col">CN</th><th scope="col">Planeur</th><th scope="col">Statut</th><th scope="col">Distance</th><th scope="col">Temps</th><th scope="col">Vitesse</th><th scope="col">Pénalité</th><th scope="col">Points</th><th scope="col">Trace</th></tr></thead>
+                                <tbody>
+                                    {% for row in session.results %}
+                                        {% set track = row.competitionId ? tracks[row.competitionId|lower]|default(null) : null %}
+                                        <tr{% if track and track.owner and track.owner == app.user %} aria-current="true"{% endif %}>
+                                            <td>{{ row.rank }}</td>
+                                            <td>{{ row.player }}</td>
+                                            <td>{{ row.competitionId ?: '—' }}</td>
+                                            <td>{{ row.glider ?: '—' }}</td>
+                                            <td>{{ row.status|session_status }}</td>
+                                            <td>{{ row.distance is not null ? row.distance|flight_distance : '—' }}</td>
+                                            <td>{{ row.time is not null ? row.time|flight_duration : '—' }}</td>
+                                            <td>{{ row.speed is not null ? row.speed|number_format(1, ',', ' ') ~ ' km/h' : '—' }}</td>
+                                            <td>{{ row.penalty ? row.penalty|number_format(0, ',', ' ') ~ ' pts' : '—' }}</td>
+                                            <td>{{ row.score is not null ? row.score|number_format(1, ',', ' ') : '—' }}</td>
+                                            <td>{% if track %}<a href="{{ path('app_flight_show', {id: track.id}) }}">Analyse<span class="u-visually-hidden"> du vol de {{ row.player }}</span></a>{% else %}—{% endif %}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </figure>
+                    <p class="u-note">Résultats du serveur Condor ({{ session.resultsFile }}). Les pénalités et les points sont ceux du serveur.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {% if app.user and past %}
+            {% if ranked %}
+                <div class="p-session__tracks" data-controller="session-viewer" data-session-viewer-url-value="{{ path('app_session_data', {id: session.id}) }}">
+                    <div class="l-container"><twig:Ui:Heading level="2" size="h3">Les traces de la session</twig:Ui:Heading></div>
+                    {{ include('flight/_session_replay.html.twig', {session: ranked, ranking_title: 'Analyse des traces déposées'}) }}
+                </div>
+            {% else %}
+                <div class="l-container">
+                    <p class="u-note">Aucune trace de cette session n’est encore déposée. Vous l’avez volée ? <a href="{{ path('app_flight_index') }}">Déposez votre trace</a> : elle rejoint la session et vous pourrez la comparer aux autres.</p>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% if is_granted('SESSION_EDIT', session) %}
+            <div class="l-container">
+                <form method="post" action="{{ path('app_session_delete', {id: session.id}) }}" onsubmit="return confirm('Supprimer cette session ? Les traces restent dans les vols des pilotes.')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete-session-' ~ session.id) }}">
+                    <twig:Ui:Button type="submit" variant="danger" size="sm" icon="">Supprimer la session</twig:Ui:Button>
+                </form>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

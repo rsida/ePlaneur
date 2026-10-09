@@ -122,7 +122,7 @@ final class FlightTest extends WebTestCase
         self::assertNull($this->entityManager->getRepository(Flight::class)->find($id));
     }
 
-    public function testFlightsOfTheSameFlightPlanFormASession(): void
+    public function testFlightsOfTheSameFlightPlanAreGathered(): void
     {
         foreach (['pilote@example.org', 'autre@example.org'] as $email) {
             $this->client->loginUser($this->user($email));
@@ -132,14 +132,16 @@ final class FlightTest extends WebTestCase
         $id = $this->entityManager->getRepository(Flight::class)->findOneBy([])?->getId();
 
         $this->client->request('GET', '/vols/'.$id);
-        self::assertSelectorTextContains('.p-flight__links', 'Session : 2 vols sur ce plan de vol');
+        self::assertSelectorTextContains('.p-flight__links', '2 traces sur ce plan de vol');
 
+        // The flight plan of the library got its page (no session of this race was recorded)
         $this->client->request('GET', '/vols/'.$id.'/session');
-        self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'C3-c060_Laragne-Ventoux-Fayence');
+        self::assertResponseRedirects('/plans-de-vol/C3-c060');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('h1', 'C3-c060 · Laragne-Ventoux-Fayence');
         self::assertCount(2, $this->client->getCrawler()->filter('.p-session__ranking tbody tr'));
 
-        $this->client->request('GET', '/vols/'.$id.'/session.json');
+        $this->client->request('GET', '/plans-de-vol/C3-c060/traces.json');
         /** @var array{task: array<string, mixed>|null, flights: list<array{start: int, latitude: list<float>, altitude: list<float>}>} $session */
         $session = json_decode((string) $this->client->getResponse()->getContent(), true);
         self::assertCount(2, $session['flights']);

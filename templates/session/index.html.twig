@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sessions de vol en réseau{% endblock %}
+{% block description %}Les prochaines sessions de vol en réseau du Club ePlaneur et l’historique de leurs résultats depuis 2020.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-sessions">
+        <div class="l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Eyebrow>Voler ensemble</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h1">Sessions en réseau</twig:Ui:Heading>
+                <p class="u-lead">Chaque semaine, les pilotes du club volent le même circuit, dans la même météo, chacun depuis chez soi. Retrouvez les prochaines sessions et les résultats de toutes les autres.</p>
+                {% if is_granted('SESSION_ORGANISE') %}
+                    <div><twig:Ui:Button href="{{ path('app_session_new') }}" icon="">Proposer une session</twig:Ui:Button></div>
+                {% endif %}
+            </div>
+
+            {% for type, messages in app.flashes(['success', 'error']) %}
+                {% for message in messages %}<div class="c-alert c-alert--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</div>{% endfor %}
+            {% endfor %}
+
+            <section class="l-stack" aria-labelledby="upcoming-title">
+                <twig:Ui:Heading level="2" size="h3" id="upcoming-title">Prochaines sessions</twig:Ui:Heading>
+                {% if upcoming is empty %}
+                    <p class="u-note">Aucune session n’est encore annoncée sur le site : elles sont aussi proposées dans le groupe WhatsApp des vols.</p>
+                {% else %}
+                    <div class="p-sessions__upcoming">
+                        {% for session in upcoming %}{{ include('session/_card.html.twig') }}{% endfor %}
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="l-stack" aria-labelledby="history-title">
+                <twig:Ui:Heading level="2" size="h3" id="history-title">Sessions passées</twig:Ui:Heading>
+                <form method="get" class="p-sessions__filters" data-controller="autosubmit">
+                    <label class="c-field"><span class="c-field__label">Année</span>
+                        <select class="c-input" name="annee" data-action="autosubmit#submit">
+                            <option value="">Toutes</option>
+                            {% for year in years %}<option{% if filters.annee|default('') == year ~ '' %} selected{% endif %}>{{ year }}</option>{% endfor %}
+                        </select>
+                    </label>
+                    <label class="c-field"><span class="c-field__label">Condor</span>
+                        <select class="c-input" name="condor" data-action="autosubmit#submit">
+                            {% for value, label in {'': 'Condor 2 et 3', '2': 'Condor 2', '3': 'Condor 3'} %}<option value="{{ value }}"{% if filters.condor|default('') == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                        </select>
+                    </label>
+                    <label class="c-field"><span class="c-field__label">Catégorie</span>
+                        <select class="c-input" name="categorie" data-action="autosubmit#submit">
+                            {% for value, label in {'': 'Toutes', 'initiation': 'Initiation', 'standard': 'Standard', 'competition': 'Compétition'} %}<option value="{{ value }}"{% if filters.categorie|default('') == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                        </select>
+                    </label>
+                    <label class="c-field"><span class="c-field__label">Session</span>
+                        <select class="c-input" name="type" data-action="autosubmit#submit">
+                            <option value="">Ouvertes et dédiées</option>
+                            <option value="ouverte"{% if filters.type|default('') == 'ouverte' %} selected{% endif %}>Ouvertes à tous</option>
+                            {% for label in dedicated %}<option value="{{ label }}"{% if filters.type|default('') == label %} selected{% endif %}>Dédiée · {{ label }}</option>{% endfor %}
+                        </select>
+                    </label>
+                    <noscript><twig:Ui:Button type="submit" size="sm" icon="">Filtrer</twig:Ui:Button></noscript>
+                </form>
+
+                <p class="u-note">{{ total }} {{ total > 1 ? 'sessions' : 'session' }}{% if pages > 1 %} · page {{ page }} sur {{ pages }}{% endif %}</p>
+                {% if past is not empty %}
+                    <figure class="c-data-table">
+                        <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Sessions passées">
+                            <table>
+                                <thead><tr><th scope="col">Date</th><th scope="col">Plan de vol</th><th scope="col">Parcours</th><th scope="col">Planeurs</th><th scope="col">Scène</th><th scope="col">Pilotes</th><th scope="col"><span class="u-visually-hidden">Résultats</span></th></tr></thead>
+                                <tbody>
+                                    {% for session in past %}
+                                        {% set plan = session.flightPlan %}
+                                        <tr>
+                                            <td><time datetime="{{ session.date|date('Y-m-d') }}">{{ session.date|format_date('short', locale: 'fr') }}</time></td>
+                                            <td><a href="{{ path('app_flight_plan_show', {code: plan.code}) }}">{{ plan.code }}</a>{% if session.dedicatedTo %} <span class="u-note">· {{ session.dedicatedTo }}</span>{% endif %}</td>
+                                            <td>{{ plan.title ?: '—' }}</td>
+                                            <td>{{ plan.gliders ?: '—' }}</td>
+                                            <td>{{ plan.landscape ?: '—' }}</td>
+                                            <td>{{ session.participantCount }}</td>
+                                            <td><a href="{{ path('app_session_show', {id: session.id}) }}">Résultats<span class="u-visually-hidden"> du {{ session.date|format_date('short', locale: 'fr') }}</span></a></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </figure>
+                {% else %}
+                    <p>Aucune session ne correspond à ces filtres.</p>
+                {% endif %}
+
+                {% if pages > 1 %}
+                    <nav class="p-sessions__pages" aria-label="Pages">
+                        {% if page > 1 %}<twig:Ui:Button href="{{ path('app_session_index', filters|merge({page: page - 1})) }}" variant="outline" size="sm" icon="">Plus récentes</twig:Ui:Button>{% else %}<span></span>{% endif %}
+                        <span class="u-note">Page {{ page }} / {{ pages }}</span>
+                        {% if page < pages %}<twig:Ui:Button href="{{ path('app_session_index', filters|merge({page: page + 1})) }}" variant="outline" size="sm" icon="">Plus anciennes</twig:Ui:Button>{% else %}<span></span>{% endif %}
+                    </nav>
+                {% endif %}
+            </section>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

@@ -153,16 +153,17 @@ stored flights again from their files (in production too, after the deployment).
 
 ## Session
 
-All the flights on the same flight plan (the name of the Condor task file, e.g.
-"C3-c060_Laragne-Ventoux-Fayence_D2_AA3 ePlaneur") form a session, the way the club names its
-network flights. The race id of the `.ftr` header is not used yet: whether two pilots of the same
-network race get the same id has not been checked (no tracks of two pilots of one race yet). A flight
-plan flown again another day joins the same session, which still compares the same task.
+The flights of one network race form a session: they share the race id of the `.ftr` header, which
+is also in the name of the results file of the server (see [sessions](sessions.md)). The session page
+(`/sessions/{id}`) shows the results of the server and, below, what the uploaded tracks give; the
+page of a flight plan (`/plans-de-vol/{code}`) gathers every track on it, whatever the day.
+Flights whose task is not a flight plan of the library are still grouped by task name
+(`/vols/{id}/session`).
 
 - **Ranking**: the pilots who finished by task speed, then the others by distance.
 - **Podium**, beyond speed: fastest, best average climb in thermals, best glide ratio in glides,
   least time circling (share of the flight).
-- **Replay**: every pilot in a color, the whole track faded and the last two minutes bold, a label
+- **Replay** (`FlightSession::replayData()`, partial `flight/_session_replay.html.twig`): every pilot in a color, the whole track faded and the last two minutes bold, a label
   with the competition id; from above or in 3D. Two clocks: "Heure de course", each recording from
   its beginning (in a network race everybody starts at once), or "Départ du circuit ensemble", the
   start lines crossed at the same moment (ghost race between flights of different days). The side

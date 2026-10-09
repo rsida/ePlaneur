@@ -193,8 +193,8 @@ final class NavigationFixtures extends Fixture implements DependentFixtureInterf
 
         $columns = [
             'Formation' => ['Installer Condor 2' => '/#guides', 'Installer Condor 3' => '/#guides', 'Parcours guidé' => '/#formation', 'Vidéos pédagogiques' => '/#formation', 'Bonnes pratiques' => '/#guides'],
-            'Voler' => ['Vols en réseau' => '/#vols', 'Participer à un vol' => '/#vols', 'Prérequis pour voler' => '/#vols', 'Déposer une trace' => '/#carnet', 'Créer mon carnet' => '/#carnet'],
-            'Le Club' => ['Présentation du club' => $presentation, 'Textes officiels' => $texts, 'Actualités' => '/actualites', 'Adhésions' => $membership, 'Contacter le club' => 'mailto:contact@club.eplaneur.fr'],
+            'Voler' => ['Vols en réseau' => '/#vols', 'Sessions et résultats' => '/sessions', 'Participer à un vol' => '/#vols', 'Prérequis pour voler' => '/#vols', 'Déposer une trace' => '/#carnet', 'Créer mon carnet' => '/#carnet'],
+            'Le Club' => ['Présentation du club' => $presentation, 'Textes officiels' => $texts, 'Actualités' => '/actualites', 'Adhésions' => $membership, 'Contacter le club' => '/contact'],
         ];
         $column = 0;
         foreach ($columns as $title => $links) {

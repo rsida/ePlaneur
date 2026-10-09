@@ -65,8 +65,8 @@ pages:
     voler/outils-eplaneur: voler/outils-eplaneur
     voler/outils-eplaneur/rechercher-fpl: voler/outils-eplaneur/rechercher-fpl
     voler/outils-eplaneur/afficher-fpl: voler/outils-eplaneur/afficher-fpl
-    voler/outils-eplaneur/afficher-sessions: voler/outils-eplaneur/afficher-sessions
-    voler/outils-eplaneur/resultats-session: voler/outils-eplaneur/resultats-session
+    voler/outils-eplaneur/afficher-sessions: { redirect: /sessions }
+    voler/outils-eplaneur/resultats-session: { redirect: /sessions }
     voler/sites-indispensables: voler/sites-indispensables
     voler/sites-indispensables/condor-club: voler/sites-indispensables/condor-club
     voler/sites-indispensables/condor-soaring: voler/sites-indispensables/condor-soaring

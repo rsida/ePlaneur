@@ -49,6 +49,20 @@
         {% endif %}
     </section>
 
+    {# Coming network sessions #}
+    {% set sessions = upcoming_sessions(2) %}
+    {% if sessions is not empty %}
+        <section class="l-stack l-stack--sm" aria-labelledby="sessions-title">
+            <div class="p-account__panel-head">
+                <twig:Ui:Heading level="2" size="h3" id="sessions-title">On se retrouve en vol</twig:Ui:Heading>
+                <twig:Ui:Link href="{{ path('app_session_index') }}">Toutes les sessions</twig:Ui:Link>
+            </div>
+            <div class="p-sessions__upcoming">
+                {% for session in sessions %}{{ include('session/_card.html.twig') }}{% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
     {# Latest flights #}
     <section class="l-stack l-stack--sm" aria-labelledby="flights-title">
         <div class="p-account__panel-head">
@@ -135,6 +149,7 @@
 
     <nav class="p-account__panel p-account__panel--sand" aria-label="Raccourcis">
         <div class="p-account__links">
+            <twig:Ui:Link href="{{ path('app_session_index') }}">Sessions en réseau</twig:Ui:Link>
             <twig:Ui:Link href="{{ path('app_flight_records') }}">Records du club</twig:Ui:Link>
             <twig:Ui:Link href="{{ path('app_flight_index') }}">Analyse de vols</twig:Ui:Link>
             <twig:Ui:Link href="{{ path('app_account_contact') }}">Contacter le club</twig:Ui:Link>

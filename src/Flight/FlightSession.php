@@ -64,6 +64,36 @@ final readonly class FlightSession
         return $podium;
     }
 
+    /**
+     * What the session replay draws: the task and, for each flight, its track (one point per second
+     * from `start`, seconds since the beginning of the recording) and the time it started the task.
+     *
+     * @return array{task: mixed, flights: list<array<string, mixed>>}
+     */
+    public function replayData(): array
+    {
+        $task = null;
+        $tracks = [];
+        foreach ($this->flights as $member) {
+            $analysis = $member->getAnalysis();
+            $task ??= $analysis['task'] ?? null;
+            $time = $analysis['series']['time'];
+            $started = $analysis['task']['turnpoints'][1]['reached'] ?? null;
+            $tracks[] = [
+                'id' => $member->getId(),
+                'pilot' => $member->getPilot(),
+                'competitionId' => $member->getCompetitionId(),
+                'start' => $time[0] ?? 0,
+                'taskStart' => null !== $started ? $time[$started] : null,
+                'latitude' => $analysis['series']['latitude'],
+                'longitude' => $analysis['series']['longitude'],
+                'altitude' => $analysis['series']['altitude'],
+            ];
+        }
+
+        return ['task' => $task, 'flights' => $tracks];
+    }
+
     public static function statistic(Flight $flight, string $name): ?float
     {
         $value = $flight->getAnalysis()['statistics'][$name] ?? null;

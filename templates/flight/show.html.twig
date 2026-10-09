@@ -23,7 +23,8 @@
                     <p class="p-flight__links">
                         {% if flight.launch %}<twig:Ui:Tag variant="soft" title="Lu sur le début de la trace">{{ flight.launch.label }}</twig:Ui:Tag>{% endif %}
                         {% if flight.public %}<twig:Ui:Tag title="Visible des visiteurs du site, sans les commentaires">Public</twig:Ui:Tag>{% endif %}
-                        {% if flight.flightPlan and app.user %}<twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">{{ session_size > 1 ? 'Session : ' ~ session_size ~ ' vols sur ce plan de vol' : 'Session de ce plan de vol' }}</twig:Ui:Link>{% endif %}
+                        {% if flight.session %}<twig:Ui:Link href="{{ path('app_session_show', {id: flight.session.id}) }}">Session du {{ flight.session.date|format_date('long', locale: 'fr') }} · {{ flight.session.participantCount }} {{ flight.session.participantCount > 1 ? 'pilotes' : 'pilote' }}</twig:Ui:Link>{% endif %}
+                        {% if flight.flightPlan and app.user %}<twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">{{ session_size > 1 ? session_size ~ ' traces sur ce plan de vol' : 'Ce plan de vol au club' }}</twig:Ui:Link>{% endif %}
                         {% if flight.owner and is_granted('LOGBOOK_VIEW', flight.owner) %}<twig:Ui:Link href="{{ flight.owner == app.user ? path('app_flight_logbook') : path('app_flight_logbook_pilot', {id: flight.owner.id}) }}">{{ flight.owner == app.user ? 'Mon carnet de vol' : 'Carnet de vol du pilote' }}</twig:Ui:Link>{% endif %}
                         {% if app.user and session_size > 1 and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare_pick', {id: flight.id}) }}">Comparer avec un autre pilote</twig:Ui:Link>{% endif %}
                     </p>

@@ -89,6 +89,11 @@ class Flight
     #[ORM\Column(options: ['default' => false])]
     private bool $public = false;
 
+    /** Network session the flight was flown in (same race id, see App\Session\SessionLinker). */
+    #[ORM\ManyToOne(inversedBy: 'flights')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?NetworkSession $session = null;
+
     /** @var Collection<int, FlightComment> */
     #[ORM\OneToMany(targetEntity: FlightComment::class, mappedBy: 'flight')]
     #[ORM\OrderBy(['at' => 'ASC', 'createdAt' => 'ASC'])]
@@ -247,10 +252,25 @@ class Flight
         return $this;
     }
 
-    /** Day of the flight: the date in the file, or the upload date when the file has none (.ftr). */
+    /**
+     * Day of the flight: the date in the file, else the day of its session, else the upload date
+     * (a .ftr file has no date).
+     */
     public function getDate(): \DateTimeImmutable
     {
-        return $this->flownOn ?? $this->uploadedAt;
+        return $this->flownOn ?? $this->session?->getDate() ?? $this->uploadedAt;
+    }
+
+    public function getSession(): ?NetworkSession
+    {
+        return $this->session;
+    }
+
+    public function setSession(?NetworkSession $session): static
+    {
+        $this->session = $session;
+
+        return $this;
     }
 
     public function getUploadedAt(): \DateTimeImmutable

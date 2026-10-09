@@ -1,0 +1,76 @@
+/* Network sessions: list, session page, flight plan page, session form */
+
+.p-sessions__upcoming {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 48em) {
+    .p-sessions__upcoming {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (width >= 64em) {
+    .p-sessions__upcoming {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.p-session-card__when {
+    font-weight: 600;
+}
+
+.p-session-card__route {
+    overflow-wrap: anywhere;
+}
+
+.p-sessions__filters {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 48em) {
+    .p-sessions__filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.p-sessions__pages {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.p-session__notes,
+.p-session__results,
+.p-session__tracks {
+    margin-block-end: var(--space-8);
+}
+
+/* A grid track that may shrink: wide tables scroll inside .c-data-table instead of widening the page */
+.p-session__results {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+.p-session__tracks > .l-container {
+    margin-block-end: var(--space-4);
+}
+
+.p-session-form__when {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 48em) {
+    .p-session-form__when {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.p-session > .l-container:nth-child(2) {
+    margin-block-start: var(--space-6);
+}

@@ -1,0 +1,18 @@
+{# A coming session (sessions list, dashboard). Variable: session. #}
+{% set plan = session.flightPlan %}
+<article class="c-card c-card--outlined t-paper p-session-card">
+    <div class="c-card__body l-stack l-stack--sm">
+        <div class="l-cluster">
+            <twig:Ui:Tag variant="soft">Condor {{ plan.condorVersion }}</twig:Ui:Tag>
+            <twig:Ui:Tag variant="soft">{{ plan.category }}</twig:Ui:Tag>
+            {% if session.dedicatedTo %}<twig:Ui:Tag variant="muted">Session dédiée · {{ session.dedicatedTo }}</twig:Ui:Tag>{% endif %}
+        </div>
+        <p class="p-session-card__when">
+            <time datetime="{{ session.startsAt|date('c') }}">{{ session.date|format_date(pattern: 'EEEE d MMMM', locale: 'fr')|capitalize }}{% if session.startTime %} · {{ session.startTime|date('H\\hi') }}{% endif %}</time>
+        </p>
+        <twig:Ui:Heading level="3" size="h4"><a href="{{ path('app_session_show', {id: session.id}) }}">{{ plan.code }}</a></twig:Ui:Heading>
+        {% if plan.title %}<p class="p-session-card__route">{{ plan.title }}</p>{% endif %}
+        <p class="u-note">{{ [plan.gliders, plan.landscape]|filter(v => v)|join(' · ') }}{% if session.organiser %}{{ plan.gliders or plan.landscape ? ' · ' : '' }}Organisée par {{ session.organiser.displayName }}{% endif %}</p>
+        <twig:Ui:Link href="{{ path('app_session_show', {id: session.id}) }}">Préparer la session</twig:Ui:Link>
+    </div>
+</article>
