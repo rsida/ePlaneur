@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Flight\Advice;
 
 use App\Flight\Analysis\FlightMarks;
+use App\Session\TaskSettings;
 use App\Training\TrainingStep;
 
 /**
@@ -21,7 +22,11 @@ use App\Training\TrainingStep;
  *   20 km/h per m/s of the climbs expected; 20 km/h slower is worth a look. No advice on flying too
  *   fast: straight flight includes ridge running, and ballasted gliders fly much faster;
  * - the marks of the Silver badge (step 4): 1 h of flight, 1,000 m gained from a low point, 50 km
- *   from the take-off.
+ *   from the take-off;
+ * - transitions that wander: 20 % or more longer than the straight lines (step 5);
+ * - spiral wider than the one of the best climbs of the flight by 20 % or more (step 4);
+ * - final glide too high: 150 m or more above the minimum finish altitude of the task, when the
+ *   settings of the session are known (step 5).
  */
 final class FlightAdvisor
 {
@@ -31,13 +36,17 @@ final class FlightAdvisor
     private const int WEAK_MIN_DURATION = 60;
     private const float NO_GAIN = 50.0;
     private const float ONE_SIDE = 0.85;
+    private const float WANDERING = 0.20;
+    private const float WIDE_SPIRAL = 1.20;
+    private const float HIGH_FINISH = 150.0;
 
     /**
      * @param array<string, mixed> $analysis
+     * @param TaskSettings|null    $settings of the session of the flight, when known
      *
      * @return list<Advice>
      */
-    public function advise(array $analysis): array
+    public function advise(array $analysis, ?TaskSettings $settings = null): array
     {
         $statistics = $analysis['statistics'];
         $thermals = array_values(array_filter($analysis['phases'], static fn (array $phase): bool => 'thermal' === $phase['type']));
@@ -102,6 +111,36 @@ final class FlightAdvisor
             }
         }
 
+        $detour = $statistics['glideDetour'] ?? null;
+        if (null !== $detour && $detour >= self::WANDERING) {
+            $advice[] = new Advice(Advice::TIP, 'Des transitions qui serpentent', \sprintf(
+                'Vos transitions se sont écartées de %d %% des lignes droites. Choisissez la prochaine ascendance avant de quitter la précédente, puis tenez le cap.',
+                round($detour * 100),
+            ), TrainingStep::MacCready);
+        }
+
+        $radius = $statistics['spiralRadius'] ?? null;
+        $target = $statistics['spiralTarget'] ?? null;
+        if (null !== $radius && null !== $target && $target > 0 && $radius >= $target * self::WIDE_SPIRAL) {
+            $advice[] = new Advice(Advice::TIP, 'Une spirale large', \sprintf(
+                'Rayon moyen de %d m, quand vos meilleures montées tournaient à %d m. Plus serré et mieux centré, le planeur reste dans le cœur du thermique.',
+                round($radius), round($target),
+            ), TrainingStep::Flaps);
+        }
+
+        $final = $analysis['task']['finalGlide'] ?? null;
+        if (null !== $settings && null !== $settings->finishMinHeight && \is_array($final)) {
+            $excess = $final['arrivalAltitude'] - $settings->finishMinHeight;
+            if ($excess >= self::HIGH_FINISH) {
+                $climb = $final['climb'] ?? null;
+                $advice[] = new Advice(Advice::TIP, 'Une arrivée trop haute', \sprintf(
+                    'Ligne d’arrivée franchie %d m au-dessus du minimum%s. Une finale calculée au plus juste, et accélérée, rapporte ce temps.',
+                    round($excess),
+                    null !== $climb && $climb > 0 ? \sprintf(' : au taux de votre dernière ascendance (%s m/s), %s de montée qui ne vous ont rien rapporté', self::number($climb), self::seconds($excess / $climb)) : '',
+                ), TrainingStep::MacCready);
+            }
+        }
+
         $badge = self::silverBadge($analysis);
         if (null !== $badge) {
             $advice[] = $badge;
@@ -143,6 +182,14 @@ final class FlightAdvisor
     private static function number(float $value): string
     {
         return number_format($value, 1, ',', ' ');
+    }
+
+    /** A short time: "1 min 24 s", "45 s". */
+    private static function seconds(float $seconds): string
+    {
+        $seconds = (int) round($seconds);
+
+        return $seconds >= 60 ? \sprintf('%d min %02d s', intdiv($seconds, 60), $seconds % 60) : $seconds.' s';
     }
 
     private static function minutes(int|float $seconds): string

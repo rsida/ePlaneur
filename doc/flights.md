@@ -117,6 +117,21 @@ administrator to add it.
    - each turnpoint: altitude and ground speed when it was reached (the times of the passages match
      Condor Club to the second).
    The `.ftr` gives the water ballast (litres at take-off).
+   **Phases** (roadmap 7g2, checked on the flight of FDU of 2026-10-08 against its Condor Club page):
+   - each thermal gets its full turns, radius (speed over turn rate), bank (tan = v·ω/g, from the
+     ground speed: estimated) and wind (drift from the centre of its first circle to the centre of
+     its last one; FDU: 10 km/h from 262°, Condor Club 10 km/h from 246°);
+   - straight flight that climbs (1 m/s over 30 s, for a minute and 50 m) is its own phase, slope
+     or wave lift (FDU: 1, +299 m; Condor Club 1, +269 m). A height recovery of Condor ("miracle")
+     reads as one too;
+   - on the task (phases cut at the start and the finish): thermals, share of the time circling,
+     average climb, left / right, glides (distance, speed, glide ratio: FDU 225 km at 206 km/h, 59.1;
+     Condor Club 216 km at 208 km/h, 58.4), wind averaged as vectors, slope or wave lift;
+   - the spiral: average radius and bank, and the radius of the best quarter of the thermals by
+     climb (four thermals at least), the "target";
+   - the climb by altitude: average climb in the thermals per band of 200 m (20 s at least).
+   Not yet: netto, effective MacCready, speeds to fly by MacCready band and wing loading: they need
+   the polar and masses of each glider.
 5. **Task**: each point is reached when the track enters its zone: a cylinder (360°), or for
    Condor's 180° start and finish a half disc of the radius behind the line across the leg (Condor
    counts the finish as soon as the glider is within the radius on the side it comes from); other

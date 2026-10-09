@@ -676,12 +676,16 @@ function angleDifference(from, to) {
     return ((to - from + 540) % 360) - 180;
 }
 
-/** One line describing a thermal or a glide. */
+/** One line describing a thermal, a glide or straight lift (slope, wave). */
 function describePhase(phase) {
     const minutes = Math.max(1, Math.round(phase.duration / 60));
     const number = (value, digits = 1) => value.toLocaleString('fr-FR', { maximumFractionDigits: digits });
     if (phase.type === 'thermal') {
         return `Thermique · ${minutes} min · ${phase.gain >= 0 ? '+' : ''}${phase.gain} m · ${number(phase.vario)} m/s · ${phase.direction === 'left' ? 'à gauche' : 'à droite'}`;
+    }
+
+    if (phase.type === 'lift') {
+        return `Pente ou onde · ${minutes} min · +${phase.gain} m · ${number(phase.vario)} m/s en ligne droite`;
     }
 
     return `Transition · ${number(phase.distance / 1000)} km · ${Math.round(phase.speed)} km/h${phase.glideRatio ? ` · finesse ${Math.round(phase.glideRatio)}` : ''}`;

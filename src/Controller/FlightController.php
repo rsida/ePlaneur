@@ -189,7 +189,7 @@ final class FlightController extends AbstractController
         return $this->render('flight/show.html.twig', [
             'flight' => $flight,
             'session_size' => $flights->countSession($flight),
-            'advice' => $advisor->advise($flight->getAnalysis()),
+            'advice' => $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings()),
             'comment_form' => $form?->createView(),
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }

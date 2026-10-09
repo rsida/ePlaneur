@@ -13,6 +13,10 @@ use App\Flight\Track;
  */
 final readonly class FlightAnalysis
 {
+    /** Height of the bands of the climb by altitude, metres, and the seconds a band needs. */
+    private const int CLIMB_BAND = 200;
+    private const int CLIMB_BAND_MIN_TIME = 20;
+
     /**
      * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
      * @param list<Phase>                                                                                                                          $phases
@@ -60,9 +64,47 @@ final readonly class FlightAnalysis
                 'glideRatio' => null !== $phase->glideRatio ? round($phase->glideRatio, 1) : null,
                 'direction' => $phase->direction,
                 'straight' => round($phase->straight),
+                'turns' => $phase->turns,
+                'radius' => $phase->radius,
+                'bank' => $phase->bank,
+                'windSpeed' => $phase->windSpeed,
+                'windFrom' => $phase->windFrom,
             ], $this->phases),
+            'climbByAltitude' => $this->climbByAltitude(),
             'task' => null === $this->task ? null : $this->taskArray($this->task),
         ];
+    }
+
+    /**
+     * Average climb in the thermals by band of altitude (CLIMB_BAND metres), lowest first: where the
+     * thermals worked best.
+     *
+     * @return list<array{bottom: int, climb: float, seconds: int}>
+     */
+    private function climbByAltitude(): array
+    {
+        $bands = [];
+        foreach ($this->phases as $phase) {
+            if (Phase::THERMAL !== $phase->type) {
+                continue;
+            }
+            for ($i = $phase->start; $i < $phase->end; ++$i) {
+                $band = (int) floor($this->series['altitude'][$i] / self::CLIMB_BAND) * self::CLIMB_BAND;
+                $bands[$band] ??= [0.0, 0];
+                $bands[$band][0] += $this->series['altitude'][$i + 1] - $this->series['altitude'][$i];
+                ++$bands[$band][1];
+            }
+        }
+        ksort($bands);
+        $rows = [];
+        foreach ($bands as $bottom => [$gain, $seconds]) {
+            // A band crossed in a few seconds says nothing
+            if ($seconds >= self::CLIMB_BAND_MIN_TIME) {
+                $rows[] = ['bottom' => $bottom, 'climb' => round($gain / $seconds, 2), 'seconds' => $seconds];
+            }
+        }
+
+        return $rows;
     }
 
     /**

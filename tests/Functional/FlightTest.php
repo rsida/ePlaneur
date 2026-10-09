@@ -210,7 +210,7 @@ final class FlightTest extends WebTestCase
         self::assertResponseRedirects('/vols/'.$id.'#commentaires');
         $crawler = $this->client->followRedirect();
         self::assertSelectorTextContains('.p-flight__comment', 'Spirale décentrée ici.');
-        self::assertSelectorTextContains('.p-flight__comment-at', '2:00');
+        self::assertSelectorTextContains('.p-flight__comment .p-flight__comment-at', '2:00');
         self::assertSelectorTextContains('.p-flight__comment', 'Étape 5 · Voler à la vitesse MacCready');
 
         // Another member sees the comment but may not comment

@@ -29,6 +29,11 @@ final class FlightAnalyzerTest extends TestCase
         self::assertEqualsWithDelta(180, $thermal->duration(), 12, 'The thermal is found within a few seconds');
         self::assertEqualsWithDelta(2.0, $thermal->vario(), 0.15);
         self::assertSame('left', $thermal->direction);
+        // Six turns of 100 m at 12°/s (75 km/h): bank atan(v·ω/g) = 24°, no drift
+        self::assertEqualsWithDelta(6.0, $thermal->turns, 0.6);
+        self::assertEqualsWithDelta(100.0, $thermal->radius, 8.0);
+        self::assertEqualsWithDelta(24.0, $thermal->bank, 2.0);
+        self::assertEqualsWithDelta(0.0, $thermal->windSpeed, 3.0);
         self::assertEqualsWithDelta(30.0, $phases[0]->glideRatio, 1.5, '30 m/s for 1 m/s of sink');
         self::assertEqualsWithDelta(108.0, $phases[2]->speed(), 2.0);
 
@@ -56,6 +61,55 @@ final class FlightAnalyzerTest extends TestCase
         // Measured over 4 s: no noise between close points
         self::assertEqualsWithDelta(-1.0, $analysis->series['vario'][60], 0.01);
         self::assertEqualsWithDelta(108.0, $analysis->series['speed'][60], 0.5);
+    }
+
+    public function testTheWindIsReadFromTheDriftOfTheCircles(): void
+    {
+        // The thermal drifts 5 m/s to the north (18 km/h of southerly wind)
+        $fixes = array_map(static function (Fix $fix): Fix {
+            $drift = 5.0 * max(0.0, min($fix->time, 300.0) - 120.0);
+
+            return new Fix($fix->time, $fix->latitude + $drift / 111194.9, $fix->longitude, $fix->altitude);
+        }, FlightSamples::glideThermalGlide());
+        $analysis = (new FlightAnalyzer())->analyze(self::track($fixes));
+        $thermal = $analysis->phases[1];
+
+        self::assertEqualsWithDelta(18.0, $thermal->windSpeed, 2.0);
+        self::assertEqualsWithDelta(180.0, $thermal->windFrom, 10.0, 'From the south');
+        self::assertEqualsWithDelta(18.0, $analysis->statistics['windSpeed'], 2.0);
+        self::assertEqualsWithDelta(180.0, $analysis->statistics['windFrom'], 10.0);
+    }
+
+    public function testAStraightClimbIsSlopeOrWaveLift(): void
+    {
+        // Straight flight climbing 1.5 m/s for two and a half minutes, after a glide
+        $fixes = [];
+        for ($t = 0; $t < 300; ++$t) {
+            $fixes[] = new Fix((float) $t, ...FlightSamples::toLatLon(25.0 * $t, 0), altitude: 1500.0 + ($t < 150 ? -$t : -150 + 1.5 * ($t - 150)));
+        }
+        $analysis = (new FlightAnalyzer())->analyze(self::track($fixes));
+
+        self::assertSame([Phase::GLIDE, Phase::LIFT], array_map(static fn (Phase $phase): string => $phase->type, self::merged($analysis->phases)));
+        self::assertSame(1, $analysis->statistics['lifts']);
+    }
+
+    /**
+     * Phase types without repeats (a glide may be cut in two by the change of slope).
+     *
+     * @param list<Phase> $phases
+     *
+     * @return list<Phase>
+     */
+    private static function merged(array $phases): array
+    {
+        $merged = [];
+        foreach ($phases as $phase) {
+            if ([] === $merged || end($merged)->type !== $phase->type) {
+                $merged[] = $phase;
+            }
+        }
+
+        return $merged;
     }
 
     public function testFixesAreResampledToOnePerSecond(): void

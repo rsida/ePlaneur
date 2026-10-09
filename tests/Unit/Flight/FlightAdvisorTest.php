@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Flight;
 
 use App\Flight\Advice\Advice;
 use App\Flight\Advice\FlightAdvisor;
+use App\Session\TaskSettings;
 use App\Training\TrainingStep;
 use PHPUnit\Framework\TestCase;
 
@@ -37,6 +38,24 @@ final class FlightAdvisorTest extends TestCase
         self::assertStringContainsString('autour de 131 km/h', $advice[4]->text, '95 + 20 × 1.8');
     }
 
+    public function testWanderingTransitionsWideSpiralsAndAHighFinish(): void
+    {
+        $settings = TaskSettings::fromCondorClub(json_decode((string) file_get_contents(__DIR__.'/../../fixtures/condor/condor-club-task-27105.json'), true));
+        $advice = $this->advise(
+            ['glideDetour' => 0.31, 'spiralRadius' => 160.0, 'spiralTarget' => 120.0],
+            [],
+            finalGlide: ['arrivalAltitude' => 638.0, 'climb' => 3.7],
+            settings: $settings,
+        );
+        $titles = array_map(static fn (Advice $item): string => $item->title, $advice);
+
+        self::assertSame(['Des transitions qui serpentent', 'Une spirale large', 'Une arrivée trop haute'], $titles);
+        self::assertStringContainsString('31 %', $advice[0]->text);
+        // Condor Club: 308 m above the minimum of 330 m, about 84 s of climb at 3.7 m/s
+        self::assertStringContainsString('308 m au-dessus du minimum', $advice[2]->text);
+        self::assertStringContainsString('1 min 23 s', $advice[2]->text);
+    }
+
     public function testSilverBadgeMarks(): void
     {
         // 1 h 10 straight to the east at 20 m/s (84 km), climbing 1,200 m
@@ -54,10 +73,11 @@ final class FlightAdvisorTest extends TestCase
     /**
      * @param array<string, float>                   $statistics
      * @param list<array{int, float, float, string}> $thermals   duration, gain, climb, direction
+     * @param array<string, float>|null              $finalGlide
      *
      * @return list<Advice>
      */
-    private function advise(array $statistics, array $thermals, bool $completed = false, int $duration = 1800, float $speed = 20.0, float $climb = 0.0): array
+    private function advise(array $statistics, array $thermals, bool $completed = false, int $duration = 1800, float $speed = 20.0, float $climb = 0.0, ?array $finalGlide = null, ?TaskSettings $settings = null): array
     {
         $series = ['time' => [], 'latitude' => [], 'longitude' => [], 'altitude' => []];
         for ($t = 0; $t <= $duration; ++$t) {
@@ -73,7 +93,7 @@ final class FlightAdvisorTest extends TestCase
             'statistics' => $statistics + ['duration' => $duration, 'takeoff' => 0, 'landing' => $duration],
             'series' => $series,
             'phases' => $phases,
-            'task' => ['completed' => $completed],
-        ]);
+            'task' => ['completed' => $completed || null !== $finalGlide, 'finalGlide' => $finalGlide],
+        ], $settings);
     }
 }

@@ -11,6 +11,8 @@ final readonly class Phase
 {
     public const string THERMAL = 'thermal';
     public const string GLIDE = 'glide';
+    /** Climbing in straight flight: slope or wave lift. */
+    public const string LIFT = 'lift';
 
     /**
      * @param int         $start      index in the 1 s series
@@ -21,6 +23,11 @@ final readonly class Phase
      * @param string|null $direction  "left" or "right" (thermals)
      * @param float       $straight   metres between its first and last points (a glide flown
      *                                straight has its distance)
+     * @param float|null  $turns      full turns (thermals)
+     * @param float|null  $radius     metres, from the speed and the turn rate (thermals)
+     * @param float|null  $bank       degrees, tan(bank) = v·ω / g (thermals)
+     * @param float|null  $windSpeed  km/h, drift of the circles (thermals)
+     * @param float|null  $windFrom   degrees the wind blows from (thermals)
      */
     public function __construct(
         public string $type,
@@ -31,7 +38,26 @@ final readonly class Phase
         public ?float $glideRatio,
         public ?string $direction,
         public float $straight = 0.0,
+        public ?float $turns = null,
+        public ?float $radius = null,
+        public ?float $bank = null,
+        public ?float $windSpeed = null,
+        public ?float $windFrom = null,
     ) {
+    }
+
+    /** The same phase as another type (a glide that climbs is a slope or wave lift). */
+    public function as(string $type): self
+    {
+        return new self($type, $this->start, $this->end, $this->gain, $this->distance, null, null, $this->straight);
+    }
+
+    /**
+     * The same thermal with its turns, radius, bank and wind.
+     */
+    public function withCircles(float $turns, ?float $radius, ?float $bank, ?float $windSpeed, ?float $windFrom): self
+    {
+        return new self($this->type, $this->start, $this->end, $this->gain, $this->distance, $this->glideRatio, $this->direction, $this->straight, $turns, $radius, $bank, $windSpeed, $windFrom);
     }
 
     /** Seconds. */

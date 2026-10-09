@@ -18,7 +18,8 @@ use App\Flight\Turnpoint;
  *    noise of differences between close points;
  * 3. circling is detected from the turn rate (heading change over 10 seconds): circling segments
  *    are thermals, the rest glides; short pieces are merged into their neighbours (a thermal being
- *    re-centred stays one thermal);
+ *    re-centred stays one thermal); a glide that climbs (1 m/s for a minute, 50 m) is slope or
+ *    wave lift; thermals get their turns, radius, bank and wind (drift of the circles);
  * 4. statistics are computed between take-off and landing (ground speed above 40 km/h); 30 s slower
  *    on the way is a stop on the ground (a landing, then a relaunch);
  * 5. with a task, each point is reached when the track enters its zone (a cylinder, or a half
@@ -43,6 +44,12 @@ final class FlightAnalyzer
 
     /** Ground speed above which the glider is flying, km/h. */
     private const float FLYING_SPEED = 40.0;
+
+    /** Straight flight climbing at least LIFT_CLIMB m/s (over LIFT_WINDOW s) for LIFT_TIME s and LIFT_GAIN m is slope or wave lift. */
+    private const int LIFT_WINDOW = 30;
+    private const int LIFT_TIME = 60;
+    private const float LIFT_GAIN = 50.0;
+    private const float LIFT_CLIMB = 1.0;
 
     /** Seconds under the flying speed, between take-off and landing, that make a stop on the ground. */
     private const int LANDED_TIME = 30;
@@ -96,6 +103,7 @@ final class FlightAnalyzer
         [$takeoff, $landing] = self::flyingRange($speed);
         $turnRate = self::turnRates($heading);
         $phases = self::phases($turnRate, $takeoff, $landing, $altitude, $step, $latitude, $longitude);
+        $phases = self::describe(self::splitLift($phases, $altitude, $step, $latitude, $longitude), $turnRate, $speed, $latitude, $longitude);
 
         $series = [
             'time' => array_column($points, 0),
@@ -111,7 +119,8 @@ final class FlightAnalyzer
         $statistics = self::statistics($series, $step, $phases, $takeoff, $landing)
             + self::climbing($series, $takeoff, $landing, $launch)
             + self::spirals($turnRate, $altitude, $takeoff, $landing)
-            + self::taskFlying($series, $phases, $task);
+            + self::taskFlying($series, $phases, $task)
+            + self::circling($series, $phases, $task);
 
         return new FlightAnalysis($track, $series, $phases, $statistics, $task, $launch);
     }
@@ -301,6 +310,124 @@ final class FlightAnalyzer
     }
 
     /**
+     * Cuts out of the glides the parts flown straight while climbing (slope or wave lift): the
+     * altitude gained over LIFT_WINDOW seconds stays above LIFT_CLIMB m/s for LIFT_TIME seconds and
+     * LIFT_GAIN metres.
+     *
+     * @param list<Phase> $phases
+     * @param list<float> $altitude
+     * @param list<float> $step
+     * @param list<float> $latitude
+     * @param list<float> $longitude
+     *
+     * @return list<Phase>
+     */
+    private static function splitLift(array $phases, array $altitude, array $step, array $latitude, array $longitude): array
+    {
+        $count = \count($altitude);
+        $half = intdiv(self::LIFT_WINDOW, 2);
+        $make = static function (string $type, int $start, int $end) use ($altitude, $step, $latitude, $longitude): Phase {
+            $gain = $altitude[$end] - $altitude[$start];
+            $distance = array_sum(\array_slice($step, $start + 1, $end - $start));
+
+            return new Phase($type, $start, $end, $gain, $distance, Phase::GLIDE === $type && -$gain >= self::MIN_GLIDE_LOSS ? $distance / -$gain : null, null, Geo::distance($latitude[$start], $longitude[$start], $latitude[$end], $longitude[$end]));
+        };
+        $result = [];
+        foreach ($phases as $phase) {
+            if (Phase::GLIDE !== $phase->type) {
+                $result[] = $phase;
+                continue;
+            }
+            // Runs of climbing straight flight inside the glide
+            $runs = [];
+            $runStart = null;
+            for ($i = $phase->start; $i <= $phase->end + 1; ++$i) {
+                $climbing = $i <= $phase->end
+                    && ($altitude[min($count - 1, $i + $half)] - $altitude[max(0, $i - $half)]) / self::LIFT_WINDOW >= self::LIFT_CLIMB;
+                if ($climbing) {
+                    $runStart ??= $i;
+                } elseif (null !== $runStart) {
+                    $end = $i - 1;
+                    if ($end - $runStart >= self::LIFT_TIME && $altitude[$end] - $altitude[$runStart] >= self::LIFT_GAIN) {
+                        $runs[] = [$runStart, $end];
+                    }
+                    $runStart = null;
+                }
+            }
+            if ([] === $runs) {
+                $result[] = $phase;
+                continue;
+            }
+            // Pieces of glide shorter than MIN_PHASE at the ends of the glide join the lift next to them
+            if ($runs[0][0] - $phase->start < self::MIN_PHASE) {
+                $runs[0][0] = $phase->start;
+            }
+            $last = \count($runs) - 1;
+            if ($phase->end - $runs[$last][1] < self::MIN_PHASE) {
+                $runs[$last][1] = $phase->end;
+            }
+            $cursor = $phase->start;
+            foreach ($runs as [$start, $end]) {
+                if ($start > $cursor) {
+                    $result[] = $make(Phase::GLIDE, $cursor, $start);
+                }
+                $result[] = $make(Phase::LIFT, $start, $end);
+                $cursor = $end;
+            }
+            $result[] = $make(Phase::GLIDE, $cursor, $phase->end);
+        }
+
+        // A glide left with no length after a lift ends the flight: drop it
+        return array_values(array_filter($result, static fn (Phase $phase): bool => $phase->end > $phase->start));
+    }
+
+    /**
+     * Thermals get their turns, radius, bank and wind.
+     *
+     * @param list<Phase> $phases
+     * @param list<float> $turnRate
+     * @param list<float> $speed
+     * @param list<float> $latitude
+     * @param list<float> $longitude
+     *
+     * @return list<Phase>
+     */
+    private static function describe(array $phases, array $turnRate, array $speed, array $latitude, array $longitude): array
+    {
+        return array_map(static function (Phase $phase) use ($turnRate, $speed, $latitude, $longitude): Phase {
+            $duration = $phase->duration();
+            if (Phase::THERMAL !== $phase->type || $duration <= 0) {
+                return $phase;
+            }
+            $rates = \array_slice($turnRate, $phase->start, $duration + 1);
+            $turned = abs(array_sum($rates));
+            $omega = deg2rad(array_sum(array_map('abs', $rates)) / \count($rates));
+            $velocity = array_sum(\array_slice($speed, $phase->start, $duration + 1)) / ($duration + 1) / 3.6;
+            $radius = $omega > 0 ? $velocity / $omega : null;
+            $bank = $omega > 0 ? rad2deg(atan($velocity * $omega / 9.81)) : null;
+            // Wind: drift from the centre of the first circle to the centre of the last one
+            $circle = $omega > 0 ? min($duration, (int) round(2 * \M_PI / $omega)) : $duration;
+            $windSpeed = null;
+            $windFrom = null;
+            if ($circle > 0 && $duration > $circle) {
+                $centre = static function (int $from) use ($circle, $latitude, $longitude): array {
+                    return [
+                        array_sum(\array_slice($latitude, $from, $circle)) / $circle,
+                        array_sum(\array_slice($longitude, $from, $circle)) / $circle,
+                    ];
+                };
+                [$lat1, $lon1] = $centre($phase->start);
+                [$lat2, $lon2] = $centre($phase->end - $circle);
+                $drift = Geo::distance($lat1, $lon1, $lat2, $lon2);
+                $windSpeed = round($drift / ($duration - $circle) * 3.6, 1);
+                $windFrom = $drift > 1.0 ? round(fmod(Geo::bearing($lat1, $lon1, $lat2, $lon2) + 180.0, 360.0)) : null;
+            }
+
+            return $phase->withCircles(round($turned / 360.0, 1), null !== $radius ? round($radius) : null, null !== $bank ? round($bank) : null, $windSpeed, $windFrom);
+        }, $phases);
+    }
+
+    /**
      * Joins consecutive runs of the same kind.
      *
      * @param list<array{bool, int, int}> $runs
@@ -453,6 +580,129 @@ final class FlightAnalyzer
     }
 
     /**
+     * The phases on the task when it was finished (cut at the start and the finish), otherwise all
+     * of them.
+     *
+     * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
+     * @param list<Phase>                                                                                                                          $phases
+     *
+     * @return list<Phase>
+     */
+    private static function onTask(array $series, array $phases, ?TaskResult $task): array
+    {
+        if (null === $task || !$task->isCompleted()) {
+            return $phases;
+        }
+        $from = (int) $task->start();
+        $to = (int) $task->finish();
+        $clipped = [];
+        foreach ($phases as $phase) {
+            $start = max($phase->start, $from);
+            $end = min($phase->end, $to);
+            if ($end <= $start) {
+                continue;
+            }
+            if ($start === $phase->start && $end === $phase->end) {
+                $clipped[] = $phase;
+                continue;
+            }
+            $distance = 0.0;
+            for ($i = $start + 1; $i <= $end; ++$i) {
+                $distance += Geo::distance($series['latitude'][$i - 1], $series['longitude'][$i - 1], $series['latitude'][$i], $series['longitude'][$i]);
+            }
+            $gain = $series['altitude'][$end] - $series['altitude'][$start];
+            $clipped[] = new Phase(
+                $phase->type,
+                $start,
+                $end,
+                $gain,
+                $distance,
+                Phase::GLIDE === $phase->type && -$gain >= self::MIN_GLIDE_LOSS ? $distance / -$gain : null,
+                $phase->direction,
+                Geo::distance($series['latitude'][$start], $series['longitude'][$start], $series['latitude'][$end], $series['longitude'][$end]),
+                $phase->turns,
+                $phase->radius,
+                $phase->bank,
+                $phase->windSpeed,
+                $phase->windFrom,
+            );
+        }
+
+        return $clipped;
+    }
+
+    /**
+     * On the task when it was finished, otherwise on the whole flight: the spiral (average radius
+     * and bank, and the radius of the best quarter of the thermals by climb, at least four of
+     * them), the wind (drift of the circles, averaged as vectors) and the slope or wave lift.
+     *
+     * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
+     * @param list<Phase>                                                                                                                          $phases
+     *
+     * @return array<string, int|float|null>
+     */
+    private static function circling(array $series, array $phases, ?TaskResult $task): array
+    {
+        $inside = self::onTask($series, $phases, $task);
+        $from = null !== $task && $task->isCompleted() ? (int) $task->start() : 0;
+        $to = null !== $task && $task->isCompleted() ? (int) $task->finish() : 0;
+        $thermals = array_values(array_filter($inside, static fn (Phase $phase): bool => Phase::THERMAL === $phase->type && null !== $phase->radius));
+        $lifts = array_values(array_filter($inside, static fn (Phase $phase): bool => Phase::LIFT === $phase->type));
+        $time = array_sum(array_map(static fn (Phase $phase): int => $phase->duration(), $thermals));
+        $weighted = static fn (callable $value): ?float => $time > 0 ? round(array_sum(array_map(static fn (Phase $phase): float => $value($phase) * $phase->duration(), $thermals)) / $time) : null;
+
+        $target = null;
+        if (\count($thermals) >= 4) {
+            $best = $thermals;
+            usort($best, static fn (Phase $a, Phase $b): int => $b->vario() <=> $a->vario());
+            $best = \array_slice($best, 0, (int) ceil(\count($best) / 4));
+            $target = round(array_sum(array_map(static fn (Phase $phase): float => (float) $phase->radius, $best)) / \count($best));
+        }
+
+        // Wind as the average of the drift vectors (towards which the circles move)
+        $east = 0.0;
+        $north = 0.0;
+        $windTime = 0;
+        foreach ($thermals as $phase) {
+            if (null === $phase->windSpeed || null === $phase->windFrom) {
+                continue;
+            }
+            $towards = deg2rad($phase->windFrom + 180.0);
+            $east += sin($towards) * $phase->windSpeed * $phase->duration();
+            $north += cos($towards) * $phase->windSpeed * $phase->duration();
+            $windTime += $phase->duration();
+        }
+        $windSpeed = $windTime > 0 ? hypot($east, $north) / $windTime : null;
+
+        // The same figures as the whole flight has, on this part
+        $allThermals = array_values(array_filter($inside, static fn (Phase $phase): bool => Phase::THERMAL === $phase->type));
+        $glides = array_values(array_filter($inside, static fn (Phase $phase): bool => Phase::GLIDE === $phase->type));
+        $sum = static fn (array $list, callable $value): float => array_sum(array_map($value, $list));
+        $circlingTime = $sum($allThermals, static fn (Phase $phase): int => $phase->duration());
+        $span = null !== $task && $task->isCompleted() ? $to - $from : null;
+        $glideTime = $sum($glides, static fn (Phase $phase): int => $phase->duration());
+        $glideDistance = $sum($glides, static fn (Phase $phase): float => $phase->distance);
+        $glideLoss = $sum($glides, static fn (Phase $phase): float => max(0.0, -$phase->gain));
+
+        return [
+            'phaseThermals' => \count($allThermals),
+            'phaseCircling' => null !== $span && $span > 0 ? round($circlingTime / $span, 3) : null,
+            'phaseClimb' => $circlingTime > 0 ? round($sum($allThermals, static fn (Phase $phase): float => $phase->gain) / $circlingTime, 2) : null,
+            'phaseLeftShare' => $circlingTime > 0 ? round($sum(array_filter($allThermals, static fn (Phase $phase): bool => 'left' === $phase->direction), static fn (Phase $phase): int => $phase->duration()) / $circlingTime, 3) : null,
+            'phaseGlideDistance' => round($glideDistance),
+            'phaseGlideSpeed' => $glideTime > 0 ? round($glideDistance / $glideTime * 3.6, 1) : null,
+            'phaseGlideRatio' => $glideLoss >= self::MIN_GLIDE_LOSS ? round($glideDistance / $glideLoss, 1) : null,
+            'spiralRadius' => $weighted(static fn (Phase $phase): float => (float) $phase->radius),
+            'spiralBank' => $weighted(static fn (Phase $phase): float => (float) $phase->bank),
+            'spiralTarget' => $target,
+            'windSpeed' => null !== $windSpeed ? round($windSpeed, 1) : null,
+            'windFrom' => null !== $windSpeed && $windSpeed > 0.5 ? round(fmod(rad2deg(atan2($east, $north)) + 180.0 + 360.0, 360.0)) : null,
+            'lifts' => \count($lifts),
+            'liftGain' => round(array_sum(array_map(static fn (Phase $phase): float => $phase->gain, $lifts))),
+        ];
+    }
+
+    /**
      * On the task when it was finished, otherwise on the whole flight: the band of the thermals
      * (average altitude at their entry and exit) and the detour of the glides (distance flown over
      * the straight lines between their ends, split at the turnpoints reached on the way).
@@ -464,16 +714,11 @@ final class FlightAnalyzer
      */
     private static function taskFlying(array $series, array $phases, ?TaskResult $task): array
     {
-        $from = null !== $task && $task->isCompleted() ? (int) $task->start() : 0;
-        $to = null !== $task && $task->isCompleted() ? (int) $task->finish() : \PHP_INT_MAX;
         $reached = null !== $task ? array_filter($task->reached, static fn (?int $index): bool => null !== $index) : [];
         $thermals = [];
         $flown = 0.0;
         $straight = 0.0;
-        foreach ($phases as $phase) {
-            if ($phase->start < $from || $phase->end > $to) {
-                continue;
-            }
+        foreach (self::onTask($series, $phases, $task) as $phase) {
             if (Phase::THERMAL === $phase->type) {
                 $thermals[] = $phase;
                 continue;

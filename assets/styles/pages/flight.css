@@ -240,6 +240,10 @@
     border-left-color: var(--color-success);
 }
 
+.p-flight__phase-item--lift {
+    border-left-color: var(--color-accent);
+}
+
 .p-flight__phase-item:hover,
 .p-flight__phase-item[aria-current='true'] {
     background-color: var(--color-paper);
@@ -946,4 +950,84 @@
 
 .p-flight__alert {
     color: var(--color-danger);
+}
+
+/* Phase analysis */
+.p-flight__phases-analysis {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin-block: var(--space-7) var(--space-6);
+}
+
+.p-flight__phases-analysis .p-flight__stats {
+    margin-block: 0;
+}
+
+.p-flight__up {
+    color: var(--color-success);
+}
+
+.p-flight__down {
+    color: var(--color-danger);
+}
+
+.p-flight__coach {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 64em) {
+    .p-flight__coach {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: start;
+    }
+}
+
+.p-flight__bars,
+.p-flight__winds {
+    display: grid;
+    align-self: stretch;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+}
+
+.p-flight__bars li,
+.p-flight__winds li {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr auto;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.p-flight__winds li {
+    grid-template-columns: 4.5rem 1.5rem 1fr;
+}
+
+.p-flight__bar {
+    display: block;
+    height: 0.75rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-line);
+}
+
+.p-flight__bar > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-success);
+}
+
+.p-flight__bar-label {
+    color: var(--on-surface-muted);
+    text-align: end;
+}
+
+.p-flight__wind-arrow {
+    display: inline-block;
+    font-weight: 700;
+    text-align: center;
 }

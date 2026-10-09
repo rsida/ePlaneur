@@ -253,6 +253,106 @@
             </div>
         </div>
 
+        {# Phase analysis and coaching (Condor Club parity, roadmap 7g2) #}
+        {% if stats.phaseThermals is defined %}
+            {% set altitude = analysis.series.altitude %}
+            {% set circling = stats.phaseCircling ?? stats.circlingShare %}
+            <section class="l-container p-flight__phases-analysis" aria-labelledby="phases-title">
+                <twig:Ui:Heading level="2" size="h3" id="phases-title">Analyse par phases</twig:Ui:Heading>
+                <div class="p-flight__stats">
+                    <twig:Ui:Stat label="Thermiques" value="{{ stats.phaseThermals }} · {{ circling is not null ? (circling * 100)|number_format(1, ',', ' ') ~ ' %' : '—' }}" unit="du temps en spirale" />
+                    <twig:Ui:Stat label="Montée moyenne" value="{{ stats.phaseClimb is not null ? '+' ~ stats.phaseClimb|number_format(2, ',', ' ') : '—' }}" unit="m/s en thermique" />
+                    <twig:Ui:Stat label="Gauche / droite" value="{{ stats.phaseLeftShare is not null ? (stats.phaseLeftShare * 100)|round ~ ' / ' ~ ((1 - stats.phaseLeftShare) * 100)|round : '—' }}" unit="% du temps en spirale" />
+                    <twig:Ui:Stat label="Bande exploitée" value="{{ stats.bandBottom is not null ? stats.bandBottom|number_format(0, ',', ' ') ~ ' → ' ~ stats.bandTop|number_format(0, ',', ' ') : '—' }}" unit="m, entrée → sortie" />
+                    <twig:Ui:Stat label="Transitions" value="{{ (stats.phaseGlideDistance / 1000)|number_format(0, ',', ' ') }} km · {{ stats.phaseGlideSpeed is not null ? stats.phaseGlideSpeed|number_format(0, ',', ' ') : '—' }}" unit="km/h{{ stats.glideDetour is not null ? ', détour +' ~ (stats.glideDetour * 100)|number_format(1, ',', ' ') ~ ' %' : '' }}" />
+                    <twig:Ui:Stat label="Finesse réalisée" value="{{ stats.phaseGlideRatio is not null ? stats.phaseGlideRatio|number_format(1, ',', ' ') : '—' }}" unit="en transition" />
+                    <twig:Ui:Stat label="Vent (dérive en spirale)" value="{{ stats.windSpeed is not null ? stats.windSpeed|number_format(0, ',', ' ') ~ ' km/h' : '—' }}" unit="{{ stats.windFrom is not null ? 'du ' ~ stats.windFrom ~ '°' : '' }}" />
+                    <twig:Ui:Stat label="Pente ou onde" value="{{ stats.lifts }}" unit="{{ stats.lifts > 0 ? 'montée' ~ (stats.lifts > 1 ? 's' : '') ~ ' en ligne droite, +' ~ stats.liftGain|number_format(0, ',', ' ') ~ ' m' : 'montée en ligne droite' }}" />
+                </div>
+                <p class="u-note">Sur le circuit quand il est terminé, sur tout le vol sinon.</p>
+
+                <figure class="c-data-table">
+                    <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Phases du vol">
+                        <table>
+                            <thead><tr><th scope="col">Phase</th><th scope="col">Début{{ approx }}</th><th scope="col">Durée</th><th scope="col">Altitude</th><th scope="col">Vario</th><th scope="col">Détails</th></tr></thead>
+                            <tbody>
+                                {% for phase in analysis.phases %}
+                                    <tr class="p-flight__phase-row p-flight__phase-row--{{ phase.type }}">
+                                        <th scope="row">{{ {thermal: 'Thermique', glide: 'Transition', lift: 'Pente ou onde'}[phase.type] }}{% if phase.direction %} {{ phase.direction == 'left' ? 'G' : 'D' }}{% endif %}</th>
+                                        <td><button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ phase.start }}">{{ phase.start|flight_clock }}</button></td>
+                                        <td>{{ phase.duration|flight_clock }}</td>
+                                        <td>{{ altitude[phase.start]|number_format(0, ',', ' ') }} → {{ altitude[phase.end]|number_format(0, ',', ' ') }} m</td>
+                                        <td class="{{ phase.vario >= 0 ? 'p-flight__up' : 'p-flight__down' }}">{{ phase.vario >= 0 ? '+' : '' }}{{ phase.vario|number_format(1, ',', ' ') }} m/s</td>
+                                        <td class="u-note">
+                                            {%- if phase.type == 'thermal' -%}
+                                                {{ [phase.turns ? phase.turns|number_format(1, ',', ' ') ~ ' tours' : null, phase.radius ? 'r ' ~ phase.radius ~ ' m' : null, phase.bank ? phase.bank ~ '°' : null, phase.windSpeed is not null and phase.windFrom is not null ? 'vent ' ~ phase.windSpeed|number_format(0) ~ ' km/h du ' ~ phase.windFrom ~ '°' : null]|filter(v => v)|join(' · ') }}
+                                            {%- else -%}
+                                                {{ [phase.distance|flight_distance, phase.speed|number_format(0, ',', ' ') ~ ' km/h', phase.glideRatio ? 'finesse ' ~ phase.glideRatio|number_format(0, ',', ' ') : null]|filter(v => v)|join(' · ') }}
+                                            {%- endif -%}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </figure>
+
+                <div class="p-flight__coach">
+                    {% if stats.spiralRadius %}
+                        {% set target = stats.spiralTarget %}
+                        {% set verdict = target is null ? null : (stats.spiralRadius > target * 1.15 ? 'Large' : (stats.spiralRadius < target * 0.85 ? 'Serrée' : 'Bonne')) %}
+                        <section class="c-card c-card--outlined t-paper" aria-labelledby="spiral-title">
+                            <div class="c-card__body l-stack l-stack--sm">
+                                <twig:Ui:Heading level="3" size="h4" id="spiral-title">Spirale{% if verdict %} · {{ verdict }}{% endif %}</twig:Ui:Heading>
+                                <dl class="p-flight__facts">
+                                    <div><dt>Rayon moyen</dt><dd>{{ stats.spiralRadius }} m</dd></div>
+                                    {% if target %}<div><dt>Rayon de vos meilleures montées</dt><dd>{{ target }} m</dd></div>{% endif %}
+                                    <div><dt>Inclinaison moyenne <span class="u-note">(estimée)</span></dt><dd>{{ stats.spiralBank }}°</dd></div>
+                                </dl>
+                                <p class="u-note">La cible est le rayon de vos meilleures montées du vol (le meilleur quart). Spiraler plus large que la cible veut souvent dire que le cœur n’était pas centré ; beaucoup plus serré augmente la chute du planeur.</p>
+                            </div>
+                        </section>
+                    {% endif %}
+                    {% if analysis.climbByAltitude is not empty %}
+                        {% set best = max(analysis.climbByAltitude|map(b => b.climb)) %}
+                        <section class="c-card c-card--outlined t-paper" aria-labelledby="climb-title">
+                            <div class="c-card__body l-stack l-stack--sm">
+                                <twig:Ui:Heading level="3" size="h4" id="climb-title">Taux de montée par altitude</twig:Ui:Heading>
+                                <ol class="p-flight__bars">
+                                    {% for band in analysis.climbByAltitude|reverse %}
+                                        <li title="{{ band.seconds|flight_time }} en thermique dans cette tranche">
+                                            <span class="p-flight__bar-label">{{ band.bottom|number_format(0, ',', ' ') }} m</span>
+                                            <span class="p-flight__bar"><span style="width: {{ best > 0 ? (max(band.climb, 0) / best * 100)|round : 0 }}%"></span></span>
+                                            <span class="p-flight__bar-value">{{ band.climb >= 0 ? '+' : '' }}{{ band.climb|number_format(1, ',', ' ') }} m/s</span>
+                                        </li>
+                                    {% endfor %}
+                                </ol>
+                                <p class="u-note">Vario moyen en thermique par tranche de 200 m : où les thermiques portaient le mieux.</p>
+                            </div>
+                        </section>
+                    {% endif %}
+                    {% set winds = analysis.phases|filter(p => p.type == 'thermal' and p.windSpeed is not null and p.windFrom is not null) %}
+                    {% if winds is not empty %}
+                        <section class="c-card c-card--outlined t-paper" aria-labelledby="wind-title">
+                            <div class="c-card__body l-stack l-stack--sm">
+                                <twig:Ui:Heading level="3" size="h4" id="wind-title">Vent par altitude</twig:Ui:Heading>
+                                <ol class="p-flight__winds">
+                                    {% for phase in winds|sort((a, b) => altitude[b.end] <=> altitude[a.end]) %}
+                                        <li>
+                                            <span class="p-flight__bar-label">{{ ((altitude[phase.start] + altitude[phase.end]) / 2)|number_format(0, ',', ' ') }} m</span>
+                                            <span class="p-flight__wind-arrow" style="transform: rotate({{ phase.windFrom + 180 }}deg)" aria-hidden="true">↑</span>
+                                            <span class="p-flight__bar-value">{{ phase.windSpeed|number_format(0) }} km/h du {{ phase.windFrom }}°</span>
+                                        </li>
+                                    {% endfor %}
+                                </ol>
+                                <p class="u-note">Mesuré par la dérive de chaque thermique, à son altitude moyenne.</p>
+                            </div>
+                        </section>
+                    {% endif %}
+                </div>
+            </section>
+        {% endif %}
+
         {% if task and task.turnpoints[0].reachedAltitude is defined %}
             {% set points = task.turnpoints %}
             {% set start = points[1].reached %}
