@@ -177,6 +177,9 @@ final class SessionTest extends WebTestCase
         $this->client->request('GET', '/vols/'.$flight->getId().'/igc');
         self::assertResponseIsSuccessful();
         self::assertStringStartsWith('AXEPePlaneur', (string) $this->client->getResponse()->getContent());
+        // One track only: nothing to compare yet
+        $this->client->request('GET', '/sessions/'.$session->getId().'/comparaison');
+        self::assertResponseRedirects('/sessions/'.$session->getId());
         $this->client->request('GET', '/sessions/'.$session->getId().'/thermiques.json');
         self::assertResponseIsSuccessful();
         self::assertArrayHasKey('thermals', json_decode((string) $this->client->getResponse()->getContent(), true));

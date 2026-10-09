@@ -190,7 +190,7 @@ final readonly class FlightComparison
      *
      * @return list<int>
      */
-    private static function progressTimes(array $analysis): array
+    public static function progressTimes(array $analysis): array
     {
         $series = $analysis['series'];
         $points = $analysis['task']['turnpoints'];
@@ -231,7 +231,7 @@ final readonly class FlightComparison
      *
      * @return Stretch
      */
-    private static function describe(array $analysis, int $from, int $to): array
+    public static function describe(array $analysis, int $from, int $to): array
     {
         $series = $analysis['series'];
         $circling = 0;

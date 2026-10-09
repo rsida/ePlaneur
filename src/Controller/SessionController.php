@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Entity\NetworkSession;
 use App\Entity\User;
 use App\Flight\FlightSession;
+use App\Flight\SessionComparison;
 use App\Form\SessionType;
 use App\Repository\NetworkSessionRepository;
 use App\Security\Permission;
@@ -102,6 +103,33 @@ final class SessionController extends AbstractController
         return $response;
     }
 
+    /** Every track of the session compared along the task at once (SessionComparison). */
+    #[Route('/{id<\d+>}/comparaison', name: 'compare', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function compare(NetworkSession $session): Response
+    {
+        $comparison = $this->comparison($session);
+        if (null === $comparison) {
+            $this->addFlash('error', 'Il faut au moins deux traces parties sur le circuit pour comparer la session.');
+
+            return $this->redirectToRoute('app_session_show', ['id' => $session->getId()]);
+        }
+
+        return $this->render('session/compare.html.twig', ['session' => $session, 'comparison' => $comparison]);
+    }
+
+    #[Route('/{id<\d+>}/comparaison.json', name: 'compare_data', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function compareData(NetworkSession $session): JsonResponse
+    {
+        $comparison = $this->comparison($session) ?? throw $this->createNotFoundException();
+        $response = new JsonResponse($comparison->chartData());
+        $response->setPrivate();
+        $response->setMaxAge(300);
+
+        return $response;
+    }
+
     /** Thermals of every track of the session, for its thermal map (FlightSession::thermalMap()). */
     #[Route('/{id<\d+>}/thermiques.json', name: 'thermals', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
@@ -133,6 +161,13 @@ final class SessionController extends AbstractController
         $this->addFlash('success', 'La session est supprimée. Les traces de ses pilotes restent dans leurs vols.');
 
         return $this->redirectToRoute('app_session_index');
+    }
+
+    private function comparison(NetworkSession $session): ?SessionComparison
+    {
+        $flights = array_values($session->getFlights()->toArray());
+
+        return [] !== $flights ? SessionComparison::of(FlightSession::of($flights)->flights) : null;
     }
 
     private function edit(Request $request, SessionData $data, ?NetworkSession $session, SessionManager $manager, EntityManagerInterface $entityManager): Response

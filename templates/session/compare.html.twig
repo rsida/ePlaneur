@@ -1,0 +1,85 @@
+{% extends 'base.html.twig' %}
+
+{% set plan = session.flightPlan %}
+{% set flights = comparison.flights %}
+{% set colors = ['rgb(214 69 65)', 'rgb(62 93 131)', 'rgb(36 140 72)', 'rgb(168 91 42)', 'rgb(123 79 160)', 'rgb(0 150 160)', 'rgb(200 160 0)', 'rgb(220 90 160)', 'rgb(90 90 90)', 'rgb(120 160 40)'] %}
+
+{% block title %}Comparer la session {{ plan.code }} du {{ session.date|format_date('short', locale: 'fr') }}{% endblock %}
+
+{% block body %}
+    <section class="p-flight p-session-compare t-light" data-controller="session-compare"
+             data-session-compare-url-value="{{ path('app_session_compare_data', {id: session.id}) }}">
+        <div class="l-container p-flight__head">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_session_show', {id: session.id}) }}">Retour à la session</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Comparer toute la session</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ plan.label }}</twig:Ui:Heading>
+                <p class="p-flight__meta">{{ session.date|format_date('long', locale: 'fr') }} · {{ flights|length }} traces parties sur le circuit</p>
+                <p class="u-note">À chaque point du circuit, le temps de chaque pilote depuis son départ est comparé au plus rapide de la session à cet endroit (le « meilleur virtuel ») : la courbe d’un pilote ne monte que là où il perd du temps sur le meilleur.</p>
+            </div>
+        </div>
+
+        <div class="l-container l-stack">
+            <ul class="p-session-compare__pilots" aria-label="Pilotes">
+                {% for flight in flights %}
+                    <li><span class="p-session__dot" style="--pilot-color: {{ colors[loop.index0 % colors|length] }}"></span><a href="{{ path('app_flight_show', {id: flight.id}) }}">{{ flight.pilot }}{% if flight.competitionId %} ({{ flight.competitionId }}){% endif %}</a></li>
+                {% endfor %}
+            </ul>
+            <p class="p-flight__loading" data-session-compare-target="status" role="status">Chargement…</p>
+            <figure class="p-flight__chart"><figcaption>Retard sur le meilleur virtuel le long du circuit (min)</figcaption><div data-session-compare-target="chart" data-series="gap"></div></figure>
+            <figure class="p-flight__chart"><figcaption>Altitude le long du circuit (m)</figcaption><div data-session-compare-target="chart" data-series="altitude"></div></figure>
+
+            <section class="l-stack l-stack--sm" aria-labelledby="legs-title">
+                <twig:Ui:Heading level="2" size="h3" id="legs-title">Branches du circuit</twig:Ui:Heading>
+                {% set legs = comparison.legs %}
+                <figure class="c-data-table">
+                    <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Temps par branche">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Pilote</th>
+                                    {% for leg in legs %}<th scope="col">{{ leg.from }} → {{ leg.to }} <span class="p-session-compare__leg-distance">{{ leg.distance|flight_distance }}</span></th>{% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for flight in flights %}
+                                    {% set f = loop.index0 %}
+                                    <tr>
+                                        <th scope="row"><span class="p-session__dot" style="--pilot-color: {{ colors[f % colors|length] }}"></span>{{ flight.competitionId ?? flight.pilot }}</th>
+                                        {% for leg in legs %}
+                                            {% set time = leg.times[f] %}
+                                            <td{% if time is not null and time == leg.best %} class="p-session-compare__best"{% endif %}>
+                                                {% if time is null %}—{% else %}{{ time|flight_clock }}{% if time > leg.best %} <span class="u-note">{{ (time - leg.best)|flight_gap }}</span>{% endif %}{% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </figure>
+                <p class="u-note">En gras, le meilleur temps de chaque branche ; à côté des autres, l’écart avec lui.</p>
+            </section>
+
+            <section class="l-stack l-stack--sm" aria-labelledby="moments-title">
+                <twig:Ui:Heading level="2" size="h3" id="moments-title">Où chacun a perdu le plus de temps</twig:Ui:Heading>
+                <ul class="p-session-compare__moments">
+                    {% for moment in comparison.moments %}
+                        {% set flight = flights[loop.index0] %}
+                        <li>
+                            <strong>{{ flight.competitionId ?? flight.pilot }}</strong>
+                            {% if moment is null %}
+                                <span class="u-note">aucun tronçon de 10 km où il perd plus de 30 s sur le meilleur.</span>
+                            {% else %}
+                                perd {{ moment.loss|flight_gap|trim('+') }} entre km {{ (moment.from / 1000)|number_format(0) }} et km {{ (moment.to / 1000)|number_format(0) }} :
+                                {{ moment.pilot.thermals }} thermique{{ moment.pilot.thermals > 1 ? 's' : '' }}{% if moment.pilot.climb is not null %} à {{ moment.pilot.climb|number_format(1, ',', ' ') }} m/s{% endif %}, {{ moment.pilot.circling|flight_time }} en spirale{% if moment.pilot.glideSpeed %}, transitions à {{ moment.pilot.glideSpeed|number_format(0) }} km/h{% endif %}.
+                                <span class="u-note">Le plus rapide sur ce tronçon, {{ moment.fastest.competitionId ?? moment.fastest.pilot }} : {{ moment.best.thermals }} thermique{{ moment.best.thermals > 1 ? 's' : '' }}{% if moment.best.climb is not null %} à {{ moment.best.climb|number_format(1, ',', ' ') }} m/s{% endif %}, {{ moment.best.circling|flight_time }} en spirale{% if moment.best.glideSpeed %}, transitions à {{ moment.best.glideSpeed|number_format(0) }} km/h{% endif %}.</span>
+                                {% if moment.fastest.id != flight.id and flight.id %}<a href="{{ path('app_flight_compare', {id: flight.id, other: moment.fastest.id}) }}">Comparer les deux vols</a>{% endif %}
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </div>
+    </section>
+{% endblock %}

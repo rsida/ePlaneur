@@ -68,6 +68,14 @@ slider, the time counts from each pilot's start line (pilots join the server at 
 their recordings share no clock): a thermal shows while a pilot climbs in it and for 10 minutes
 after.
 
+**Comparer toute la session** (`/sessions/{id}/comparaison`, `SessionComparison`, two tracks that
+started at least): at each 250 m of the task, each pilot's time since their start against the
+fastest time any pilot took to get there (the virtual leader). Charts of the gap and of the altitude
+along the task for every pilot (`session-compare` Stimulus controller, values of every pilot under
+the cursor), the time of each pilot on each leg with the best in bold, and for each pilot the 10 km
+stretch where they lost the most, with what they did there and what the fastest pilot on that
+stretch did, and a link to compare the two flights.
+
 On the page of a flight of the session: its rank among the tracks of the race for the climb in the
 thermals and the speed of the transitions on the task (`FlightSession::ranks()`, ties share a rank),
 and "Comparer au vainqueur" (the first of the session ranking).

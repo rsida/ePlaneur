@@ -163,3 +163,35 @@
 .p-session__swatch--4 {
     background-color: var(--thermal-strong);
 }
+
+/* Whole-session comparison */
+.p-session-compare__pilots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-session-compare__best {
+    font-weight: 700;
+}
+
+.p-session-compare__moments {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-session-compare .p-flight__chart {
+    align-self: stretch;
+}
+
+.p-session-compare__leg-distance {
+    display: block;
+    font-weight: 400;
+    opacity: 0.8;
+}

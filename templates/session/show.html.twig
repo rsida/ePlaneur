@@ -89,7 +89,11 @@
         {% if app.user and past %}
             {% if ranked %}
                 <div class="p-session__tracks" data-controller="session-viewer" data-session-viewer-url-value="{{ path('app_session_data', {id: session.id}) }}">
-                    <div class="l-container"><twig:Ui:Heading level="2" size="h3">Les traces de la session</twig:Ui:Heading></div>
+                    <div class="l-container l-cluster p-session__tracks-head">
+                        <twig:Ui:Heading level="2" size="h3">Les traces de la session</twig:Ui:Heading>
+                        {% if ranked.flights|length > 1 %}<twig:Ui:Link href="{{ path('app_session_compare', {id: session.id}) }}">Comparer toute la session</twig:Ui:Link>{% endif %}
+                        <twig:Ui:Link href="#thermiques">Carte des thermiques</twig:Ui:Link>
+                    </div>
                     {{ include('flight/_session_replay.html.twig', {session: ranked, ranking_title: 'Analyse des traces déposées'}) }}
                 </div>
                 <section class="l-container p-session__thermals" id="thermiques" aria-labelledby="race-thermals-title"
