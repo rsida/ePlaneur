@@ -38,7 +38,7 @@ Restricted pages show "Contenu restreint" with an invitation to log in or regist
 | SEO, redirections, view counter, broken link checker, Akismet | SEOPress, Redirection, Post Views Counter, WPMU DEV, Akismet | Keep SEO metadata and legacy URL redirects |
 | Analytics | Google Site Kit / Analytics | Cookie consent needed (GDPR) |
 | Membership and payments | **External**: Yapla | Integration or replacement to decide |
-| FPL / sessions tools | **External**: eplaneur.fr | Link, embed or rebuild to decide |
+| FPL / sessions tools | **External**: eplaneur.fr | Decided 2026-10-09: FPL list and sheets stay on eplaneur.fr (linked); sessions and results move to the club site |
 | Summer break banner on home page | Manual | Configurable announcement banner |
 
 ## Legal pages

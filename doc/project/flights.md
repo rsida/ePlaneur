@@ -74,10 +74,11 @@ check the Condor Club circuit and FPL sheet, publish on both sites.
 
 ## Flight data and tools
 
-Flight plans (FPL) and sessions are stored in a database on **eplaneur.fr** with a normalised coding
-(FPL codes such as `C2-d015`). The tools are hosted on eplaneur.fr and publicly reachable; the club
-site documents each of them (the membership pages present access to "ePlaneur tools" as a member
-benefit):
+Flight plans (FPL) and sessions are stored today in a database on **eplaneur.fr** with a normalised
+coding (FPL codes such as `C2-d015`). The tools are hosted on eplaneur.fr and publicly reachable; the
+club site documents each of them (the membership pages present access to "ePlaneur tools" as a member
+benefit). Decided on 2026-10-09 (see [ecosystem](ecosystem.md)): the FPL tools stay on eplaneur.fr;
+sessions and results move to the club site, which links to the FPL sheets:
 
 | Tool | Function |
 |---|---|

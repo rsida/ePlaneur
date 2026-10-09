@@ -4,6 +4,42 @@ Prompts given to Figma (Figma Make / AI) to design screens that have no mock-up 
 French because the generated screens must be. Once a mock-up exists, note its link here and in
 [roadmap](roadmap.md).
 
+## Member space and personal data (step 9a, 2026-10-09)
+
+Status: prompt written, frames not generated yet.
+
+> **Contexte.** Tu travailles sur le site du Club ePlaneur, une association qui forme au vol en planeur sur le simulateur Condor. Base-toi strictement sur les frames existantes du site (« ePlaneur — Grand air adouci · Version 6 · Desktop », « Premier vol · Article desktop », pages « Le Club », formulaires de connexion et d'inscription) et reprends sans en inventer de nouveaux :
+> - **les styles** : palette ink #192630, navy #3e5d83, sand #e7bca7, sand-soft #f1ded2, sky-soft #e5ebf1, cream #f7f5ef, slate #586772, line #d8ddd9, vert #2f6b4f (réussite), rouge #a8322d (danger) ; typos Oswald (titres display), Barlow (titres), Inter (texte) ;
+> - **les composants** : en-tête et pied de page, surtitre, titres, carte, tag, bouton (plein, contour, danger), lien fléché, tuile chiffrée (libellé, valeur, unité), champ de formulaire, case à cocher, message d'alerte ;
+> - **la grille** : desktop 1440 px, marges 72 px, contenu 1296 px ; mobile 390 px.
+>
+> **Le besoin.** Conçois l'**espace personnel** d'un compte du site (`/mon-compte`), qui remplace la simple page « Mon compte ». Il réunit ce qu'un pilote fait sur le site : son adhésion au club, ses vols Condor analysés, sa progression dans le parcours de formation en 8 étapes, ses échanges avec les formateurs, son profil et ses données personnelles (RGPD). Les comptes sont : inscrit (gratuit, non adhérent), membre (adhésion validée par le club), comité, formateur, administrateur.
+>
+> **Navigation de l'espace** : une colonne de navigation à gauche en desktop, un menu déroulant ou des onglets défilants en mobile : « Tableau de bord », « Mes vols », « Mon carnet de vol », « Mon adhésion », « Messages », « Mon profil », « Confidentialité et données ». En bas, « Se déconnecter ».
+>
+> Tous les textes sont en français, réalistes et tirés de la vie du club (vols en réseau du mercredi, plans de vol comme « C3-c060 Laragne – Ventoux – Fayence », planeur Diana 2, paysage AA3, CN « RS2 »). Crée les écrans suivants, en desktop 1440 px puis en mobile 390 px :
+>
+> 1. **Tableau de bord** (membre actif).
+>    - Bonjour et nom affiché, rôle (« Membre 2026 »).
+>    - **Carte adhésion** : saison, état (validée / demande envoyée / paiement attendu / à renouveler), date de fin (31 décembre), liens « Mon attestation » ou « Renouveler » ou « Payer en ligne ».
+>    - **Derniers vols** (3 cartes : plan de vol, date, durée, distance, vitesse circuit, type de départ en tag) et bouton « Déposer une trace ».
+>    - **Ma progression** : mini-courbe de la vitesse circuit sur les derniers vols, badges récents (« 300 km », « Vol de 3 h »), conseil qui revient le plus (« Des thermiques faibles acceptés · Étape 5 »).
+>    - **Nouveautés** : commentaires de formateurs reçus sur mes vols (non lus en évidence), réponses aux messages.
+>    - Raccourcis : « Records du club », « Vols en réseau », « Parcours de formation ».
+> 2. **Tableau de bord, autres états** : compte inscrit sans adhésion (encart d'invitation à adhérer avec les tarifs 10 € moins de 25 ans / 25 € adulte), compte tout neuf sans vol (états vides qui expliquent quoi faire), compte formateur (encart « Pilotes suivis » : derniers vols à commenter).
+> 3. **Mes vols** : liste filtrable (période, paysage, plan de vol, circuit terminé ou non, public ou privé), tri par date ; chaque vol avec ses chiffres, son tag de départ, un repère « Public » et les actions « Voir », « Rendre public / privé », « Supprimer ».
+> 4. **Mon adhésion** : adhésion en cours et historique des saisons, tarifs de la saison ouverte, formulaire de demande (type, identité, date de naissance, adresse, téléphone WhatsApp, soutien volontaire, acceptation des statuts et du règlement intérieur), suivi du paiement (HelloAsso ou virement), attestations à télécharger.
+> 5. **Messages** (à étudier) : boîte de réception avec les conversations (formateurs, comité), fil de conversation, message lié à un vol (vignette du vol et instant précis « 1:12:30 »), nouveau message, pièces jointes interdites ; état vide. Montre aussi la vue mobile.
+> 6. **Mon profil** : nom affiché, adresse e-mail (changement avec confirmation par e-mail), mot de passe, **CN Condor** et nom de pilote Condor (pour rattacher les traces), versions de Condor utilisées (2, 3), **préférences de notification par e-mail** (commentaire sur un de mes vols, nouveau message, rappel de renouvellement, actualités du club), messages de succès et d'erreur.
+> 7. **Confidentialité et données** (RGPD).
+>    - Ce que le club conserve et pourquoi, en langage simple, avec un lien vers la politique de confidentialité.
+>    - **Visibilité** : mes vols publics ou non par défaut, mon nom dans le classement de saison ou non.
+>    - **Télécharger mes données** : bouton qui prépare une archive (compte, adhésions, vols et traces, commentaires, messages) et état « archive prête ».
+>    - **Supprimer mon compte** : zone séparée en rouge. Elle explique ce qui sera supprimé (compte, profil, commentaires, messages) et ce qui sera conservé (les adhésions et paiements, gardés 10 ans pour la comptabilité de l'association, avec le seul nom et la date). **Choix pour les vols** : « Supprimer aussi mes vols et mes traces » ou « Garder mes vols de façon anonyme » (sans nom, sans CN, pour que les sessions et les records du club restent complets), avec le nombre de vols concernés. Confirmation en deux étapes : fenêtre qui récapitule, y compris le choix fait pour les vols, saisie du mot de passe et case « Je comprends que c'est définitif », bouton danger « Supprimer définitivement mon compte ». Puis l'écran de fin (« Votre compte a été supprimé », retour à l'accueil).
+> 8. **Contacter le club** depuis l'espace : petit formulaire (objet parmi « Adhésion », « Formation », « Vols en réseau », « Site », « Autre », message) prérempli avec le nom et l'e-mail du compte, et confirmation d'envoi.
+>
+> Contrastes AA, focus visible, tout est utilisable au clavier ; les actions destructrices sont toujours séparées et confirmées. Nomme clairement chaque frame et chaque composant en français, comme dans les frames existantes.
+
 ## News list and home news section (step 4, 2026-10-06)
 
 Status: frames generated (2026-10-06) on page 4 of the Figma file `a00zZWdxi7zD4Opbt6gIbn` (node

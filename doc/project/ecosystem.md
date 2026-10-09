@@ -12,8 +12,14 @@ rebuilding something that already exists elsewhere.
 | Data | FPL and network sessions database, normalisation and integrity tools (hash, signature, metadata) | Users, members, pages, news |
 | ChatBot | IA-ePlaneur (2024–2026, Chatbase) — to be replaced | Club ChatBot, self-hosted since April 2026 |
 
-Both sites share the `eplaneur.fr` domain and link to each other heavily. The club site mostly
-**describes** the ePlaneur tools and links to eplaneur.fr for the tools themselves.
+Both sites share the `eplaneur.fr` domain and link to each other heavily.
+
+Split of roles decided on 2026-10-09: **eplaneur.fr is the library** (information only: installing
+the equipment, Condor documentation, the list of flight plans and their technical sheets);
+**club.eplaneur.fr runs the life of the club** (network sessions, everyone's results, flights,
+progression, membership). The FPL search and FPL sheets therefore stay on eplaneur.fr, while the
+sessions and their results move to the club site in time, each session linking to the sheet of its
+flight plan on eplaneur.fr ("we flew this FPL, its technical sheet is here").
 
 ## Simulator and Condor services
 
