@@ -17,8 +17,11 @@ use App\Flight\Turnpoint;
  * - header of fixed size: "FTR", Condor version (int at 3), pilot first name, last name, country,
  *   competition id, registration and landscape (Pascal short strings at 0x9b, 0xac, 0xbd, 0xce, 0xd6,
  *   0xdf); task: count (int at 0xf3), then 84 bytes per point from 0xf7 (name, x, y, z as floats,
- *   radius and angle as ints at +44 and +48: 360° for a cylinder, 180° for a start or finish line); glider class and model (short strings at 0x52eb and 0x52fc), then the
- *   flight plan name;
+ *   radius and angle as ints at +44 and +48: 360° for a cylinder, 180° for a start or finish line); glider class and model (short strings at 0x52eb and 0x52fc), the
+ *   litres of water ballast (int at 0x532f: 146 on a Diana 2 flight, as Condor Club shows), then
+ *   the flight plan name;
+ * - the settings of the task (penalties, realism, start time, weather) are between the task and
+ *   the glider but do not read as plain numbers: only the name of a custom weather shows;
  * - at 0x549b: six ints (1, -1, race id, 0, number of records, ?), then the records;
  * - records of 64 bytes from 0x54b3: the time at +0, x, y, altitude as floats at +4, +8, +12
  *   (landscape metres, converted with the landscape's projection), the attitude, and 24 bytes that
@@ -44,6 +47,7 @@ final readonly class FtrReader
     private const int TASK_COUNT = 0xF3;
     private const int TASK_POINTS = 0xF7;
     private const int TASK_POINT_SIZE = 0x54;
+    private const int WATER = 0x532F;
     private const int RECORDS_HEADER = 0x549B;
     private const int RECORDS = 0x54B3;
     private const int RECORD_SIZE = 64;
@@ -104,6 +108,7 @@ final readonly class FtrReader
             turnpoints: self::turnpoints($content, $landscape),
             fixes: $fixes,
             exactTimes: null !== $times,
+            water: self::water($content),
         );
     }
 
@@ -147,6 +152,14 @@ final readonly class FtrReader
         }
 
         return $turnpoints;
+    }
+
+    /** Litres of water ballast, or null when the value is out of what a glider carries. */
+    private static function water(string $content): ?int
+    {
+        $litres = self::int($content, self::WATER);
+
+        return $litres >= 0 && $litres <= 500 ? $litres : null;
     }
 
     /** Name of the flight plan: the first short string after the glider skin. */

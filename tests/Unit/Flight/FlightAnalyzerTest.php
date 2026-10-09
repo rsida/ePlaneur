@@ -41,6 +41,18 @@ final class FlightAnalyzerTest extends TestCase
         self::assertSame(1.0, $statistics['leftShare']);
         self::assertEqualsWithDelta(1741.0, $statistics['altitudeMax'], 1.0);
 
+        // Turns by direction, height gained and climbed, glides straight, no stop on the way
+        self::assertSame([0, null], [$statistics['rightSpirals'], $statistics['rightClimb']]);
+        self::assertSame(1, $statistics['leftSpirals'], 'One spiral of six turns');
+        self::assertEqualsWithDelta(2.0, $statistics['leftClimb'], 0.15);
+        self::assertEqualsWithDelta(360.0, $statistics['bestGain'], 2.0, 'From 1,381 m to 1,741 m');
+        self::assertEqualsWithDelta(360.0, $statistics['totalClimb'], 2.0);
+        self::assertSame(0, $statistics['release'], 'Airborne: nothing to leave out');
+        self::assertEqualsWithDelta(0.0, $statistics['glideDetour'], 0.01);
+        self::assertSame(0, $statistics['stops']);
+        self::assertEqualsWithDelta(1381.0, $statistics['bandBottom'], 15.0);
+        self::assertEqualsWithDelta(1741.0, $statistics['bandTop'], 15.0);
+
         // Measured over 4 s: no noise between close points
         self::assertEqualsWithDelta(-1.0, $analysis->series['vario'][60], 0.01);
         self::assertEqualsWithDelta(108.0, $analysis->series['speed'][60], 0.5);
@@ -85,6 +97,16 @@ final class FlightAnalyzerTest extends TestCase
         self::assertTrue($task['completed']);
         self::assertSame(364, $task['duration']);
         self::assertEqualsWithDelta(69.2, $task['speed'], 0.1, '7 km in 364 s');
+
+        // Passage of each point, and the final glide from the end of the thermal to the finish
+        self::assertEqualsWithDelta(1466.0, $task['turnpoints'][1]['reachedAltitude'], 1.0, '1,500 m - 34 s at 1 m/s');
+        self::assertEqualsWithDelta(108.0, $task['turnpoints'][2]['reachedSpeed'], 1.0);
+        $final = $task['finalGlide'];
+        self::assertNotNull($final);
+        self::assertEqualsWithDelta(2.0, $final['climb'], 0.15);
+        self::assertEqualsWithDelta(1643.0, $final['arrivalAltitude'], 2.0, '1,741 m - 98 s at 1 m/s');
+        self::assertSame($final['arrivalAltitude'], $final['height'], 'The finish point is at 0 m');
+        self::assertEqualsWithDelta(1643 / 2.0, $final['heightTime'], 60);
     }
 
     public function testHalfDiscStartAndFinishOfCondor(): void

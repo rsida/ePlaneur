@@ -19,7 +19,8 @@ use App\Flight\Turnpoint;
  * 3. circling is detected from the turn rate (heading change over 10 seconds): circling segments
  *    are thermals, the rest glides; short pieces are merged into their neighbours (a thermal being
  *    re-centred stays one thermal);
- * 4. statistics are computed between take-off and landing (ground speed above 40 km/h);
+ * 4. statistics are computed between take-off and landing (ground speed above 40 km/h); 30 s slower
+ *    on the way is a stop on the ground (a landing, then a relaunch);
  * 5. with a task, each point is reached when the track enters its zone (a cylinder, or a half
  *    disc for Condor's 180° start and finish), the start being the last exit of the start zone
  *    before the first turnpoint;
@@ -42,6 +43,15 @@ final class FlightAnalyzer
 
     /** Ground speed above which the glider is flying, km/h. */
     private const float FLYING_SPEED = 40.0;
+
+    /** Seconds under the flying speed, between take-off and landing, that make a stop on the ground. */
+    private const int LANDED_TIME = 30;
+
+    /** Metres between the ends of a glide under which it is not a transition (detour). */
+    private const float MIN_TRANSITION = 1000.0;
+
+    /** Seconds between the points that measure the distance flown in a glide (detour). */
+    private const int DETOUR_STEP = 30;
 
     /** Height lost under which a glide has no glide ratio, metres. */
     private const float MIN_GLIDE_LOSS = 10.0;
@@ -85,7 +95,7 @@ final class FlightAnalyzer
 
         [$takeoff, $landing] = self::flyingRange($speed);
         $turnRate = self::turnRates($heading);
-        $phases = self::phases($turnRate, $takeoff, $landing, $altitude, $step);
+        $phases = self::phases($turnRate, $takeoff, $landing, $altitude, $step, $latitude, $longitude);
 
         $series = [
             'time' => array_column($points, 0),
@@ -96,14 +106,14 @@ final class FlightAnalyzer
             'vario' => $vario,
         ];
 
-        return new FlightAnalysis(
-            $track,
-            $series,
-            $phases,
-            self::statistics($series, $step, $phases, $takeoff, $landing),
-            \count($track->turnpoints) >= 3 ? self::task($track->turnpoints, $latitude, $longitude) : null,
-            self::launch($series, $track->turnpoints[0] ?? null),
-        );
+        $task = \count($track->turnpoints) >= 3 ? self::task($track->turnpoints, $latitude, $longitude) : null;
+        $launch = self::launch($series, $track->turnpoints[0] ?? null);
+        $statistics = self::statistics($series, $step, $phases, $takeoff, $landing)
+            + self::climbing($series, $takeoff, $landing, $launch)
+            + self::spirals($turnRate, $altitude, $takeoff, $landing)
+            + self::taskFlying($series, $phases, $task);
+
+        return new FlightAnalysis($track, $series, $phases, $statistics, $task, $launch);
     }
 
     /**
@@ -243,10 +253,12 @@ final class FlightAnalyzer
      * @param list<float> $turnRate
      * @param list<float> $altitude
      * @param list<float> $step
+     * @param list<float> $latitude
+     * @param list<float> $longitude
      *
      * @return list<Phase>
      */
-    private static function phases(array $turnRate, int $takeoff, int $landing, array $altitude, array $step): array
+    private static function phases(array $turnRate, int $takeoff, int $landing, array $altitude, array $step, array $latitude, array $longitude): array
     {
         // Runs of circling / straight flight: [circling, start, end]
         $runs = [];
@@ -281,6 +293,7 @@ final class FlightAnalyzer
                 $distance,
                 !$circling && -$gain >= self::MIN_GLIDE_LOSS ? $distance / -$gain : null,
                 $circling ? ($turn >= 0 ? 'right' : 'left') : null,
+                Geo::distance($latitude[$start], $longitude[$start], $latitude[$end], $longitude[$end]),
             );
         }
 
@@ -331,6 +344,12 @@ final class FlightAnalyzer
         $glideDistance = $sum($glides, static fn (Phase $phase): float => $phase->distance);
         $glideLoss = $sum($glides, static fn (Phase $phase): float => max(0.0, -$phase->gain));
         $round = static fn (float $value, int $precision = 0): float => round($value, $precision);
+        $stops = 0;
+        $slow = 0;
+        foreach ($flying('speed') as $value) {
+            $slow = $value < self::FLYING_SPEED ? $slow + 1 : 0;
+            $stops += self::LANDED_TIME === $slow ? 1 : 0;
+        }
 
         return [
             'takeoff' => $takeoff,
@@ -353,6 +372,136 @@ final class FlightAnalyzer
             'glideDistance' => $round($glideDistance),
             'glideRatio' => $glideLoss >= self::MIN_GLIDE_LOSS ? $round($glideDistance / $glideLoss, 1) : null,
             'glideSpeed' => $glideTime > 0 ? $round($glideDistance / $glideTime * 3.6, 1) : null,
+            'stops' => $stops,
+        ];
+    }
+
+    /**
+     * Height gained from a low point and height climbed in all, from the release (the end of the
+     * tow or winch climb, when the glider first sinks for 5 s) to the landing, as Condor Club counts
+     * them.
+     *
+     * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
+     *
+     * @return array{release: int, bestGain: float, totalClimb: float}
+     */
+    private static function climbing(array $series, int $takeoff, int $landing, ?Launch $launch): array
+    {
+        $altitude = $series['altitude'];
+        $release = $takeoff;
+        if (null !== $launch && Launch::Airborne !== $launch) {
+            for ($i = $takeoff + 10; $i + 4 <= $landing; ++$i) {
+                if (max(\array_slice($series['vario'], $i, 5)) < 0) {
+                    $release = $i;
+                    break;
+                }
+            }
+        }
+        $low = \INF;
+        $bestGain = 0.0;
+        $totalClimb = 0.0;
+        for ($i = $release; $i <= $landing; ++$i) {
+            $low = min($low, $altitude[$i]);
+            $bestGain = max($bestGain, $altitude[$i] - $low);
+            $totalClimb += $i > $release ? max(0.0, $altitude[$i] - $altitude[$i - 1]) : 0.0;
+        }
+
+        return ['release' => $release, 'bestGain' => round($bestGain), 'totalClimb' => round($totalClimb)];
+    }
+
+    /**
+     * Spirals one way, as Condor Club counts them: each run of at least one full turn without
+     * straightening (a thermal often holds several, the glider re-centring between them), with
+     * their average climb.
+     *
+     * @param list<float> $turnRate
+     * @param list<float> $altitude
+     *
+     * @return array{rightSpirals: int, rightClimb: ?float, leftSpirals: int, leftClimb: ?float}
+     */
+    private static function spirals(array $turnRate, array $altitude, int $takeoff, int $landing): array
+    {
+        $count = ['right' => 0, 'left' => 0];
+        $gain = ['right' => 0.0, 'left' => 0.0];
+        $time = ['right' => 0, 'left' => 0];
+        $start = null;
+        $turn = 0.0;
+        for ($i = $takeoff; $i <= $landing + 1; ++$i) {
+            $rate = $i <= $landing ? $turnRate[$i] : 0.0;
+            $circling = abs($rate) >= self::CIRCLING_RATE && (null === $start || ($rate > 0) === ($turn > 0));
+            if ($circling) {
+                $start ??= $i;
+                $turn += $rate;
+                continue;
+            }
+            if (null !== $start && abs($turn) >= 360.0) {
+                $direction = $turn > 0 ? 'right' : 'left';
+                ++$count[$direction];
+                $gain[$direction] += $altitude[$i - 1] - $altitude[$start];
+                $time[$direction] += $i - 1 - $start;
+            }
+            $start = abs($rate) >= self::CIRCLING_RATE ? $i : null;
+            $turn = null !== $start ? $rate : 0.0;
+        }
+
+        return [
+            'rightSpirals' => $count['right'],
+            'rightClimb' => $time['right'] > 0 ? round($gain['right'] / $time['right'], 2) : null,
+            'leftSpirals' => $count['left'],
+            'leftClimb' => $time['left'] > 0 ? round($gain['left'] / $time['left'], 2) : null,
+        ];
+    }
+
+    /**
+     * On the task when it was finished, otherwise on the whole flight: the band of the thermals
+     * (average altitude at their entry and exit) and the detour of the glides (distance flown over
+     * the straight lines between their ends, split at the turnpoints reached on the way).
+     *
+     * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
+     * @param list<Phase>                                                                                                                          $phases
+     *
+     * @return array{bandBottom: ?float, bandTop: ?float, glideDetour: ?float}
+     */
+    private static function taskFlying(array $series, array $phases, ?TaskResult $task): array
+    {
+        $from = null !== $task && $task->isCompleted() ? (int) $task->start() : 0;
+        $to = null !== $task && $task->isCompleted() ? (int) $task->finish() : \PHP_INT_MAX;
+        $reached = null !== $task ? array_filter($task->reached, static fn (?int $index): bool => null !== $index) : [];
+        $thermals = [];
+        $flown = 0.0;
+        $straight = 0.0;
+        foreach ($phases as $phase) {
+            if ($phase->start < $from || $phase->end > $to) {
+                continue;
+            }
+            if (Phase::THERMAL === $phase->type) {
+                $thermals[] = $phase;
+                continue;
+            }
+            // A glide that does not lose height, or of less than a kilometre, is not a transition
+            if ($phase->gain >= 0 || $phase->straight < self::MIN_TRANSITION) {
+                continue;
+            }
+            $cuts = array_values(array_filter($reached, static fn (int $index): bool => $index > $phase->start && $index < $phase->end));
+            $points = [$phase->start, ...$cuts, $phase->end];
+            $at = static fn (int $a, int $b): float => Geo::distance($series['latitude'][$a], $series['longitude'][$a], $series['latitude'][$b], $series['longitude'][$b]);
+            for ($k = 1; $k < \count($points); ++$k) {
+                $straight += $at($points[$k - 1], $points[$k]);
+                // Flown distance from a point every DETOUR_STEP seconds, as Condor Club measures it
+                // (the wobbles of the 1 s track would count as a detour)
+                for ($i = $points[$k - 1]; $i < $points[$k]; $i += self::DETOUR_STEP) {
+                    $flown += $at($i, min($i + self::DETOUR_STEP, $points[$k]));
+                }
+            }
+        }
+        $average = static fn (string $end): ?float => [] !== $thermals
+            ? round(array_sum(array_map(static fn (Phase $phase): float => $series['altitude']['start' === $end ? $phase->start : $phase->end], $thermals)) / \count($thermals))
+            : null;
+
+        return [
+            'bandBottom' => $average('start'),
+            'bandTop' => $average('end'),
+            'glideDetour' => $straight > 0 ? round($flown / $straight - 1, 3) : null,
         ];
     }
 

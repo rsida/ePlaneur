@@ -95,6 +95,24 @@ administrator to add it.
 4. **Statistics** between take-off and landing (ground speed above 40 km/h): duration, distance
    flown, altitudes, maximum and average speeds, varios, thermals (count, time, gain, average
    climb, share of the flight, share circling left), glides (time, distance, glide ratio, speed).
+   Beyond them, measured as Condor Club does (checked on the C3-s117 flight of 2026-03-05 against
+   its Condor Club page, roadmap 7g1):
+   - **release**: the end of the tow or winch climb, the first time the glider sinks for 5 s; the
+     best height gained from a low point (1,074 m, Condor Club 1,074.20 m) and the height climbed in
+     all (4,698 m, Condor Club 5,093 m) are counted from it;
+   - **spirals** right and left: each run of one full turn or more without straightening, with their
+     average climb (Condor Club counts more of them: 12 and 4 against 3 and 3; its rule is unknown);
+   - **stops**: 30 s under the flying speed between take-off and landing;
+   - on the task when it was finished: the **band** of the thermals, average altitude at entry and
+     exit (1,841 → 2,120 m, Condor Club 1,838 → 2,122 m), and the **detour** of the transitions,
+     glides losing height whose ends are 1 km apart or more, split at the turnpoints reached on the
+     way, the distance flown taken from a point every 30 s (14 %, Condor Club 9.8 %);
+   - the **final glide**, from the end of the last thermal to the finish: last climb, distance,
+     time, arrival altitude, height above the finish point and the climb time it stands for (the
+     minimum arrival height of the task is not read from the file);
+   - each turnpoint: altitude and ground speed when it was reached (the times of the passages match
+     Condor Club to the second).
+   The `.ftr` gives the water ballast (litres at take-off).
 5. **Task**: each point is reached when the track enters its zone: a cylinder (360°), or for
    Condor's 180° start and finish a half disc of the radius behind the line across the leg (Condor
    counts the finish as soon as the glider is within the radius on the side it comes from); other

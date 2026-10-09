@@ -13,6 +13,7 @@ final readonly class Track
      * @param list<Fix>       $fixes      in time order
      * @param list<Turnpoint> $turnpoints the task, empty when the file has none
      * @param bool            $exactTimes false when the times are estimated (Condor .ftr files)
+     * @param int|null        $water      litres of water ballast at take-off (Condor .ftr files)
      */
     public function __construct(
         public string $format,
@@ -27,6 +28,7 @@ final readonly class Track
         public array $fixes,
         public bool $exactTimes,
         public ?\DateTimeImmutable $date = null,
+        public ?int $water = null,
     ) {
     }
 
@@ -35,6 +37,6 @@ final readonly class Track
      */
     public function withFixes(array $fixes): self
     {
-        return new self($this->format, $this->simulator, $this->pilot, $this->competitionId, $this->glider, $this->landscape, $this->raceId, $this->flightPlan, $this->turnpoints, $fixes, $this->exactTimes, $this->date);
+        return new self($this->format, $this->simulator, $this->pilot, $this->competitionId, $this->glider, $this->landscape, $this->raceId, $this->flightPlan, $this->turnpoints, $fixes, $this->exactTimes, $this->date, $this->water);
     }
 }

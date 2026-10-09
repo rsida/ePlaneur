@@ -38,6 +38,7 @@ final readonly class FlightAnalysis
         return [
             'exactTimes' => $this->track->exactTimes,
             'launch' => $this->launch?->value,
+            'water' => $this->track->water,
             'statistics' => $this->statistics,
             'series' => [
                 'time' => $this->series['time'],
@@ -58,8 +59,47 @@ final readonly class FlightAnalysis
                 'speed' => round($phase->speed(), 1),
                 'glideRatio' => null !== $phase->glideRatio ? round($phase->glideRatio, 1) : null,
                 'direction' => $phase->direction,
+                'straight' => round($phase->straight),
             ], $this->phases),
             'task' => null === $this->task ? null : $this->taskArray($this->task),
+        ];
+    }
+
+    /**
+     * The last glide of a finished task, from the end of the last thermal to the finish: how high
+     * the glider arrived, and what that height cost at the climb rate of that last thermal (height
+     * above the finish point: the minimum height of the task is not read from the file yet).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function finalGlide(TaskResult $task): ?array
+    {
+        $finish = $task->finish();
+        if (!$task->isCompleted() || null === $finish) {
+            return null;
+        }
+        $thermals = array_filter($this->phases, static fn (Phase $phase): bool => Phase::THERMAL === $phase->type && $phase->end <= $finish && $phase->end > (int) $task->start());
+        $last = [] !== $thermals ? end($thermals) : null;
+        $from = null !== $last ? $last->end : (int) $task->start();
+        $series = $this->series;
+        $distance = 0.0;
+        for ($i = $from + 1; $i <= $finish; ++$i) {
+            $distance += Geo::distance($series['latitude'][$i - 1], $series['longitude'][$i - 1], $series['latitude'][$i], $series['longitude'][$i]);
+        }
+        $duration = $finish - $from;
+        $height = $series['altitude'][$finish] - $task->turnpoints[array_key_last($task->turnpoints)]->altitude;
+        $climb = null !== $last && $last->vario() > 0 ? $last->vario() : null;
+
+        return [
+            'from' => $from,
+            'climb' => null !== $climb ? round($climb, 2) : null,
+            'distance' => round($distance),
+            'duration' => $duration,
+            'speed' => $duration > 0 ? round($distance / $duration * 3.6, 1) : null,
+            'startAltitude' => round($series['altitude'][$from]),
+            'arrivalAltitude' => round($series['altitude'][$finish]),
+            'height' => round($height),
+            'heightTime' => null !== $climb && $height > 0 ? (int) round($height / $climb) : null,
         ];
     }
 
@@ -84,6 +124,7 @@ final readonly class FlightAnalysis
             ];
         }
         $duration = $task->isCompleted() ? $task->finish() - $task->start() : null;
+        $series = $this->series;
 
         return [
             'turnpoints' => array_map(static fn ($point, $reached): array => [
@@ -93,7 +134,11 @@ final readonly class FlightAnalysis
                 'altitude' => round($point->altitude),
                 'radius' => $point->radius,
                 'reached' => $reached,
+                // Altitude and ground speed when the point was reached
+                'reachedAltitude' => null !== $reached ? round($series['altitude'][$reached]) : null,
+                'reachedSpeed' => null !== $reached ? round($series['speed'][$reached], 1) : null,
             ], $points, $task->reached),
+            'finalGlide' => $this->finalGlide($task),
             'legs' => $legs,
             'distance' => round($task->distance),
             'completed' => $task->isCompleted(),

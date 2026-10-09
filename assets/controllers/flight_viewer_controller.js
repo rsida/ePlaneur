@@ -29,6 +29,8 @@ const VARIO_CLASSES = [
     { max: 2, color: [92, 176, 112] },
     { max: Infinity, color: [36, 140, 72] },
 ];
+// Track coloured by altitude: from the lowest to the highest point of the flight, as on Condor Club
+const ALTITUDE_COLORS = [[94, 60, 153], [59, 82, 170], [44, 123, 182], [0, 166, 202], [0, 196, 160], [144, 220, 120], [249, 208, 87], [242, 135, 50], [215, 48, 39]];
 const CURTAIN_STEP = 5; // seconds between the lines down to the ground in 3D
 // Pilot view: looking ahead and a little down (fewer far tiles than the horizon, which MapLibre
 // draws with stretched walls while they load)
@@ -37,7 +39,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'follow', 'pilot', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint'];
+    static targets = ['map', 'view', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint'];
 
     static values = { url: String };
 
@@ -87,23 +89,60 @@ export default class extends Controller {
         ({ map: this.map, overlay: this.overlay } = createMap(this.mapTarget, boundsOf(this.series.latitude, this.series.longitude)));
         this.map.on('load', () => {
             addTask(this.map, this.flight.task);
-            this.trackSegments = this.segmentsByVario();
+            this.trackSegments = this.segments();
+            this.showLegend();
             this.render();
             this.statusTarget.hidden = true;
         });
     }
 
-    /** Runs of the track of the same vario class, drawn as one path each. */
-    segmentsByVario() {
-        const { vario } = this.series;
-        const classOf = (v) => VARIO_CLASSES.findIndex((c) => v <= c.max);
+    /** Colour mode of the track chosen above the map: vario (default) or altitude. */
+    get colorMode() {
+        return this.hasColorsTarget ? this.colorsTarget.value : 'vario';
+    }
+
+    setColors() {
+        this.trackSegments = this.segments();
+        this.showLegend();
+        this.render();
+    }
+
+    /** Lowest and highest altitude of the flight, for the altitude colours and their legend. */
+    altitudeRange() {
+        const { altitude } = this.series;
+        const { takeoff = 0, landing = this.count - 1 } = this.flight.statistics;
+        const flying = altitude.slice(takeoff, landing + 1);
+
+        return [Math.min(...flying), Math.max(...flying)];
+    }
+
+    showLegend() {
+        if (!this.hasLegendTarget) return;
+        const altitude = this.colorMode === 'altitude';
+        const rgb = (c) => `rgb(${c.join(',')})`;
+        const colors = altitude ? ALTITUDE_COLORS : VARIO_CLASSES.map((c) => c.color);
+        const [low, high] = this.altitudeRange();
+        this.legendTarget.querySelector('[data-legend="bar"]').style.background = `linear-gradient(to right, ${colors.map(rgb).join(', ')})`;
+        this.legendTarget.querySelector('[data-legend="low"]').textContent = altitude ? `${Math.round(low)} m` : '< −2 m/s';
+        this.legendTarget.querySelector('[data-legend="high"]').textContent = altitude ? `${Math.round(high)} m` : '> +2 m/s';
+    }
+
+    /** Runs of the track of the same colour class (vario or altitude), drawn as one path each. */
+    segments() {
+        const { vario, altitude } = this.series;
+        const [low, high] = this.altitudeRange();
+        const byAltitude = this.colorMode === 'altitude';
+        const classes = byAltitude ? ALTITUDE_COLORS : VARIO_CLASSES.map((c) => c.color);
+        const classOf = byAltitude
+            ? (i) => Math.max(0, Math.min(classes.length - 1, Math.floor(((altitude[i] - low) / Math.max(1, high - low)) * classes.length)))
+            : (i) => VARIO_CLASSES.findIndex((c) => vario[i] <= c.max);
         const segments = [];
         let current = null;
         for (let i = 0; i < this.count; i += 1) {
-            const cls = classOf(vario[i]);
+            const cls = classOf(i);
             if (!current || current.cls !== cls) {
                 // Each segment starts at the end of the previous one: no gap in the line
-                current = { cls, color: VARIO_CLASSES[cls].color, indexes: current ? [i - 1, i] : [i] };
+                current = { cls, color: classes[cls], indexes: current ? [i - 1, i] : [i] };
                 segments.push(current);
             } else {
                 current.indexes.push(i);

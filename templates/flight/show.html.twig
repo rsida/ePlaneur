@@ -72,6 +72,48 @@
             </div>
         </div>
 
+        {# Details beyond the key figures (Condor Club parity, roadmap 7g1); older analyses lack them until analysed again #}
+        {% if stats.totalClimb is defined %}
+            {% set final = task.finalGlide|default(null) %}
+            <div class="l-container p-flight__details">
+                <section class="c-card c-card--outlined t-paper" aria-labelledby="details-title">
+                    <div class="c-card__body l-stack l-stack--sm">
+                        <twig:Ui:Heading level="2" size="h4" id="details-title">Le vol en détail</twig:Ui:Heading>
+                        <dl class="p-flight__facts">
+                            {% if analysis.water is defined and analysis.water is not null %}<div><dt>Eau (ballast) au décollage</dt><dd>{{ analysis.water }} L</dd></div>{% endif %}
+                            <div><dt>Temps de vol{{ approx }}</dt><dd>{{ stats.duration|flight_time }}</dd></div>
+                            <div><dt>Vitesse sol maximale</dt><dd>{{ stats.speedMax|number_format(0, ',', ' ') }} km/h</dd></div>
+                            <div><dt>Meilleur gain d’altitude <span class="u-note">(après le largage)</span></dt><dd>{{ stats.bestGain|number_format(0, ',', ' ') }} m</dd></div>
+                            <div><dt>Élévation cumulée <span class="u-note">(après le largage)</span></dt><dd>{{ stats.totalClimb|number_format(0, ',', ' ') }} m</dd></div>
+                            <div><dt>Posé en cours de vol</dt><dd>{{ stats.stops > 0 ? 'Oui' ~ (stats.stops > 1 ? ' (' ~ stats.stops ~ ' fois)' : '') : 'Non' }}</dd></div>
+                            <div><dt>Spirales à droite <span class="u-note">(séries d’un tour ou plus)</span></dt><dd>{{ stats.rightSpirals }}{% if stats.rightClimb is not null %} <span class="u-note">({{ stats.rightClimb|number_format(1, ',', ' ') }} m/s)</span>{% endif %}</dd></div>
+                            <div><dt>Spirales à gauche</dt><dd>{{ stats.leftSpirals }}{% if stats.leftClimb is not null %} <span class="u-note">({{ stats.leftClimb|number_format(1, ',', ' ') }} m/s)</span>{% endif %}</dd></div>
+                            {% if stats.bandBottom is not null %}<div><dt>Bande exploitée <span class="u-note">(entrée → sortie des thermiques du circuit, en moyenne)</span></dt><dd>{{ stats.bandBottom|number_format(0, ',', ' ') }} → {{ stats.bandTop|number_format(0, ',', ' ') }} m</dd></div>{% endif %}
+                            {% if stats.glideDetour is not null %}<div><dt>Écart des transitions à la ligne droite <span class="u-note">(points toutes les 30 s, coupées aux points de virage)</span></dt><dd>+{{ (stats.glideDetour * 100)|number_format(1, ',', ' ') }} %</dd></div>{% endif %}
+                        </dl>
+                    </div>
+                </section>
+                {% if final %}
+                    <section class="c-card c-card--outlined t-paper" aria-labelledby="final-title">
+                        <div class="c-card__body l-stack l-stack--sm">
+                            <twig:Ui:Heading level="2" size="h4" id="final-title">Transition finale</twig:Ui:Heading>
+                            <dl class="p-flight__facts">
+                                {% if final.climb is not null %}<div><dt>Dernière ascendance</dt><dd>{{ final.climb|number_format(1, ',', ' ') }} m/s</dd></div>{% endif %}
+                                <div><dt>Distance</dt><dd>{{ final.distance|flight_distance }}</dd></div>
+                                <div><dt>Durée{{ approx }}</dt><dd>{{ final.duration|flight_time }}{% if final.speed %} <span class="u-note">· {{ final.speed|number_format(0, ',', ' ') }} km/h</span>{% endif %}</dd></div>
+                                <div><dt>Altitude au départ de la finale</dt><dd>{{ final.startAltitude|number_format(0, ',', ' ') }} m</dd></div>
+                                <div><dt>Altitude à l’arrivée</dt><dd>{{ final.arrivalAltitude|number_format(0, ',', ' ') }} m</dd></div>
+                                <div><dt>Hauteur au-dessus du point d’arrivée</dt><dd>{{ final.height|number_format(0, ',', ' ') }} m</dd></div>
+                            </dl>
+                            {% if final.heightTime %}
+                                <p class="u-note">Au taux de la dernière ascendance, ces {{ final.height|number_format(0, ',', ' ') }} m représentent {{ final.heightTime|flight_time }} de montée. Une arrivée juste au-dessus de la hauteur minimale imposée par le circuit les aurait gagnés.</p>
+                            {% endif %}
+                        </div>
+                    </section>
+                {% endif %}
+            </div>
+        {% endif %}
+
         {% if advice is not empty %}
             <div class="l-container p-flight__advice">
                 <twig:Ui:Heading level="2" size="h4">Conseils</twig:Ui:Heading>
@@ -104,8 +146,18 @@
                             <option value="osm">Plan</option>
                         </select>
                     </label>
+                    <label class="p-flight__select">
+                        <span class="u-visually-hidden">Couleur de la trace</span>
+                        <select data-flight-viewer-target="colors" data-action="flight-viewer#setColors">
+                            <option value="vario">Trace : vario</option>
+                            <option value="altitude">Trace : altitude</option>
+                        </select>
+                    </label>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="pilot" data-action="flight-viewer#togglePilot" title="En 3D, la caméra dans le planeur, inclinée avec lui"><twig:ux:icon name="glider" /> Vue pilote</button>
+                </div>
+                <div class="p-flight__legend" data-flight-viewer-target="legend" aria-hidden="true">
+                    <span data-legend="low"></span><span class="p-flight__legend-bar" data-legend="bar"></span><span data-legend="high"></span>
                 </div>
                 <p class="p-flight__loading" data-flight-viewer-target="status" role="status">Chargement du vol…</p>
             </div>
@@ -170,6 +222,48 @@
                 <figure class="p-flight__chart"><figcaption>Vitesse sol (km/h)</figcaption><div data-flight-viewer-target="chart" data-series="speed"></div></figure>
             </div>
         </div>
+
+        {% if task and task.turnpoints[0].reachedAltitude is defined %}
+            {% set points = task.turnpoints %}
+            {% set start = points[1].reached %}
+            <section class="l-container p-flight__turnpoints" aria-labelledby="turnpoints-title">
+                <twig:Ui:Heading level="2" size="h3" id="turnpoints-title">Points de virage</twig:Ui:Heading>
+                <figure class="c-data-table">
+                    <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Passage des points de virage">
+                        <table>
+                            <thead><tr><th scope="col">Point</th><th scope="col">Nom</th><th scope="col">Altitude du point</th><th scope="col">Atteint à{{ approx }}</th><th scope="col">Altitude au passage</th><th scope="col">Branche</th><th scope="col">Depuis le départ</th><th scope="col">Vitesse sol au passage</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Décollage</th>
+                                    <td>{{ points[0].name }}</td>
+                                    <td>{{ points[0].altitude|number_format(0, ',', ' ') }} m</td>
+                                    <td>{{ stats.takeoff|flight_clock }}</td>
+                                    <td>—</td><td>—</td><td>—</td><td>—</td>
+                                </tr>
+                                {% for point in points|slice(1) %}
+                                    {% set k = loop.index %}
+                                    {% set previous = points[k - 1].reached %}
+                                    <tr>
+                                        <th scope="row">{{ k == 1 ? 'Départ' : (loop.last ? 'Arrivée' : 'TP ' ~ (k - 1)) }}</th>
+                                        <td>{{ point.name }}</td>
+                                        <td>{{ point.altitude|number_format(0, ',', ' ') }} m</td>
+                                        {% if point.reached is not null %}
+                                            <td><button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ point.reached }}">{{ point.reached|flight_clock }}</button></td>
+                                            <td>{{ point.reachedAltitude|number_format(0, ',', ' ') }} m</td>
+                                            <td>{{ k > 1 and previous is not null ? '+' ~ (point.reached - previous)|flight_clock : '—' }}</td>
+                                            <td>{{ k > 1 and start is not null ? '+' ~ (point.reached - start)|flight_clock : '—' }}</td>
+                                            <td>{{ point.reachedSpeed|number_format(0, ',', ' ') }} km/h</td>
+                                        {% else %}
+                                            <td colspan="5">non atteint</td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </figure>
+            </section>
+        {% endif %}
 
         <section class="l-container p-flight__thermals" data-flight-viewer-target="thermals" hidden aria-labelledby="thermals-title">
             <twig:Ui:Heading level="2" size="h3" id="thermals-title">Deux thermiques côte à côte</twig:Ui:Heading>

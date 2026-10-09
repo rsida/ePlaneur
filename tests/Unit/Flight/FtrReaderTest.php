@@ -36,6 +36,7 @@ final class FtrReaderTest extends TestCase
         self::assertSame('Diana2', $track->glider);
         self::assertSame('AA3', $track->landscape);
         self::assertSame(1930306707, $track->raceId);
+        self::assertSame(146, $track->water, 'Litres of water ballast');
         self::assertStringStartsWith('C3-c060_Laragne-Ventoux-Fayence', (string) $track->flightPlan);
         self::assertTrue($track->exactTimes, 'Times decoded from the records');
 

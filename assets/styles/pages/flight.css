@@ -863,3 +863,74 @@
     justify-content: space-between;
     gap: var(--space-3);
 }
+
+/* Details of the flight and final glide (Condor Club parity) */
+.p-flight__details {
+    display: grid;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+@media (width >= 64em) {
+    .p-flight__details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+}
+
+.p-flight__facts {
+    display: grid;
+    margin: 0;
+}
+
+.p-flight__facts > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid var(--color-line);
+}
+
+.p-flight__facts > div:last-child {
+    border-bottom: 0;
+}
+
+.p-flight__facts dt {
+    color: var(--on-surface-muted);
+}
+
+.p-flight__facts dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: end;
+    white-space: nowrap;
+}
+
+.p-flight__turnpoints {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin-block: var(--space-7) var(--space-6);
+}
+
+/* Colours of the track: lowest and highest value at both ends of a gradient */
+.p-flight__legend {
+    position: absolute;
+    bottom: var(--space-6);
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    font-size: var(--text-xs);
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.p-flight__legend-bar {
+    width: 8rem;
+    height: 0.5rem;
+    border-radius: var(--radius-sm);
+}

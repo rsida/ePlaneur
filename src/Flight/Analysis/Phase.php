@@ -19,6 +19,8 @@ final readonly class Phase
      * @param float       $distance   metres flown
      * @param float|null  $glideRatio distance over height lost (glides that lose height)
      * @param string|null $direction  "left" or "right" (thermals)
+     * @param float       $straight   metres between its first and last points (a glide flown
+     *                                straight has its distance)
      */
     public function __construct(
         public string $type,
@@ -28,6 +30,7 @@ final readonly class Phase
         public float $distance,
         public ?float $glideRatio,
         public ?string $direction,
+        public float $straight = 0.0,
     ) {
     }
 
