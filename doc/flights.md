@@ -151,6 +151,15 @@ The viewer reads `FlightAnalysis::toArray()`, stored when the flight is uploaded
 1 h 40 flight). After changing the analysis, `make console c="app:flight:analyse"` analyses the
 stored flights again from their files (in production too, after the deployment).
 
+## Downloads
+
+Logged-in users can download, from the page of a flight, its original file (`/vols/{id}/fichier`,
+`.ftr` or `.igc`, kept unless the flight was anonymised) and an IGC export of the analysed track
+(`/vols/{id}/igc`, `IgcExporter`): one B record per second, the task as C records with its zones
+as LSEEYOU lines (as Condor writes them), the pilot, competition id and glider as H records, ASCII
+only. The time of day of a `.ftr` track is not known: the export starts the recording at 12:00:00
+and says so in an L line. The export reads back with `IgcReader`.
+
 ## Viewer
 
 - Map: **MapLibre GL** 5 (version 6 is not supported yet by deck.gl's MapLibre integration).

@@ -54,6 +54,11 @@
     --color-tint-cool: var(--palette-sky-soft);
     --color-paper: var(--palette-white);
     --color-danger: var(--palette-red);
+    /* Strength of the thermals on the thermal map of a race (race_thermals_controller.js uses the same) */
+    --thermal-weak: rgb(240 150 70);
+    --thermal-light: rgb(170 205 90);
+    --thermal-good: rgb(70 170 95);
+    --thermal-strong: rgb(25 120 60);
     --color-danger-soft: var(--palette-red-soft);
     --color-success: var(--palette-green);
     --color-success-soft: var(--palette-green-soft);

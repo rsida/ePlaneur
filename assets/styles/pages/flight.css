@@ -1031,3 +1031,11 @@
     font-weight: 700;
     text-align: center;
 }
+
+.p-flight__race-rank {
+    margin: 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-cool);
+    font-weight: 600;
+}

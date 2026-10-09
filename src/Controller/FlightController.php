@@ -14,6 +14,7 @@ use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
 use App\Flight\FlightMailer;
 use App\Flight\FlightSession;
+use App\Flight\IgcExporter;
 use App\Flight\Logbook;
 use App\Flight\Reader\InvalidTrackException;
 use App\Form\FlightCommentType;
@@ -25,10 +26,12 @@ use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -186,8 +189,17 @@ final class FlightController extends AbstractController
             $form = $this->createForm(FlightCommentType::class, new FlightComment($flight, $user, new \DateTimeImmutable()), ['action' => $this->generateUrl('app_flight_comment', ['id' => $flight->getId()])]);
         }
 
+        // Rank among the tracks of its race, and the winner to compare with
+        $race = null;
+        $session = $flight->getSession();
+        if (null !== $session && $session->getFlights()->count() > 1) {
+            $ranked = FlightSession::of(array_values($session->getFlights()->toArray()));
+            $race = $ranked->ranks($flight) + ['winner' => $ranked->flights[0]];
+        }
+
         return $this->render('flight/show.html.twig', [
             'flight' => $flight,
+            'race' => $race,
             'session_size' => $flights->countSession($flight),
             'advice' => $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings()),
             'comment_form' => $form?->createView(),
@@ -221,6 +233,34 @@ final class FlightController extends AbstractController
         $response = new JsonResponse(FlightSession::of($flights->findSession($flight))->replayData());
         $response->setPrivate();
         $response->setMaxAge(300);
+
+        return $response;
+    }
+
+    /** The file the pilot uploaded (.ftr or .igc), for other analysis software. */
+    #[Route('/{id<\d+>}/fichier', name: 'file', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function originalFile(Flight $flight, FlightImporter $importer): BinaryFileResponse
+    {
+        $path = $importer->pathOf($flight);
+        if ('' === $flight->getFileName() || !is_file($path)) {
+            throw $this->createNotFoundException('The file of this flight is no longer kept.');
+        }
+        $response = new BinaryFileResponse($path);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $flight->getOriginalName(), 'trace.'.pathinfo($flight->getFileName(), \PATHINFO_EXTENSION));
+        $response->setPrivate();
+
+        return $response;
+    }
+
+    /** The analysed track as an IGC file (one fix per second, task as C records). */
+    #[Route('/{id<\d+>}/igc', name: 'igc', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function igc(Flight $flight, IgcExporter $exporter): Response
+    {
+        $response = new Response($exporter->export($flight), Response::HTTP_OK, ['Content-Type' => 'application/octet-stream']);
+        $response->headers->set('Content-Disposition', $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $exporter->fileName($flight)));
+        $response->setPrivate();
 
         return $response;
     }

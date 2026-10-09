@@ -92,6 +92,31 @@
                     <div class="l-container"><twig:Ui:Heading level="2" size="h3">Les traces de la session</twig:Ui:Heading></div>
                     {{ include('flight/_session_replay.html.twig', {session: ranked, ranking_title: 'Analyse des traces déposées'}) }}
                 </div>
+                <section class="l-container p-session__thermals" id="thermiques" aria-labelledby="race-thermals-title"
+                         data-controller="race-thermals" data-race-thermals-url-value="{{ path('app_session_thermals', {id: session.id}) }}">
+                    <div class="l-stack l-stack--xs">
+                        <twig:Ui:Heading level="2" size="h3" id="race-thermals-title">Carte des thermiques de la course</twig:Ui:Heading>
+                        <p class="u-note">Construite à partir des {{ ranked.flights|length }} traces déposées : tous les pilotes ont volé la même météo.</p>
+                    </div>
+                    <div class="p-flight__map-wrap">
+                        <div class="p-flight__map" data-race-thermals-target="map" role="region" aria-label="Carte des thermiques de la course"></div>
+                        <p class="p-flight__loading" data-race-thermals-target="status" role="status">Chargement des thermiques…</p>
+                    </div>
+                    <div class="p-session__thermals-time">
+                        <label class="p-session__thermals-seek">
+                            <span>Temps de course : <strong data-race-thermals-target="clock">toute la course</strong></span>
+                            <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="10" data-race-thermals-target="seek" data-action="input->race-thermals#seek">
+                        </label>
+                        <button type="button" class="p-flight__toggle" aria-pressed="true" data-race-thermals-target="all" data-action="race-thermals#showAll">Toute la course</button>
+                    </div>
+                    <p class="u-note p-session__thermals-legend">
+                        <span><span class="p-session__swatch p-session__swatch--1"></span> moins de 1 m/s</span>
+                        <span><span class="p-session__swatch p-session__swatch--2"></span> 1 à 2</span>
+                        <span><span class="p-session__swatch p-session__swatch--3"></span> 2 à 3</span>
+                        <span><span class="p-session__swatch p-session__swatch--4"></span> plus de 3 m/s</span>
+                        · Taille : nombre de montées. Avec le temps de course (compté depuis le passage de la ligne de départ par chaque pilote), un thermique apparaît quand un pilote y monte et reste 10 minutes. Survolez un point pour ses valeurs.
+                    </p>
+                </section>
             {% else %}
                 <div class="l-container">
                     <p class="u-note">Aucune trace de cette session n’est encore déposée. Vous l’avez volée ? <a href="{{ path('app_flight_index') }}">Déposez votre trace</a> : elle rejoint la session et vous pourrez la comparer aux autres.</p>

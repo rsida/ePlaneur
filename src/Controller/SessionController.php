@@ -102,6 +102,19 @@ final class SessionController extends AbstractController
         return $response;
     }
 
+    /** Thermals of every track of the session, for its thermal map (FlightSession::thermalMap()). */
+    #[Route('/{id<\d+>}/thermiques.json', name: 'thermals', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function thermals(NetworkSession $session): JsonResponse
+    {
+        $flights = array_values($session->getFlights()->toArray());
+        $response = new JsonResponse([] !== $flights ? FlightSession::of($flights)->thermalMap() : ['task' => null, 'thermals' => []]);
+        $response->setPrivate();
+        $response->setMaxAge(300);
+
+        return $response;
+    }
+
     #[Route('/{id<\d+>}/modifier', name: 'edit', methods: ['GET', 'POST'])]
     #[IsGranted(SessionVoter::EDIT, 'session')]
     public function editSession(Request $request, NetworkSession $session, SessionManager $manager, EntityManagerInterface $entityManager): Response

@@ -175,6 +175,7 @@ final readonly class FlightAnalysis
                 'longitude' => round($point->longitude, 6),
                 'altitude' => round($point->altitude),
                 'radius' => $point->radius,
+                'angle' => $point->angle,
                 'reached' => $reached,
                 // Altitude and ground speed when the point was reached
                 'reachedAltitude' => null !== $reached ? round($series['altitude'][$reached]) : null,

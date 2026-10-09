@@ -26,7 +26,10 @@
                         {% if flight.session %}<twig:Ui:Link href="{{ path('app_session_show', {id: flight.session.id}) }}">Session du {{ flight.session.date|format_date('long', locale: 'fr') }} · {{ flight.session.participantCount }} {{ flight.session.participantCount > 1 ? 'pilotes' : 'pilote' }}</twig:Ui:Link>{% endif %}
                         {% if flight.flightPlan and app.user %}<twig:Ui:Link href="{{ path('app_flight_session', {id: flight.id}) }}">{{ session_size > 1 ? session_size ~ ' traces sur ce plan de vol' : 'Ce plan de vol au club' }}</twig:Ui:Link>{% endif %}
                         {% if flight.owner and is_granted('LOGBOOK_VIEW', flight.owner) %}<twig:Ui:Link href="{{ flight.owner == app.user ? path('app_flight_logbook') : path('app_flight_logbook_pilot', {id: flight.owner.id}) }}">{{ flight.owner == app.user ? 'Mon carnet de vol' : 'Carnet de vol du pilote' }}</twig:Ui:Link>{% endif %}
+                        {% if app.user and race and race.winner.id != flight.id and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare', {id: flight.id, other: race.winner.id}) }}">Comparer au vainqueur</twig:Ui:Link>{% endif %}
                         {% if app.user and session_size > 1 and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare_pick', {id: flight.id}) }}">Comparer avec un autre pilote</twig:Ui:Link>{% endif %}
+                        {% if app.user and flight.fileName %}<twig:Ui:Link href="{{ path('app_flight_file', {id: flight.id}) }}" icon="download">Trace d’origine (.{{ flight.format }})</twig:Ui:Link>{% endif %}
+                        {% if app.user %}<twig:Ui:Link href="{{ path('app_flight_igc', {id: flight.id}) }}" icon="download">Export IGC</twig:Ui:Link>{% endif %}
                     </p>
                 {% endif %}
                 {% for message in app.flashes('info') %}
@@ -269,6 +272,9 @@
                     <twig:Ui:Stat label="Vent (dérive en spirale)" value="{{ stats.windSpeed is not null ? stats.windSpeed|number_format(0, ',', ' ') ~ ' km/h' : '—' }}" unit="{{ stats.windFrom is not null ? 'du ' ~ stats.windFrom ~ '°' : '' }}" />
                     <twig:Ui:Stat label="Pente ou onde" value="{{ stats.lifts }}" unit="{{ stats.lifts > 0 ? 'montée' ~ (stats.lifts > 1 ? 's' : '') ~ ' en ligne droite, +' ~ stats.liftGain|number_format(0, ',', ' ') ~ ' m' : 'montée en ligne droite' }}" />
                 </div>
+                {% if race and (race.climb or race.glide) %}
+                    <p class="p-flight__race-rank">Parmi les {{ race.count }} traces de cette course :{% if race.climb %} montée n<sup>o</sup> {{ race.climb }}{% endif %}{% if race.climb and race.glide %} ·{% endif %}{% if race.glide %} transition n<sup>o</sup> {{ race.glide }}{% endif %} <span class="u-note">(vario moyen en thermique, vitesse des transitions)</span></p>
+                {% endif %}
                 <p class="u-note">Sur le circuit quand il est terminé, sur tout le vol sinon.</p>
 
                 <figure class="c-data-table">

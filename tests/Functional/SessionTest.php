@@ -169,6 +169,17 @@ final class SessionTest extends WebTestCase
         self::assertSelectorExists('a[href="/sessions/'.$session->getId().'"]');
         self::assertSelectorTextContains('.p-flight__official', 'Résultat officiel');
         self::assertSelectorTextContains('.p-session-settings', 'Fenêtre de 15 min');
+
+        // Downloads: the original file and an IGC export; the thermals of the race
+        $this->client->request('GET', '/vols/'.$flight->getId().'/fichier');
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('laragne.ftr', (string) $this->client->getResponse()->headers->get('content-disposition'));
+        $this->client->request('GET', '/vols/'.$flight->getId().'/igc');
+        self::assertResponseIsSuccessful();
+        self::assertStringStartsWith('AXEPePlaneur', (string) $this->client->getResponse()->getContent());
+        $this->client->request('GET', '/sessions/'.$session->getId().'/thermiques.json');
+        self::assertResponseIsSuccessful();
+        self::assertArrayHasKey('thermals', json_decode((string) $this->client->getResponse()->getContent(), true));
         $this->client->request('GET', '/vols/'.$flight->getId().'/session');
         self::assertResponseRedirects('/sessions/'.$session->getId());
         self::assertSelectorNotExists('a[href="/sessions/'.$session->getId().'/modifier"]');

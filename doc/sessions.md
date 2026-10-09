@@ -57,6 +57,21 @@ a new code the address of its eplaneur.fr page is suggested and can be changed. 
 code of the library. The results file is the CSV written by the dedicated server, uploaded with its
 original name (the race id is read from it); comma, semicolon or tab separated, units allowed.
 
+## Race view
+
+On the session page, below the replay, the **thermal map of the race** (`race-thermals` Stimulus
+controller, data from `/sessions/{id}/thermiques.json`, `FlightSession::thermalMap()`): every thermal
+of every track after its start line, at its centre, thermals closer than 700 m taken as one. Over
+the whole race the size of a point says how many climbs it gave, its colour how strong they were
+(under 1, 1 to 2, 2 to 3, over 3 m/s, tokens `--thermal-*`); hovering gives the values. With the
+slider, the time counts from each pilot's start line (pilots join the server at different times,
+their recordings share no clock): a thermal shows while a pilot climbs in it and for 10 minutes
+after.
+
+On the page of a flight of the session: its rank among the tracks of the race for the climb in the
+thermals and the speed of the transitions on the task (`FlightSession::ranks()`, ties share a rank),
+and "Comparer au vainqueur" (the first of the session ranking).
+
 ## Task settings
 
 A session can hold the settings of its task (`App\Session\TaskSettings`, stored as JSON): date and

@@ -105,3 +105,61 @@
     cursor: pointer;
     font-weight: 600;
 }
+
+/* Thermal map of the race */
+.p-session__thermals {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-block-end: var(--space-8);
+}
+
+/* Not in the grid of the flight viewer: no grid area */
+.p-session__thermals .p-flight__map-wrap {
+    position: relative;
+    grid-area: auto;
+}
+
+.p-session__thermals-time {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+}
+
+.p-session__thermals-seek {
+    display: grid;
+    flex: 1 1 16rem;
+    gap: var(--space-1);
+}
+
+.p-session__thermals-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+}
+
+.p-session__swatch {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 1px solid var(--color-paper);
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.p-session__swatch--1 {
+    background-color: var(--thermal-weak);
+}
+
+.p-session__swatch--2 {
+    background-color: var(--thermal-light);
+}
+
+.p-session__swatch--3 {
+    background-color: var(--thermal-good);
+}
+
+.p-session__swatch--4 {
+    background-color: var(--thermal-strong);
+}
