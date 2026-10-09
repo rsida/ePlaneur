@@ -1,0 +1,13 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block content %}
+    <p>Nouveau message du formulaire de contact du site :</p>
+    <p style="margin:16px 0;padding:16px;background:#f7f5ef;border-radius:4px;">
+        <strong>{{ request.name }}</strong> · {{ request.email }}{% if request.user %} (compte du site){% endif %}<br>
+        Objet : {{ request.subject.label }}<br>
+        Reçu le {{ request.createdAt|date('d/m/Y à H:i') }}
+    </p>
+    <p style="white-space:pre-line;">{{ request.message }}</p>
+    <p>Répondre à cet e-mail écrit à {{ request.name }}. Une fois la demande traitée, marquez-la comme telle dans l’administration :</p>
+    <p><a href="{{ url('admin_contact_request_detail', {entityId: request.id}) }}" style="color:#3e5d83;font-weight:700;">Voir la demande</a></p>
+{% endblock %}

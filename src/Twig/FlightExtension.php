@@ -9,7 +9,8 @@ use Twig\Attribute\AsTwigFilter;
 /**
  * Flight values for people: `3725|flight_duration` → "1 h 02 min", `182408|flight_distance` →
  * "182,4 km", `125|flight_gap` → "+2 min 05 s", `95|flight_time` → "1 min 35 s", `3725|flight_clock` →
- * "1:02:05" (a moment of the flight, as the viewer shows it).
+ * "1:02:05" (a moment of the flight, as the viewer shows it), `plan|flight_plan_name` → "C3-c060
+ * Laragne – Ventoux – Fayence".
  */
 final class FlightExtension
 {
@@ -70,5 +71,21 @@ final class FlightExtension
         $minutes = intdiv($seconds % 3600, 60);
 
         return $hours > 0 ? \sprintf('%d:%02d:%02d', $hours, $minutes, $seconds % 60) : \sprintf('%d:%02d', $minutes, $seconds % 60);
+    }
+
+    /**
+     * A Condor flight plan name for reading: "C3-c060_Laragne-Ventoux-Fayence_D2_AA3 ePlaneur" →
+     * "C3-c060 Laragne – Ventoux – Fayence" (code and route of the club's naming; glider class and
+     * landscape are shown apart). Other names only lose their underscores.
+     */
+    #[AsTwigFilter('flight_plan_name')]
+    public static function flightPlanName(?string $name): string
+    {
+        $name = trim((string) preg_replace('/\s+ePlaneur\s*$/i', '', (string) $name));
+        if (1 === preg_match('/^(C\d-[a-z]*\d+[a-z]*)_([^_]+)/i', $name, $match)) {
+            return $match[1].' '.str_replace('-', ' – ', $match[2]);
+        }
+
+        return str_replace('_', ' ', $name);
     }
 }

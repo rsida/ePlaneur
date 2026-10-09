@@ -1,0 +1,48 @@
+{% extends 'account/_layout.html.twig' %}
+
+{# "Confidentialité et données" (Figma): what is kept, visibility choices, archive, deletion. #}
+{% block title %}Confidentialité et données{% endblock %}
+{% block heading %}Vos données, vos choix{% endblock %}
+{% block lead %}En clair : ce que le club conserve, pourquoi, et ce que vous pouvez décider.{% endblock %}
+
+{% block content %}
+    <section class="p-account__panel" aria-labelledby="kept-title">
+        <twig:Ui:Heading level="2" size="h4" id="kept-title">Ce que nous conservons</twig:Ui:Heading>
+        <dl class="p-account-kept">
+            <div><dt>Compte et profil</dt><dd>Votre nom, votre e-mail, votre identité Condor et vos préférences servent à vous connecter, à rattacher vos traces et à vous contacter.</dd></div>
+            <div><dt>Vols, traces et commentaires</dt><dd>Ils servent à analyser vos vols, à suivre votre progression et à échanger avec les formateurs. Seuls les vols que vous rendez publics sont visibles des visiteurs du site.</dd></div>
+            <div><dt>Adhésions et paiements</dt><dd>Ils sont nécessaires au suivi de votre saison et à la comptabilité de l’association, qui les conserve dix ans.</dd></div>
+            <div><dt>Messages au club</dt><dd>Ce que vous écrivez avec le formulaire de contact sert à vous répondre.</dd></div>
+        </dl>
+    </section>
+
+    <section class="p-account__panel" aria-labelledby="share-title">
+        <twig:Ui:Heading level="2" size="h4" id="share-title">Ce que vous partagez</twig:Ui:Heading>
+        {{ form_start(form, {attr: {class: 'c-form'}}) }}
+            {{ form_row(form.flightsPublicByDefault) }}
+            {{ form_row(form.inRanking) }}
+            <div><twig:Ui:Button type="submit" size="sm" icon="">Enregistrer mes choix</twig:Ui:Button></div>
+        {{ form_end(form) }}
+    </section>
+
+    <section class="p-account__panel p-account__panel--tint" aria-labelledby="export-title">
+        <twig:Ui:Heading level="2" size="h4" id="export-title">Emporter une copie de vos données</twig:Ui:Heading>
+        <p>L’archive (ZIP) contient votre compte, vos adhésions, vos vols et leurs traces, vos commentaires et vos messages au club. Elle ne contient pas votre mot de passe.</p>
+        <form method="post" action="{{ path('app_account_export') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('export_data') }}">
+            <twig:Ui:Button type="submit" size="sm" icon="">Télécharger mes données</twig:Ui:Button>
+        </form>
+    </section>
+
+    <section class="p-account__panel p-account__panel--danger" aria-labelledby="delete-title">
+        <twig:Ui:Heading level="2" size="h4" id="delete-title">Supprimer mon compte</twig:Ui:Heading>
+        <p>Votre profil, vos commentaires et vos messages seront supprimés définitivement. Pour vos vols, vous choisirez : les supprimer aussi, ou les garder de façon anonyme pour les sessions et les records du club.</p>
+        <p>Les adhésions et paiements sont conservés dix ans pour la comptabilité de l’association, avec le seul nom et les dates.</p>
+        {% if can_delete %}
+            <div class="p-account__danger-note"><strong>Gardez une copie avant de continuer</strong>Téléchargez vos données si vous souhaitez conserver votre historique. La suppression demande deux confirmations.</div>
+            <div><twig:Ui:Button href="{{ path('app_account_delete') }}" variant="danger" size="sm" icon="">Demander la suppression de mon compte</twig:Ui:Button></div>
+        {% else %}
+            <div class="p-account__danger-note"><strong>Vous êtes le seul administrateur</strong>Donnez d’abord les droits d’administration à un autre compte : le site ne peut pas rester sans administrateur.</div>
+        {% endif %}
+    </section>
+{% endblock %}

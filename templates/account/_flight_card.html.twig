@@ -1,0 +1,37 @@
+{#
+    A flight of the account (dashboard, "Mes vols"): launch and visibility tags, date, flight plan,
+    glider, figures, and either a link to its analysis or, with `actions`, the buttons to open it,
+    change its visibility and delete it.
+#}
+<article class="p-account__panel p-account-flight">
+    <div class="l-cluster">
+        {% if flight.launch %}<twig:Ui:Tag variant="soft">{{ flight.launch.label }}</twig:Ui:Tag>{% endif %}
+        <twig:Ui:Tag variant="{{ flight.public ? 'default' : 'soft' }}">{{ flight.public ? 'Public' : 'Privé' }}</twig:Ui:Tag>
+    </div>
+    <span class="u-note">{{ flight.date|format_date('long', locale: 'fr') }}</span>
+    <twig:Ui:Heading level="3" size="h4" class="p-account-flight__title">{{ flight.flightPlan ? flight.flightPlan|flight_plan_name : flight.originalName }}</twig:Ui:Heading>
+    <span class="u-note">{{ [flight.glider, flight.landscape, flight.simulator]|filter(v => v)|join(' · ') }}</span>
+    <div class="p-account-flight__figures">
+        <twig:Ui:Stat label="Durée" value="{{ flight.duration|flight_duration }}" />
+        <twig:Ui:Stat label="Distance" value="{{ (flight.distance / 1000)|number_format(0, ',', ' ') }}" unit="km" />
+    </div>
+    <p class="p-account-flight__speed">Vitesse circuit : {{ flight.taskSpeed ? flight.taskSpeed|number_format(1, ',', ' ') ~ ' km/h' : '— circuit non terminé' }}</p>
+    {% if actions|default(false) %}
+        <div class="l-cluster">
+            <twig:Ui:Button href="{{ path('app_flight_show', {id: flight.id}) }}" size="sm" icon="">Voir</twig:Ui:Button>
+            <form method="post" action="{{ path('app_flight_publish', {id: flight.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('publish_flight_' ~ flight.id) }}">
+                <input type="hidden" name="public" value="{{ flight.public ? '0' : '1' }}">
+                <input type="hidden" name="retour" value="{{ app.request.requestUri }}">
+                <twig:Ui:Button type="submit" variant="outline" size="sm" icon="">{{ flight.public ? 'Rendre privé' : 'Rendre public' }}</twig:Ui:Button>
+            </form>
+            <form method="post" action="{{ path('app_flight_delete', {id: flight.id}) }}" onsubmit="return confirm('Supprimer ce vol et sa trace ? Cette action est définitive.')">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_flight_' ~ flight.id) }}">
+                <input type="hidden" name="retour" value="{{ app.request.requestUri }}">
+                <twig:Ui:Button type="submit" variant="danger" size="sm" icon="">Supprimer</twig:Ui:Button>
+            </form>
+        </div>
+    {% else %}
+        <twig:Ui:Link href="{{ path('app_flight_show', {id: flight.id}) }}">Voir l’analyse</twig:Ui:Link>
+    {% endif %}
+</article>

@@ -80,7 +80,7 @@ user cannot perform with `is_granted()` in templates as well.
 | `/inscription/renvoyer-confirmation` | `app_register_resend` | New confirmation link (3 requests per 15 min per IP) |
 | `/connexion`, `/deconnexion` | `app_login`, `app_logout` | Login (with "stay logged in" for 30 days), logout |
 | `/mot-de-passe-oublie` | `app_forgot_password_request` | Reset link by e-mail (valid 1 h, one request per 15 min) |
-| `/mon-compte` | `app_account` | Account details and groups |
+| `/mon-compte/...` | `app_account`... | Member space: dashboard, flights, logbook, membership, profile (name, e-mail, password, Condor, e-mail preferences), privacy, data export and account deletion (see [member space](member-space.md)) |
 
 Rules:
 

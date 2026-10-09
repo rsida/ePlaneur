@@ -1,0 +1,22 @@
+{# Fees of the open seasons (public membership page and member space). #}
+{% if open is empty %}
+    <p class="u-note">Les adhésions ne sont pas ouvertes en ce moment. Revenez en fin d’année pour la prochaine saison.</p>
+{% else %}
+    {% for open_season in open %}
+        <section class="l-stack l-stack--sm" aria-label="Tarifs {{ open_season.label }}">
+            <twig:Ui:Heading level="2" size="h3">Tarifs · {{ open_season.label }}</twig:Ui:Heading>
+            <ul class="p-membership__fees">
+                {% for type in open_season.types %}
+                    <li class="c-card c-card--outlined t-paper">
+                        <span class="c-card__body l-stack l-stack--xs">
+                            <strong class="p-membership__fee-name">{{ type.name }}</strong>
+                            <span class="p-membership__fee-price">{{ type.price|euros }}</span>
+                            {% if type.description %}<span class="u-note">{{ type.description }}</span>{% endif %}
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <p class="u-note">Adhésion valable jusqu’au 31 décembre {{ open_season.year }}. Un soutien volontaire peut s’ajouter à la cotisation.</p>
+        </section>
+    {% endfor %}
+{% endif %}

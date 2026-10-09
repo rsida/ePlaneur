@@ -35,6 +35,15 @@
     {{- parent() -}}
 {%- endblock choice_widget_collapsed -%}
 
+{# Checkboxes or radio buttons of a choice: one per line, each inside its label (.c-check) #}
+{%- block choice_widget_expanded -%}
+    <div {{ block('widget_container_attributes') }} class="{{ html_classes('c-choices', attr.class|default('')) }}">
+        {%- for child in form -%}
+            <label class="c-check">{{- form_widget(child) -}}<span>{{ child.vars.label|trans({}, child.vars.translation_domain) }}</span></label>
+        {%- endfor -%}
+    </div>
+{%- endblock choice_widget_expanded -%}
+
 {# A checkbox inside its label (.c-check), then its help and errors #}
 {%- block checkbox_row -%}
     <div class="{{ html_classes('c-field', {'c-field--invalid': errors|length > 0}) }}">

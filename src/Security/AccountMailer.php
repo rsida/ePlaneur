@@ -38,6 +38,24 @@ final readonly class AccountMailer
             ]));
     }
 
+    /** Link to confirm a new address, sent to that address (member space, "Mon profil"). */
+    public function sendEmailChange(User $user, string $newEmail): void
+    {
+        $id = (string) $user->getId();
+        $signature = $this->verifyEmailHelper->generateSignature('app_account_email_confirm', $id, $newEmail, ['email' => $newEmail]);
+
+        $this->mailer->send((new TemplatedEmail())
+            ->to(new Address($newEmail, $user->getDisplayName()))
+            ->subject('Confirmez votre nouvelle adresse e-mail')
+            ->htmlTemplate('email/change_email.html.twig')
+            ->context([
+                'user' => $user,
+                'newEmail' => $newEmail,
+                'signedUrl' => $signature->getSignedUrl(),
+                'expiresAt' => $signature->getExpiresAt(),
+            ]));
+    }
+
     public function sendPasswordReset(User $user, ResetPasswordToken $token): void
     {
         $this->mailer->send((new TemplatedEmail())

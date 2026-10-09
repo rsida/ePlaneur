@@ -1,0 +1,9 @@
+{% extends 'account/_layout.html.twig' %}
+
+{% block title %}Contacter le club{% endblock %}
+{% block heading %}Contacter le club{% endblock %}
+{% block lead %}Une question, une idée ou un besoin d’aide ? Écrivez-nous.{% endblock %}
+
+{% block content %}
+    {{ include('contact/_form.html.twig') }}
+{% endblock %}

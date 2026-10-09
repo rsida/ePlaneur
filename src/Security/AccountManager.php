@@ -49,6 +49,18 @@ final readonly class AccountManager
         $this->entityManager->flush();
     }
 
+    /**
+     * Sets the new address of a confirmed change ("Mon profil").
+     *
+     * @throws VerifyEmailExceptionInterface when the link is not valid or has expired
+     */
+    public function confirmEmailChange(Request $request, User $user, string $newEmail): void
+    {
+        $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user->getId(), $newEmail);
+        $user->setEmail($newEmail);
+        $this->entityManager->flush();
+    }
+
     public function changePassword(User $user, string $plainPassword, bool $flush = true): void
     {
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));

@@ -10,7 +10,8 @@ use App\Entity\User;
 /**
  * Records of the club from the uploaded flights: the fastest finish of each task (flight plan), and
  * per landscape the longest distance flown, the longest flight and the highest altitude; and the
- * ranking of a season (calendar year) by kilometres of finished tasks.
+ * ranking of a season (calendar year) by kilometres of finished tasks, without the pilots who chose
+ * not to appear in it.
  */
 final class ClubRecords
 {
@@ -85,7 +86,8 @@ final class ClubRecords
         $pilots = [];
         foreach ($flights as $flight) {
             $owner = $flight->getOwner();
-            if (null === $owner || (int) $flight->getDate()->format('Y') !== $year) {
+            // Pilots who chose not to appear in the ranking ("Confidentialité et données")
+            if (null === $owner || !$owner->isInRanking() || (int) $flight->getDate()->format('Y') !== $year) {
                 continue;
             }
             $id = spl_object_id($owner);

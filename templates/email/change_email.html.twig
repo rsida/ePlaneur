@@ -1,0 +1,8 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block content %}
+    <p>Bonjour {{ user.displayName }},</p>
+    <p>Vous avez demandé à utiliser l’adresse <strong>{{ newEmail }}</strong> pour votre compte du Club ePlaneur. Confirmez-la pour qu’elle remplace l’ancienne :</p>
+    <p style="margin:24px 0;"><a href="{{ signedUrl }}" style="display:inline-block;padding:14px 20px;border-radius:4px;background:#3e5d83;color:#ffffff;font-weight:700;text-decoration:none;">Confirmer ma nouvelle adresse</a></p>
+    <p style="font-size:13px;color:#586772;">Ce lien est valable jusqu’au {{ expiresAt|date('d/m/Y à H:i') }} (heure de Paris), et seulement une fois connecté à votre compte. Si vous n’êtes pas à l’origine de cette demande, ignorez ce message : votre adresse ne change pas.</p>
+{% endblock %}

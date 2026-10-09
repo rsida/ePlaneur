@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contacter le club{% endblock %}
+{% block description %}Une question sur l’adhésion, la formation ou les vols en réseau ? Écrivez au Club ePlaneur.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-contact">
+        <div class="l-stack l-stack--lg p-contact__inner">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Breadcrumb :items="[{label: 'Accueil', href: path('app_home')}, {label: 'Contacter le club'}]" />
+                <twig:Ui:Eyebrow>Le club</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h1">Contacter le club</twig:Ui:Heading>
+                <p class="u-lead">Une question, une idée ou un besoin d’aide ? Écrivez-nous.</p>
+            </div>
+            {{ include('contact/_form.html.twig') }}
+            <div class="p-account__panel">
+                <twig:Ui:Heading level="2" size="h4">Déjà membre ?</twig:Ui:Heading>
+                <p>Connectez-vous : votre nom et votre adresse sont préremplis, et vous retrouvez votre espace personnel.</p>
+                <div><twig:Ui:Link href="{{ path('app_login', {_target_path: path('app_account_contact')}) }}">Me connecter</twig:Ui:Link></div>
+            </div>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

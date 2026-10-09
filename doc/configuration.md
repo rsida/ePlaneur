@@ -79,6 +79,7 @@ Credentials are applied when the volume is created only (see [installation](inst
 |---|---|---|
 | `MAILER_DSN` | `null://null`, dev: `smtp://mailer:1025` | Prod: real provider, e.g. `smtp://user:pass@smtp.example.com:587` |
 | `MAILER_FROM` | `"Club ePlaneur <no-reply@club.eplaneur.fr>"` | Sender of every e-mail; use an address the provider is allowed to send from |
+| `CONTACT_EMAIL` | `club-eplaneur@outlook.fr` | Receives the messages of the contact form (see [member space](member-space.md#contact-form)) |
 | `MESSENGER_TRANSPORT_DSN` | `doctrine://default?auto_setup=0`, dev: `sync://`, test: `in-memory://` | Async transport, consumed by the `worker` service in prod |
 
 ### Online payment of memberships (HelloAsso)

@@ -1,0 +1,26 @@
+{# Contact form or, once sent, its confirmation (`sent`). Used by /contact and the member space. #}
+{% if sent %}
+    <div class="p-account__panel p-contact__sent" role="status">
+        <twig:Ui:Heading level="2" size="h3">Message envoyé</twig:Ui:Heading>
+        <p>Merci ! Le club a bien reçu votre message et vous répond par e-mail, en général sous quelques jours.</p>
+        <p class="u-note">Pour une urgence le soir d’un vol en réseau, le groupe WhatsApp du vol reste le plus rapide.</p>
+        <div class="p-account__links">
+            <twig:Ui:Link href="{{ app.user ? path('app_account') : path('app_home') }}">{{ app.user ? 'Retour au tableau de bord' : 'Retour à l’accueil' }}</twig:Ui:Link>
+            <twig:Ui:Link href="{{ app.user ? path('app_account_contact') : path('app_contact') }}">Écrire un autre message</twig:Ui:Link>
+        </div>
+    </div>
+{% else %}
+    {{ form_start(form, {attr: {class: 'p-account__panel', novalidate: 'novalidate'}}) }}
+        <twig:Ui:Heading level="2" size="h3">Écrire au club</twig:Ui:Heading>
+        <p class="u-note">{{ app.user ? 'Vos coordonnées sont préremplies depuis votre compte. ' : '' }}Tous les champs sont obligatoires.</p>
+        {{ form_errors(form) }}
+        <div class="c-form">
+            <div class="p-account__pair">{{ form_row(form.name) }}{{ form_row(form.email) }}</div>
+            {{ form_row(form.subject) }}
+            {{ form_row(form.message) }}
+            {{ form_row(form.website) }}
+            <p class="u-note">Vos coordonnées servent uniquement à répondre à cette demande. N’envoyez pas votre mot de passe ni d’informations sensibles.</p>
+            <div><twig:Ui:Button type="submit">Envoyer mon message</twig:Ui:Button></div>
+        </div>
+    {{ form_end(form) }}
+{% endif %}

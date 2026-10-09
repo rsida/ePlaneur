@@ -1,0 +1,11 @@
+{% extends 'account/_layout.html.twig' %}
+
+{% block title %}Mon carnet de vol{% endblock %}
+{% block heading %}Mon carnet de vol{% endblock %}
+{% block lead %}Chacun son rythme. Gardez une trace de ce qui progresse, pas seulement des kilomètres.{% endblock %}
+
+{% block content %}
+    <div class="l-stack l-stack--lg">
+        {{ include('flight/_logbook_body.html.twig') }}
+    </div>
+{% endblock %}

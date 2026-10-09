@@ -148,7 +148,8 @@ stored flights again from their files (in production too, after the deployment).
   compared between flights (comparison page), not within a flight.
 - Public flights (`Flight::$public`, "Rendre public" for the pilot, `FLIGHT_PUBLISH`): their page
   and its data are open to visitors (`FLIGHT_VIEW`); comments, sessions, comparisons and logbooks
-  still need an account. The home page lists the latest three (`FlightRepository::findPublic()`).
+  still need an account. The home page lists the latest three (`FlightRepository::findPublic()`). New flights are private unless the pilot
+  chose "public by default" in their privacy settings.
 
 ## Session
 
@@ -201,7 +202,7 @@ rather than in time (`FlightComparison`):
   badge (1 h, 1,000 m gained from a low point, 50 km from the take-off). No advice on flying too fast:
   straight flight includes ridge running, and ballasted gliders fly much faster. Kinds: something
   to work on, something done well, or where the flight stands (badge marks reached in part).
-- **Logbook** (`/vols/carnet`, linked from the flight list and from each flight): the pilot's
+- **Logbook** (`/mon-compte/carnet`, in the member space; `/vols/carnet` redirects there): the pilot's
   flights from the oldest, totals, the advice that comes back most, and one chart per value (task
   speed, average climb, glide ratio, time circling) with the date, flight plan and value of each
   flight under the cursor. Seen by the pilot and by trainers (`/vols/carnet/{user}`).
@@ -209,7 +210,8 @@ rather than in time (`FlightComparison`):
   whole flight or on the moment shown by the viewer (the form takes it from the map, the charts or
   the slider), about a step of the training path or not. Every member who sees the flight reads
   them; clicking the moment of a comment moves the glider there. Their author (or an administrator)
-  deletes them.
+  deletes them. The pilot gets an e-mail for each new comment by someone else, unless they turned it
+  off in their profile (`FlightMailer`).
 
 ## Club life
 
@@ -219,7 +221,8 @@ the uploaded flights, nothing is stored.
 - **Records** (`/vols/records`, logged-in users): per flight plan the best task speed (with its
   pilot, the number of flights and a link to the session); per landscape the longest distance flown,
   the longest flight and the highest altitude.
-- **Season ranking** (same page, `?saison=`): pilots (accounts) of a calendar year by kilometres of
+- **Season ranking** (same page, `?saison=`): pilots (accounts that did not opt out in their privacy
+  settings) of a calendar year by kilometres of
   finished tasks, with their tasks, flights, hours and best speed. The date of a flight is the one
   of its file, or of its upload when the file has none (`.ftr`).
 - **Badges** (logbook): first task finished, 100, 300 and 500 km flown in one flight, 3 h and 5 h

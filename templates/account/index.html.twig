@@ -1,43 +1,143 @@
-{% extends 'layout/form_page.html.twig' %}
+{% extends 'account/_layout.html.twig' %}
 
+{#
+    Dashboard of the member space (Figma frames "Tableau de bord": active member, registered without
+    membership, new account, trainer).
+#}
 {% block title %}Mon compte{% endblock %}
-{% block heading %}Bonjour {{ app.user.displayName }}{% endblock %}
+{% block heading %}Bonjour {{ app.user.displayName|split(' ')|first }}.{% endblock %}
+{% block lead %}{{ membership and membership.status.value == 'validated' ? 'Membre ' ~ membership.season.year ~ ' · ' : '' }}Vos vols, vos progrès et la vie du club, au même endroit.{% endblock %}
 
 {% block content %}
-    {% set user = app.user %}
-    <dl class="c-definition-list">
-        <dt>Adresse e-mail</dt>
-        <dd>{{ user.email }}</dd>
-        <dt>Compte créé le</dt>
-        <dd>{{ user.createdAt|date('d/m/Y') }}</dd>
-        <dt>Adhésion</dt>
-        <dd>
-            {% if membership %}
-                {{ membership.season.label }} · {{ membership.status.label }}
-                {% if membership.status.value == 'validated' %} · <a href="{{ path('app_membership_certificate', {id: membership.id}) }}">attestation</a>{% endif %}
-            {% else %}
-                Pas d’adhésion enregistrée sur le site.
-            {% endif %}
-            · <a href="{{ path('app_membership') }}">{{ membership ? 'Mes adhésions' : 'Adhérer au club' }}</a>
-        </dd>
-        <dt>Groupes</dt>
-        <dd>
-            {% if user.groups is empty %}
-                Compte inscrit, sans groupe. L’adhésion au club ajoute le groupe « Membre ».
-            {% else %}
-                <span class="l-cluster">
-                    {% for group in user.groups %}<twig:Ui:Tag variant="soft">{{ group.name }}</twig:Ui:Tag>{% endfor %}
-                </span>
-            {% endif %}
-        </dd>
-    </dl>
-    <twig:Ui:Button href="{{ path('app_logout') }}" variant="outline" icon="">Se déconnecter</twig:Ui:Button>
-{% endblock %}
+    {% set next = open|filter(s => not membership or s.year > membership.season.year)|first %}
 
-{% block aside %}
-    <twig:Ui:Link href="{{ path('app_flight_index') }}">Analyse de vols</twig:Ui:Link>
-    {% if is_granted('ADMIN_ACCESS') %}
-        <twig:Ui:Link href="{{ path('admin') }}">Administration du site</twig:Ui:Link>
+    {# Membership #}
+    <section class="p-account__panel p-account__panel--tint p-account-membership" aria-labelledby="membership-title">
+        {% if membership and membership.status.value == 'validated' and not next %}
+            <twig:Ui:Tag variant="soft" class="p-account__membership p-account__membership--validated">{{ membership.season.label }} · Validée</twig:Ui:Tag>
+            <div class="p-account__panel-head">
+                <div class="l-stack l-stack--xs">
+                    <twig:Ui:Heading level="2" size="h4" id="membership-title">Le ciel se partage.</twig:Ui:Heading>
+                    <p class="u-note">Votre adhésion est valable jusqu’au {{ membership.season.endsOn|format_date('long', locale: 'fr') }}.</p>
+                </div>
+                <twig:Ui:Button href="{{ path('app_membership_certificate', {id: membership.id}) }}" variant="outline" size="sm" icon="">Mon attestation</twig:Ui:Button>
+            </div>
+        {% elseif membership and membership.status.value in ['requested', 'paid'] %}
+            <twig:Ui:Tag variant="soft">{{ membership.season.label }} · {{ membership.status.label }}</twig:Ui:Tag>
+            <div class="p-account__panel-head">
+                <div class="l-stack l-stack--xs">
+                    <twig:Ui:Heading level="2" size="h4" id="membership-title">{{ membership.status.value == 'paid' ? 'Le club valide votre adhésion' : 'Votre demande est enregistrée' }}</twig:Ui:Heading>
+                    <p class="u-note">{{ membership.status.value == 'paid' ? 'Votre paiement est reçu : vous recevrez un e-mail de bienvenue à la validation.' : 'Il reste à régler votre adhésion de ' ~ membership.total|euros ~ '.' }}</p>
+                </div>
+                <twig:Ui:Button href="{{ path('app_account_membership') }}" size="sm" icon="">Suivre ma demande</twig:Ui:Button>
+            </div>
+        {% elseif next %}
+            <twig:Ui:Tag variant="soft">{{ next.label }} · Adhésions ouvertes</twig:Ui:Tag>
+            <div class="p-account__panel-head">
+                <div class="l-stack l-stack--xs">
+                    <twig:Ui:Heading level="2" size="h4" id="membership-title">{{ membership ? 'Renouvelez votre adhésion' : 'Rejoignez le club' }}</twig:Ui:Heading>
+                    <p class="u-note">
+                        {% for type in next.types %}{{ type.name }} {{ type.price|euros }}{{ not loop.last ? ' · ' : '' }}{% endfor %}.
+                        L’adhésion ouvre les contenus et les outils réservés aux membres, et soutient le club.
+                    </p>
+                </div>
+                <twig:Ui:Button href="{{ path('app_account_membership') }}" size="sm" icon="">{{ membership ? 'Renouveler' : 'Adhérer' }}</twig:Ui:Button>
+            </div>
+        {% else %}
+            <twig:Ui:Heading level="2" size="h4" id="membership-title">Adhésion</twig:Ui:Heading>
+            <p class="u-note">Les adhésions ne sont pas ouvertes en ce moment.</p>
+        {% endif %}
+    </section>
+
+    {# Latest flights #}
+    <section class="l-stack l-stack--sm" aria-labelledby="flights-title">
+        <div class="p-account__panel-head">
+            <twig:Ui:Heading level="2" size="h3" id="flights-title">Vos derniers vols</twig:Ui:Heading>
+            <twig:Ui:Button href="{{ path('app_flight_index') }}" size="sm" icon="">Déposer une trace</twig:Ui:Button>
+        </div>
+        {% if recent is empty %}
+            <div class="p-account__panel">
+                <twig:Ui:Heading level="3" size="h4">Votre premier vol vous attend</twig:Ui:Heading>
+                <p>Après un vol dans Condor, déposez sa trace : le site la montre sur la carte et en 3D, analyse vos thermiques et vos transitions, et vous donne des conseils pour la suite.</p>
+                <p class="u-note">Condor 3 : le fichier .ftr du dossier Documents › Condor3 › FlightTracks. Condor 2 : un export IGC.</p>
+            </div>
+        {% else %}
+            <div class="p-account-flights">
+                {% for flight in recent %}{{ include('account/_flight_card.html.twig') }}{% endfor %}
+            </div>
+            {% if count > 3 %}<twig:Ui:Link href="{{ path('app_account_flights') }}">Tous mes vols ({{ count }})</twig:Ui:Link>{% endif %}
+        {% endif %}
+    </section>
+
+    {# Progression and advice #}
+    {% if speeds is not empty or tip %}
+        <div class="p-account__cols">
+            <section class="p-account__panel" aria-labelledby="rhythm-title">
+                <twig:Ui:Heading level="2" size="h4" id="rhythm-title">À votre rythme</twig:Ui:Heading>
+                {% if speeds|length > 1 %}
+                    <div data-controller="logbook-chart" data-logbook-chart-points-value="{{ speeds|json_encode }}">
+                        <figure class="p-flight__chart p-account-rhythm"><figcaption>Vitesse circuit · {{ speeds|length }} derniers circuits terminés (km/h)</figcaption><div data-logbook-chart-target="chart" data-series="taskSpeed"></div></figure>
+                    </div>
+                {% elseif speeds is not empty %}
+                    <p>Premier circuit terminé à {{ speeds|first.taskSpeed|number_format(1, ',', ' ') }} km/h : la courbe apparaîtra au prochain.</p>
+                {% else %}
+                    <p class="u-note">La courbe de votre vitesse circuit apparaît dès deux circuits terminés.</p>
+                {% endif %}
+                {% if badges is not empty %}
+                    <div class="l-cluster">{% for item in badges %}<twig:Ui:Tag variant="soft">{{ item.badge.label }}</twig:Ui:Tag>{% endfor %}</div>
+                {% endif %}
+                <twig:Ui:Link href="{{ path('app_account_logbook') }}">Voir mon carnet de vol</twig:Ui:Link>
+            </section>
+            {% if tip %}
+                <section class="p-account__panel p-account__panel--sand" aria-labelledby="tip-title">
+                    <twig:Ui:Heading level="2" size="h4" id="tip-title">Un conseil pour le prochain vol</twig:Ui:Heading>
+                    {% if tip.advice.step %}<twig:Ui:Tag variant="soft">{{ tip.advice.step.title }}</twig:Ui:Tag>{% endif %}
+                    <strong>{{ tip.advice.title }}</strong>
+                    <p>{{ tip.advice.text }}</p>
+                    <span class="u-note">Vol du {{ tip.flight.date|format_date('long', locale: 'fr') }}</span>
+                    <twig:Ui:Link href="{{ path('app_flight_show', {id: tip.flight.id}) }}">Lire l’analyse et les conseils</twig:Ui:Link>
+                </section>
+            {% endif %}
+        </div>
     {% endif %}
-    <twig:Ui:Link href="{{ path('app_forgot_password_request') }}">Changer de mot de passe</twig:Ui:Link>
+
+    {# Trainers: flights waiting for a comment #}
+    {% if to_comment is not empty %}
+        <section class="p-account__panel" aria-labelledby="trainer-title">
+            <twig:Ui:Heading level="2" size="h4" id="trainer-title">Pilotes suivis · vols à commenter</twig:Ui:Heading>
+            <ul class="p-account-list">
+                {% for flight in to_comment %}
+                    <li>
+                        <a href="{{ path('app_flight_show', {id: flight.id}) }}">{{ flight.pilot }}{% if flight.competitionId %} ({{ flight.competitionId }}){% endif %}</a>
+                        <span class="u-note">{{ flight.flightPlan ? flight.flightPlan|flight_plan_name : flight.originalName }} · {{ flight.date|format_date('medium', locale: 'fr') }}{% if flight.taskSpeed %} · {{ flight.taskSpeed|number_format(1, ',', ' ') }} km/h{% endif %}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    {# News #}
+    <section class="p-account__panel" aria-labelledby="news-title">
+        <twig:Ui:Heading level="2" size="h4" id="news-title">Du nouveau au sol</twig:Ui:Heading>
+        {% if comments is empty %}
+            <p class="u-note">Aucun commentaire sur vos vols pour l’instant. Les formateurs peuvent commenter un vol entier ou un instant précis : vous serez prévenu par e-mail si vous l’avez choisi dans votre profil.</p>
+        {% else %}
+            <ul class="p-account-list">
+                {% for comment in comments %}
+                    <li>
+                        <a href="{{ path('app_flight_show', {id: comment.flight.id}) }}{{ comment.at is not null ? '#t=' ~ comment.at : '#commentaires' }}">{{ comment.author ? comment.author.displayName : 'Compte supprimé' }} a commenté votre vol {{ comment.flight.flightPlan ? comment.flight.flightPlan|flight_plan_name : '' }}{% if comment.at is not null %} à {{ comment.at|flight_clock }}{% endif %}</a>
+                        <span class="u-note">{{ comment.createdAt|format_date('medium', locale: 'fr') }} · « {{ comment.body|u.truncate(110, '…') }} »</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </section>
+
+    <nav class="p-account__panel p-account__panel--sand" aria-label="Raccourcis">
+        <div class="p-account__links">
+            <twig:Ui:Link href="{{ path('app_flight_records') }}">Records du club</twig:Ui:Link>
+            <twig:Ui:Link href="{{ path('app_flight_index') }}">Analyse de vols</twig:Ui:Link>
+            <twig:Ui:Link href="{{ path('app_account_contact') }}">Contacter le club</twig:Ui:Link>
+        </div>
+    </nav>
 {% endblock %}

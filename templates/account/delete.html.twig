@@ -1,0 +1,29 @@
+{% extends 'account/_layout.html.twig' %}
+
+{# Account deletion, step 1 of 2 (Figma "Suppression · Récapitulatif"), with the choice for the flights. #}
+{% block title %}Supprimer mon compte{% endblock %}
+{% block heading %}Supprimer mon compte{% endblock %}
+{% block lead %}Prenez le temps de vérifier ce qui sera supprimé.{% endblock %}
+
+{% block content %}
+    {{ form_start(form, {attr: {class: 'p-account__panel'}}) }}
+        <twig:Ui:Tag variant="soft" class="p-account-delete__step">Confirmation · Étape 1 sur 2</twig:Ui:Tag>
+        <twig:Ui:Heading level="2" size="h4">Avant de quitter le club</twig:Ui:Heading>
+        <p>Vous êtes sur le point de supprimer le compte de {{ app.user.displayName }}{% if app.user.condorCn %} · CN {{ app.user.condorCn }}{% endif %}.</p>
+        <dl class="p-account-kept">
+            <div><dt>Seront supprimés définitivement</dt><dd>Votre compte et votre profil, les commentaires que vous avez écrits, vos messages au club.</dd></div>
+            <div><dt>Seront conservés pour la comptabilité</dt><dd>Les adhésions et paiements, dix ans, avec le seul nom et les dates. Ils ne sont plus rattachés à un compte.</dd></div>
+        </dl>
+        {% if flights > 0 %}
+            <div class="c-form">{{ form_row(form.keepFlights) }}</div>
+        {% else %}
+            <div hidden>{{ form_row(form.keepFlights) }}</div>
+        {% endif %}
+        <twig:Ui:Link href="{{ path('app_account_privacy') }}">Télécharger d’abord mes données</twig:Ui:Link>
+        <div class="l-cluster">
+            <twig:Ui:Button href="{{ path('app_account_privacy') }}" variant="outline" size="sm" icon="">Annuler</twig:Ui:Button>
+            <twig:Ui:Button type="submit" variant="danger" size="sm" icon="">Continuer vers la confirmation</twig:Ui:Button>
+        </div>
+        <p class="u-note">Aucune donnée n’est supprimée à cette étape.</p>
+    {{ form_end(form) }}
+{% endblock %}

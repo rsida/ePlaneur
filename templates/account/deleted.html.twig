@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Compte supprimé{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-contact">
+        <div class="l-stack l-stack--lg p-contact__inner">
+            <twig:Ui:Eyebrow>Mon compte</twig:Ui:Eyebrow>
+            <twig:Ui:Heading level="1" size="h1">Votre compte a été supprimé</twig:Ui:Heading>
+            <p class="u-lead">Merci d’avoir volé avec le club. Vos données ont été effacées comme vous l’avez choisi ; les adhésions restent dans la comptabilité de l’association, avec le seul nom et les dates.</p>
+            <p>Vous pouvez revenir quand vous voulez : il suffit de créer un nouveau compte.</p>
+            <div class="l-cluster">
+                <twig:Ui:Button href="{{ path('app_home') }}">Retour à l’accueil</twig:Ui:Button>
+                <twig:Ui:Button href="{{ path('app_contact') }}" variant="outline" icon="">Écrire au club</twig:Ui:Button>
+            </div>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

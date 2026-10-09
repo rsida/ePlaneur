@@ -5,3 +5,8 @@ framework:
             policy: sliding_window
             limit: 3
             interval: '15 minutes'
+        # Contact form: a few messages per visitor, so that a robot cannot flood the club's mailbox
+        contact:
+            policy: sliding_window
+            limit: 5
+            interval: '1 hour'

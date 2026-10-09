@@ -14,6 +14,7 @@ use App\Repository\MembershipRepository;
 use App\Repository\MembershipSeasonRepository;
 use App\Repository\UserRepository;
 use App\Security\DefaultGroup;
+use App\Security\UserNotification;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Clock\ClockInterface;
 
@@ -157,7 +158,8 @@ final readonly class MembershipManager
     }
 
     /**
-     * Reminds the members of the season before an open season who have not renewed yet, once.
+     * Reminds the members of the season before an open season who have not renewed yet, once (unless
+     * they turned the renewal e-mail off).
      *
      * @return list<Membership> the memberships of the past season whose member was reminded
      */
@@ -171,7 +173,7 @@ final readonly class MembershipManager
             }
             foreach ($this->memberships->findValidated($past) as $membership) {
                 $user = $membership->getUser();
-                if (null === $user || null !== $membership->getReminderSentAt() || null !== $this->memberships->findActive($user, $season)) {
+                if (null === $user || !$user->wants(UserNotification::Renewal) || null !== $membership->getReminderSentAt() || null !== $this->memberships->findActive($user, $season)) {
                     continue;
                 }
                 $this->mailer->sendReminder($membership, $season);

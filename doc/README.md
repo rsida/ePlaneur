@@ -8,7 +8,8 @@
 | [Content: posts, blocks, media](content.md) | Post model, block types and how to add one, media storage and access, post permissions |
 | [WordPress import](wordpress-import.md) | `app:import-wordpress`: pages, posts and files of the current site, page tree mapping, redirects of the old addresses |
 | [Flight viewer](flights.md) | `/vols`: Condor `.ftr` and IGC tracks, landscape projections, analysis, 2D/3D viewer |
-| [Membership](membership.md) | `/adhesion`: seasons and fees, requests, validation, certificate, end of membership, reminders |
+| [Membership](membership.md) | `/mon-compte/adhesion`: seasons and fees, requests, validation, certificate, end of membership, reminders |
+| [Member space and contact](member-space.md) | `/mon-compte`: dashboard, flights, profile, privacy, GDPR export and deletion; contact form |
 | [Back-office](admin.md) | `/admin` (EasyAdmin): access, screens and their permissions, how to add a screen |
 | [Figma prompts](figma-prompts.md) | Prompts used to design screens without mock-up, and their status |
 | [Design system](design-system.md) | Tokens, surface themes, layout primitives, Twig components, icons |

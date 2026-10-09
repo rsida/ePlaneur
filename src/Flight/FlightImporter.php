@@ -45,6 +45,8 @@ final readonly class FlightImporter
         $filesystem->copy($path, $this->directory.'/'.$fileName);
 
         $flight = new Flight($analysis, $fileName, $originalName, $owner, $this->clock->now());
+        // The pilot's choice in "Confidentialité et données"
+        $flight->setPublic($owner?->isFlightsPublicByDefault() ?? false);
         $this->entityManager->persist($flight);
         $this->entityManager->flush();
 
@@ -59,10 +61,18 @@ final readonly class FlightImporter
     public function reanalyse(Flight $flight): void
     {
         $path = $this->pathOf($flight);
-        if (!is_file($path)) {
+        if ('' === $flight->getFileName() || !is_file($path)) {
             throw new InvalidTrackException(\sprintf('The file %s is missing.', $path));
         }
         $flight->setAnalysis($this->analyzer->analyze($this->reader->read((string) file_get_contents($path))));
+    }
+
+    /** Removes the stored file of a flight (deleted, or anonymised: the file holds the pilot's name). */
+    public function removeFile(Flight $flight): void
+    {
+        if ('' !== $flight->getFileName()) {
+            (new Filesystem())->remove($this->pathOf($flight));
+        }
     }
 
     public function pathOf(Flight $flight): string
@@ -72,7 +82,7 @@ final readonly class FlightImporter
 
     public function delete(Flight $flight): void
     {
-        (new Filesystem())->remove($this->pathOf($flight));
+        $this->removeFile($flight);
         $this->entityManager->remove($flight);
         $this->entityManager->flush();
     }

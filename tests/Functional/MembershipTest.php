@@ -40,6 +40,12 @@ final class MembershipTest extends WebTestCase
     public function testVisitorsSeeTheFeesAndAreAskedToLogIn(): void
     {
         $this->client->request('GET', '/adhesion');
+        self::assertResponseIsSuccessful();
+        $this->client->loginUser($this->user('jeanne@example.org'));
+        $this->client->request('GET', '/adhesion');
+        self::assertResponseRedirects('/mon-compte/adhesion', null, 'An account goes to its space');
+        $this->client->restart();
+        $this->client->request('GET', '/adhesion');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.p-membership__fees', 'Moins de 25 ans');
@@ -51,12 +57,12 @@ final class MembershipTest extends WebTestCase
     public function testAnAccountSendsItsRequest(): void
     {
         $this->client->loginUser($this->user('jeanne@example.org'));
-        $crawler = $this->client->request('GET', '/adhesion');
+        $crawler = $this->client->request('GET', '/mon-compte/adhesion');
         $form = $crawler->filter('form[name="membership_request"]')->form($this->data(['membership_request[donation]' => '5']));
         self::choice($form, 'membership_request[type]')->select((string) $this->type('Adulte')->getId());
         $this->client->submit($form);
 
-        self::assertResponseRedirects('/adhesion');
+        self::assertResponseRedirects('/mon-compte/adhesion');
         self::assertQueuedEmailCount(1);
         $email = self::getMailerMessage();
         self::assertNotNull($email);
@@ -77,7 +83,7 @@ final class MembershipTest extends WebTestCase
     public function testTheReducedRateChecksTheAge(): void
     {
         $this->client->loginUser($this->user('jeanne@example.org'));
-        $crawler = $this->client->request('GET', '/adhesion');
+        $crawler = $this->client->request('GET', '/mon-compte/adhesion');
         $form = $crawler->filter('form[name="membership_request"]')->form($this->data(['membership_request[birthDate]' => '1980-04-01']));
         self::choice($form, 'membership_request[type]')->select((string) $this->type('Moins de 25 ans')->getId());
         $this->client->submit($form);
@@ -89,7 +95,7 @@ final class MembershipTest extends WebTestCase
     public function testTheRulesMustBeAccepted(): void
     {
         $this->client->loginUser($this->user('jeanne@example.org'));
-        $crawler = $this->client->request('GET', '/adhesion');
+        $crawler = $this->client->request('GET', '/mon-compte/adhesion');
         $form = $crawler->filter('form[name="membership_request"]')->form($this->data());
         self::choice($form, 'membership_request[type]')->select((string) $this->type('Adulte')->getId());
         self::choice($form, 'membership_request[rulesAccepted]')->untick();

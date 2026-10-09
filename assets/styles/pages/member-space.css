@@ -1,0 +1,331 @@
+/*
+ * Member space (templates/account/_layout.html.twig and its pages): navigation column and panels
+ * (Figma "Dashboard", node 85-2).
+ */
+
+.p-account {
+    padding-block: var(--space-7) var(--section-padding);
+    background-color: var(--surface);
+}
+
+.p-account__grid {
+    display: grid;
+    gap: var(--space-6);
+}
+
+@media (width >= 64em) {
+    .p-account__grid {
+        grid-template-columns: 15rem minmax(0, 1fr);
+        gap: var(--space-8);
+        align-items: start;
+    }
+}
+
+.p-account__side {
+    display: grid;
+    gap: var(--space-5);
+    align-content: start;
+}
+
+@media (width >= 64em) {
+    .p-account__side {
+        position: sticky;
+        top: var(--space-5);
+    }
+}
+
+.p-account__me {
+    display: grid;
+    gap: var(--space-1);
+    justify-items: start;
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-line);
+}
+
+.p-account__name {
+    font-family: var(--font-heading);
+    font-size: var(--text-title-xs);
+}
+
+.p-account__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+}
+
+.p-account__membership {
+    margin-top: var(--space-1);
+}
+
+.p-account__membership--validated {
+    --tag-soft-bg: var(--color-success-soft);
+    --tag-soft-fg: var(--color-success);
+}
+
+.p-account__nav {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.p-account__nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (width >= 64em) {
+    .p-account__nav ul {
+        display: grid;
+    }
+}
+
+.p-account__nav ul a {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    text-decoration: none;
+}
+
+.p-account__nav ul a:hover {
+    background-color: var(--color-paper);
+}
+
+.p-account__nav ul a[aria-current='page'] {
+    border-left-color: var(--color-primary);
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.p-account__logout {
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-line);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    text-decoration: none;
+}
+
+.p-account__main {
+    min-width: 0;
+}
+
+.p-account__main > * {
+    width: 100%;
+}
+
+.p-account__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-section-title);
+    font-weight: 600;
+    line-height: 1.05;
+    text-transform: uppercase;
+    text-wrap: balance;
+}
+
+.p-account__lead {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-lead);
+}
+
+/* Panels of the pages: a white card with a title */
+.p-account__panel {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    background-color: var(--color-paper);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+}
+
+.p-account__panel > * {
+    margin: 0;
+}
+
+.p-account__panel--tint {
+    background-color: var(--color-tint-cool);
+    outline-color: transparent;
+}
+
+.p-account__panel--sand {
+    background-color: var(--color-tint-warm);
+    outline-color: transparent;
+}
+
+.p-account__panel--danger {
+    outline: 1px solid var(--color-danger);
+}
+
+.p-account__panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.p-account__panel .c-form {
+    align-items: stretch;
+}
+
+.p-account__cols {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 48em) {
+    .p-account__cols {
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    }
+}
+
+.p-account__pair {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 40em) {
+    .p-account__pair {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.p-account__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
+}
+
+.p-account__danger-note {
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--color-danger);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-danger-soft);
+}
+
+.p-account__danger-note strong {
+    display: block;
+    color: var(--color-danger);
+}
+
+/* Contact form, public page (templates/contact/) */
+.p-contact__inner {
+    max-width: var(--article-column);
+}
+
+.p-contact__inner > * {
+    width: 100%;
+}
+
+/* Dashboard and "Mes vols" */
+.p-account-membership .c-tag {
+    justify-self: start;
+}
+
+.p-account-flights {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 64em) {
+    .p-account-flights:not(.p-account-flights--list) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.p-account-flight {
+    align-content: start;
+    gap: var(--space-2);
+}
+
+.p-account-flight__title {
+    margin: 0;
+}
+
+.p-account-flight__figures {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+}
+
+.p-account-flight__figures .c-stat {
+    background-color: var(--color-tint-cool);
+}
+
+.p-account-flight__figures .c-stat__value {
+    font-size: var(--text-title-sm);
+    white-space: nowrap;
+}
+
+.p-account-flight__speed {
+    margin: 0;
+    font-weight: 600;
+}
+
+.p-account-stats {
+    margin-block: 0;
+}
+
+.p-account-rhythm {
+    padding: 0;
+    outline: 0;
+}
+
+.p-account-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-account-list li {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.p-account-list a {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.p-account-filters {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (width >= 48em) {
+    .p-account-filters {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Privacy and deletion */
+.p-account-kept {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+}
+
+.p-account-kept dt {
+    font-weight: 700;
+}
+
+.p-account-kept dd {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-muted);
+}
+
+.p-account-delete__step {
+    --tag-soft-bg: var(--color-danger-soft);
+    --tag-soft-fg: var(--color-danger);
+
+    justify-self: start;
+}

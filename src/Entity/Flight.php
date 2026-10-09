@@ -217,6 +217,24 @@ class Flight
         return $this->originalName;
     }
 
+    /** Name shown for a flight kept after its pilot deleted their account. */
+    public const string ANONYMOUS_PILOT = 'Pilote anonyme';
+
+    /**
+     * The pilot deleted their account and chose to keep their flights for the club: the analysis
+     * stays, without name, competition id or account; the file (which holds the name) is removed
+     * by the caller, so the flight can no longer be analysed again.
+     */
+    public function anonymize(): void
+    {
+        $this->owner = null;
+        $this->pilot = self::ANONYMOUS_PILOT;
+        $this->competitionId = null;
+        $this->public = false;
+        $this->fileName = '';
+        $this->originalName = '';
+    }
+
     public function isPublic(): bool
     {
         return $this->public;

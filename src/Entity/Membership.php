@@ -424,6 +424,21 @@ class Membership
         $this->validatedAt = $at;
     }
 
+    /**
+     * The account was deleted: only what the books need stays (name, season, amounts, dates).
+     */
+    public function anonymize(): void
+    {
+        $this->user = null;
+        $this->email = '';
+        $this->birthDate = null;
+        $this->address = '';
+        $this->postalCode = '';
+        $this->city = '';
+        $this->phone = '';
+        $this->checkoutIntentId = null;
+    }
+
     public function cancel(): void
     {
         $this->status = MembershipStatus::Cancelled;

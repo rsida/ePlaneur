@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Membership of the club (roadmap step 8a): the fees of the open season for everyone; for a
@@ -25,24 +26,34 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  */
 final class MembershipController extends AbstractController
 {
-    #[Route('/adhesion', name: 'app_membership', methods: ['GET', 'POST'])]
-    public function index(Request $request, MembershipSeasonRepository $seasons, MembershipRepository $memberships, MembershipManager $manager): Response
+    /** Fees of the open seasons and how to join, for visitors; a logged-in account goes to its space. */
+    #[Route('/adhesion', name: 'app_membership', methods: ['GET'])]
+    public function index(MembershipSeasonRepository $seasons): Response
     {
-        $open = $seasons->findOpen();
+        if ($this->getUser() instanceof User) {
+            return $this->redirectToRoute('app_account_membership');
+        }
+
+        return $this->render('membership/index.html.twig', ['open' => $seasons->findOpen()]);
+    }
+
+    /** The account's memberships, the request form of the first open season it has not asked for. */
+    #[Route('/mon-compte/adhesion', name: 'app_account_membership', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function account(Request $request, MembershipSeasonRepository $seasons, MembershipRepository $memberships, MembershipManager $manager): Response
+    {
         $user = $this->getUser();
-        $form = null;
+        \assert($user instanceof User);
+        $open = $seasons->findOpen();
         $season = null;
-        if ($user instanceof User) {
-            // The first open season the account has not asked for yet
-            foreach ($open as $candidate) {
-                if (null === $memberships->findActive($user, $candidate) && !$candidate->getTypes()->isEmpty()) {
-                    $season = $candidate;
-                    break;
-                }
+        foreach ($open as $candidate) {
+            if (null === $memberships->findActive($user, $candidate) && !$candidate->getTypes()->isEmpty()) {
+                $season = $candidate;
+                break;
             }
         }
+        $form = null;
         if (null !== $season) {
-            \assert($user instanceof User);
             $membership = $manager->prepare($user, $season);
             $form = $this->createForm(MembershipRequestType::class, $membership);
             $form->handleRequest($request);
@@ -56,13 +67,13 @@ final class MembershipController extends AbstractController
                 }
                 $this->addFlash('success', 'Votre demande d’adhésion est enregistrée : un e-mail récapitulatif vous a été envoyé.');
 
-                return $this->redirectToRoute('app_membership');
+                return $this->redirectToRoute('app_account_membership');
             }
         }
+        $mine = $memberships->findByUser($user);
 
-        $mine = $user instanceof User ? $memberships->findByUser($user) : [];
-
-        return $this->render('membership/index.html.twig', [
+        return $this->render('account/membership.html.twig', [
+            'section' => 'membership',
             'open' => $open,
             'season' => $season,
             'form' => $form?->createView(),
@@ -81,7 +92,7 @@ final class MembershipController extends AbstractController
             throw $this->createAccessDeniedException();
         }
         if (!$manager->canPayOnline($membership)) {
-            return $this->redirectToRoute('app_membership');
+            return $this->redirectToRoute('app_account_membership');
         }
 
         return $this->redirect($manager->payOnline($membership, $this->paymentUrls()));
@@ -101,7 +112,7 @@ final class MembershipController extends AbstractController
             $this->addFlash('success', 'Votre paiement est en cours de traitement par HelloAsso : il apparaîtra ici dès qu’il sera confirmé.');
         }
 
-        return $this->redirectToRoute('app_membership');
+        return $this->redirectToRoute('app_account_membership');
     }
 
     /** The member left the HelloAsso page, or the payment failed: they can try again. */
@@ -110,7 +121,7 @@ final class MembershipController extends AbstractController
     {
         $this->addFlash('success', 'Le paiement n’a pas abouti. Votre demande est conservée : vous pouvez réessayer quand vous voulez.');
 
-        return $this->redirectToRoute('app_membership');
+        return $this->redirectToRoute('app_account_membership');
     }
 
     /**

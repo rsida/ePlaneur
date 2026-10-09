@@ -259,6 +259,8 @@ final class FlightTest extends WebTestCase
         $this->uploadSample($pilot);
 
         $this->client->request('GET', '/vols/carnet');
+        self::assertResponseRedirects('/mon-compte/carnet');
+        $this->client->followRedirect();
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Mon carnet de vol');
         self::assertSelectorTextContains('.p-flight__stats', 'Vols 1');
@@ -333,7 +335,7 @@ final class FlightTest extends WebTestCase
         self::assertSelectorTextContains('[aria-labelledby="season-title"] tbody', 'pilote@example.org');
         self::assertSelectorTextContains('[aria-labelledby="tasks-title"] tbody', 'Tâche test');
 
-        $this->client->request('GET', '/vols/carnet');
+        $this->client->request('GET', '/mon-compte/carnet');
         self::assertSelectorTextContains('.p-flight-logbook__badge.is-earned', 'Premier circuit terminé');
     }
 

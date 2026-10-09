@@ -1,0 +1,63 @@
+{% extends 'account/_layout.html.twig' %}
+
+{# "Mon profil" (Figma "Mon profil"): one panel per form, each sent on its own. #}
+{% block title %}Mon profil{% endblock %}
+{% block heading %}Mon profil{% endblock %}
+{% block lead %}Des coordonnées à jour et les bons repères pour rattacher vos traces.{% endblock %}
+
+{% block content %}
+    {% set user = app.user %}
+    <section class="p-account__panel" id="display_name" aria-labelledby="account-title">
+        <twig:Ui:Heading level="2" size="h4" id="account-title">Votre compte</twig:Ui:Heading>
+        <div class="l-cluster">
+            <twig:Ui:Tag variant="soft">Rôle : {{ user.groups is empty ? 'Inscrit' : user.groups|map(g => g.name)|join(', ') }}</twig:Ui:Tag>
+            <span class="u-note">Compte créé le {{ user.createdAt|format_date('long', locale: 'fr') }}</span>
+        </div>
+        {{ form_start(forms.display_name, {attr: {class: 'c-form'}}) }}
+            {{ form_row(forms.display_name.displayName) }}
+            <div><twig:Ui:Button type="submit" size="sm" icon="">Enregistrer le nom affiché</twig:Ui:Button></div>
+        {{ form_end(forms.display_name) }}
+    </section>
+
+    <section class="p-account__panel" id="email_change" aria-labelledby="email-title">
+        <twig:Ui:Heading level="2" size="h4" id="email-title">Adresse e-mail</twig:Ui:Heading>
+        <p>Adresse actuelle : <strong>{{ user.email }}</strong>{{ user.verified ? ' · Confirmée' : '' }}</p>
+        {{ form_start(forms.email_change, {attr: {class: 'c-form', novalidate: 'novalidate'}}) }}
+            {{ form_errors(forms.email_change) }}
+            {{ form_row(forms.email_change.email) }}
+            <div><twig:Ui:Button type="submit" size="sm" icon="">Envoyer l’e-mail de confirmation</twig:Ui:Button></div>
+        {{ form_end(forms.email_change) }}
+    </section>
+
+    <section class="p-account__panel" id="password_change" aria-labelledby="password-title">
+        <twig:Ui:Heading level="2" size="h4" id="password-title">Mot de passe</twig:Ui:Heading>
+        {{ form_start(forms.password_change, {attr: {class: 'c-form'}}) }}
+            {{ form_row(forms.password_change.currentPassword) }}
+            <div class="p-account__pair">{{ form_row(forms.password_change.plainPassword.first) }}{{ form_row(forms.password_change.plainPassword.second) }}</div>
+            {{ form_errors(forms.password_change.plainPassword) }}
+            <p class="u-note">Votre mot de passe n’est jamais visible par le club. Ne le communiquez pas dans un message.</p>
+            <div><twig:Ui:Button type="submit" size="sm" icon="">Modifier mon mot de passe</twig:Ui:Button></div>
+        {{ form_end(forms.password_change) }}
+    </section>
+
+    <section class="p-account__panel" id="condor" aria-labelledby="condor-title">
+        <twig:Ui:Heading level="2" size="h4" id="condor-title">Identité Condor</twig:Ui:Heading>
+        {{ form_start(forms.condor, {attr: {class: 'c-form'}}) }}
+            <div class="p-account__pair">{{ form_row(forms.condor.condorCn) }}{{ form_row(forms.condor.condorPilotName) }}</div>
+            <p class="u-note">Ces deux repères servent à reconnaître vos traces. Un nom différent de celui du simulateur peut empêcher la reconnaissance du vol.</p>
+            {{ form_row(forms.condor.condorVersions) }}
+            <div><twig:Ui:Button type="submit" size="sm" icon="">Enregistrer mon identité Condor</twig:Ui:Button></div>
+        {{ form_end(forms.condor) }}
+    </section>
+
+    <section class="p-account__panel" id="notifications" aria-labelledby="notifications-title">
+        <twig:Ui:Heading level="2" size="h4" id="notifications-title">Préférences e-mail</twig:Ui:Heading>
+        <p class="u-note">Choisissez les nouvelles qui vous intéressent. Ces réglages ne désactivent pas les e-mails de sécurité ou de confirmation.</p>
+        {{ form_start(forms.notifications, {attr: {class: 'c-form'}}) }}
+            {{ form_row(forms.notifications.notifications) }}
+            <div><twig:Ui:Button type="submit" size="sm" icon="">Enregistrer mes préférences</twig:Ui:Button></div>
+        {{ form_end(forms.notifications) }}
+    </section>
+
+    <twig:Ui:Link href="{{ path('app_account_privacy') }}">Gérer ma confidentialité et mes données</twig:Ui:Link>
+{% endblock %}

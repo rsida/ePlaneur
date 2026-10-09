@@ -63,19 +63,26 @@
     color: var(--color-danger);
 }
 
+/* Checkboxes or radio buttons of a choice, one per line */
+.c-choices {
+    display: grid;
+    gap: var(--space-3);
+}
+
 /* Checkbox with its label */
 .c-check {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-3);
     font-size: var(--text-sm);
     cursor: pointer;
 }
 
 .c-check input {
+    flex: none;
     width: 1.125rem;
     height: 1.125rem;
-    margin: 0;
+    margin: 0.1em 0 0;
     accent-color: var(--color-primary);
 }
 

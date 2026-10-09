@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Repository\ContactRequestRepository;
 use App\Repository\MembershipRepository;
 use App\Security\Permission;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
@@ -34,6 +35,7 @@ final class DashboardController extends AbstractDashboardController
     public function __construct(
         private readonly Environment $twig,
         private readonly MembershipRepository $memberships,
+        private readonly ContactRequestRepository $contactRequests,
     ) {
     }
 
@@ -103,6 +105,10 @@ final class DashboardController extends AbstractDashboardController
             ->setPermission(Permission::MembershipManage->value);
 
         yield MenuItem::section('Comptes');
+        $unread = $this->isGranted(Permission::ContactManage->value) ? $this->contactRequests->countUnprocessed() : 0;
+        yield MenuItem::linkTo(ContactRequestCrudController::class, 'Messages de contact', 'inbox')
+            ->setPermission(Permission::ContactManage->value)
+            ->setBadge($unread > 0 ? $unread : false, 'warning');
         yield MenuItem::linkTo(UserCrudController::class, 'Comptes', 'users')
             ->setPermission(Permission::UserManage->value);
         yield MenuItem::linkTo(GroupCrudController::class, 'Groupes et droits', 'shield-check')
@@ -127,6 +133,7 @@ final class DashboardController extends AbstractDashboardController
             ['label' => 'Menus', 'text' => 'Liens de l’en-tête et du pied de page, réservés ou non.', 'icon' => 'list-tree', 'route' => 'admin_menu_item_index', 'permission' => Permission::MenuManage->value],
             ['label' => 'Catégories d’articles', 'text' => 'Classer les actualités.', 'icon' => 'tags', 'route' => 'admin_category_index', 'permission' => Permission::CategoryManage->value],
             ['label' => 'Adhésions', 'text' => 'Enregistrer les paiements, valider les demandes, exporter une saison.', 'icon' => 'id-card', 'route' => 'admin_membership_index', 'permission' => Permission::MembershipManage->value],
+            ['label' => 'Messages de contact', 'text' => 'Lire les messages envoyés au club et noter la suite donnée.', 'icon' => 'inbox', 'route' => 'admin_contact_request_index', 'permission' => Permission::ContactManage->value],
             ['label' => 'Comptes', 'text' => 'Les comptes du site et leurs groupes.', 'icon' => 'users', 'route' => 'admin_user_index', 'permission' => Permission::UserManage->value],
             ['label' => 'Groupes et droits', 'text' => 'Choisir ce que chaque groupe peut faire.', 'icon' => 'shield-check', 'route' => 'admin_group_index', 'permission' => Permission::GroupManage->value],
         ];

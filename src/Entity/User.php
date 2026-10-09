@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use App\Security\Permission;
+use App\Security\UserNotification;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -62,6 +63,32 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private ?Media $avatar = null;
 
+    /** Competition id in Condor ("RS2"), to recognise the pilot's tracks. */
+    #[ORM\Column(length: 10, nullable: true)]
+    #[Assert\Length(max: 10)]
+    private ?string $condorCn = null;
+
+    /** Pilot name in Condor, as written in the tracks. */
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
+    private ?string $condorPilotName = null;
+
+    /** @var list<int> versions of Condor the pilot flies (2, 3) */
+    #[ORM\Column(type: 'json', options: ['default' => '[]'])]
+    private array $condorVersions = [];
+
+    /** @var list<string> e-mails the account accepts (UserNotification values) */
+    #[ORM\Column(type: 'json', options: ['default' => '["flight_comment","message","renewal"]'])]
+    private array $notifications = [UserNotification::FlightComment->value, UserNotification::Message->value, UserNotification::Renewal->value];
+
+    /** New flights are public (shown to visitors) unless the pilot changes them. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $flightsPublicByDefault = false;
+
+    /** The display name appears in the season ranking of the club. */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $inRanking = true;
+
     /** @var Collection<int, Group> */
     #[ORM\ManyToMany(targetEntity: Group::class, inversedBy: 'users')]
     #[ORM\JoinTable(name: 'app_user_group')]
@@ -97,6 +124,97 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this->email;
+    }
+
+    public function getCondorCn(): ?string
+    {
+        return $this->condorCn;
+    }
+
+    public function setCondorCn(?string $condorCn): static
+    {
+        $this->condorCn = null !== $condorCn && '' !== trim($condorCn) ? mb_strtoupper(trim($condorCn)) : null;
+
+        return $this;
+    }
+
+    public function getCondorPilotName(): ?string
+    {
+        return $this->condorPilotName;
+    }
+
+    public function setCondorPilotName(?string $condorPilotName): static
+    {
+        $this->condorPilotName = null !== $condorPilotName && '' !== trim($condorPilotName) ? trim($condorPilotName) : null;
+
+        return $this;
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getCondorVersions(): array
+    {
+        return $this->condorVersions;
+    }
+
+    /**
+     * @param iterable<int|string> $versions
+     */
+    public function setCondorVersions(iterable $versions): static
+    {
+        $list = array_values(array_unique(array_map(intval(...), [...$versions])));
+        sort($list);
+        $this->condorVersions = $list;
+
+        return $this;
+    }
+
+    /**
+     * @return list<UserNotification>
+     */
+    public function getNotifications(): array
+    {
+        return array_values(array_filter(array_map(UserNotification::tryFrom(...), $this->notifications)));
+    }
+
+    /**
+     * @param iterable<UserNotification> $notifications
+     */
+    public function setNotifications(iterable $notifications): static
+    {
+        $this->notifications = array_values(array_unique(array_map(static fn (UserNotification $notification): string => $notification->value, [...$notifications])));
+
+        return $this;
+    }
+
+    public function wants(UserNotification $notification): bool
+    {
+        return \in_array($notification->value, $this->notifications, true);
+    }
+
+    public function isFlightsPublicByDefault(): bool
+    {
+        return $this->flightsPublicByDefault;
+    }
+
+    public function setFlightsPublicByDefault(bool $flightsPublicByDefault): static
+    {
+        $this->flightsPublicByDefault = $flightsPublicByDefault;
+
+        return $this;
+    }
+
+    public function isInRanking(): bool
+    {
+        return $this->inRanking;
+    }
+
+    public function setInRanking(bool $inRanking): static
+    {
+        $this->inRanking = $inRanking;
+
+        return $this;
     }
 
     public function getDisplayName(): string

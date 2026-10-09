@@ -8,11 +8,12 @@ use App\Entity\Flight;
 use App\Entity\FlightComment;
 use App\Entity\User;
 use App\Flight\Advice\FlightAdvisor;
-use App\Flight\Club\Badge;
 use App\Flight\Club\ClubRecords;
 use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
+use App\Flight\FlightMailer;
 use App\Flight\FlightSession;
+use App\Flight\Logbook;
 use App\Flight\Reader\InvalidTrackException;
 use App\Form\FlightCommentType;
 use App\Repository\FlightRepository;
@@ -98,23 +99,24 @@ final class FlightController extends AbstractController
         ]);
     }
 
-    /** The flights of a pilot over time: totals, trends and the advice that comes back most. */
+    /** The pilot's own logbook lives in the member space. */
     #[Route('/carnet', name: 'logbook', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function logbook(FlightRepository $flights, FlightAdvisor $advisor): Response
+    public function logbook(): Response
     {
-        $user = $this->getUser();
-        \assert($user instanceof User);
-
-        return $this->renderLogbook($user, $flights, $advisor);
+        return $this->redirectToRoute('app_account_logbook', status: Response::HTTP_MOVED_PERMANENTLY);
     }
 
     #[Route('/carnet/{id<\d+>}', name: 'logbook_pilot', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     #[IsGranted(FlightVoter::LOGBOOK, 'pilot')]
-    public function pilotLogbook(#[MapEntity(id: 'id')] User $pilot, FlightRepository $flights, FlightAdvisor $advisor): Response
+    public function pilotLogbook(#[MapEntity(id: 'id')] User $pilot, Logbook $logbook): Response
     {
-        return $this->renderLogbook($pilot, $flights, $advisor);
+        if ($pilot === $this->getUser()) {
+            return $this->redirectToRoute('app_account_logbook');
+        }
+
+        return $this->renderLogbook($pilot, $logbook);
     }
 
     #[Route('/{id<\d+>}', name: 'show', methods: ['GET'])]
@@ -128,7 +130,7 @@ final class FlightController extends AbstractController
     #[Route('/{id<\d+>}/commentaires', name: 'comment', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     #[IsGranted(FlightVoter::COMMENT, 'flight')]
-    public function comment(Flight $flight, Request $request, FlightRepository $flights, FlightAdvisor $advisor, EntityManagerInterface $entityManager, ClockInterface $clock): Response
+    public function comment(Flight $flight, Request $request, FlightRepository $flights, FlightAdvisor $advisor, EntityManagerInterface $entityManager, ClockInterface $clock, FlightMailer $mailer): Response
     {
         $user = $this->getUser();
         \assert($user instanceof User);
@@ -142,6 +144,7 @@ final class FlightController extends AbstractController
             }
             $entityManager->persist($comment);
             $entityManager->flush();
+            $mailer->sendComment($comment);
             $this->addFlash('info', 'Commentaire ajouté.');
 
             return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId(), '_fragment' => 'commentaires']);
@@ -165,42 +168,9 @@ final class FlightController extends AbstractController
         return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId(), '_fragment' => 'commentaires']);
     }
 
-    private function renderLogbook(User $pilot, FlightRepository $flights, FlightAdvisor $advisor): Response
+    private function renderLogbook(User $pilot, Logbook $logbook): Response
     {
-        $logbook = $flights->findLogbook($pilot);
-        $points = [];
-        $tips = [];
-        foreach ($logbook as $flight) {
-            $statistics = $flight->getAnalysis()['statistics'];
-            $points[] = [
-                'url' => $this->generateUrl('app_flight_show', ['id' => $flight->getId()]),
-                'date' => $flight->getDate()->format('d/m/Y'),
-                'plan' => $flight->getFlightPlan() ?? $flight->getOriginalName(),
-                'taskSpeed' => $flight->getTaskSpeed(),
-                'climb' => $statistics['climbAverage'] ?? null,
-                'glideRatio' => $statistics['glideRatio'] ?? null,
-                'circling' => null !== ($statistics['circlingShare'] ?? null) ? round($statistics['circlingShare'] * 100) : null,
-            ];
-            foreach ($advisor->advise($flight->getAnalysis()) as $advice) {
-                if ('tip' === $advice->kind) {
-                    $tips[$advice->title] ??= ['title' => $advice->title, 'step' => $advice->step, 'count' => 0];
-                    ++$tips[$advice->title]['count'];
-                }
-            }
-        }
-        usort($tips, static fn (array $a, array $b): int => $b['count'] <=> $a['count']);
-
-        return $this->render('flight/logbook.html.twig', [
-            'pilot' => $pilot,
-            'own' => $pilot === $this->getUser(),
-            'flights' => $logbook,
-            'points' => $points,
-            'tips' => $tips,
-            'hours' => array_sum(array_map(static fn (Flight $flight): int => $flight->getDuration(), $logbook)),
-            'distance' => array_sum(array_map(static fn (Flight $flight): int => $flight->getDistance(), $logbook)),
-            'tasks' => \count(array_filter($logbook, static fn (Flight $flight): bool => null !== $flight->getTaskSpeed())),
-            'badges' => Badge::earned($logbook),
-        ]);
+        return $this->render('flight/logbook.html.twig', ['pilot' => $pilot, 'own' => false] + $logbook->of($pilot));
     }
 
     /**
@@ -357,7 +327,7 @@ final class FlightController extends AbstractController
             $this->addFlash('info', $flight->isPublic() ? 'Le vol est public : les visiteurs du site peuvent le voir, sans les commentaires.' : 'Le vol n’est plus visible que des membres connectés.');
         }
 
-        return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId()]);
+        return $this->back($request) ?? $this->redirectToRoute('app_flight_show', ['id' => $flight->getId()]);
     }
 
     #[Route('/{id<\d+>}/supprimer', name: 'delete', methods: ['POST'])]
@@ -370,6 +340,14 @@ final class FlightController extends AbstractController
             $this->addFlash('success', 'Le vol a été supprimé.');
         }
 
-        return $this->redirectToRoute('app_flight_index');
+        return $this->back($request) ?? $this->redirectToRoute('app_flight_index');
+    }
+
+    /** Back to the page of the member space the action came from ("Mes vols"), if any. */
+    private function back(Request $request): ?Response
+    {
+        $back = $request->request->getString('retour');
+
+        return str_starts_with($back, '/mon-compte/') ? $this->redirect($back) : null;
     }
 }

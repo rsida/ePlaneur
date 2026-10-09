@@ -1,0 +1,10 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block content %}
+    {% set flight = comment.flight %}
+    <p>Bonjour {{ flight.owner.displayName }},</p>
+    <p>{{ comment.author ? comment.author.displayName : 'Un formateur' }} a commenté votre vol {{ flight.flightPlan ?? flight.originalName }}{% if comment.at is not null %}, à l’instant {{ comment.at|flight_clock }}{% endif %} :</p>
+    <p style="margin:16px 0;padding:16px;background:#f7f5ef;border-radius:4px;white-space:pre-line;">{{ comment.body }}</p>
+    <p style="margin:24px 0;"><a href="{{ url('app_flight_show', {id: flight.id}) }}{{ comment.at is not null ? '#t=' ~ comment.at : '#commentaires' }}" style="display:inline-block;padding:14px 20px;border-radius:4px;background:#3e5d83;color:#ffffff;font-weight:700;text-decoration:none;">Voir le vol</a></p>
+    <p style="font-size:13px;color:#586772;">Vous recevez cet e-mail parce que vous l’avez demandé dans « Mon profil ». Vous pouvez le désactiver à tout moment.</p>
+{% endblock %}

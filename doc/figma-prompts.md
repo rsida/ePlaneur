@@ -6,7 +6,13 @@ French because the generated screens must be. Once a mock-up exists, note its li
 
 ## Member space and personal data (step 9a, 2026-10-09)
 
-Status: prompt written, frames not generated yet.
+Status: frames generated (2026-10-09) on the "Dashboard" page of the Figma file
+`a00zZWdxi7zD4Opbt6gIbn` (node 85-2): dashboard (active member, registered without membership, new
+account, trainer), my flights and flight deletion, logbook with the 8-step path, membership and its
+follow-up, messages (inbox, conversation, new message, empty), profile, privacy and data (archive
+ready, deletion summary and final confirmation, account deleted), contact the club and message sent;
+desktop 1440 px, mobile 390 px still in progress. Generated before the choice for the flights was
+added to the prompt: the deletion summary shows it in the implementation only.
 
 > **Contexte.** Tu travailles sur le site du Club ePlaneur, une association qui forme au vol en planeur sur le simulateur Condor. Base-toi strictement sur les frames existantes du site (« ePlaneur — Grand air adouci · Version 6 · Desktop », « Premier vol · Article desktop », pages « Le Club », formulaires de connexion et d'inscription) et reprends sans en inventer de nouveaux :
 > - **les styles** : palette ink #192630, navy #3e5d83, sand #e7bca7, sand-soft #f1ded2, sky-soft #e5ebf1, cream #f7f5ef, slate #586772, line #d8ddd9, vert #2f6b4f (réussite), rouge #a8322d (danger) ; typos Oswald (titres display), Barlow (titres), Inter (texte) ;

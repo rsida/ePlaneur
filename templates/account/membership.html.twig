@@ -1,0 +1,12 @@
+{% extends 'account/_layout.html.twig' %}
+
+{% block title %}Mon adhésion{% endblock %}
+{% block heading %}Mon adhésion{% endblock %}
+{% block lead %}Votre adhésion au club, son paiement et vos attestations.{% endblock %}
+
+{% block content %}
+    <div class="l-stack l-stack--lg p-membership">
+        {{ include('membership/_account.html.twig') }}
+        {{ include('membership/_fees.html.twig') }}
+    </div>
+{% endblock %}

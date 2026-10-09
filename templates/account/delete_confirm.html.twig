@@ -1,0 +1,32 @@
+{% extends 'account/_layout.html.twig' %}
+
+{# Account deletion, step 2 of 2 (Figma "Suppression · Confirmation définitive"). #}
+{% block title %}Supprimer mon compte{% endblock %}
+{% block heading %}Supprimer mon compte{% endblock %}
+{% block lead %}Dernière vérification avant une action irréversible.{% endblock %}
+
+{% block content %}
+    {{ form_start(form, {attr: {class: 'p-account__panel'}}) }}
+        <twig:Ui:Heading level="2" size="h4">Confirmer la suppression définitive</twig:Ui:Heading>
+        <twig:Ui:Tag variant="soft" class="p-account-delete__step">Confirmation · Étape 2 sur 2</twig:Ui:Tag>
+        <div class="p-account__danger-note">
+            <strong>Cette action est irréversible</strong>
+            Votre compte {{ app.user.displayName }}, votre profil, vos commentaires et vos messages seront supprimés.
+            {% if flights > 0 %}
+                {{ keep ? 'Vos ' ~ flights ~ ' vols restent sur le site de façon anonyme, sans nom, sans CN et sans leur fichier d’origine.' : 'Vos ' ~ flights ~ ' vols et leurs traces seront supprimés.' }}
+            {% endif %}
+            Vous ne pourrez plus vous connecter.
+        </div>
+        <p>Les adhésions et paiements sont conservés dix ans pour la comptabilité de l’association, avec le seul nom et les dates.</p>
+        <div class="c-form">
+            {{ form_widget(form.keepFlights) }}
+            {{ form_row(form.password) }}
+            {{ form_row(form.understood) }}
+            <div><twig:Ui:Button type="submit" variant="danger" icon="" block>Supprimer définitivement mon compte</twig:Ui:Button></div>
+        </div>
+        <div class="p-account__links">
+            <twig:Ui:Link href="{{ path('app_account_privacy') }}">Annuler et garder mon compte</twig:Ui:Link>
+            <twig:Ui:Link href="{{ path('app_account_delete') }}">Retour au récapitulatif</twig:Ui:Link>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

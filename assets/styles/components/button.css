@@ -11,6 +11,8 @@
     --button-dark-fg: var(--color-on-dark);
     --button-accent-bg: var(--color-accent);
     --button-accent-fg: var(--color-on-accent);
+    --button-danger-bg: var(--color-danger);
+    --button-danger-fg: var(--color-on-dark);
     --button-radius: var(--radius-sm);
     --button-min-height: 3.375rem; /* 54 */
 }
@@ -58,6 +60,12 @@
 .c-button--accent {
     --_bg: var(--button-accent-bg);
     --_fg: var(--button-accent-fg);
+}
+
+/* Destructive action (delete): always separated and confirmed */
+.c-button--danger {
+    --_bg: var(--button-danger-bg);
+    --_fg: var(--button-danger-fg);
 }
 
 /* Transparent, takes the text color of its surface */

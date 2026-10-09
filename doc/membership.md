@@ -18,7 +18,7 @@ HelloAsso) are done; the treasurer's books (8c) are described at the end.
 1. **Season**: the committee creates the season of a year in "Saisons et tarifs" with its types and
    prices (2026: "Moins de 25 ans" 10 € up to 24 years old on 1 January, "Adulte" 25 €) and opens it.
    From September, a new season defaults to the next year: opening it starts the renewal campaign.
-2. **Request**: on `/adhesion`, a logged-in account picks a type and fills in the membership form of
+2. **Request**: on `/mon-compte/adhesion` (`/adhesion` shows the fees to everyone), a logged-in account picks a type and fills in the membership form of
    the internal rules (name, birth date, address, phone, acceptance of the statutes and rules), with an
    optional voluntary support payment (it gives no extra right and no tax receipt yet). The data of
    the previous membership is filled in again. One active request per season. A reduced rate checks
@@ -39,8 +39,8 @@ HelloAsso) are done; the treasurer's books (8c) are described at the end.
 8. **Export**: "Exporter la saison (CSV)" (semicolons, UTF-8 for Excel): every membership of a season
    with the member's data, amounts, payment and validation, for the treasurer and the federation.
 
-Memberships are kept when an account is deleted (name and e-mail are copied): they are part of the
-books. A season and its types cannot be deleted once used.
+Memberships are kept when an account is deleted, anonymised (name, type and amounts stay; e-mail,
+birth date, address and phone are emptied): they are part of the books. A season and its types cannot be deleted once used.
 
 ## Online payment
 

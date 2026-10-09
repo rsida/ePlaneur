@@ -114,7 +114,7 @@ final class MembershipPaymentTest extends WebTestCase
 
     private function request(): void
     {
-        $crawler = $this->client->request('GET', '/adhesion');
+        $crawler = $this->client->request('GET', '/mon-compte/adhesion');
         self::assertSelectorTextContains('form[name="membership_request"] button', 'payer en ligne');
         $form = $crawler->filter('form[name="membership_request"]')->form([
             'membership_request[firstName]' => 'Jeanne',

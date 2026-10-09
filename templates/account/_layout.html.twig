@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{#
+    Member space (Figma "Dashboard" page, node 85-2): the account and its navigation on the left,
+    the page on the right. Child templates set `section` (current navigation item) and define the
+    blocks title, heading (display title), lead (sentence under it) and content.
+#}
+{% block body %}
+    {% set user = app.user %}
+    {% set membership = account_membership() %}
+    {% set nav = [
+        {key: 'dashboard', label: 'Tableau de bord', route: 'app_account'},
+        {key: 'flights', label: 'Mes vols', route: 'app_account_flights'},
+        {key: 'logbook', label: 'Mon carnet de vol', route: 'app_account_logbook'},
+        {key: 'membership', label: 'Mon adhésion', route: 'app_account_membership'},
+        {key: 'profile', label: 'Mon profil', route: 'app_account_profile'},
+        {key: 'privacy', label: 'Confidentialité et données', route: 'app_account_privacy'},
+    ] %}
+    <section class="p-account t-light">
+        <div class="l-container p-account__grid">
+            <aside class="p-account__side" aria-label="Mon compte">
+                <div class="p-account__me">
+                    <strong class="p-account__name">{{ user.displayName }}</strong>
+                    {% set condor = [user.condorCn ? 'CN ' ~ user.condorCn : null, user.condorVersions is not empty ? 'Condor ' ~ user.condorVersions|join(' et ') : null]|filter(v => v) %}
+                    {% if condor is not empty %}<span class="p-account__meta">{{ condor|join(' · ') }}</span>{% endif %}
+                    <span class="p-account__meta">Rôle : {{ user.groups is empty ? 'Inscrit' : user.groups|map(g => g.name)|join(', ') }}</span>
+                    {% if membership %}
+                        <twig:Ui:Tag variant="soft" class="p-account__membership p-account__membership--{{ membership.status.value }}">{{ membership.status.value == 'validated' ? 'Adhésion ' ~ membership.season.year ~ ' validée' : membership.status.label }}</twig:Ui:Tag>
+                    {% endif %}
+                </div>
+                <nav class="p-account__nav" aria-label="Espace personnel">
+                    <ul role="list">
+                        {% for item in nav %}
+                            <li><a href="{{ path(item.route) }}"{% if section|default('') == item.key %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+                        {% endfor %}
+                    </ul>
+                    <twig:Ui:Link href="{{ path('app_account_contact') }}" class="p-account__contact" aria-current="{{ section|default('') == 'contact' ? 'page' : 'false' }}">Contacter le club</twig:Ui:Link>
+                    {% if is_granted('ADMIN_ACCESS') %}<twig:Ui:Link href="{{ path('admin') }}">Administration du site</twig:Ui:Link>{% endif %}
+                    <a class="p-account__logout" href="{{ path('app_logout') }}">Se déconnecter</a>
+                </nav>
+            </aside>
+
+            <div class="p-account__main l-stack">
+                <header class="p-account__header l-stack l-stack--sm">
+                    <twig:Ui:Breadcrumb :items="[{label: 'Accueil', href: path('app_home')}, {label: 'Mon compte'}]" />
+                    <twig:Ui:Eyebrow>Mon compte / Chacun son rythme</twig:Ui:Eyebrow>
+                    <h1 class="p-account__title">{% block heading %}{% endblock %}</h1>
+                    <p class="p-account__lead">{% block lead %}{% endblock %}</p>
+                </header>
+                {% for type, messages in app.flashes(['success', 'error', 'info']) %}
+                    {% for message in messages %}
+                        <div class="c-alert{{ type != 'info' ? ' c-alert--' ~ type : '' }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</div>
+                    {% endfor %}
+                {% endfor %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

@@ -62,7 +62,7 @@ final class AccountTest extends WebTestCase
         $this->login('jeanne@example.org', self::PASSWORD);
         self::assertResponseRedirects('/mon-compte');
         $this->client->followRedirect();
-        self::assertSelectorTextContains('h1', 'Bonjour Jeanne Planeur');
+        self::assertSelectorTextContains('h1', 'Bonjour Jeanne.');
         self::assertSelectorTextContains('header', 'Mon compte');
     }
 
@@ -128,8 +128,8 @@ final class AccountTest extends WebTestCase
         $this->client->request('GET', '/mon-compte');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.c-definition-list', 'Membre');
-        self::assertSelectorTextContains('.c-definition-list', 'Comité');
+        self::assertSelectorTextContains('.p-account__me', 'Membre');
+        self::assertSelectorTextContains('.p-account__me', 'Comité');
 
         $this->client->clickLink('Se déconnecter');
         $this->client->request('GET', '/mon-compte');

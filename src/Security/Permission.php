@@ -30,6 +30,7 @@ enum Permission: string implements TranslatableInterface
     case DocumentManage = 'DOCUMENT_MANAGE';
     case FlightReview = 'FLIGHT_REVIEW';
     case MembershipManage = 'MEMBERSHIP_MANAGE';
+    case ContactManage = 'CONTACT_MANAGE';
 
     public function label(): string
     {
@@ -48,6 +49,7 @@ enum Permission: string implements TranslatableInterface
             self::DocumentManage => 'Gérer les documents officiels',
             self::FlightReview => 'Commenter les vols des pilotes et suivre leur carnet de vol (formateurs)',
             self::MembershipManage => 'Gérer les saisons et valider les adhésions',
+            self::ContactManage => 'Lire et traiter les messages du formulaire de contact',
         };
     }
 

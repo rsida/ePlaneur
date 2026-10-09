@@ -1,0 +1,80 @@
+{% extends 'account/_layout.html.twig' %}
+
+{# "Mes vols" (Figma "Mes vols"): figures of the season, filters, the flights with their actions. #}
+{% block title %}Mes vols{% endblock %}
+{% block heading %}Mes vols{% endblock %}
+{% block lead %}Chaque trace est un repère pour progresser. Retrouvez vos vols et choisissez ce que vous partagez.{% endblock %}
+
+{% block content %}
+    <div class="p-flight__stats p-account-stats">
+        <twig:Ui:Stat label="{{ season ? 'Saison ' ~ season : 'Toutes saisons' }}" value="{{ season_count }}" unit="{{ season_count > 1 ? 'vols analysés' : 'vol analysé' }}" />
+        <twig:Ui:Stat label="Temps de vol" value="{{ season_hours|flight_duration }}" />
+        <twig:Ui:Stat label="Distance parcourue" value="{{ (season_distance / 1000)|number_format(0, ',', ' ') }}" unit="km" />
+    </div>
+    <div><twig:Ui:Button href="{{ path('app_flight_index') }}" size="sm" icon="">Déposer une trace</twig:Ui:Button></div>
+
+    <form method="get" class="p-account__panel" aria-labelledby="filters-title">
+        <twig:Ui:Heading level="2" size="h4" id="filters-title">Retrouver un vol</twig:Ui:Heading>
+        {% set field = 'c-input' %}
+        <div class="p-account-filters">
+            <label class="c-field"><span class="c-field__label">Période</span>
+                <select class="{{ field }}" name="saison">
+                    {% for year in years %}<option value="{{ year }}"{% if season == year %} selected{% endif %}>Saison {{ year }}</option>{% endfor %}
+                    <option value="tout"{% if season is null %} selected{% endif %}>Toutes les saisons</option>
+                </select>
+            </label>
+            <label class="c-field"><span class="c-field__label">Paysage</span>
+                <select class="{{ field }}" name="paysage">
+                    <option value="">Tous les paysages</option>
+                    {% for landscape in choices.landscapes %}<option{% if filters.paysage|default('') == landscape %} selected{% endif %}>{{ landscape }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="c-field"><span class="c-field__label">Plan de vol</span>
+                <select class="{{ field }}" name="plan">
+                    <option value="">Tous les plans</option>
+                    {% for plan in choices.plans %}<option{% if filters.plan|default('') == plan %} selected{% endif %}>{{ plan }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="c-field"><span class="c-field__label">Circuit</span>
+                <select class="{{ field }}" name="circuit">
+                    {% for value, label in {'': 'Terminé et non terminé', 'termine': 'Terminé', 'non-termine': 'Non terminé'} %}<option value="{{ value }}"{% if filters.circuit|default('') == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="c-field"><span class="c-field__label">Visibilité</span>
+                <select class="{{ field }}" name="visibilite">
+                    {% for value, label in {'': 'Public et privé', 'public': 'Public', 'prive': 'Privé'} %}<option value="{{ value }}"{% if filters.visibilite|default('') == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="c-field"><span class="c-field__label">Trier par</span>
+                <select class="{{ field }}" name="tri">
+                    {% for value, label in {'recent': 'Date · du plus récent au plus ancien', 'ancien': 'Date · du plus ancien au plus récent', 'vitesse': 'Vitesse circuit', 'distance': 'Distance'} %}<option value="{{ value }}"{% if filters.tri|default('recent') == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+        </div>
+        <div class="l-cluster">
+            <twig:Ui:Button type="submit" size="sm" icon="">Appliquer les filtres</twig:Ui:Button>
+            <twig:Ui:Button href="{{ path('app_account_flights') }}" variant="outline" size="sm" icon="">Réinitialiser</twig:Ui:Button>
+        </div>
+    </form>
+
+    <p class="u-note">{{ total }} {{ total > 1 ? 'vols' : 'vol' }}{% if pages > 1 %} · page {{ page }} sur {{ pages }}{% endif %}. La vitesse circuit mesure la partie du vol après la ligne de départ.</p>
+
+    {% if flights is empty %}
+        <div class="p-account__panel">
+            <p>Aucun vol ne correspond à ces filtres.</p>
+            <twig:Ui:Link href="{{ path('app_account_flights', {saison: 'tout'}) }}">Voir tous mes vols</twig:Ui:Link>
+        </div>
+    {% else %}
+        <div class="p-account-flights p-account-flights--list">
+            {% for flight in flights %}{{ include('account/_flight_card.html.twig', {actions: true}) }}{% endfor %}
+        </div>
+    {% endif %}
+
+    {% if pages > 1 %}
+        <nav class="p-account__panel-head" aria-label="Pages">
+            {% if page > 1 %}<twig:Ui:Button href="{{ path('app_account_flights', filters|merge({page: page - 1})) }}" variant="outline" size="sm" icon="">Page précédente</twig:Ui:Button>{% else %}<span></span>{% endif %}
+            <span class="u-note">Page {{ page }} / {{ pages }}</span>
+            {% if page < pages %}<twig:Ui:Button href="{{ path('app_account_flights', filters|merge({page: page + 1})) }}" variant="outline" size="sm" icon="">Page suivante</twig:Ui:Button>{% else %}<span></span>{% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

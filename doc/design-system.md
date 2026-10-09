@@ -114,7 +114,7 @@ usage example.
 
 | Component | Purpose | Main props |
 |---|---|---|
-| `Ui:Button` | Call to action (`<a>` or `<button>`) | `href`, `variant` (primary, dark, accent, outline), `icon`, `block`, `size` (md, sm) |
+| `Ui:Button` | Call to action (`<a>` or `<button>`) | `href`, `variant` (primary, dark, accent, outline, danger), `icon`, `block`, `size` (md, sm) |
 | `Ui:Link` | Text link with arrow | `href`, `icon` |
 | `Ui:Eyebrow` | Uppercase label above titles | — |
 | `Ui:Heading` | Heading with independent tag and size | `level`, `size` (h1–h4) |

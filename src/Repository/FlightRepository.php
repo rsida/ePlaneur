@@ -77,4 +77,81 @@ class FlightRepository extends ServiceEntityRepository
         /* @var list<Flight> */
         return $this->findBy(['public' => true], ['uploadedAt' => 'DESC', 'id' => 'DESC'], $limit);
     }
+
+    /**
+     * Flights of others without any comment yet, the latest first (trainers' dashboard).
+     *
+     * @return list<Flight>
+     */
+    public function findToComment(User $trainer, int $limit): array
+    {
+        /* @var list<Flight> */
+        return $this->createQueryBuilder('flight')
+            ->leftJoin('flight.comments', 'comment')
+            ->andWhere('flight.owner IS NOT NULL AND flight.owner != :trainer')->setParameter('trainer', $trainer)
+            ->groupBy('flight.id')
+            ->having('COUNT(comment.id) = 0')
+            ->orderBy('flight.uploadedAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()->getResult();
+    }
+
+    /**
+     * Flights of an account for "Mes vols": filtered and sorted, one page.
+     *
+     * @param array{season?: ?int, landscape?: ?string, plan?: ?string, finished?: ?bool, public?: ?bool, sort?: string} $filters
+     *
+     * @return array{flights: list<Flight>, total: int}
+     */
+    public function findForOwner(User $owner, array $filters, int $page, int $perPage): array
+    {
+        $qb = $this->createQueryBuilder('flight')->andWhere('flight.owner = :owner')->setParameter('owner', $owner);
+        if (null !== ($filters['season'] ?? null)) {
+            $qb->andWhere('COALESCE(flight.flownOn, flight.uploadedAt) >= :from AND COALESCE(flight.flownOn, flight.uploadedAt) < :to')
+                ->setParameter('from', new \DateTimeImmutable($filters['season'].'-01-01'))
+                ->setParameter('to', new \DateTimeImmutable(($filters['season'] + 1).'-01-01'));
+        }
+        if (null !== ($filters['landscape'] ?? null)) {
+            $qb->andWhere('flight.landscape = :landscape')->setParameter('landscape', $filters['landscape']);
+        }
+        if (null !== ($filters['plan'] ?? null)) {
+            $qb->andWhere('flight.flightPlan = :plan')->setParameter('plan', $filters['plan']);
+        }
+        if (null !== ($filters['finished'] ?? null)) {
+            $qb->andWhere($filters['finished'] ? 'flight.taskSpeed IS NOT NULL' : 'flight.taskSpeed IS NULL');
+        }
+        if (null !== ($filters['public'] ?? null)) {
+            $qb->andWhere('flight.public = :public')->setParameter('public', $filters['public']);
+        }
+        match ($filters['sort'] ?? 'recent') {
+            'ancien' => $qb->orderBy('flight.uploadedAt', 'ASC'),
+            'vitesse' => $qb->orderBy('flight.taskSpeed', 'DESC'),
+            'distance' => $qb->orderBy('flight.distance', 'DESC'),
+            default => $qb->orderBy('flight.uploadedAt', 'DESC'),
+        };
+        $qb->addOrderBy('flight.id', 'DESC');
+        $total = (int) (clone $qb)->select('COUNT(flight.id)')->resetDQLPart('orderBy')->getQuery()->getSingleScalarResult();
+
+        /** @var list<Flight> $flights */
+        $flights = $qb->setFirstResult(($page - 1) * $perPage)->setMaxResults($perPage)->getQuery()->getResult();
+
+        return ['flights' => $flights, 'total' => $total];
+    }
+
+    /**
+     * Landscapes and flight plans of an account's flights, for the filters.
+     *
+     * @return array{landscapes: list<string>, plans: list<string>}
+     */
+    public function filterChoices(User $owner): array
+    {
+        $rows = $this->createQueryBuilder('flight')->select('DISTINCT flight.landscape AS landscape, flight.flightPlan AS plan')
+            ->andWhere('flight.owner = :owner')->setParameter('owner', $owner)->getQuery()->getArrayResult();
+        $landscapes = array_values(array_unique(array_filter(array_column($rows, 'landscape'))));
+        $plans = array_values(array_unique(array_filter(array_column($rows, 'plan'))));
+        sort($landscapes);
+        sort($plans);
+
+        return ['landscapes' => $landscapes, 'plans' => $plans];
+    }
 }
