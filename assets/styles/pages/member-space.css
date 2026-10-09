@@ -329,3 +329,7 @@
 
     justify-self: start;
 }
+
+.p-account__training {
+    margin: 0;
+}

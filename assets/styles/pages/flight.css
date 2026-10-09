@@ -1039,3 +1039,66 @@
     background-color: var(--color-tint-cool);
     font-weight: 600;
 }
+
+/* Training path in the logbook */
+.p-training__head {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.p-training__steps {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (width >= 64em) {
+    .p-training__steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.p-training__step {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border-left: 4px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+}
+
+.p-training__step--in_progress {
+    border-left-color: var(--color-accent);
+}
+
+.p-training__step--validated {
+    border-left-color: var(--color-success);
+}
+
+.p-training__step-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.p-training__number {
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background-color: var(--color-tint-cool);
+    font-weight: 700;
+}
+
+.p-training__note {
+    margin: 0;
+}
+
+.p-training__edit > summary {
+    cursor: pointer;
+    font-weight: 600;
+}

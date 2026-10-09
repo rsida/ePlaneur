@@ -20,7 +20,9 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
  * - FLIGHT_DELETE (a flight): the pilot who uploaded it, or an administrator;
  * - FLIGHT_COMMENT (a flight): its pilot, or a trainer (FLIGHT_REVIEW);
  * - FLIGHT_COMMENT_DELETE (a comment): its author, or an administrator;
- * - LOGBOOK_VIEW (a user): the user, or a trainer.
+ * - LOGBOOK_VIEW (a user): the user, or a trainer;
+ * - TRAINING_EDIT (a user): mark the steps of their training path: a trainer, for another pilot
+ *   (nobody validates their own steps), or an administrator.
  *
  * @extends Voter<string, Flight|FlightComment|User>
  */
@@ -32,13 +34,14 @@ final class FlightVoter extends Voter
     public const string COMMENT = 'FLIGHT_COMMENT';
     public const string COMMENT_DELETE = 'FLIGHT_COMMENT_DELETE';
     public const string LOGBOOK = 'LOGBOOK_VIEW';
+    public const string TRAINING = 'TRAINING_EDIT';
 
     protected function supports(string $attribute, mixed $subject): bool
     {
         return match ($attribute) {
             self::VIEW, self::PUBLISH, self::DELETE, self::COMMENT => $subject instanceof Flight,
             self::COMMENT_DELETE => $subject instanceof FlightComment,
-            self::LOGBOOK => $subject instanceof User,
+            self::LOGBOOK, self::TRAINING => $subject instanceof User,
             default => false,
         };
     }
@@ -59,6 +62,7 @@ final class FlightVoter extends Voter
             $subject instanceof Flight && self::DELETE === $attribute => $subject->getOwner() === $user || $user->hasAllPermissions(),
             $subject instanceof Flight => $subject->getOwner() === $user || $user->hasPermission(Permission::FlightReview),
             $subject instanceof FlightComment => $subject->getAuthor() === $user || $user->hasAllPermissions(),
+            self::TRAINING === $attribute => $user->hasAllPermissions() || ($subject !== $user && $user->hasPermission(Permission::FlightReview)),
             default => $subject === $user || $user->hasPermission(Permission::FlightReview),
         };
     }

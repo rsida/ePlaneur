@@ -260,6 +260,24 @@ rather than in time (`FlightComparison`):
   deletes them. The pilot gets an e-mail for each new comment by someone else, unless they turned it
   off in their profile (`FlightMailer`).
 
+## Training path
+
+Each pilot's logbook starts with the **training path** (roadmap 9g, `App\Training\TrainingPath`,
+partial `flight/_training_path.html.twig`): the eight steps of `TrainingStep`, each not started, in
+progress or validated (`StepProgress`: status, trainer's note, reference flight of the pilot,
+validation date, who marked it), the internal qualification of the club reached (steps 1 to 4:
+Élève ePilote, ePilote Solo, ePilote, ePilote breveté Condor Club) and the current step.
+
+- A trainer (`FLIGHT_REVIEW`) marks the steps from the logbook of a pilot (`/vols/carnet/{id}`,
+  `TrainingController`, POST `/vols/carnet/{id}/parcours/{step}`); "Pas commencée" removes the
+  progress. Nobody marks their own steps, except an administrator (`TRAINING_EDIT` of
+  `FlightVoter`).
+- The pilot reads them in their logbook (`/mon-compte/carnet`) and on their dashboard.
+- The progress is in the export of the personal data and goes with the account.
+
+The committee has not validated this follow-up yet (it replaces the trainers' Excel workbooks, see
+[training](project/training.md#progression-tracking)): no default group holds `FLIGHT_REVIEW`.
+
 ## Club life
 
 Kept modest, so that the site stays a training tool rather than a game; everything is computed from

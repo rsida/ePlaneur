@@ -14,6 +14,7 @@ use App\Repository\FlightRepository;
 use App\Repository\MembershipRepository;
 use App\Repository\MembershipSeasonRepository;
 use App\Security\Permission;
+use App\Training\TrainingPath;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -77,10 +78,10 @@ final class AccountController extends AbstractController
             'landscape' => $request->query->getString('paysage') ?: null,
             'plan' => $request->query->getString('plan') ?: null,
             'finished' => match ($request->query->getString('circuit')) {
-                'termine' => true, 'non-termine' => false, default => null
+                'termine' => true, 'non-termine' => false, default => null,
             },
             'public' => match ($request->query->getString('visibilite')) {
-                'public' => true, 'prive' => false, default => null
+                'public' => true, 'prive' => false, default => null,
             },
             'sort' => $request->query->getString('tri', 'recent'),
         ];
@@ -105,11 +106,11 @@ final class AccountController extends AbstractController
     }
 
     #[Route('/mon-compte/carnet', name: 'app_account_logbook', methods: ['GET'])]
-    public function logbook(Logbook $logbook): Response
+    public function logbook(Logbook $logbook, TrainingPath $training): Response
     {
         $user = $this->getUser();
         \assert($user instanceof User);
 
-        return $this->render('account/logbook.html.twig', ['section' => 'logbook', 'pilot' => $user, 'own' => true] + $logbook->of($user));
+        return $this->render('account/logbook.html.twig', ['section' => 'logbook', 'pilot' => $user, 'own' => true, 'path' => $training->of($user), 'training_forms' => []] + $logbook->of($user));
     }
 }

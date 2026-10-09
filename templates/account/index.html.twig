@@ -84,7 +84,7 @@
     </section>
 
     {# Progression and advice #}
-    {% if speeds is not empty or tip %}
+    {% if speeds is not empty or tip or training_path(app.user).validated > 0 %}
         <div class="p-account__cols">
             <section class="p-account__panel" aria-labelledby="rhythm-title">
                 <twig:Ui:Heading level="2" size="h4" id="rhythm-title">À votre rythme</twig:Ui:Heading>
@@ -100,6 +100,11 @@
                 {% if badges is not empty %}
                     <div class="l-cluster">{% for item in badges %}<twig:Ui:Tag variant="soft">{{ item.badge.label }}</twig:Ui:Tag>{% endfor %}</div>
                 {% endif %}
+                {% set training = training_path(app.user) %}
+                <p class="p-account__training">
+                    <strong>Parcours de formation :</strong>
+                    {{ training.validated }} étape{{ training.validated > 1 ? 's' : '' }} sur 8{% if training.qualification %} · {{ training.qualification }}{% endif %}{% if training.current %} · en cours : {{ training.current.title }}{% endif %}
+                </p>
                 <twig:Ui:Link href="{{ path('app_account_logbook') }}">Voir mon carnet de vol</twig:Ui:Link>
             </section>
             {% if tip %}

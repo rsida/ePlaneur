@@ -14,7 +14,7 @@ header. Styles: `assets/styles/pages/member-space.css`.
 |---|---|---|
 | `/mon-compte` | `app_account` | Dashboard: membership state and its next action, the 3 latest flights, task speed of the last finished tasks, latest badges, the latest advice, flights to comment (trainers, `FLIGHT_REVIEW`), latest comments on one's flights, shortcuts |
 | `/mon-compte/vols` | `app_account_flights` | Figures of the season; filters (season, landscape, flight plan, task finished, visibility) and sort (date, task speed, distance); 10 flights per page with "Voir", "Rendre public / privé", "Supprimer" |
-| `/mon-compte/carnet` | `app_account_logbook` | The logbook (`App\Flight\Logbook`, see [flights](flights.md#progression)) |
+| `/mon-compte/carnet` | `app_account_logbook` | The training path and the logbook (`App\Flight\Logbook`, see [flights](flights.md#training-path)) |
 | `/mon-compte/adhesion` | `app_account_membership` | Membership request and its follow-up (see [membership](membership.md)) |
 | `/mon-compte/profil` | `app_account_profile` | One form per panel (`App\Form\Account\ProfileForms`): display name; e-mail (change confirmed by a signed link sent to the new address, `app_account_email_confirm`, throttled); password (current one required); Condor (CN, pilot name, versions); e-mail preferences (`UserNotification`) |
 | `/mon-compte/confidentialite` | `app_account_privacy` | New flights public by default or not, appear in the season ranking or not; export of the data; link to the deletion |

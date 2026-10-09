@@ -13,6 +13,9 @@
                 <p class="u-lead">Les vols {{ own ? 'que vous avez' : 'que ce pilote a' }} déposés, du plus ancien au plus récent : la progression se lit sur les courbes.</p>
             </div>
 
+            {% for type, messages in app.flashes(['success', 'error']) %}
+                {% for message in messages %}<div class="c-alert c-alert--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</div>{% endfor %}
+            {% endfor %}
             {{ include('flight/_logbook_body.html.twig') }}
         </div>
     </twig:Layout:Section>

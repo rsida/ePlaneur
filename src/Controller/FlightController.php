@@ -20,12 +20,17 @@ use App\Flight\Reader\InvalidTrackException;
 use App\Form\FlightCommentType;
 use App\Repository\FlightPlanRepository;
 use App\Repository\FlightRepository;
+use App\Repository\StepProgressRepository;
 use App\Security\Voter\FlightVoter;
+use App\Training\TrainingPath;
+use App\Training\TrainingStep;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -115,13 +120,21 @@ final class FlightController extends AbstractController
     #[Route('/carnet/{id<\d+>}', name: 'logbook_pilot', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     #[IsGranted(FlightVoter::LOGBOOK, 'pilot')]
-    public function pilotLogbook(#[MapEntity(id: 'id')] User $pilot, Logbook $logbook): Response
+    public function pilotLogbook(#[MapEntity(id: 'id')] User $pilot, Logbook $logbook, TrainingPath $training, StepProgressRepository $progress, FormFactoryInterface $formFactory): Response
     {
         if ($pilot === $this->getUser()) {
             return $this->redirectToRoute('app_account_logbook');
         }
+        $forms = $this->isGranted(FlightVoter::TRAINING, $pilot)
+            ? TrainingController::forms($pilot, $progress, $formFactory, fn (TrainingStep $step): string => $this->generateUrl('app_training_step', ['id' => $pilot->getId(), 'step' => $step->value]))
+            : [];
 
-        return $this->renderLogbook($pilot, $logbook);
+        return $this->render('flight/logbook.html.twig', [
+            'pilot' => $pilot,
+            'own' => false,
+            'path' => $training->of($pilot),
+            'training_forms' => array_map(static fn (FormInterface $form): FormView => $form->createView(), $forms),
+        ] + $logbook->of($pilot));
     }
 
     #[Route('/{id<\d+>}', name: 'show', methods: ['GET'])]
@@ -171,11 +184,6 @@ final class FlightController extends AbstractController
         }
 
         return $this->redirectToRoute('app_flight_show', ['id' => $flight->getId(), '_fragment' => 'commentaires']);
-    }
-
-    private function renderLogbook(User $pilot, Logbook $logbook): Response
-    {
-        return $this->render('flight/logbook.html.twig', ['pilot' => $pilot, 'own' => false] + $logbook->of($pilot));
     }
 
     /**

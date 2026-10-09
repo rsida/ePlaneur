@@ -32,6 +32,21 @@ enum TrainingStep: int
         };
     }
 
+    /**
+     * Internal qualification of the club given by the step once validated (doc/project/training.md);
+     * the steps from 5 on give none.
+     */
+    public function qualification(): ?string
+    {
+        return match ($this) {
+            self::Discover => 'Élève ePilote',
+            self::Solo => 'ePilote Solo',
+            self::Network => 'ePilote',
+            self::Flaps => 'ePilote breveté Condor Club',
+            default => null,
+        };
+    }
+
     /** "Étape 5 · Voler à la vitesse MacCready". */
     public function title(): string
     {

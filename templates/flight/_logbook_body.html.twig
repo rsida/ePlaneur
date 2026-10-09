@@ -1,4 +1,5 @@
-{# Content of a logbook (Logbook::of()): totals, badges, recurring advice, trend charts, flights. #}
+{# Content of a logbook (Logbook::of()): training path, totals, badges, recurring advice, trend charts, flights. #}
+{% if path is defined %}{{ include('flight/_training_path.html.twig') }}{% endif %}
 {% if flights is empty %}
     <p class="u-note">Aucun vol pour l’instant. <a href="{{ path('app_flight_index') }}">Ajoutez une trace</a> pour commencer le carnet.</p>
 {% else %}
