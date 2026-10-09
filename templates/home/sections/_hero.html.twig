@@ -27,15 +27,18 @@
     </div>
 </section>
 
-<section class="p-next-flight t-primary" aria-label="Prochain vol en réseau">
-    <div class="l-container p-next-flight__inner">
-        <twig:Ui:Date day="08" :meta="['Oct. 2026 · Exemple']">
-            <span class="p-next-flight__time">Jeudi · 20:30 · Paris</span>
-        </twig:Ui:Date>
-        <div class="p-next-flight__session">
-            <p class="p-next-flight__title">Premières ailes en réseau</p>
-            <p class="u-note">Condor 3 · Débutant · Session illustrative</p>
+{% set next = upcoming_sessions(1)|first %}
+{% if next %}
+    <section class="p-next-flight t-primary" aria-label="Prochain vol en réseau">
+        <div class="l-container p-next-flight__inner">
+            <twig:Ui:Date day="{{ next.date|date('d') }}" :meta="[next.date|format_date(pattern: 'MMM y', locale: 'fr')|capitalize]">
+                <span class="p-next-flight__time">{{ next.date|format_date(pattern: 'EEEE', locale: 'fr')|capitalize }}{{ next.startTime ? ' · ' ~ next.startTime|date('H\\hi') ~ ' · Paris' : '' }}</span>
+            </twig:Ui:Date>
+            <div class="p-next-flight__session">
+                <p class="p-next-flight__title">{{ next.flightPlan.title ?? next.flightPlan.code }}</p>
+                <p class="u-note">Condor {{ next.flightPlan.condorVersion }} · {{ next.flightPlan.category }} · {{ next.flightPlan.code }}</p>
+            </div>
+            <div class="p-next-flight__link"><twig:Ui:Link href="{{ path('app_session_show', {id: next.id}) }}">Préparer la session</twig:Ui:Link></div>
         </div>
-        <div class="p-next-flight__link"><twig:Ui:Link href="#vols">Voir les prochains vols</twig:Ui:Link></div>
-    </div>
-</section>
+    </section>
+{% endif %}

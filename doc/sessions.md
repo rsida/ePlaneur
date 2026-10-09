@@ -47,7 +47,10 @@ A `.ftr` track takes the date of its session (`Flight::getDate()`).
 `/vols/{id}/session` now redirects to the session of the flight, or to its flight plan page; flights
 whose task is not a flight plan of the library keep the former page (every flight on the same task).
 
-The dashboard of the member space shows the next two sessions ("On se retrouve en vol").
+The dashboard of the member space shows the next two sessions ("On se retrouve en vol"); the home
+page shows the next one in its banner and the next six in "02 / Les prochains vols" (the latest
+three with their results when none is announced; `upcoming_sessions()` and `recent_sessions()` of
+`SessionExtension`).
 
 ### Session form
 

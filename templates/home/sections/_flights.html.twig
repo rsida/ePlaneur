@@ -1,31 +1,34 @@
-{% set sessions = [
-    {day: '08', version: 'Condor 3', schedule: 'Jeudi · 20:30 · heure de Paris', title: 'Premières ailes en réseau', level: 'Débutant',
-        text: 'Prendre ses repères, préparer sa connexion et découvrir le vol à plusieurs, tranquillement.'},
-    {day: '10', version: 'Condor 2', schedule: 'Samedi · 14:00 · heure de Paris', title: 'Balade au-dessus des Alpes', level: 'Tous niveaux',
-        text: 'Une navigation accessible entre vallées et sommets. Le temps de regarder, et de progresser ensemble.'},
-    {day: '13', version: 'Condor 3', schedule: 'Mardi · 20:30 · heure de Paris', title: 'À la recherche des thermiques', level: 'Intermédiaire',
-        text: 'Lire le ciel, exploiter les ascendances et échanger nos conseils. Un défi à partager, sans pression.'},
-] %}
+{# Network sessions of the club: the coming ones, or the latest ones when none is announced yet. #}
+{% set coming = upcoming_sessions(6) %}
+{% set sessions = coming is not empty ? coming : recent_sessions(3) %}
 <twig:Layout:Section theme="dark" id="vols">
     <div class="l-stack l-stack--lg">
-        <twig:Layout:SectionHeader eyebrow="02 / Les prochains vols" title="On se retrouve là-haut."
-            lead="Un vol découverte, une balade ou un défi ? Choisissez votre prochaine sortie." class="u-full p-flights__header">
-            <twig:block name="aside"><twig:Ui:Link href="#">Tous les vols en réseau</twig:Ui:Link></twig:block>
+        <twig:Layout:SectionHeader eyebrow="02 / {{ coming is not empty ? 'Les prochains vols' : 'Les derniers vols' }}" title="On se retrouve là-haut."
+            lead="Chaque semaine, les pilotes du club volent le même circuit, dans la même météo, chacun depuis chez soi." class="u-full p-flights__header">
+            <twig:block name="aside"><twig:Ui:Link href="{{ path('app_session_index') }}">Tous les vols en réseau</twig:Ui:Link></twig:block>
         </twig:Layout:SectionHeader>
 
-        <div class="l-cluster l-cluster--tight" role="group" aria-label="Filtrer par version">
-            <twig:Ui:Tag :pressed="true">Tous les vols</twig:Ui:Tag>
-            <twig:Ui:Tag :pressed="false">Condor 2</twig:Ui:Tag>
-            <twig:Ui:Tag :pressed="false">Condor 3</twig:Ui:Tag>
-        </div>
-        <p class="u-note">Sessions illustratives d’octobre 2026 · Exemples, pas le calendrier officiel du club.</p>
-
-        <div class="l-rail">
-            {% for session in sessions %}
-                <twig:Card:Session day="{{ session.day }}" month="Oct." year="2026" version="{{ session.version }}"
-                    schedule="{{ session.schedule }}" title="{{ session.title }}" level="{{ session.level }}" text="{{ session.text }}" />
-            {% endfor %}
-        </div>
+        {% if sessions is empty %}
+            <p class="u-note">Les sessions sont annoncées dans le groupe WhatsApp des vols du club.</p>
+        {% else %}
+            {% if coming is empty %}<p class="u-note">Pas encore de session annoncée sur le site : voici les dernières, avec leurs résultats.</p>{% endif %}
+            <div class="l-rail">
+                {% for session in sessions %}
+                    {% set plan = session.flightPlan %}
+                    <twig:Card:Session
+                        day="{{ session.date|date('d') }}"
+                        month="{{ session.date|format_date(pattern: 'MMM', locale: 'fr')|capitalize }}"
+                        year="{{ session.date|date('Y') }}"
+                        version="Condor {{ plan.condorVersion }}"
+                        schedule="{{ session.date|format_date(pattern: 'EEEE', locale: 'fr')|capitalize }}{{ session.startTime ? ' · ' ~ session.startTime|date('H\\hi') ~ ' · heure de Paris' : '' }}"
+                        title="{{ plan.title ?? plan.code }}"
+                        level="{{ plan.category }}{{ session.dedicatedTo ? ' · session dédiée' : '' }}"
+                        text="{{ plan.code }}{{ plan.gliders ? ' · planeurs ' ~ plan.gliders : '' }}{{ plan.landscape ? ' · scène ' ~ plan.landscape : '' }}{{ coming is empty ? ' · ' ~ session.participantCount ~ ' pilotes' : '' }}"
+                        href="{{ path('app_session_show', {id: session.id}) }}"
+                        linkLabel="{{ coming is not empty ? 'Voir les détails du vol' : 'Voir les résultats' }}" />
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <div class="c-callout u-full">
             <p class="u-note">Premier vol en réseau ? On vous aide à vérifier les prérequis et à préparer votre connexion.</p>

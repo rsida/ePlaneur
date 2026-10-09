@@ -65,6 +65,23 @@ final class SessionTest extends WebTestCase
         self::assertResponseRedirects();
     }
 
+    public function testTheHomePageShowsTheComingSessions(): void
+    {
+        $this->client->request('GET', '/');
+        self::assertSelectorTextContains('#vols', 'Les sessions sont annoncées dans le groupe WhatsApp');
+        self::assertSelectorNotExists('.p-next-flight');
+
+        $this->session('C3-c046a', '2026-02-19');
+        $next = $this->session('C3-s118', '+2 days')->setStartTime(new \DateTimeImmutable('21:00'));
+        $this->entityManager->flush();
+        $this->client->request('GET', '/');
+        self::assertSelectorTextContains('#vols', 'Les prochains vols');
+        self::assertSelectorTextContains('#vols', 'C3-s118');
+        self::assertSelectorTextNotContains('#vols', 'C3-c046a');
+        self::assertSelectorTextContains('.p-next-flight', '21h00');
+        self::assertSelectorExists('.p-next-flight a[href="/sessions/'.$next->getId().'"]');
+    }
+
     public function testAMemberProposesASessionOnANewFlightPlan(): void
     {
         $this->client->loginUser($this->user('max@example.org', 'member'));

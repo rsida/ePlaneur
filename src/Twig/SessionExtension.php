@@ -30,6 +30,13 @@ final readonly class SessionExtension
         return $this->sessions->findUpcoming($this->clock->now(), $limit);
     }
 
+    /** @return list<NetworkSession> the latest past sessions */
+    #[AsTwigFunction('recent_sessions')]
+    public function recent(int $limit = 3): array
+    {
+        return $this->sessions->findPast($this->clock->now(), [], 1, $limit)['sessions'];
+    }
+
     /** A time of day given in minutes after midnight: 765 → "12h45". */
     #[AsTwigFilter('day_minutes')]
     public static function dayMinutes(int $minutes): string
