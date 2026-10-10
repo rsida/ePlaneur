@@ -69,6 +69,7 @@ final readonly class FlightAnalysis
                 'bank' => $phase->bank,
                 'windSpeed' => $phase->windSpeed,
                 'windFrom' => $phase->windFrom,
+                'centring' => $phase->centring,
             ], $this->phases),
             'climbByAltitude' => $this->climbByAltitude(),
             'task' => null === $this->task ? null : $this->taskArray($this->task),

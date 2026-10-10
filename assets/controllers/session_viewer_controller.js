@@ -2,7 +2,7 @@
 import { Controller } from '@hotwired/stimulus';
 import { PathLayer } from '@deck.gl/layers';
 import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
-import { chaseBearing, gliderLayers, positionAt, readings, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
+import { chaseBearing, gliderLayers, positionAt, readings, sessionThermalLayers, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
 
 /*
  * Session replay (templates/flight/session.html.twig): every flight of FlightController::sessionData()
@@ -16,8 +16,9 @@ import { chaseBearing, gliderLayers, positionAt, readings, taskLayers, thermalLa
  * Each pilot is a glider in their colour with a flag (name, altitude) and a fading trail
  * (../flight/scene.js). Clicking a pilot follows them: their flag gives their readings (speed,
  * vario, average climb, height above the relief), and in 3D the camera flies behind their glider,
- * a curtain under their trail shows their height and their thermals so far rise as columns. In 3D
- * the cylinders of the task stand up to the sky.
+ * a curtain under their trail shows their height. In 3D the cylinders of the task stand up to the
+ * sky, and the thermals rise as arrows: those of every pilot, one arrow per thermal with how many
+ * pilots used it (sessionThermalLayers()), or those of the pilot followed in their colour.
  */
 
 /* One color per pilot, in ranking order */
@@ -28,7 +29,7 @@ const COLORS = [
 const TRAIL = 300; // seconds of track drawn behind each glider
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'align', 'status', 'clock', 'pilots', 'dot', 'play', 'rate', 'seek'];
+    static targets = ['map', 'view', 'basemap', 'align', 'thermals', 'status', 'clock', 'pilots', 'dot', 'play', 'rate', 'seek'];
 
     static values = { url: String };
 
@@ -147,7 +148,7 @@ export default class extends Controller {
         this.overlay.setProps({
             layers: [
                 ...(this.is3d ? taskLayers('session', this.session.task, { top: this.top }) : []),
-                ...(this.is3d && followed ? thermalLayers('session', followed.track, followed.track.thermals ?? [], followed.index, { color: followed.color }) : []),
+                ...this.thermalLayers(gliders, followed),
                 new PathLayer({
                     id: 'tracks',
                     data: this.paths(),
@@ -163,6 +164,17 @@ export default class extends Controller {
                 ...gliderLayers('session', gliders, { is3d: this.is3d, zoom: this.map.getZoom() }),
             ],
         });
+    }
+
+    /** In 3D, the thermals of every pilot grouped, or those of the pilot followed. */
+    thermalLayers(gliders, followed) {
+        if (!this.is3d) return [];
+        const zoom = this.map.getZoom();
+        if (!this.hasThermalsTarget || this.thermalsTarget.value === 'all') {
+            return sessionThermalLayers('session', gliders.map((glider) => ({ track: glider.track, index: glider.index, thermals: glider.track.thermals })), { zoom });
+        }
+
+        return followed ? thermalLayers('session', followed.track, followed.track.thermals ?? [], followed.index, { color: followed.color, zoom }) : [];
     }
 
     /** Height of the relief under a glider, known in 3D only. */

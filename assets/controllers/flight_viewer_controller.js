@@ -6,7 +6,7 @@ import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { bearing, distance } from '../flight/geo.js';
 import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
-import { angleDifference, chaseBearing, gliderLayers, positionAt, readings, taskLayers, thermalLayers } from '../flight/scene.js';
+import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, gliderLayers, liftLayers, positionAt, readings, taskLayers, thermalLayers } from '../flight/scene.js';
 
 /*
  * Flight viewer (templates/flight/show.html.twig): the flight of FlightController::analysis() on a
@@ -18,8 +18,13 @@ import { angleDifference, chaseBearing, gliderLayers, positionAt, readings, task
  * - Charts (uPlot) share the cursor with the map; clicking a chart, the seek bar or a phase moves
  *   the glider there.
  * - The glider is drawn turned and banked with its flag and readings (../flight/scene.js); in 3D
- *   the cylinders of the task stand up and the thermals climbed so far rise as columns. "Suivre"
- *   keeps the glider in view, and in 3D flies the camera behind it.
+ *   the cylinders of the task stand up, the thermals climbed so far rise as arrows, the slope lift
+ *   gets orange arrows, and a curtain in the colours of the track hangs down to the ground.
+ *   "Suivre" keeps the glider in view, and in 3D flies the camera behind it.
+ * - Under the seek bar, the thermals (coloured by climb), slope lift, low points and final glide;
+ *   above it, the turnpoints reached.
+ * - "Centrage": the climb on each side of the circles of the thermal shown (centring of the
+ *   analysis), with which way to shift the circles.
  * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
  * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
  * - Two thermals picked in the list are compared: figures and the height gained over time.
@@ -35,7 +40,16 @@ const VARIO_CLASSES = [
 ];
 // Track coloured by altitude: from the lowest to the highest point of the flight, as on Condor Club
 const ALTITUDE_COLORS = [[94, 60, 153], [59, 82, 170], [44, 123, 182], [0, 166, 202], [0, 196, 160], [144, 220, 120], [249, 208, 87], [242, 135, 50], [215, 48, 39]];
-const CURTAIN_STEP = 5; // seconds between the lines down to the ground in 3D
+const CURTAIN_STEP = 2; // seconds between the lines of the curtain down to the ground in 3D
+// Netto colour of the track out of the glides (in a thermal the polar says nothing)
+const NO_NETTO = [150, 150, 150];
+// Low points on the timeline: the lowest of each glide ending in a thermal, when that low is this
+// many metres under the average entry of the thermals
+const LOW_POINT_MARGIN = 250;
+// Eighths of the centring radar, from north clockwise
+const SECTORS = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'];
+// Difference of climb between the best and the worst side under which a thermal is centred (m/s)
+const CENTRED = 0.5;
 // Pilot view: looking ahead and a little down (fewer far tiles than the horizon, which MapLibre
 // draws with stretched walls while they load)
 const PILOT_PITCH = 75;
@@ -43,7 +57,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice'];
 
     static values = { url: String, label: String };
 
@@ -69,11 +83,13 @@ export default class extends Controller {
         this.seekTarget.max = String(this.count - 1);
         this.phaseAt = this.phaseIndex();
         this.thermalPhases = this.flight.phases.filter((phase) => phase.type === 'thermal');
+        this.liftPhases = this.flight.phases.filter((phase) => phase.type === 'lift');
         this.top = this.series.altitude.reduce((top, altitude) => Math.max(top, altitude), 0);
         this.buildMap();
         this.buildCharts();
         this.buildPhases();
         this.buildMarks();
+        this.buildEvents();
         this.resizeObserver = new ResizeObserver(() => this.resizeCharts());
         this.resizeObserver.observe(this.element);
         // A link to a moment of the flight: #t=seconds
@@ -131,26 +147,35 @@ export default class extends Controller {
         if (!this.hasLegendTarget) return;
         const altitude = this.colorMode === 'altitude';
         const rgb = (c) => `rgb(${c.join(',')})`;
+        const netto = this.colorMode === 'netto';
         const colors = altitude ? ALTITUDE_COLORS : VARIO_CLASSES.map((c) => c.color);
         const [low, high] = this.altitudeRange();
         this.legendTarget.querySelector('[data-legend="bar"]').style.background = `linear-gradient(to right, ${colors.map(rgb).join(', ')})`;
-        this.legendTarget.querySelector('[data-legend="low"]').textContent = altitude ? `${Math.round(low)} m` : '< −2 m/s';
+        this.legendTarget.querySelector('[data-legend="low"]').textContent = altitude ? `${Math.round(low)} m` : `${netto ? 'Netto ' : ''}< −2 m/s`;
         this.legendTarget.querySelector('[data-legend="high"]').textContent = altitude ? `${Math.round(high)} m` : '> +2 m/s';
     }
 
-    /** Runs of the track of the same colour class (vario or altitude), drawn as one path each. */
+    /**
+     * Runs of the track of the same colour class (vario, altitude or netto), drawn as one path each;
+     * the colour of each second is kept for the curtain.
+     */
     segments() {
-        const { vario, altitude } = this.series;
+        const { vario, altitude, netto } = this.series;
         const [low, high] = this.altitudeRange();
-        const byAltitude = this.colorMode === 'altitude';
-        const classes = byAltitude ? ALTITUDE_COLORS : VARIO_CLASSES.map((c) => c.color);
-        const classOf = byAltitude
-            ? (i) => Math.max(0, Math.min(classes.length - 1, Math.floor(((altitude[i] - low) / Math.max(1, high - low)) * classes.length)))
-            : (i) => VARIO_CLASSES.findIndex((c) => vario[i] <= c.max);
+        const mode = this.colorMode === 'netto' && !netto ? 'vario' : this.colorMode;
+        const classes = mode === 'altitude' ? ALTITUDE_COLORS : [...VARIO_CLASSES.map((c) => c.color), NO_NETTO];
+        const varioClass = (value) => VARIO_CLASSES.findIndex((c) => value <= c.max);
+        const classOf = {
+            altitude: (i) => Math.max(0, Math.min(classes.length - 1, Math.floor(((altitude[i] - low) / Math.max(1, high - low)) * classes.length))),
+            vario: (i) => varioClass(vario[i]),
+            netto: (i) => (netto[i] === null ? VARIO_CLASSES.length : varioClass(netto[i])),
+        }[mode];
+        this.pointColors = new Array(this.count);
         const segments = [];
         let current = null;
         for (let i = 0; i < this.count; i += 1) {
             const cls = classOf(i);
+            this.pointColors[i] = classes[cls];
             if (!current || current.cls !== cls) {
                 // Each segment starts at the end of the previous one: no gap in the line
                 current = { cls, color: classes[cls], indexes: current ? [i - 1, i] : [i] };
@@ -204,6 +229,14 @@ export default class extends Controller {
                 updateTriggers: { getPath: this.is3d },
             }),
         ];
+        // In 3D the lift over the track (drawn after it), under the glider
+        if (this.is3d) {
+            const zoom = this.map.getZoom();
+            layers.push(
+                ...thermalLayers('flight', this.series, this.thermalPhases, this.index, { zoom }),
+                ...liftLayers('flight', this.series, this.liftPhases, this.index, { zoom, windFrom: this.flight.statistics.windFrom ?? null }),
+            );
+        }
         // In the pilot view the camera is in the glider
         if (!this.pilotView) {
             const [lon, lat] = positionAt(this.series, this.index);
@@ -212,14 +245,12 @@ export default class extends Controller {
             layers.push(...gliderLayers('flight', [{ track: this.series, index: this.index, color: [255, 255, 255], flagColor: [25, 38, 48], label: this.labelValue, details, selected: false }], { is3d: this.is3d, zoom: this.map.getZoom() }));
         }
         if (this.is3d) {
-            layers.unshift(
-                ...taskLayers('flight', this.flight.task, { top: this.top }),
-                ...thermalLayers('flight', this.series, this.thermalPhases, this.index),
-            );
-            // Lines down to the ground: the relief hides their lower part
+            layers.unshift(...taskLayers('flight', this.flight.task, { top: this.top }));
+            // A curtain down to the ground in the colours of the track: the relief hides its lower part
             if (!this.curtain) {
                 this.curtain = [];
-                for (let k = 0; k < this.count; k += CURTAIN_STEP) this.curtain.push(k);
+                const { takeoff = 0, landing = this.count - 1 } = this.flight.statistics;
+                for (let k = takeoff; k <= landing; k += CURTAIN_STEP) this.curtain.push(k);
             }
             layers.unshift(new LineLayer({
                 id: 'curtain',
@@ -228,8 +259,10 @@ export default class extends Controller {
                 data: this.curtain,
                 getSourcePosition: (k) => this.position(k),
                 getTargetPosition: (k) => this.position(k, true),
-                getColor: [25, 38, 48, 70],
-                getWidth: 1,
+                getColor: (k) => [...this.pointColors[k], 80],
+                getWidth: 2,
+                parameters: SEE_THROUGH,
+                updateTriggers: { getColor: this.colorMode },
             }));
         }
         this.overlay.setProps({ layers });
@@ -644,6 +677,156 @@ export default class extends Controller {
         this.marksTarget.replaceChildren(...marks);
     }
 
+    /* ---------- Events under the timeline ---------- */
+
+    /**
+     * Under the seek bar: each thermal as a band coloured by its climb, the slope lift in orange,
+     * the final glide, and the low points (the lowest of a glide well under the usual entry of the
+     * thermals). A click moves the replay there.
+     */
+    buildEvents() {
+        if (!this.hasEventsTarget) return;
+        const { time, altitude } = this.series;
+        const at = (i) => `${(i / Math.max(1, this.count - 1)) * 100}%`;
+        const rgb = (c) => `rgb(${c.join(' ')})`;
+        const event = (kind, from, to, color, title) => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.tabIndex = -1;
+            item.className = `p-flight__event p-flight__event--${kind}`;
+            item.style.left = at(from);
+            if (to !== null) item.style.width = `calc(${at(to)} - ${at(from)})`;
+            if (color) item.style.setProperty('--event-color', rgb(color));
+            item.title = `${title} · ${formatTime(time[from])}`;
+            item.addEventListener('click', () => this.goToMoment({ detail: { at: from } }));
+
+            return item;
+        };
+        const items = [];
+        let number = 0;
+        for (const phase of this.flight.phases) {
+            if (phase.type === 'thermal') {
+                number += 1;
+                items.push(event('thermal', phase.start, phase.end, climbColor(phase.vario), `Thermique ${number} · ${phase.gain >= 0 ? '+' : ''}${phase.gain} m · ${FORMATS.vario(phase.vario)}`));
+            } else if (phase.type === 'lift') {
+                items.push(event('lift', phase.start, phase.end, null, `Pente ou onde · +${phase.gain} m · ${FORMATS.vario(phase.vario)}`));
+            }
+        }
+        const final = this.flight.task?.finalGlide;
+        const finish = this.flight.task?.turnpoints.at(-1)?.reached;
+        if (final && finish !== null && finish !== undefined) {
+            items.push(event('final', final.from, finish, null, `Transition finale · ${(final.distance / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km · arrivée ${FORMATS.altitude(final.arrivalAltitude)}`));
+        }
+        for (const low of this.lowPoints()) {
+            items.push(event('low', low, null, null, `Point bas · ${FORMATS.altitude(altitude[low])}`));
+        }
+        this.eventsTarget.replaceChildren(...items);
+    }
+
+    /** Seconds of the low points: the lowest of each glide followed by a thermal, well under the usual entry. */
+    lowPoints() {
+        const { altitude } = this.series;
+        const phases = this.flight.phases;
+        const entries = this.thermalPhases.map((phase) => altitude[phase.start]);
+        if (entries.length === 0) return [];
+        const usual = entries.reduce((sum, value) => sum + value, 0) / entries.length;
+        const lows = [];
+        phases.forEach((phase, p) => {
+            if (phase.type !== 'glide' || phases[p + 1]?.type !== 'thermal') return;
+            let lowest = phase.start;
+            for (let k = phase.start; k <= phases[p + 1].start; k += 1) if (altitude[k] < altitude[lowest]) lowest = k;
+            if (altitude[lowest] < usual - LOW_POINT_MARGIN) lows.push(lowest);
+        });
+
+        return lows;
+    }
+
+    /* ---------- Centring radar ---------- */
+
+    /** The radar of the thermal at second `i`, or else of the last one before it. */
+    showRadar(i) {
+        if (!this.hasRadarTarget) return;
+        const thermal = [...this.thermalPhases].reverse().find((phase) => phase.start <= i && phase.centring);
+        this.radarTarget.hidden = !thermal;
+        if (!thermal || thermal === this.radarThermal) return;
+        this.radarThermal = thermal;
+        this.radarSector = null;
+        const number = this.thermalPhases.indexOf(thermal) + 1;
+        this.radarTitleTarget.textContent = `Centrage du thermique ${number}`;
+        this.radarAdviceTarget.textContent = centringAdvice(thermal.centring);
+        this.drawRadar();
+    }
+
+    /**
+     * The eight sides of the circles as wedges, longer and darker the better they climbed (from the
+     * weakest side to the strongest), north up; the side pointed at is outlined.
+     */
+    drawRadar() {
+        const canvas = this.radarCanvasTarget;
+        const context = canvas.getContext('2d');
+        const { width, height } = canvas;
+        const centre = [width / 2, height / 2];
+        const outer = width / 2 - 18;
+        const values = this.radarThermal.centring;
+        const known = values.filter((v) => v !== null);
+        const low = Math.min(...known);
+        const high = Math.max(...known);
+        const style = getComputedStyle(this.element);
+        context.clearRect(0, 0, width, height);
+        context.strokeStyle = style.getPropertyValue('--color-line').trim() || '#ccc';
+        context.lineWidth = 1;
+        for (const r of [outer / 3, (2 * outer) / 3, outer]) {
+            context.beginPath();
+            context.arc(...centre, r, 0, 2 * Math.PI);
+            context.stroke();
+        }
+        values.forEach((value, n) => {
+            if (value === null) return;
+            const length = outer * (0.3 + 0.7 * (high > low ? (value - low) / (high - low) : 1));
+            // North up, clockwise: canvas angles start east and turn clockwise
+            const middle = ((n * 45 - 90) * Math.PI) / 180;
+            const half = (22.5 * Math.PI) / 180;
+            context.beginPath();
+            context.moveTo(...centre);
+            context.arc(...centre, length, middle - half, middle + half);
+            context.closePath();
+            context.fillStyle = `rgb(${(value < 0 ? [62, 93, 131] : climbColor(value)).join(' ')})`;
+            context.fill();
+            if (n === this.radarSector) {
+                context.lineWidth = 2;
+                context.strokeStyle = style.getPropertyValue('--color-text').trim() || '#000';
+                context.stroke();
+            }
+        });
+        context.fillStyle = style.getPropertyValue('--color-text-muted').trim() || '#666';
+        context.font = '600 11px Inter, sans-serif';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        [['N', 0, -1], ['E', 1, 0], ['S', 0, 1], ['O', -1, 0]].forEach(([letter, x, y]) => context.fillText(letter, centre[0] + x * (outer + 10), centre[1] + y * (outer + 10)));
+        this.radarValueTarget.textContent = this.radarSector === null || values[this.radarSector] === null
+            ? 'Survolez un côté pour lire son vario.'
+            : `Côté ${SECTORS[this.radarSector]} : ${FORMATS.vario(values[this.radarSector])}`;
+    }
+
+    /** The side of the circles under the cursor. */
+    pointRadar(event) {
+        if (!this.radarThermal) return;
+        const canvas = this.radarCanvasTarget;
+        const box = canvas.getBoundingClientRect();
+        const x = ((event.clientX - box.left) / box.width) * canvas.width - canvas.width / 2;
+        const y = ((event.clientY - box.top) / box.height) * canvas.height - canvas.height / 2;
+        const sector = Math.hypot(x, y) < 6 ? null : Math.floor((((Math.atan2(x, -y) * 180) / Math.PI + 360 + 22.5) % 360) / 45);
+        if (sector === this.radarSector) return;
+        this.radarSector = sector;
+        this.drawRadar();
+    }
+
+    leaveRadar() {
+        if (this.radarSector === null) return;
+        this.radarSector = null;
+        this.drawRadar();
+    }
+
     /* ---------- Comments ---------- */
 
     /** A moment given by another controller (a glide clicked on the polar chart). */
@@ -703,6 +886,7 @@ export default class extends Controller {
         this.nowSpeedTarget.textContent = FORMATS.speed(speed[i]);
         this.nowVarioTarget.textContent = FORMATS.vario(vario[i]);
         const p = this.phaseAt[i];
+        this.showRadar(i);
         this.nowPhaseTarget.textContent = p >= 0 ? describePhase(this.flight.phases[p]) : '';
         this.phasesTarget.querySelectorAll('[aria-current]').forEach((item) => item.removeAttribute('aria-current'));
         this.phasesTarget.querySelector(`[data-phase="${p}"]`)?.setAttribute('aria-current', 'true');
@@ -721,7 +905,7 @@ export default class extends Controller {
 
 
 
-/** One line describing a thermal, a glide or straight lift (slope, wave). */
+/** One line describing a thermal, a glide, straight lift (slope, wave) or the launch climb. */
 function describePhase(phase) {
     const minutes = Math.max(1, Math.round(phase.duration / 60));
     const number = (value, digits = 1) => value.toLocaleString('fr-FR', { maximumFractionDigits: digits });
@@ -729,9 +913,32 @@ function describePhase(phase) {
         return `Thermique · ${minutes} min · ${phase.gain >= 0 ? '+' : ''}${phase.gain} m · ${number(phase.vario)} m/s · ${phase.direction === 'left' ? 'à gauche' : 'à droite'}`;
     }
 
+    if (phase.type === 'launch') {
+        return `Lancement · ${minutes} min · +${phase.gain} m · ${number(phase.vario)} m/s`;
+    }
+
     if (phase.type === 'lift') {
         return `Pente ou onde · ${minutes} min · +${phase.gain} m · ${number(phase.vario)} m/s en ligne droite`;
     }
 
     return `Transition · ${number(phase.distance / 1000)} km · ${Math.round(phase.speed)} km/h${phase.glideRatio ? ` · finesse ${Math.round(phase.glideRatio)}` : ''}`;
+}
+
+/** What the centring of a thermal says: centred, or which way to shift the circles. */
+function centringAdvice(centring) {
+    let best = null;
+    let worst = null;
+    centring.forEach((value, n) => {
+        if (value === null) return;
+        if (best === null || value > centring[best]) best = n;
+        if (worst === null || value < centring[worst]) worst = n;
+    });
+    if (best === null) return '';
+    if (centring[best] - centring[worst] < CENTRED) {
+        return `Bien centré : à peine ${FORMATS.vario(centring[best] - centring[worst]).replace('+', '')} d’écart entre les côtés des cercles.`;
+    }
+
+    const towards = /^[eo]/.test(SECTORS[best]) ? `l’${SECTORS[best]}` : `le ${SECTORS[best]}`;
+
+    return `Ça monte mieux côté ${SECTORS[best]} (${FORMATS.vario(centring[best])}) que côté ${SECTORS[worst]} (${FORMATS.vario(centring[worst])}) : décalez les cercles vers ${towards}.`;
 }

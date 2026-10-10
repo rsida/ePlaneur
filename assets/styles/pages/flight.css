@@ -322,6 +322,65 @@
     content: "";
 }
 
+/* Thermals, slope lift, final glide and low points under the seek bar */
+.p-flight__events {
+    position: absolute;
+    inset: 100% var(--space-2) auto;
+    height: var(--space-2);
+}
+
+.p-flight__event {
+    position: absolute;
+    top: 0;
+    min-width: 2px;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 1px;
+    background-color: var(--event-color);
+    cursor: pointer;
+}
+
+.p-flight__event--lift {
+    background-color: var(--color-lift);
+}
+
+.p-flight__event--final {
+    top: auto;
+    bottom: -3px;
+    height: 2px;
+    background-color: var(--color-final-glide);
+}
+
+/* A small triangle pointing down */
+.p-flight__event--low {
+    width: var(--space-2);
+    height: var(--space-2);
+    background-color: var(--color-low-point);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform: translate(-50%, 100%);
+}
+
+/* Centring radar of a thermal */
+.p-flight__radar-canvas {
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    aspect-ratio: 1;
+    margin-inline: auto;
+}
+
+.p-flight__radar-value,
+.p-flight__radar-advice {
+    margin: 0;
+    font-size: var(--text-sm);
+}
+
+.p-flight__radar-value {
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
 /* Charts */
 .p-flight__charts {
     grid-area: charts;

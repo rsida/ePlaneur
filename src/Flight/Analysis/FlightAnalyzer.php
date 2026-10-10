@@ -63,6 +63,10 @@ final class FlightAnalyzer
     /** Height lost under which a glide has no glide ratio, metres. */
     private const float MIN_GLIDE_LOSS = 10.0;
 
+    /** Centring radar of a thermal: two full turns at least, and seconds in an eighth of the circle to give it a value. */
+    private const float CENTRING_MIN_TURNS = 2.0;
+    private const int CENTRING_MIN_SECONDS = 3;
+
     /** Seconds the glider stays still at the beginning of a track that begins on the ground. */
     private const int GROUND_STILL = 5;
 
@@ -103,7 +107,7 @@ final class FlightAnalyzer
         [$takeoff, $landing] = self::flyingRange($speed);
         $turnRate = self::turnRates($heading);
         $phases = self::phases($turnRate, $takeoff, $landing, $altitude, $step, $latitude, $longitude);
-        $phases = self::describe(self::splitLift($phases, $altitude, $step, $latitude, $longitude), $turnRate, $speed, $latitude, $longitude);
+        $phases = self::describe(self::splitLift($phases, $altitude, $step, $latitude, $longitude), $turnRate, $speed, $vario, $latitude, $longitude);
 
         $series = [
             'time' => array_column($points, 0),
@@ -116,8 +120,11 @@ final class FlightAnalyzer
 
         $task = \count($track->turnpoints) >= 3 ? self::task($track->turnpoints, $latitude, $longitude) : null;
         $launch = self::launch($series, $track->turnpoints[0] ?? null);
+        $climbing = self::climbing($series, $takeoff, $landing, $launch);
+        // Climbing straight behind the tug or on the cable is not slope or wave lift
+        $phases = array_map(static fn (Phase $phase): Phase => Phase::LIFT === $phase->type && $phase->start < $climbing['release'] ? $phase->as(Phase::LAUNCH) : $phase, $phases);
         $statistics = self::statistics($series, $step, $phases, $takeoff, $landing)
-            + self::climbing($series, $takeoff, $landing, $launch)
+            + $climbing
             + self::spirals($turnRate, $altitude, $takeoff, $landing)
             + self::taskFlying($series, $phases, $task)
             + self::circling($series, $phases, $task);
@@ -382,19 +389,20 @@ final class FlightAnalyzer
     }
 
     /**
-     * Thermals get their turns, radius, bank and wind.
+     * Thermals get their turns, radius, bank, wind and centring.
      *
      * @param list<Phase> $phases
      * @param list<float> $turnRate
      * @param list<float> $speed
+     * @param list<float> $vario
      * @param list<float> $latitude
      * @param list<float> $longitude
      *
      * @return list<Phase>
      */
-    private static function describe(array $phases, array $turnRate, array $speed, array $latitude, array $longitude): array
+    private static function describe(array $phases, array $turnRate, array $speed, array $vario, array $latitude, array $longitude): array
     {
-        return array_map(static function (Phase $phase) use ($turnRate, $speed, $latitude, $longitude): Phase {
+        return array_map(static function (Phase $phase) use ($turnRate, $speed, $vario, $latitude, $longitude): Phase {
             $duration = $phase->duration();
             if (Phase::THERMAL !== $phase->type || $duration <= 0) {
                 return $phase;
@@ -423,8 +431,40 @@ final class FlightAnalyzer
                 $windFrom = $drift > 1.0 ? round(fmod(Geo::bearing($lat1, $lon1, $lat2, $lon2) + 180.0, 360.0)) : null;
             }
 
-            return $phase->withCircles(round($turned / 360.0, 1), null !== $radius ? round($radius) : null, null !== $bank ? round($bank) : null, $windSpeed, $windFrom);
+            $centring = $turned >= 360.0 * self::CENTRING_MIN_TURNS ? self::centring($phase, $circle, $vario, $latitude, $longitude) : null;
+
+            return $phase->withCircles(round($turned / 360.0, 1), null !== $radius ? round($radius) : null, null !== $bank ? round($bank) : null, $windSpeed, $windFrom, $centring);
         }, $phases);
+    }
+
+    /**
+     * Where the thermal climbed best around the circles: the average vario in each eighth of the
+     * circle, from north clockwise, by the bearing of the glider from the centre of its circle (the
+     * average position over the circle around that second, which follows the drift). An eighth
+     * crossed for less than CENTRING_MIN_SECONDS says nothing (null).
+     *
+     * @param list<float> $vario
+     * @param list<float> $latitude
+     * @param list<float> $longitude
+     *
+     * @return list<?float>
+     */
+    private static function centring(Phase $phase, int $circle, array $vario, array $latitude, array $longitude): array
+    {
+        $half = intdiv($circle, 2);
+        $sums = array_fill(0, 8, 0.0);
+        $counts = array_fill(0, 8, 0);
+        for ($i = $phase->start + $half; $i <= $phase->end - $half; ++$i) {
+            $from = $i - $half;
+            $length = 2 * $half + 1;
+            $lat = array_sum(\array_slice($latitude, $from, $length)) / $length;
+            $lon = array_sum(\array_slice($longitude, $from, $length)) / $length;
+            $sector = ((int) floor((Geo::bearing($lat, $lon, $latitude[$i], $longitude[$i]) + 22.5) / 45.0)) % 8;
+            $sums[$sector] += $vario[$i];
+            ++$counts[$sector];
+        }
+
+        return array_map(static fn (float $sum, int $count): ?float => $count >= self::CENTRING_MIN_SECONDS ? round($sum / $count, 2) : null, $sums, $counts);
     }
 
     /**

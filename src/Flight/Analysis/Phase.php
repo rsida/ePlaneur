@@ -13,21 +13,26 @@ final readonly class Phase
     public const string GLIDE = 'glide';
     /** Climbing in straight flight: slope or wave lift. */
     public const string LIFT = 'lift';
+    /** The tow or winch climb, before the release: straight and climbing, but not lift. */
+    public const string LAUNCH = 'launch';
 
     /**
-     * @param int         $start      index in the 1 s series
-     * @param int         $end        index in the 1 s series (included)
-     * @param float       $gain       metres gained (negative: lost)
-     * @param float       $distance   metres flown
-     * @param float|null  $glideRatio distance over height lost (glides that lose height)
-     * @param string|null $direction  "left" or "right" (thermals)
-     * @param float       $straight   metres between its first and last points (a glide flown
-     *                                straight has its distance)
-     * @param float|null  $turns      full turns (thermals)
-     * @param float|null  $radius     metres, from the speed and the turn rate (thermals)
-     * @param float|null  $bank       degrees, tan(bank) = v·ω / g (thermals)
-     * @param float|null  $windSpeed  km/h, drift of the circles (thermals)
-     * @param float|null  $windFrom   degrees the wind blows from (thermals)
+     * @param int               $start      index in the 1 s series
+     * @param int               $end        index in the 1 s series (included)
+     * @param float             $gain       metres gained (negative: lost)
+     * @param float             $distance   metres flown
+     * @param float|null        $glideRatio distance over height lost (glides that lose height)
+     * @param string|null       $direction  "left" or "right" (thermals)
+     * @param float             $straight   metres between its first and last points (a glide flown
+     *                                      straight has its distance)
+     * @param float|null        $turns      full turns (thermals)
+     * @param float|null        $radius     metres, from the speed and the turn rate (thermals)
+     * @param float|null        $bank       degrees, tan(bank) = v·ω / g (thermals)
+     * @param float|null        $windSpeed  km/h, drift of the circles (thermals)
+     * @param float|null        $windFrom   degrees the wind blows from (thermals)
+     * @param list<?float>|null $centring   average vario (m/s) in each eighth of the circles, from
+     *                                      north clockwise: where the glider was around the centre of
+     *                                      its circle (thermals, null when too short)
      */
     public function __construct(
         public string $type,
@@ -43,6 +48,7 @@ final readonly class Phase
         public ?float $bank = null,
         public ?float $windSpeed = null,
         public ?float $windFrom = null,
+        public ?array $centring = null,
     ) {
     }
 
@@ -53,11 +59,13 @@ final readonly class Phase
     }
 
     /**
-     * The same thermal with its turns, radius, bank and wind.
+     * The same thermal with its turns, radius, bank, wind and centring.
+     *
+     * @param list<?float>|null $centring
      */
-    public function withCircles(float $turns, ?float $radius, ?float $bank, ?float $windSpeed, ?float $windFrom): self
+    public function withCircles(float $turns, ?float $radius, ?float $bank, ?float $windSpeed, ?float $windFrom, ?array $centring = null): self
     {
-        return new self($this->type, $this->start, $this->end, $this->gain, $this->distance, $this->glideRatio, $this->direction, $this->straight, $turns, $radius, $bank, $windSpeed, $windFrom);
+        return new self($this->type, $this->start, $this->end, $this->gain, $this->distance, $this->glideRatio, $this->direction, $this->straight, $turns, $radius, $bank, $windSpeed, $windFrom, $centring);
     }
 
     /** Seconds. */

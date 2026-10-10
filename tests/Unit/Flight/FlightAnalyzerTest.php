@@ -80,6 +80,33 @@ final class FlightAnalyzerTest extends TestCase
         self::assertEqualsWithDelta(180.0, $analysis->statistics['windFrom'], 10.0);
     }
 
+    public function testTheCentringTellsWhereTheThermalIsStronger(): void
+    {
+        // The same six turns, climbing 2 m/s plus 1 m/s on the north-east side of the circle and
+        // minus 1 m/s on the south-west side
+        $fixes = FlightSamples::glideThermalGlide();
+        $altitude = 1381.0;
+        foreach ($fixes as $t => $fix) {
+            if ($t < 120 || $t >= 300) {
+                continue;
+            }
+            $angle = deg2rad(12.0 * ($t - 120));
+            // Bearing of the glider from the centre of the circle
+            $around = atan2(sin($angle), -cos($angle));
+            $fixes[$t] = new Fix($fix->time, $fix->latitude, $fix->longitude, $altitude);
+            $altitude += 2.0 + cos($around - deg2rad(45.0));
+        }
+        $thermal = (new FlightAnalyzer())->analyze(self::track($fixes))->phases[1];
+
+        self::assertNotNull($thermal->centring);
+        self::assertCount(8, $thermal->centring);
+        $best = array_keys($thermal->centring, max($thermal->centring))[0];
+        $worst = array_keys($thermal->centring, min($thermal->centring))[0];
+        self::assertSame(1, $best, 'North-east');
+        self::assertSame(5, $worst, 'South-west');
+        self::assertGreaterThan(1.5, $thermal->centring[1] - $thermal->centring[5]);
+    }
+
     public function testAStraightClimbIsSlopeOrWaveLift(): void
     {
         // Straight flight climbing 1.5 m/s for two and a half minutes, after a glide
@@ -211,6 +238,28 @@ final class FlightAnalyzerTest extends TestCase
 
         self::assertSame($expected, (new FlightAnalyzer())->analyze(self::track($fixes))->launch, 'Still at the beginning');
         self::assertSame($expected, (new FlightAnalyzer())->analyze(self::track(\array_slice($fixes, 28), [$airfield]))->launch, 'At the height of the departure airfield');
+    }
+
+    public function testTheTowClimbIsNotSlopeLift(): void
+    {
+        // 30 s still, 10 s of ground roll, 200 s climbing 3 m/s behind the tug, then a glide
+        $fixes = [];
+        for ($t = 0; $t < 440; ++$t) {
+            $x = match (true) {
+                $t < 30 => 0.0,
+                $t < 40 => 1.5 * ($t - 30) ** 2,
+                default => 150.0 + 30.0 * ($t - 40),
+            };
+            $altitude = 200.0 + 3.0 * min(200, max(0, $t - 40)) - max(0, $t - 240);
+            $fixes[] = new Fix((float) $t, ...FlightSamples::toLatLon($x, 0), altitude: $altitude);
+        }
+        $analysis = (new FlightAnalyzer())->analyze(self::track($fixes));
+        $types = array_map(static fn (Phase $phase): string => $phase->type, $analysis->phases);
+
+        self::assertSame(Launch::Aerotow, $analysis->launch);
+        self::assertContains(Phase::LAUNCH, $types);
+        self::assertNotContains(Phase::LIFT, $types);
+        self::assertSame(0, $analysis->statistics['lifts']);
     }
 
     /**

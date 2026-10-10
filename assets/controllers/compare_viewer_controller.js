@@ -125,7 +125,7 @@ export default class extends Controller {
             layers: [
                 ...(this.is3d ? [
                     ...taskLayers('compare', this.comparison.task, { top: this.top }),
-                    ...gliders.flatMap((glider, n) => thermalLayers(`compare-${n}`, glider.track, glider.track.thermals ?? [], glider.index, { color: glider.color })),
+                    ...gliders.flatMap((glider, n) => thermalLayers(`compare-${n}`, glider.track, glider.track.thermals ?? [], glider.index, { color: glider.color, zoom: this.map.getZoom() })),
                 ] : []),
                 new PathLayer({
                     id: 'tracks',

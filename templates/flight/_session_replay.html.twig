@@ -43,6 +43,13 @@
                     <option value="task"{% if align == 'task' %} selected{% endif %}>Départ du circuit ensemble</option>
                 </select>
             </label>
+            <label class="p-flight__select">
+                <span class="u-visually-hidden">Thermiques en 3D</span>
+                <select data-session-viewer-target="thermals" data-action="session-viewer#render">
+                    <option value="all">Thermiques : tous les pilotes</option>
+                    <option value="followed">Thermiques : pilote suivi</option>
+                </select>
+            </label>
         </div>
         <p class="p-flight__loading" data-session-viewer-target="status" role="status">Chargement des vols…</p>
     </div>

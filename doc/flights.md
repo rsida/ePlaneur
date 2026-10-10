@@ -120,10 +120,14 @@ administrator to add it.
    **Phases** (roadmap 7g2, checked on the flight of FDU of 2026-10-08 against its Condor Club page):
    - each thermal gets its full turns, radius (speed over turn rate), bank (tan = v·ω/g, from the
      ground speed: estimated) and wind (drift from the centre of its first circle to the centre of
-     its last one; FDU: 10 km/h from 262°, Condor Club 10 km/h from 246°);
+     its last one; FDU: 10 km/h from 262°, Condor Club 10 km/h from 246°); from two full turns, its
+     **centring** (roadmap 7h5): the average vario in each eighth of the circles, by the bearing of
+     the glider from the centre of its circle (the average position over one circle around that
+     second, which follows the drift), an eighth crossed for less than 3 s left out;
    - straight flight that climbs (1 m/s over 30 s, for a minute and 50 m) is its own phase, slope
      or wave lift (FDU: 1, +299 m; Condor Club 1, +269 m). A height recovery of Condor ("miracle")
-     reads as one too;
+     reads as one too. Before the release it is the tow or winch climb, a "launch" phase
+     (2026-10-10: the aerotow of C3-s117 read as 1,504 m of slope lift);
    - on the task (phases cut at the start and the finish): thermals, share of the time circling,
      average climb, left / right, glides (distance, speed, glide ratio: FDU 225 km at 206 km/h, 59.1;
      Condor Club 216 km at 208 km/h, 58.4), wind averaged as vectors, slope or wave lift;
@@ -229,13 +233,30 @@ and says so in an L line. The export reads back with `IgcReader`.
   of the last 30 s ("ø"), altitude and, in 3D, the height above the relief of the map (the real
   relief, not Condor's: a guide only).
 - 3D scene: the cylinders of the task stand up from the ground to 300 m above the highest glider,
-  translucent, with the line of the task at that height (`taskLayers()`); the thermals climbed so
-  far rise as columns from the altitude of their entry to their exit, the one being climbed growing
-  with the glider (`thermalLayers()`, red shades by climb rate on the flight page, the colour of the
-  pilot in a session or comparison; the thermals come with the replay data,
-  `FlightSession::thermalsOf()`); a sky with haze at the horizon (MapLibre `sky`).
-- The timeline of the flight page has a tick at each turnpoint reached (start, points, finish),
-  which moves the replay there.
+  translucent, with the line of the task at that height (`taskLayers()`); a sky with haze at the
+  horizon (MapLibre `sky`). Translucent volumes do not write the depth buffer, or the tracks drawn
+  after them would disappear behind their walls.
+- Lift in 3D (roadmap 7h1, `arrowLayer()`: a line and a head of four barbs in two planes, readable
+  from any side, thinner when zoomed out): the thermals climbed so far are arrows from the centre
+  of their first circle at the entry to the centre of their last circle at the exit, so they lean
+  with the drift (the wind), thicker and darker with the climb (under 1, 1 to 2, 2 to 3, over
+  3 m/s), the one being climbed growing with the glider (`thermalLayers()`; the colour of the pilot
+  in a comparison; the thermals come with the replay data, `FlightSession::thermalsOf()`). The
+  slope or wave lift phases get an orange band over the track and orange arrows every 400 m coming
+  up to it from 150 m below on the side of the wind of the flight (`liftLayers()`).
+- Curtain (roadmap 7h2): in 3D a line down to the ground every 2 s, in the colour of the track, so
+  the curtain reads altitude and height above the relief. The track (and the curtain) can be
+  coloured by vario, altitude or, with the polar of the glider, netto (grey out of the glides).
+- Timeline (roadmap 7h3): above the seek bar a tick at each turnpoint reached (start, points,
+  finish); under it each thermal as a band coloured by its climb, the slope lift in orange, the
+  final glide as a line, and the low points (the lowest of a glide ending in a thermal, 250 m or
+  more under the average entry of the thermals) as red triangles. A click moves the replay there;
+  hovering gives the values. The list of phases gives the same moments to the keyboard.
+- Centring radar (roadmap 7h5), beside the map: for the thermal at the moment shown (or the last
+  one before it), the eight sides of its circles as wedges, longer and darker the better they
+  climbed, north up; hovering a side gives its vario, and a sentence says which way to shift the
+  circles (or that the thermal was centred: less than 0.5 m/s between the best and the worst
+  side).
 - Switching to 3D picks the "Satellite" basemap unless the pilot chose one.
 - Replay ×1 to ×300, "Suivre" keeps the glider in the centre; in 3D the camera comes close and
   flies behind it, turned along its track of the last minute (`chaseBearing()`: the course, not

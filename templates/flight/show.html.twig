@@ -186,6 +186,7 @@
                         <select data-flight-viewer-target="colors" data-action="flight-viewer#setColors">
                             <option value="vario">Trace : vario</option>
                             <option value="altitude">Trace : altitude</option>
+                            {% if performance %}<option value="netto">Trace : netto</option>{% endif %}
                         </select>
                     </label>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
@@ -220,6 +221,15 @@
                     </section>
                 {% endif %}
 
+                <section class="l-stack l-stack--sm p-flight__radar" data-flight-viewer-target="radar" hidden>
+                    <h2 class="p-flight__side-title" data-flight-viewer-target="radarTitle">Centrage</h2>
+                    <canvas class="p-flight__radar-canvas" width="200" height="200" data-flight-viewer-target="radarCanvas"
+                            data-action="mousemove->flight-viewer#pointRadar mouseleave->flight-viewer#leaveRadar"
+                            role="img" aria-label="Vario moyen de chaque côté des cercles"></canvas>
+                    <p class="p-flight__radar-value" data-flight-viewer-target="radarValue"></p>
+                    <p class="p-flight__radar-advice" data-flight-viewer-target="radarAdvice"></p>
+                </section>
+
                 <section class="l-stack l-stack--sm">
                     <h2 class="p-flight__side-title">Thermiques et transitions</h2>
                     <ol class="p-flight__phases" data-flight-viewer-target="phases"></ol>
@@ -247,6 +257,8 @@
                     <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="1" aria-label="Position dans le vol"
                            data-flight-viewer-target="seek" data-action="input->flight-viewer#seek">
                     <div class="p-flight__marks" data-flight-viewer-target="marks"></div>
+                    {# Thermals, slope lift, low points and final glide; the list of phases gives them to the keyboard #}
+                    <div class="p-flight__events" data-flight-viewer-target="events" aria-hidden="true"></div>
                 </div>
                 <button type="button" class="p-flight__moment" data-action="flight-viewer#copyMoment" title="Copier l’adresse de ce vol à l’instant affiché">
                     <twig:ux:icon name="link" /><span class="u-visually-hidden">Lien vers cet instant</span>
@@ -289,7 +301,7 @@
                             <tbody>
                                 {% for phase in analysis.phases %}
                                     <tr class="p-flight__phase-row p-flight__phase-row--{{ phase.type }}">
-                                        <th scope="row">{{ {thermal: 'Thermique', glide: 'Transition', lift: 'Pente ou onde'}[phase.type] }}{% if phase.direction %} {{ phase.direction == 'left' ? 'G' : 'D' }}{% endif %}</th>
+                                        <th scope="row">{{ {thermal: 'Thermique', glide: 'Transition', lift: 'Pente ou onde', launch: 'Lancement'}[phase.type] }}{% if phase.direction %} {{ phase.direction == 'left' ? 'G' : 'D' }}{% endif %}</th>
                                         <td><button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ phase.start }}">{{ phase.start|flight_clock }}</button></td>
                                         <td>{{ phase.duration|flight_clock }}</td>
                                         <td>{{ altitude[phase.start]|number_format(0, ',', ' ') }} → {{ altitude[phase.end]|number_format(0, ',', ' ') }} m</td>

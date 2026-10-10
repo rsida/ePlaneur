@@ -98,19 +98,19 @@ final readonly class FlightSession
     }
 
     /**
-     * Thermals of a flight for the 3D replays (columns where the pilot climbed): first and last
-     * second, average climb.
+     * Thermals of a flight for the 3D replays (arrows where the pilot climbed): first and last
+     * second, average climb, full turns (for the centres of the circles).
      *
      * @param array<string, mixed> $analysis Flight::getAnalysis()
      *
-     * @return list<array{start: int, end: int, vario: float}>
+     * @return list<array{start: int, end: int, vario: float, turns: ?float}>
      */
     public static function thermalsOf(array $analysis): array
     {
         $thermals = [];
         foreach ($analysis['phases'] ?? [] as $phase) {
             if ('thermal' === $phase['type']) {
-                $thermals[] = ['start' => (int) $phase['start'], 'end' => (int) $phase['end'], 'vario' => (float) $phase['vario']];
+                $thermals[] = ['start' => (int) $phase['start'], 'end' => (int) $phase['end'], 'vario' => (float) $phase['vario'], 'turns' => isset($phase['turns']) ? (float) $phase['turns'] : null];
             }
         }
 
