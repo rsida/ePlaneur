@@ -8,6 +8,7 @@ use App\Entity\Flight;
 use App\Flight\Analysis\FlightAnalyzer;
 use App\Flight\Fix;
 use App\Flight\FlightComparison;
+use App\Flight\Ghost;
 use App\Flight\Track;
 use App\Flight\Turnpoint;
 use PHPUnit\Framework\TestCase;
@@ -46,6 +47,38 @@ final class FlightComparisonTest extends TestCase
         $thermals = $comparison->thermals(0);
         self::assertCount(1, $thermals);
         self::assertEqualsWithDelta(3500, $thermals[0]['at'], FlightComparison::STEP);
+    }
+
+    public function testTheWaterfallSaysTheTimeWasLostCircling(): void
+    {
+        $comparison = FlightComparison::of($this->flight('Slow', 1.5), $this->flight('Fast'));
+        self::assertNotNull($comparison);
+        $waterfall = $comparison->waterfall();
+
+        self::assertCount(1, $waterfall);
+        self::assertEqualsWithDelta(90, $waterfall[0]['gap'], 2);
+        self::assertEqualsWithDelta(90, $waterfall[0]['circling'], 12, 'Lost circling');
+        self::assertEqualsWithDelta(0, $waterfall[0]['straight'], 12);
+        self::assertSame(0, $waterfall[0]['before']);
+        self::assertSame($waterfall[0]['gap'], $waterfall[0]['after']);
+    }
+
+    public function testTheGhostIsTheBestOtherPilot(): void
+    {
+        $slow = $this->flight('Slow', 1.5);
+        $fast = $this->flight('Fast');
+        $ghost = Ghost::of($slow, [$fast, $this->flight('Slower', 2.0)]);
+
+        self::assertNotNull($ghost);
+        self::assertSame('Fast', $ghost['pilot']);
+        self::assertSame(1, $ghost['rank']);
+        self::assertSame(0, $ghost['offset'], 'Both crossed the start at the same second of their tracks');
+        self::assertEqualsWithDelta(90, end($ghost['gaps']), 2);
+        self::assertCount(\count($ghost['gaps']), \array_slice($ghost['times'], 0, \count($ghost['gaps'])));
+
+        // The winner gets the second as a ghost; alone, none
+        self::assertSame('Slow', Ghost::of($fast, [$slow])['pilot'] ?? null);
+        self::assertNull(Ghost::of($fast, []));
     }
 
     public function testFlightsOfDifferentTasksAreNotCompared(): void

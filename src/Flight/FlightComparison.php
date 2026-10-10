@@ -113,6 +113,46 @@ final readonly class FlightComparison
     }
 
     /**
+     * Where the time was lost or gained, leg by leg: the gap made on each leg completed by both
+     * flights, split into the time spent circling (more or weaker thermals) and the time flying
+     * straight (slower glides, detours), with the gap before and after the leg (a waterfall; positive:
+     * the flight is behind) and what each pilot did on it.
+     *
+     * @return list<array{from: string, to: string, circling: int, straight: int, gap: int, before: int, after: int, flight: Stretch, reference: Stretch}>
+     */
+    public function waterfall(): array
+    {
+        $rows = [];
+        $total = 0;
+        $points = $this->flight->getAnalysis()['task']['turnpoints'];
+        $others = $this->reference->getAnalysis()['task']['turnpoints'];
+        for ($k = 1; $k < \count($points) - 1; ++$k) {
+            $mine = [$points[$k]['reached'] ?? null, $points[$k + 1]['reached'] ?? null];
+            $theirs = [$others[$k]['reached'] ?? null, $others[$k + 1]['reached'] ?? null];
+            if (\in_array(null, [...$mine, ...$theirs], true)) {
+                break;
+            }
+            $flight = self::describe($this->flight->getAnalysis(), $mine[0], $mine[1]);
+            $reference = self::describe($this->reference->getAnalysis(), $theirs[0], $theirs[1]);
+            $circling = $flight['circling'] - $reference['circling'];
+            $straight = ($flight['duration'] - $flight['circling']) - ($reference['duration'] - $reference['circling']);
+            $rows[] = [
+                'from' => $points[$k]['name'],
+                'to' => $points[$k + 1]['name'],
+                'circling' => $circling,
+                'straight' => $straight,
+                'gap' => $circling + $straight,
+                'before' => $total,
+                'after' => $total += $circling + $straight,
+                'flight' => $flight,
+                'reference' => $reference,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
      * Stretches of the task where the flight lost (or gained) the most time on the reference, the
      * biggest first, with what each pilot did there. Stretches do not overlap.
      *

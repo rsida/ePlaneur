@@ -195,6 +195,10 @@
                                 <span><strong>Forte descendance</strong> : flèche bleue vers le bas, là où l’air descendait à plus de 2 m/s (netto).</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--wind" aria-hidden="true"></span>
                                 <span><strong>Manche à air</strong> : flèche blanche au sommet de chaque thermique, dans le sens où va le vent, plus longue quand il est fort (vitesse affichée de près).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--ghost" aria-hidden="true"></span>
+                                <span><strong>Fantôme</strong> (bouton « Fantôme ») : le meilleur autre pilote de la course, parti au même moment que vous, avec sa traîne ; l’écart le long du circuit est sur son drapeau et à côté de la carte.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--speed" aria-hidden="true"></span>
+                                <span><strong>Trace : vitesse / MacCready</strong> : chaque transition en bleu si elle était trop lente, en vert à la bonne vitesse, en orange trop rapide, pour la montée moyenne de vos thermiques (polaire du planeur, vent retiré).</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--curtain" aria-hidden="true"></span>
                                 <span><strong>Rideau et ombre</strong> : des traits vers le sol aux couleurs de la trace, pour lire la hauteur, et l’ombre de la trace sur le relief.</span></li>
                         </ul>
@@ -241,7 +245,7 @@
                         <select data-flight-viewer-target="colors" data-action="flight-viewer#setColors">
                             <option value="vario">Trace : vario</option>
                             <option value="altitude">Trace : altitude</option>
-                            {% if performance %}<option value="netto">Trace : netto</option>{% endif %}
+                            {% if performance %}<option value="netto">Trace : netto</option><option value="speed">Trace : vitesse / MacCready</option>{% endif %}
                         </select>
                     </label>
                     <label class="p-flight__select" data-flight-viewer-target="airChoice" hidden>
@@ -255,6 +259,7 @@
                     {% if analysis.slopes.cells ?? null %}
                         <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="slopes" data-action="flight-viewer#toggleSlopes" title="Les pentes face au vent de la tâche, où l’on attend de l’ascendance de pente"><twig:ux:icon name="mountain" /> Pentes</button>
                     {% endif %}
+                    <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="ghost" data-action="flight-viewer#toggleGhost" hidden><twig:ux:icon name="glider" /><span> Fantôme</span></button>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="pilot" data-action="flight-viewer#togglePilot" title="En 3D, la caméra dans le planeur, inclinée avec lui"><twig:ux:icon name="glider" /> Vue pilote</button>
                 </div>
@@ -271,6 +276,7 @@
                     <div><dt>Vitesse sol</dt><dd data-flight-viewer-target="nowSpeed">—</dd></div>
                     <div><dt>Vario (4 s)</dt><dd data-flight-viewer-target="nowVario">—</dd></div>
                     {% if analysis.series.ground ?? null %}<div><dt>Hauteur sol</dt><dd data-flight-viewer-target="nowHeight">—</dd></div>{% endif %}
+                    <div hidden><dt data-flight-viewer-target="nowGhostLabel">Écart</dt><dd data-flight-viewer-target="nowGhost">—</dd></div>
                     {% if analysis.task %}<div><dt>Finesse requise (arrivée)</dt><dd data-flight-viewer-target="nowRequired">—</dd></div>{% endif %}
                 </dl>
                 <p class="p-flight__phase" data-flight-viewer-target="nowPhase"></p>

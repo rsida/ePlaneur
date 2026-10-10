@@ -190,6 +190,35 @@
             </div>
         </div>
 
+        {% set waterfall = comparison.waterfall %}
+        {% if waterfall|length > 0 %}
+            {# Where the time was lost or gained, leg by leg: floating bars from the gap before the leg to the gap after it #}
+            {% set ends = [0]|merge(waterfall|map(r => r.before))|merge(waterfall|map(r => r.after)) %}
+            {% set low = min(ends) %}{% set high = max(ends) %}{% set span = max(1, high - low) %}
+            <section class="l-container l-stack l-stack--sm p-compare__waterfall" aria-labelledby="waterfall-title">
+                <twig:Ui:Heading level="2" size="h3" id="waterfall-title">Où {{ nameA }} a perdu ou gagné du temps sur {{ nameB }}</twig:Ui:Heading>
+                <p class="u-note">Branche par branche : l’écart avant et après la branche, puis ce qui l’a fait, le temps en spirale (thermiques plus nombreux ou plus faibles) ou en ligne droite (transitions plus lentes, détours).</p>
+                <ol class="p-compare__waterfall-list" style="--zero: {{ ((0 - low) / span * 100)|round(2) }}%">
+                    {% for row in waterfall %}
+                        {% set left = (min(row.before, row.after) - low) / span * 100 %}
+                        {% set width = max(0.5, (row.gap|abs) / span * 100) %}
+                        <li class="p-compare__waterfall-row">
+                            <span class="p-compare__waterfall-leg">{{ row.from }} → {{ row.to }}</span>
+                            <span class="p-compare__waterfall-track" title="Écart avant : {{ row.before|flight_gap }} · après : {{ row.after|flight_gap }}">
+                                <span class="p-compare__waterfall-bar {{ row.gap > 0 ? 'p-compare__waterfall-bar--lost' : 'p-compare__waterfall-bar--won' }}" style="left: {{ left|round(2) }}%; width: {{ width|round(2) }}%"></span>
+                            </span>
+                            <span class="p-compare__waterfall-values">
+                                <strong class="{{ row.gap > 0 ? 'p-compare__lost' : (row.gap < 0 ? 'p-compare__won' : '') }}">{{ row.gap|flight_gap }}</strong>
+                                · en spirale {{ row.circling|flight_gap }} · en ligne droite {{ row.straight|flight_gap }}
+                                <span class="p-compare__waterfall-detail">{{ nameA }} : {{ row.flight.thermals }} th.{% if row.flight.climb %} à {{ row.flight.climb|number_format(1, ',', ' ') }} m/s{% endif %}{% if row.flight.glideSpeed %}, {{ row.flight.glideSpeed }} km/h{% endif %} · {{ nameB }} : {{ row.reference.thermals }} th.{% if row.reference.climb %} à {{ row.reference.climb|number_format(1, ',', ' ') }} m/s{% endif %}{% if row.reference.glideSpeed %}, {{ row.reference.glideSpeed }} km/h{% endif %}</span>
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ol>
+                <p class="u-note">Écart total à la fin de la dernière branche faite par les deux : <strong>{{ (waterfall|last).after|flight_gap }}</strong> (positif : {{ nameA }} derrière).</p>
+            </section>
+        {% endif %}
+
         <div class="l-container p-compare__thermals">
             <twig:Ui:Heading level="2" size="h3">Thermiques pris par chacun</twig:Ui:Heading>
             <div class="p-compare__columns">

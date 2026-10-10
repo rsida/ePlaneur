@@ -6,7 +6,7 @@ import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { bearing, distance } from '../flight/geo.js';
 import { addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
-import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, crossingLayers, gliderLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
+import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, crossingLayers, gliderLayers, trailLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
 
 /*
  * Flight viewer (templates/flight/show.html.twig): the flight of FlightController::analysis() on a
@@ -30,6 +30,8 @@ import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, crossingLayers,
  *   analysis), with which way to shift the circles.
  * - "Course": the lift the other pilots of the race found (SessionLift), wide translucent cylinders,
  *   those this flight missed in yellow, also as yellow triangles on the timeline.
+ * - "Fantôme": the best other pilot of the race replayed from the same start (Ghost), with the gap
+ *   along the task beside the map and on its flag.
  * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
  * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
  * - Two thermals picked in the list are compared: figures and the height gained over time.
@@ -46,6 +48,11 @@ const VARIO_CLASSES = [
 // Track coloured by altitude: from the lowest to the highest point of the flight, as on Condor Club
 const ALTITUDE_COLORS = [[94, 60, 153], [59, 82, 170], [44, 123, 182], [0, 166, 202], [0, 196, 160], [144, 220, 120], [249, 208, 87], [242, 135, 50], [215, 48, 39]];
 const CURTAIN_STEP = 2; // seconds between the lines of the curtain down to the ground in 3D
+// Speed of the glides against the MacCready speed of the climb met (the advice's thresholds, km/h):
+// too slow, right, too fast
+const SPEED_CLASSES = [[70, 130, 220], [92, 176, 112], [240, 150, 70]];
+const SPEED_SLOW = 20;
+const SPEED_FAST = 30;
 // Netto colour of the track out of the glides (in a thermal the polar says nothing)
 const NO_NETTO = [150, 150, 150];
 // Low points on the timeline: the lowest of each glide ending in a thermal, when that low is this
@@ -68,6 +75,9 @@ const TOO_LOW_END = 180;
 const SLOPE_NEAR = 300;
 // Required glide ratios above this are shown as this (the finish is out of reach)
 const REQUIRED_MAX = 100;
+// The ghost (best other pilot of the race): its colour and the seconds of its trail
+const GHOST_COLOR = [190, 200, 255];
+const GHOST_TRAIL = 90;
 // Eighths of the centring radar, from north clockwise
 const SECTORS = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'];
 // Difference of climb between the best and the worst side under which a thermal is centred (m/s)
@@ -79,7 +89,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'nowGhost', 'nowGhostLabel'];
 
     static values = { url: String, label: String };
 
@@ -112,6 +122,16 @@ export default class extends Controller {
         this.series.height = ground ? altitude.map((value, i) => (ground[i] === null ? null : value - ground[i])) : null;
         this.series.required = this.requiredGlide();
         this.air = this.flight.sessionLift ?? null;
+        this.ghost = this.flight.ghost ?? null;
+        if (this.ghost && this.hasGhostTarget) {
+            this.ghostTarget.hidden = false;
+            this.ghostTarget.lastChild.textContent = ` Fantôme ${this.ghost.pilot}`;
+            this.ghostTarget.title = `Rejouer avec ${this.ghost.pilot} (${this.ghost.rank === 1 ? 'vainqueur' : `${this.ghost.rank}e`} de la course), parti au même moment`;
+        }
+        if (this.ghost && this.hasNowGhostLabelTarget) {
+            this.nowGhostLabelTarget.textContent = `Écart avec ${this.ghost.pilot}`;
+            this.nowGhostLabelTarget.closest('div').hidden = false;
+        }
         if (this.hasAirChoiceTarget) this.airChoiceTarget.hidden = !this.air?.thermals.length;
         this.top = this.series.altitude.reduce((top, altitude) => Math.max(top, altitude), 0);
         this.buildMap();
@@ -179,27 +199,39 @@ export default class extends Controller {
         const altitude = this.colorMode === 'altitude';
         const rgb = (c) => `rgb(${c.join(',')})`;
         const netto = this.colorMode === 'netto';
-        const colors = altitude ? ALTITUDE_COLORS : VARIO_CLASSES.map((c) => c.color);
+        const speed = this.colorMode === 'speed' && this.flight.speedToFly;
+        const colors = altitude ? ALTITUDE_COLORS : speed ? SPEED_CLASSES : VARIO_CLASSES.map((c) => c.color);
         const [low, high] = this.altitudeRange();
         this.legendTarget.querySelector('[data-legend="bar"]').style.background = `linear-gradient(to right, ${colors.map(rgb).join(', ')})`;
+        if (speed) {
+            const { speed: best } = this.flight.speedToFly;
+            this.legendTarget.querySelector('[data-legend="low"]').textContent = `Lent < ${best - SPEED_SLOW} km/h`;
+            this.legendTarget.querySelector('[data-legend="high"]').textContent = `> ${best + SPEED_FAST} km/h rapide`;
+
+            return;
+        }
         this.legendTarget.querySelector('[data-legend="low"]').textContent = altitude ? `${Math.round(low)} m` : `${netto ? 'Netto ' : ''}< −2 m/s`;
         this.legendTarget.querySelector('[data-legend="high"]').textContent = altitude ? `${Math.round(high)} m` : '> +2 m/s';
     }
 
     /**
-     * Runs of the track of the same colour class (vario, altitude or netto), drawn as one path each;
-     * the colour of each second is kept for the curtain.
+     * Runs of the track of the same colour class (vario, altitude, netto or speed of the glides
+     * against the MacCready speed), drawn as one path each; the colour of each second is kept for
+     * the curtain.
      */
     segments() {
         const { vario, altitude, netto } = this.series;
         const [low, high] = this.altitudeRange();
-        const mode = this.colorMode === 'netto' && !netto ? 'vario' : this.colorMode;
-        const classes = mode === 'altitude' ? ALTITUDE_COLORS : [...VARIO_CLASSES.map((c) => c.color), NO_NETTO];
+        const unavailable = (this.colorMode === 'netto' && !netto) || (this.colorMode === 'speed' && !this.flight.speedToFly);
+        const mode = unavailable ? 'vario' : this.colorMode;
+        const classes = mode === 'altitude' ? ALTITUDE_COLORS : mode === 'speed' ? [...SPEED_CLASSES, NO_NETTO] : [...VARIO_CLASSES.map((c) => c.color), NO_NETTO];
+        const glideSpeed = mode === 'speed' ? this.glideSpeedClasses() : null;
         const varioClass = (value) => VARIO_CLASSES.findIndex((c) => value <= c.max);
         const classOf = {
             altitude: (i) => Math.max(0, Math.min(classes.length - 1, Math.floor(((altitude[i] - low) / Math.max(1, high - low)) * classes.length))),
             vario: (i) => varioClass(vario[i]),
             netto: (i) => (netto[i] === null ? VARIO_CLASSES.length : varioClass(netto[i])),
+            speed: (i) => glideSpeed[i] ?? SPEED_CLASSES.length,
         }[mode];
         this.pointColors = new Array(this.count);
         const segments = [];
@@ -217,6 +249,23 @@ export default class extends Controller {
         }
 
         return segments;
+    }
+
+    /**
+     * Class of each second of the glides measured against the polar (speedToFly.glides: start and
+     * airspeed): too slow, right or too fast for the MacCready speed of the climb met.
+     */
+    glideSpeedClasses() {
+        const classes = new Array(this.count).fill(null);
+        const { speed: best, glides } = this.flight.speedToFly;
+        for (const [start, airspeed] of glides) {
+            const phase = this.flight.phases[this.phaseAt[start]];
+            if (!phase) continue;
+            const cls = airspeed < best - SPEED_SLOW ? 0 : airspeed > best + SPEED_FAST ? 2 : 1;
+            for (let i = phase.start; i <= phase.end; i += 1) classes[i] = cls;
+        }
+
+        return classes;
     }
 
     position(i, ground = false) {
@@ -278,6 +327,7 @@ export default class extends Controller {
             const details = readings(this.series, this.index, ground);
             layers.push(...gliderLayers('flight', [{ track: this.series, index: this.index, color: [255, 255, 255], flagColor: [25, 38, 48], label: this.labelValue, details, selected: false }], { is3d: this.is3d, zoom: this.map.getZoom() }));
         }
+        layers.push(...this.ghostLayers());
         // Under the track: the lift of the other pilots of the race
         layers.unshift(...sessionAirLayers('flight', this.air, { is3d: this.is3d, zoom: this.map.getZoom(), show: this.hasAirTarget ? this.airTarget.value : 'all' }));
         if (this.is3d) {
@@ -345,6 +395,44 @@ export default class extends Controller {
         } else {
             this.centerOnGlider();
         }
+    }
+
+    /** The ghost glider and its trail, when shown and in the air at that moment. */
+    ghostLayers() {
+        const ghost = this.ghost;
+        if (!ghost || (this.hasGhostTarget && this.ghostTarget.getAttribute('aria-pressed') !== 'true')) return [];
+        const index = this.index + ghost.offset;
+        if (index < 0 || index > ghost.latitude.length - 1) return [];
+        const glider = { track: ghost, index, color: GHOST_COLOR, flagColor: [62, 70, 120], label: `Fantôme ${ghost.pilot}`, details: [this.ghostGapText() ?? `${Math.round(ghost.altitude[Math.round(index)]).toLocaleString('fr-FR')} m`], selected: false };
+
+        return [
+            ...trailLayers('ghost', [glider], { is3d: this.is3d, seconds: GHOST_TRAIL, width: 2 }),
+            ...gliderLayers('ghost', [glider], { is3d: this.is3d, zoom: this.map.getZoom() }),
+        ];
+    }
+
+    /** The gap with the ghost at the moment shown, along the task: "2 min 46 s derrière". */
+    ghostGapText() {
+        const ghost = this.ghost;
+        const i = Math.round(this.index);
+        if (!ghost || ghost.times.length === 0 || i < ghost.times[0]) return null;
+        // The last step of the task the flight has reached
+        let lo = 0;
+        let hi = ghost.times.length - 1;
+        while (lo < hi) {
+            const mid = Math.ceil((lo + hi) / 2);
+            if (ghost.times[mid] <= i) lo = mid; else hi = mid - 1;
+        }
+        const gap = ghost.gaps[lo];
+        if (gap === undefined) return null;
+        if (gap === 0) return 'à égalité';
+
+        return `${FORMATS.gap(Math.abs(gap)).replace('+', '')} ${gap > 0 ? 'derrière' : 'devant'}`;
+    }
+
+    toggleGhost() {
+        this.ghostTarget.setAttribute('aria-pressed', String(this.ghostTarget.getAttribute('aria-pressed') !== 'true'));
+        this.render();
     }
 
     /** The slopes expected to work, on or off. */
@@ -1091,6 +1179,7 @@ export default class extends Controller {
         this.nowSpeedTarget.textContent = FORMATS.speed(speed[i]);
         this.nowVarioTarget.textContent = FORMATS.vario(vario[i]);
         if (this.hasNowHeightTarget) this.nowHeightTarget.textContent = this.series.height?.[i] == null ? '—' : FORMATS.altitude(this.series.height[i]);
+        if (this.hasNowGhostTarget && this.ghost) this.nowGhostTarget.textContent = this.ghostGapText() ?? '—';
         if (this.hasNowRequiredTarget) {
             const required = this.series.required[i];
             this.nowRequiredTarget.textContent = required === null ? '—' : required >= REQUIRED_MAX ? 'hors de portée' : String(Math.round(required));

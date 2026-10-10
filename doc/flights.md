@@ -391,9 +391,27 @@ rather than in time (`FlightComparison`):
 - **Viewer**: both tracks on the map, a chart of the gap and one of both altitudes along the task;
   the slider, the charts, the key moments and the thermals move both gliders to the same distance.
   The replay moves along the task at the pace of the first pilot (both gliders always at the same
-  distance), the camera behind the first one in 3D.
+  distance), the camera behind the first one in 3D. Between two steps of 250 m the gliders glide
+  (fractional index between the seconds of the two steps): moving step by step looked like two
+  frames a second.
   The colors of the two pilots are the tokens `--color-pilot-a` and `--color-pilot-b`, read by the
   JavaScript.
+
+- **Waterfall** (roadmap 7i4, `FlightComparison::waterfall()`): leg by leg, completed by both, the
+  gap before and after as a floating bar (red lost, green gained), split into the time circling and
+  the time flying straight, with the thermals, climb and glide speed of each pilot on the leg.
+
+Roadmap 7i4 on the flight page:
+
+- **Ghost** (`Ghost`, in `analyse.json`): the best other pilot of the same race (`findSameAir()`;
+  the second when the flight won) replayed from the same start (both cross the start line
+  together), with a trail of 90 s, in 2D, 3D and the pilot view, and the live gap along the task
+  (`FlightComparison` at each 250 m) on its flag and beside the map. Button "Fantôme <pilot>".
+  The best flight of the pilot on the same flight plan another day is not offered yet.
+- **Track by speed against MacCready** ("Trace : vitesse / MacCready", with the polar): each
+  glide measured by `GliderPerformance` (60 s and 2 km at least) in blue when its estimated
+  airspeed is 20 km/h or more under the MacCready speed of the average climb of the flight, orange
+  30 km/h or more over it (the thresholds of the advice), green between; the rest in grey.
 
 ## Progression
 

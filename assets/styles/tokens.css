@@ -80,6 +80,11 @@
     --color-climb-4: #800030;
     --color-slope-arrow: #ff8c00;
     --color-wave: #9650dc;
+    /* The ghost, and the glides against the MacCready speed (flight_viewer_controller.js) */
+    --color-ghost: #bec8ff;
+    --color-glide-slow: #4682dc;
+    --color-glide-right: #5cb070;
+    --color-glide-fast: #f09646;
     --color-windsock: #f5f8fc;
     --color-final-glide: var(--palette-navy);
     --color-low-point: var(--palette-red);

@@ -14,6 +14,7 @@ use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
 use App\Flight\FlightMailer;
 use App\Flight\FlightSession;
+use App\Flight\Ghost;
 use App\Flight\Glider\GliderPerformance;
 use App\Flight\IgcExporter;
 use App\Flight\Logbook;
@@ -286,18 +287,28 @@ final class FlightController extends AbstractController
 
     /**
      * What the viewer draws: 1 s series, phases, statistics and task (FlightAnalysis::toArray()),
-     * the netto vario of the glides when the polar of the glider is known, and the lift the other
-     * pilots of the race found (SessionLift).
+     * the netto vario and the speed of the glides against the MacCready speed when the polar of the
+     * glider is known, the lift the other pilots of the race found (SessionLift) and the ghost of
+     * its best pilot (Ghost).
      */
     #[Route('/{id<\d+>}/analyse.json', name: 'analysis', methods: ['GET'])]
     #[IsGranted(FlightVoter::VIEW, 'flight')]
     public function analysis(Flight $flight, FlightRepository $flights): JsonResponse
     {
         $analysis = $flight->getAnalysis();
-        $analysis['sessionLift'] = SessionLift::around($analysis, $flights->findSameAir($flight));
+        $sameAir = $flights->findSameAir($flight);
+        $analysis['sessionLift'] = SessionLift::around($analysis, $sameAir);
+        $analysis['ghost'] = Ghost::of($flight, $sameAir);
         $glider = $this->gliders->findOneByName($flight->getGlider());
         if (null !== $glider) {
-            $analysis['series']['netto'] = GliderPerformance::of($glider, $analysis)->netto;
+            $performance = GliderPerformance::of($glider, $analysis);
+            $analysis['series']['netto'] = $performance->netto;
+            // The airspeed of each glide against the MacCready speed of the climb met
+            $analysis['speedToFly'] = null !== $performance->speedToFly ? [
+                'speed' => round($performance->speedToFly['speed']),
+                'climb' => $performance->climb,
+                'glides' => array_map(static fn (array $glide): array => [$glide['start'], round($glide['airspeed'])], $performance->glides),
+            ] : null;
         }
         $response = new JsonResponse($analysis);
         $response->setPrivate();

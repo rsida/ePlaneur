@@ -66,9 +66,17 @@ export default class extends Controller {
         this.map?.remove();
     }
 
-    /** Index in the series of a flight at step k (its last point when it did not get that far). */
+    /**
+     * Index in the series of a flight at step k (its last point when it did not get that far). A
+     * fractional k gives a fractional index, between the seconds of the two steps around it: the
+     * replay glides between the steps instead of jumping 250 m at a time.
+     */
     indexAt(flight, k) {
-        return flight.times[Math.min(k, flight.times.length - 1)];
+        const last = flight.times.length - 1;
+        const a = Math.min(Math.floor(k), last);
+        const b = Math.min(a + 1, last);
+
+        return flight.times[a] + (flight.times[b] - flight.times[a]) * (k - Math.floor(k));
     }
 
     /* ---------- Map ---------- */
@@ -110,7 +118,7 @@ export default class extends Controller {
         const parameters = this.is3d ? {} : { depthCompare: 'always' };
         const gliders = this.flights.map((flight, n) => ({
             track: flight,
-            index: this.indexAt(flight, this.k),
+            index: this.indexAt(flight, this.kf ?? this.k),
             color: flight.color,
             label: flight.competitionId || flight.pilot,
             selected: n === 0,
@@ -155,7 +163,7 @@ export default class extends Controller {
         }
         this.chase = null;
         const [a] = this.flights;
-        const elevation = this.is3d ? a.altitude[this.indexAt(a, this.k)] : 0;
+        const elevation = this.is3d ? a.altitude[Math.round(this.indexAt(a, this.k))] : 0;
         easeAt(this.map, this.is3d ? { pitch: 62, bearing: this.map.getBearing() || -20, duration: 800 } : { pitch: 0, bearing: 0, duration: 600 }, elevation);
         this.render();
     }
@@ -244,7 +252,7 @@ export default class extends Controller {
         if (this.k >= this.steps - 1) this.k = 0;
         if (this.is3d) {
             // Close enough to see the gliders turn
-            const i = this.indexAt(a, this.k);
+            const i = Math.round(this.indexAt(a, this.k));
             easeAt(this.map, { center: [a.longitude[i], a.latitude[i]], zoom: Math.max(this.map.getZoom(), 12.5), pitch: 55, duration: 600 }, a.altitude[i]);
         }
         let clock = a.times[Math.min(this.k, a.times.length - 1)] - a.start;
@@ -255,7 +263,10 @@ export default class extends Controller {
             last = now;
             let k = this.k;
             while (k < a.times.length - 1 && a.times[k + 1] - a.start <= clock) k += 1;
-            this.moveTo(k);
+            // Between this step and the next, at the pace of the first pilot's clock
+            const span = k < a.times.length - 1 ? a.times[k + 1] - a.times[k] : 0;
+            const fraction = span > 0 ? Math.max(0, Math.min(1, (clock - (a.times[k] - a.start)) / span)) : 0;
+            this.moveTo(k + fraction, { fraction: true });
             if (this.is3d) this.followFirst();
             if (k >= a.times.length - 1) {
                 this.togglePlay();
@@ -271,9 +282,10 @@ export default class extends Controller {
     followFirst() {
         if (this.map.isEasing()) return;
         const [a] = this.flights;
-        const i = this.indexAt(a, this.k);
+        const i = this.indexAt(a, this.kf ?? this.k);
+        const [lon, lat, altitude] = positionAt(a, i);
         this.chase = chaseBearing(a, i, this.chase ?? this.map.getBearing());
-        this.map.jumpTo({ center: [a.longitude[i], a.latitude[i]], elevation: a.altitude[i], bearing: this.chase });
+        this.map.jumpTo({ center: [lon, lat], elevation: altitude, bearing: this.chase });
     }
 
     /** A key moment: framed on the map, both gliders at its end. */
@@ -282,7 +294,7 @@ export default class extends Controller {
         const to = Math.round(Number(currentTarget.dataset.to) / this.comparison.step);
         const bounds = newBounds();
         this.flights.forEach((flight) => {
-            for (let i = this.indexAt(flight, from); i <= this.indexAt(flight, to); i += 5) bounds.extend([flight.longitude[i], flight.latitude[i]]);
+            for (let i = Math.round(this.indexAt(flight, from)); i <= this.indexAt(flight, to); i += 5) bounds.extend([flight.longitude[i], flight.latitude[i]]);
         });
         if (!this.is3d) this.map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 600 });
         this.moveTo(to);
@@ -294,13 +306,15 @@ export default class extends Controller {
         const k = Math.round(Number(currentTarget.dataset.at) / this.comparison.step);
         this.moveTo(k);
         const [a] = this.flights;
-        const i = this.indexAt(a, k);
+        const i = Math.round(this.indexAt(a, k));
         this.map.jumpTo({ center: [a.longitude[i], a.latitude[i]], elevation: this.is3d ? a.altitude[i] : 0 });
         this.mapTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    moveTo(k, { fromChart = false } = {}) {
-        this.k = Math.max(0, Math.min(this.steps - 1, Math.round(k)));
+    moveTo(k, { fromChart = false, fraction = false } = {}) {
+        // The replay keeps the fraction for the gliders; the values and the slider show the step
+        this.kf = fraction ? Math.max(0, Math.min(this.steps - 1, k)) : null;
+        this.k = Math.max(0, Math.min(this.steps - 1, fraction ? Math.floor(k) : Math.round(k)));
         const [a, b] = this.flights;
         this.seekTarget.value = String(this.k);
         this.nowDistanceTarget.textContent = FORMATS.distance((this.k * this.comparison.step) / 1000);

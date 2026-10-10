@@ -591,6 +591,23 @@
     transform: rotate(180deg);
 }
 
+.p-flight__swatch--ghost {
+    --arrow: var(--color-ghost);
+}
+
+.p-flight__swatch--ghost::after {
+    width: 70%;
+    height: 3px;
+    align-self: center;
+    border-radius: 2px;
+    background-color: var(--color-ghost);
+    content: "";
+}
+
+.p-flight__swatch--speed {
+    background: linear-gradient(90deg, var(--color-glide-slow) 0 33%, var(--color-glide-right) 33% 66%, var(--color-glide-fast) 66%);
+}
+
 .p-flight__swatch--curtain {
     background: repeating-linear-gradient(90deg, var(--color-climb-1) 0 1px, transparent 1px 4px), var(--color-dark-soft);
 }
@@ -1540,4 +1557,72 @@
     .p-glider__sheet {
         grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
     }
+}
+
+/* Waterfall of the gap, leg by leg (comparison) */
+.p-compare__waterfall {
+    margin-block: var(--space-6);
+}
+
+.p-compare__waterfall-list {
+    display: grid;
+    /* The stack shrinks its children to their content: the bars take the whole width */
+    align-self: stretch;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+}
+
+.p-compare__waterfall-row {
+    display: grid;
+    grid-template-areas: 'leg' 'track' 'values';
+    gap: var(--space-1);
+}
+
+@media (width >= 48em) {
+    .p-compare__waterfall-row {
+        grid-template-areas: 'leg track' 'values values';
+        grid-template-columns: minmax(10rem, 16rem) minmax(0, 1fr);
+        align-items: center;
+    }
+}
+
+.p-compare__waterfall-leg {
+    grid-area: leg;
+    font-weight: 600;
+}
+
+/* The scale of the gaps, with zero marked */
+.p-compare__waterfall-track {
+    grid-area: track;
+    position: relative;
+    height: var(--space-4);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(90deg, transparent calc(var(--zero) - 1px), var(--color-text-muted) calc(var(--zero) - 1px) calc(var(--zero) + 1px), transparent calc(var(--zero) + 1px)), var(--color-tint-cool);
+}
+
+.p-compare__waterfall-bar {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    border-radius: 2px;
+}
+
+.p-compare__waterfall-bar--lost {
+    background-color: var(--color-danger);
+}
+
+.p-compare__waterfall-bar--won {
+    background-color: var(--color-success);
+}
+
+.p-compare__waterfall-values {
+    grid-area: values;
+}
+
+.p-compare__waterfall-detail {
+    display: block;
+    color: var(--color-text-muted);
 }
