@@ -10,7 +10,8 @@ import { valueTip } from '../flight/chart.js';
  * (clicking one moves the flight viewer there) and the MacCready speed of the flight.
  *
  * curves: [{ label, points: [[km/h, m/s], ...] }] (colours: --color-pilot-b then --color-pilot-a);
- * glides: [[km/h, m/s, second of the flight], ...]; speedToFly: km/h or null.
+ * glides: [[km/h, m/s, second of the flight, netto m/s or null, MacCready m/s], ...];
+ * speedToFly: km/h or null.
  */
 
 export default class extends Controller {
@@ -69,7 +70,10 @@ export default class extends Controller {
                     if (value != null) lines.push({ text: `${curve.label} : chute ${number(-value, 2)} m/s, finesse ${Math.round(speeds[i] / 3.6 / -value)}`, color: colors[n % colors.length] });
                 });
                 const glide = glidesAt.get(speeds[i]);
-                if (glide) lines.push({ text: `Transition : chute ${number(glide[1], 2)} m/s, finesse ${glide[1] > 0 ? Math.round(glide[0] / 3.6 / glide[1]) : '∞'}`, color: glideColor });
+                if (glide) {
+                    lines.push({ text: `Transition : chute ${number(glide[1], 2)} m/s, finesse ${glide[1] > 0 ? Math.round(glide[0] / 3.6 / glide[1]) : '∞'}`, color: glideColor });
+                    if (glide[3] != null) lines.push({ text: `Netto ${glide[3] > 0 ? '+' : ''}${number(glide[3], 1)} m/s, MacCready ${number(glide[4], 1)}`, color: glideColor });
+                }
 
                 return lines;
             })],

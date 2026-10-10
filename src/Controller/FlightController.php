@@ -283,12 +283,20 @@ final class FlightController extends AbstractController
         return $response;
     }
 
-    /** What the viewer draws: 1 s series, phases, statistics and task (FlightAnalysis::toArray()). */
+    /**
+     * What the viewer draws: 1 s series, phases, statistics and task (FlightAnalysis::toArray()),
+     * and the netto vario of the glides when the polar of the glider is known.
+     */
     #[Route('/{id<\d+>}/analyse.json', name: 'analysis', methods: ['GET'])]
     #[IsGranted(FlightVoter::VIEW, 'flight')]
     public function analysis(Flight $flight): JsonResponse
     {
-        $response = new JsonResponse($flight->getAnalysis());
+        $analysis = $flight->getAnalysis();
+        $glider = $this->gliders->findOneByName($flight->getGlider());
+        if (null !== $glider) {
+            $analysis['series']['netto'] = GliderPerformance::of($glider, $analysis)->netto;
+        }
+        $response = new JsonResponse($analysis);
         $response->setPrivate();
         $response->setMaxAge(3600);
 
@@ -356,6 +364,7 @@ final class FlightController extends AbstractController
                 'longitude' => $analysis['series']['longitude'],
                 'altitude' => $analysis['series']['altitude'],
                 'speed' => $analysis['series']['speed'],
+                'thermals' => FlightSession::thermalsOf($analysis),
             ];
         }
         $response = new JsonResponse(['task' => $flight->getAnalysis()['task'], 'step' => FlightComparison::STEP, 'flights' => $tracks]);

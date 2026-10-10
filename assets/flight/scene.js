@@ -1,4 +1,4 @@
-import { LineLayer, PathLayer, SolidPolygonLayer, TextLayer } from '@deck.gl/layers';
+import { ColumnLayer, LineLayer, PathLayer, SolidPolygonLayer, TextLayer } from '@deck.gl/layers';
 import { bearing } from './geo.js';
 
 /*
@@ -11,12 +11,15 @@ import { bearing } from './geo.js';
  * - a flag above it: its name (or competition id) and altitude on its colour;
  * - its trail: the last minutes of its track, fading out behind it;
  * - in 3D, for the glider followed, a curtain down to the ground under its trail, which shows how
- *   high it flies above the relief.
+ *   high it flies above the relief;
+ * - in 3D, the cylinders of the turnpoints standing up to the sky and the line of the task above
+ *   the gliders, and the thermals as columns from where the pilot entered them to where they left.
  *
  * A glider is { track: { latitude, longitude, altitude, speed }, index, color, label, selected }:
  * `index` is its second in the track, between two seconds during a replay. Optional: `flagColor`
- * (the colour of its flag when it is not its own, e.g. a white glider) and `flagRow` (flags of
- * gliders close to each other put one above the other).
+ * (the colour of its flag when it is not its own, e.g. a white glider), `flagRow` (flags of
+ * gliders close to each other put one above the other) and `details` (lines under the name in the
+ * flag instead of the altitude, see readings()).
  */
 
 /*
@@ -30,6 +33,15 @@ const FIN = [[0, -5.3, 0.2], [0, -6.3, 1.8]];
 const SPAN = 15;
 const GLIDER_PIXELS = 56;
 const TRAIL_CHUNKS = 6;
+// Seconds of the average climb in the flag ("ø"), the integrator of a glider's vario
+const AVERAGE_CLIMB = 30;
+// Metres the cylinders of the turnpoints and the line of the task rise above the highest glider
+const TASK_ABOVE = 300;
+// Thermal columns by climb rate, from weak to strong
+// Translucent volumes (cylinders, thermals) leave the depth buffer alone: otherwise the tracks drawn
+// after them disappear behind their walls
+const SEE_THROUGH = { depthWriteEnabled: false };
+const CLIMB_COLORS = [{ max: 1, color: [240, 150, 70] }, { max: 2, color: [226, 92, 60] }, { max: Infinity, color: [200, 30, 45] }];
 
 /** Signed difference from one heading to another, in degrees (-180 to 180, positive to the right). */
 export function angleDifference(from, to) {
@@ -107,6 +119,10 @@ export function gliderLayers(id, gliders, { is3d, zoom }) {
     });
     // The glider followed is drawn last, over the others
     items.sort((a, b) => Number(a.selected) - Number(b.selected));
+    const lines = (item) => [item.label, ...(item.details ?? [`${Math.round(item.altitude).toLocaleString('fr-FR')} m`])];
+    const size = (item) => (item.selected || item.details ? 13 : 11);
+    // Flags put one above the other: each row as high as the tallest flag
+    const row = Math.max(0, ...items.map((item) => lines(item).length * size(item) * 1.15 + 10));
     const always = { depthCompare: 'always' };
     const outline = (item) => (item.selected ? [255, 255, 255] : [25, 38, 48]);
     const layers = [
@@ -138,12 +154,12 @@ export function gliderLayers(id, gliders, { is3d, zoom }) {
             id: `${id}-flags`,
             data: items.filter((item) => item.label),
             getPosition: (item) => item.position,
-            getText: (item) => `${item.label}\n${Math.round(item.altitude).toLocaleString('fr-FR')} m`,
+            getText: (item) => lines(item).join('\n'),
             characterSet: 'auto',
-            getSize: (item) => (item.selected ? 13 : 11),
+            getSize: size,
             lineHeight: 1.15,
             getColor: [255, 255, 255],
-            getPixelOffset: (item) => [0, -GLIDER_PIXELS / 2 - 6 - (item.flagRow ?? 0) * 36],
+            getPixelOffset: (item) => [0, -GLIDER_PIXELS / 2 - 6 - (item.flagRow ?? 0) * row],
             getTextAnchor: 'middle',
             getAlignmentBaseline: 'bottom',
             fontFamily: 'Inter, sans-serif',
@@ -218,6 +234,106 @@ export function trailLayers(id, gliders, { is3d, seconds, width = 3 }) {
             parameters,
         }),
     ];
+}
+
+/**
+ * Lines of the flag of the glider followed, as on Condor Club: ground speed, vario, average climb
+ * of the last AVERAGE_CLIMB seconds, altitude and, when the relief is known (`ground`, metres),
+ * the height above it. The vario is the one of the track when it has one, else from its altitudes.
+ */
+export function readings(track, index, ground = null) {
+    const { altitude, speed, vario } = track;
+    const last = altitude.length - 1;
+    const i = Math.max(0, Math.min(last, Math.round(index)));
+    const a = Math.max(0, i - 2);
+    const b = Math.min(last, i + 2);
+    const now = vario ? vario[i] : (b > a ? (altitude[b] - altitude[a]) / (b - a) : 0);
+    const back = Math.max(0, i - AVERAGE_CLIMB);
+    const average = i > back ? (altitude[i] - altitude[back]) / (i - back) : 0;
+    const climb = (value) => `${value > 0.05 ? '+' : value < -0.05 ? '−' : ''}${Math.abs(value).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m/s`;
+    const lines = [
+        `${Math.round(speed[i])} km/h`,
+        `${now >= 0 ? '↑' : '↓'} ${climb(now)}`,
+        `ø ${climb(average)}`,
+        `${Math.round(altitude[i]).toLocaleString('fr-FR')} m`,
+    ];
+    // 0 while the relief under the glider is still loading
+    if (ground !== null && Number.isFinite(ground) && ground > 0) lines.push(`${Math.max(0, Math.round(altitude[i] - ground)).toLocaleString('fr-FR')} m sol`);
+
+    return lines;
+}
+
+/**
+ * The task in 3D: each cylinder of a turnpoint as a column from the ground to `top` metres (the
+ * highest altitude of the flights), translucent, and the line of the task at that height.
+ */
+export function taskLayers(id, task, { top }) {
+    if (!task) return [];
+    const points = task.turnpoints.slice(1);
+    const ceiling = top + TASK_ABOVE;
+    // One layer per radius: the radius of a column layer is the same for all its columns
+    const radii = [...new Set(points.map((point) => point.radius))];
+
+    return [
+        ...radii.map((radius) => new ColumnLayer({
+            id: `${id}-cylinders-${radius}`,
+            data: points.filter((point) => point.radius === radius),
+            getPosition: (point) => [point.longitude, point.latitude, 0],
+            getElevation: ceiling,
+            radius,
+            diskResolution: 64,
+            extruded: true,
+            getFillColor: [80, 220, 235, 55],
+            material: false,
+            parameters: SEE_THROUGH,
+        })),
+        new PathLayer({
+            id: `${id}-task-line`,
+            data: [points],
+            getPath: (line) => line.map((point) => [point.longitude, point.latitude, ceiling]),
+            getColor: [120, 230, 150, 200],
+            getWidth: 3,
+            widthUnits: 'pixels',
+            jointRounded: true,
+        }),
+    ];
+}
+
+/**
+ * Thermals of a flight in 3D, as columns from the altitude of their entry to their exit, coloured
+ * by their climb rate: those entered before `index` (the one being climbed rises with the glider).
+ * `thermals` are the phases of the analysis ({ start, end, vario }); `color` replaces the colours of
+ * the climb rates (several pilots on one map: the colour of the pilot).
+ */
+export function thermalLayers(id, track, thermals, index, { radius = 7, color = null } = {}) {
+    const columns = [];
+    for (const phase of thermals) {
+        if (phase.start > index) break;
+        const end = Math.min(phase.end, Math.floor(index));
+        let lon = 0;
+        let lat = 0;
+        for (let k = phase.start; k <= end; k += 1) {
+            lon += track.longitude[k] / (end - phase.start + 1);
+            lat += track.latitude[k] / (end - phase.start + 1);
+        }
+        const bottom = track.altitude[phase.start];
+        const height = track.altitude[end] - bottom;
+        if (height > 20) columns.push({ position: [lon, lat, bottom], height, color: color ?? (CLIMB_COLORS.find((c) => phase.vario <= c.max) ?? CLIMB_COLORS[0]).color });
+    }
+
+    return [new ColumnLayer({
+        id: `${id}-thermals`,
+        data: columns,
+        getPosition: (column) => column.position,
+        getElevation: (column) => column.height,
+        getFillColor: (column) => [...column.color, 150],
+        // In pixels: a thermal a few hundred metres wide is a thread seen from afar
+        radius,
+        radiusUnits: 'pixels',
+        diskResolution: 24,
+        extruded: true,
+        parameters: SEE_THROUGH,
+    })];
 }
 
 /** Places a shape of the glider (metres) at a point, turned to `heading`, banked by `bank`, scaled. */

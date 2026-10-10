@@ -243,8 +243,11 @@
                         <option value="300">× 300</option>
                     </select>
                 </label>
-                <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="1" aria-label="Position dans le vol"
-                       data-flight-viewer-target="seek" data-action="input->flight-viewer#seek">
+                <div class="p-flight__timeline">
+                    <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="1" aria-label="Position dans le vol"
+                           data-flight-viewer-target="seek" data-action="input->flight-viewer#seek">
+                    <div class="p-flight__marks" data-flight-viewer-target="marks"></div>
+                </div>
                 <button type="button" class="p-flight__moment" data-action="flight-viewer#copyMoment" title="Copier l’adresse de ce vol à l’instant affiché">
                     <twig:ux:icon name="link" /><span class="u-visually-hidden">Lien vers cet instant</span>
                 </button>
@@ -253,7 +256,7 @@
 
             <div class="p-flight__charts">
                 <figure class="p-flight__chart"><figcaption>Altitude (m) — en vert les thermiques</figcaption><div data-flight-viewer-target="chart" data-series="altitude"></div></figure>
-                <figure class="p-flight__chart"><figcaption>Vario sur 4 s (m/s)</figcaption><div data-flight-viewer-target="chart" data-series="vario"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Vario sur 4 s (m/s){% if performance %} — en pointillés le netto des transitions (l’air, polaire retirée){% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="vario"></div></figure>
                 <figure class="p-flight__chart"><figcaption>Vitesse sol (km/h)</figcaption><div data-flight-viewer-target="chart" data-series="speed"></div></figure>
             </div>
         </div>
@@ -377,6 +380,8 @@
                             <div><dt>Vitesse moyenne espérée <span class="u-note">(montée et transitions, air calme)</span></dt><dd>{{ performance.speedToFly.average|number_format(0, ',', ' ') }} km/h</dd></div>
                         {% endif %}
                         {% if performance.glideSpeed %}<div><dt>Vos transitions <span class="u-note">(vitesse air estimée{{ performance.wind ? ', vent de ' ~ performance.wind.speed|number_format(0) ~ ' km/h retiré' : '' }})</span></dt><dd>{{ performance.glideSpeed|number_format(0, ',', ' ') }} km/h</dd></div>{% endif %}
+                        {% if performance.glideMacCready is not null %}<div><dt>MacCready effectif <span class="u-note">(le réglage dont vos transitions sont la vitesse)</span></dt><dd>{{ performance.glideMacCready|number_format(1, ',', ' ') }} m/s</dd></div>{% endif %}
+                        {% if performance.glideNetto is not null %}<div><dt>Netto moyen en transition <span class="u-note">(mouvement de l’air traversé)</span></dt><dd>{{ performance.glideNetto > 0 ? '+' : '' }}{{ performance.glideNetto|number_format(1, ',', ' ') }} m/s</dd></div>{% endif %}
                     </dl>
                     <figure class="p-flight__chart p-flight__polar" data-controller="polar-chart"
                             data-polar-chart-curves-value="{{ [{label: 'Polaire à ' ~ performance.wingLoading|number_format(1, ',', ' ') ~ ' kg/m²', points: performance.chartData.curve}]|json_encode }}"
@@ -387,7 +392,7 @@
                         <div data-polar-chart-target="chart"></div>
                     </figure>
                 </div>
-                <p class="u-note">La trace donne la vitesse sol : la vitesse air d’une transition est estimée en retirant le vent mesuré par la dérive des thermiques. Une transition au-dessus de la courbe a traversé de l’air montant, en dessous de l’air descendant. Polaire et fiche du planeur lues dans les fichiers de Condor.</p>
+                <p class="u-note">La trace donne la vitesse sol : la vitesse air d’une transition est estimée en retirant le vent mesuré par la dérive des thermiques. Une transition au-dessus de la courbe a traversé de l’air montant, en dessous de l’air descendant : l’écart est son netto, aussi tracé seconde par seconde sous le vario. Polaire et fiche du planeur lues dans les fichiers de Condor.</p>
             </section>
         {% endif %}
 

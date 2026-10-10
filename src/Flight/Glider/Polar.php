@@ -79,6 +79,9 @@ final readonly class Polar
      */
     public function points(float $massRatio = 1.0): array
     {
+        if (1.0 === $massRatio) {
+            return $this->points;
+        }
         $scale = sqrt($massRatio);
 
         return array_map(static fn (array $p): array => [$p[0] * $scale, $p[1] * $scale], $this->points);
@@ -104,19 +107,60 @@ final readonly class Polar
         return $curve;
     }
 
+    /**
+     * The same glider at another mass ratio (mass / reference mass): its nodes scaled, which scales
+     * the whole curve the same way, for many readings at one mass.
+     */
+    public function at(float $massRatio): self
+    {
+        $scale = sqrt($massRatio);
+
+        return new self(array_map(static fn (array $node): array => array_map(static fn (float $v): float => $v * $scale, $node), $this->nodes));
+    }
+
     /** Sink rate (m/s) at an airspeed (km/h), null out of the curve. */
     public function sinkAt(float $speed, float $massRatio = 1.0): ?float
     {
         $points = $this->points($massRatio);
-        for ($i = 1, $count = \count($points); $i < $count; ++$i) {
-            [$v1, $w1] = $points[$i - 1];
-            [$v2, $w2] = $points[$i];
-            if ($speed >= $v1 && $speed <= $v2) {
-                return $v2 > $v1 ? $w1 + ($w2 - $w1) * ($speed - $v1) / ($v2 - $v1) : $w1;
+        $count = \count($points);
+        if ($count < 2 || $speed < $points[0][0] || $speed > $points[$count - 1][0]) {
+            return null;
+        }
+        // The segment holding the speed, by halves
+        $low = 0;
+        $high = $count - 1;
+        while ($high - $low > 1) {
+            $middle = intdiv($low + $high, 2);
+            if ($points[$middle][0] <= $speed) {
+                $low = $middle;
+            } else {
+                $high = $middle;
+            }
+        }
+        [$v1, $w1] = $points[$low];
+        [$v2, $w2] = $points[$high];
+
+        return $v2 > $v1 ? $w1 + ($w2 - $w1) * ($speed - $v1) / ($v2 - $v1) : $w1;
+    }
+
+    /**
+     * The MacCready setting a glide speed (airspeed, km/h) stands for: the expected climb rate
+     * (m/s, by tenths) whose speed to fly it is. 0 at or below the best glide speed, `maximum` when
+     * faster than the speed to fly of that climb.
+     */
+    public function macCreadyFor(float $speed, float $massRatio = 1.0, float $maximum = 6.0): float
+    {
+        $polar = 1.0 === $massRatio ? $this : $this->at($massRatio);
+        if ($speed <= $polar->bestGlide()['speed']) {
+            return 0.0;
+        }
+        for ($tenths = 1; $tenths <= (int) round($maximum * 10); ++$tenths) {
+            if ($polar->speedToFly($tenths / 10)['speed'] >= $speed) {
+                return $tenths / 10;
             }
         }
 
-        return null;
+        return $maximum;
     }
 
     /** @return array{speed: float, sink: float} */

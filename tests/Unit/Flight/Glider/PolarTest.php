@@ -59,6 +59,26 @@ final class PolarTest extends TestCase
         self::assertEqualsWithDelta($strong['speed'] * 3 / (3 + $strong['sink']), $strong['average'], 0.01);
     }
 
+    public function testAGlideSpeedGivesItsMacCreadySetting(): void
+    {
+        $polar = new Polar(GliderSamples::NODES);
+
+        self::assertSame(1.0, $polar->macCreadyFor($polar->speedToFly(1.0)['speed']));
+        self::assertSame(2.5, $polar->macCreadyFor($polar->speedToFly(2.5)['speed']));
+        self::assertSame(3.0, $polar->macCreadyFor($polar->speedToFly(2.5)['speed'] * 1.2, 1.44), 'Heavier: speeds and sink rates × 1.2, so the climb too');
+        self::assertSame(0.0, $polar->macCreadyFor(80.0), 'Slower than the best glide');
+        self::assertSame(6.0, $polar->macCreadyFor(245.0), 'At most 6 m/s');
+    }
+
+    public function testAPolarAtAnotherMassIsTheScaledCurve(): void
+    {
+        $polar = new Polar(GliderSamples::NODES);
+        $heavy = $polar->at(1.44);
+
+        self::assertEqualsWithDelta($polar->sinkAt(120.0, 1.44), $heavy->sinkAt(120.0), 0.001);
+        self::assertEqualsWithDelta($polar->bestGlide(1.44)['speed'], $heavy->bestGlide()['speed'], 0.01);
+    }
+
     public function testTheCurveOfAChartStaysWithinItsSpeeds(): void
     {
         $curve = (new Polar(GliderSamples::NODES))->curve(1.0, 66.0, 270.0, 10);

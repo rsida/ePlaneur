@@ -71,6 +71,11 @@ final class GliderTest extends WebTestCase
         self::assertSelectorTextContains('.p-flight__glider', 'Acme Tester Glider-15');
         self::assertSelectorTextContains('.p-flight__glider', 'Charge alaire');
         self::assertSelectorExists('.p-flight__glider [data-controller="polar-chart"]');
+
+        // The viewer gets the netto vario of the glides, one value (or null) per second
+        $this->client->request('GET', '/vols/'.$flight->getId().'/analyse.json');
+        $analysis = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertCount(\count($analysis['series']['vario']), $analysis['series']['netto']);
     }
 
     /** Imports a folder holding the sample glider under a name, and returns what the command says. */

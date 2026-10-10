@@ -5,7 +5,7 @@ import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { addTask, boundsOf, createMap, easeAt, newBounds, setBasemap, setTerrain } from '../flight/map.js';
-import { chaseBearing, gliderLayers, trailLayers } from '../flight/scene.js';
+import { chaseBearing, gliderLayers, positionAt, readings, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
 
 /*
  * Comparison viewer (templates/flight/compare.html.twig): two flights of the same task
@@ -14,8 +14,9 @@ import { chaseBearing, gliderLayers, trailLayers } from '../flight/scene.js';
  * flown that distance, and gives the gap between them.
  *
  * The replay moves along the task at the pace of the first pilot: both gliders are always at the
- * same distance of the task, drawn with their flag and trail (../flight/scene.js); in 3D the camera
- * flies behind the first one.
+ * same distance of the task, drawn with their flag (readings of each pilot) and trail
+ * (../flight/scene.js); in 3D the camera flies behind the first one, the cylinders of the task stand
+ * up and the thermals of each pilot so far rise as columns in their colour.
  */
 
 const TRAIL = 300; // seconds of track drawn behind each glider
@@ -45,6 +46,7 @@ export default class extends Controller {
         this.lostColor = style.getPropertyValue('--color-danger').trim();
         this.wonColor = style.getPropertyValue('--color-success').trim();
         this.flights = this.comparison.flights.map((flight, n) => ({ ...flight, color: colors[n] }));
+        this.top = Math.max(0, ...this.flights.map((f) => f.altitude.reduce((top, altitude) => Math.max(top, altitude), 0)));
         const [a, b] = this.flights;
         // Steps of the task flown by both: the gap is defined there
         this.common = Math.min(a.times.length, b.times.length);
@@ -115,8 +117,16 @@ export default class extends Controller {
             // Both at the same distance of the task: one flag above the other
             flagRow: n,
         }));
+        gliders.forEach((glider) => {
+            const [lon, lat] = positionAt(glider.track, glider.index);
+            glider.details = readings(glider.track, glider.index, this.is3d ? this.map.queryTerrainElevation([lon, lat]) : null);
+        });
         this.overlay.setProps({
             layers: [
+                ...(this.is3d ? [
+                    ...taskLayers('compare', this.comparison.task, { top: this.top }),
+                    ...gliders.flatMap((glider, n) => thermalLayers(`compare-${n}`, glider.track, glider.track.thermals ?? [], glider.index, { color: glider.color })),
+                ] : []),
                 new PathLayer({
                     id: 'tracks',
                     data: this.paths(),

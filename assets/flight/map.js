@@ -37,6 +37,8 @@ export function createMap(container, bounds) {
                 base: { type: 'raster', tileSize: 256, ...BASEMAPS.topo },
                 terrain: { type: 'raster-dem', tiles: [TERRAIN_TILES], tileSize: 256, maxzoom: 14, encoding: 'terrarium', attribution: 'Relief : AWS Terrain Tiles (Mapzen)' },
             },
+            // A sky and a haze at the horizon in 3D, instead of the blank of the page
+            sky: { 'sky-color': '#79aee3', 'horizon-color': '#d9e8f5', 'fog-color': '#e6eef6', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.9, 'atmosphere-blend': 0 },
             // Toned down so the tracks stand out
             layers: [{ id: 'base', type: 'raster', source: 'base', paint: { 'raster-saturation': -0.35, 'raster-opacity': 0.85 } }],
         },

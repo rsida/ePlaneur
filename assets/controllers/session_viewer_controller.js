@@ -2,7 +2,7 @@
 import { Controller } from '@hotwired/stimulus';
 import { PathLayer } from '@deck.gl/layers';
 import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
-import { chaseBearing, gliderLayers, positionAt, trailLayers } from '../flight/scene.js';
+import { chaseBearing, gliderLayers, positionAt, readings, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
 
 /*
  * Session replay (templates/flight/session.html.twig): every flight of FlightController::sessionData()
@@ -14,8 +14,10 @@ import { chaseBearing, gliderLayers, positionAt, trailLayers } from '../flight/s
  *   different days or with different start times like a ghost race.
  *
  * Each pilot is a glider in their colour with a flag (name, altitude) and a fading trail
- * (../flight/scene.js). Clicking a pilot follows them: in 3D the camera then flies behind their
- * glider, and a curtain under their trail shows their height above the relief.
+ * (../flight/scene.js). Clicking a pilot follows them: their flag gives their readings (speed,
+ * vario, average climb, height above the relief), and in 3D the camera flies behind their glider,
+ * a curtain under their trail shows their height and their thermals so far rise as columns. In 3D
+ * the cylinders of the task stand up to the sky.
  */
 
 /* One color per pilot, in ranking order */
@@ -46,6 +48,7 @@ export default class extends Controller {
             return;
         }
         this.flights = this.session.flights.map((flight, k) => ({ ...flight, color: COLORS[k % COLORS.length], count: flight.altitude.length }));
+        this.top = Math.max(0, ...this.flights.map((f) => f.altitude.reduce((top, altitude) => Math.max(top, altitude), 0)));
         this.colorDots();
         this.buildPilots();
         this.align();
@@ -139,8 +142,12 @@ export default class extends Controller {
             label: flight.competitionId || flight.pilot,
             selected: this.selected === flight.id,
         }));
+        const followed = gliders.find((glider) => glider.selected);
+        if (followed) followed.details = readings(followed.track, followed.index, this.groundUnder(followed));
         this.overlay.setProps({
             layers: [
+                ...(this.is3d ? taskLayers('session', this.session.task, { top: this.top }) : []),
+                ...(this.is3d && followed ? thermalLayers('session', followed.track, followed.track.thermals ?? [], followed.index, { color: followed.color }) : []),
                 new PathLayer({
                     id: 'tracks',
                     data: this.paths(),
@@ -156,6 +163,14 @@ export default class extends Controller {
                 ...gliderLayers('session', gliders, { is3d: this.is3d, zoom: this.map.getZoom() }),
             ],
         });
+    }
+
+    /** Height of the relief under a glider, known in 3D only. */
+    groundUnder(glider) {
+        if (!this.is3d) return null;
+        const [lon, lat] = positionAt(glider.track, glider.index);
+
+        return this.map.queryTerrainElevation([lon, lat]);
     }
 
     setView({ currentTarget }) {

@@ -130,8 +130,8 @@ administrator to add it.
    - the spiral: average radius and bank, and the radius of the best quarter of the thermals by
      climb (four thermals at least), the "target";
    - the climb by altitude: average climb in the thermals per band of 200 m (20 s at least).
-   Not yet: netto, effective MacCready, speeds to fly by MacCready band and wing loading: they need
-   the polar and masses of each glider.
+   Netto, effective MacCready and wing loading come from the polar of the glider (see Gliders and
+   polars).
 5. **Task**: each point is reached when the track enters its zone: a cylinder (360°), or for
    Condor's 180° start and finish a half disc of the radius behind the line across the leg (Condor
    counts the finish as soon as the glider is within the radius on the side it comes from); other
@@ -180,10 +180,15 @@ a Condor update: gliders are updated by name. The name is the one of the folder,
   estimated by taking away the wind of the flight (average drift of its thermals, as vectors); its
   sink rate is the height lost over its duration, so a glide through rising air shows above the
   curve.
+- **Netto and effective MacCready**: the netto of a glide is the sink of the polar at its airspeed
+  minus the sink measured, the vertical speed of the air crossed (positive: rising air); its
+  effective MacCready is the climb rate (by tenths, 0 to 6 m/s) whose speed to fly is its airspeed
+  (`Polar::macCreadyFor()`). Both are averaged over the glides by distance on the flight page and
+  shown for each glide on the polar chart. Second by second, the netto vario of the glides (vario
+  plus the sink of the polar at the airspeed of that second, heading over 5 s, wind taken away)
+  is added to the analysis served to the viewer (`series.netto`, null outside glides: the polar does
+  not hold while circling) and drawn dashed under the vario.
 - **Advice**: the speed of the glides against that MacCready speed (see Progression).
-
-Not done: netto vario (needs the airspeed at each second, not only per glide), effective MacCready
-of each glide.
 
 ## Downloads
 
@@ -219,6 +224,18 @@ and says so in an L line. The export reads back with `IgcReader`.
   zoom to stay about 56 px wide; a flag above it with its name and altitude in its colour; in 3D a
   line down to the ground. Session and comparison: a trail of the last 5 minutes fading out behind
   each glider, and under the trail of the pilot followed a curtain down to the ground.
+- Readings in the flag, as on Condor Club (`readings()`): for the glider of the flight page, the
+  pilot followed in a session and both pilots of a comparison, ground speed, vario, average climb
+  of the last 30 s ("ø"), altitude and, in 3D, the height above the relief of the map (the real
+  relief, not Condor's: a guide only).
+- 3D scene: the cylinders of the task stand up from the ground to 300 m above the highest glider,
+  translucent, with the line of the task at that height (`taskLayers()`); the thermals climbed so
+  far rise as columns from the altitude of their entry to their exit, the one being climbed growing
+  with the glider (`thermalLayers()`, red shades by climb rate on the flight page, the colour of the
+  pilot in a session or comparison; the thermals come with the replay data,
+  `FlightSession::thermalsOf()`); a sky with haze at the horizon (MapLibre `sky`).
+- The timeline of the flight page has a tick at each turnpoint reached (start, points, finish),
+  which moves the replay there.
 - Switching to 3D picks the "Satellite" basemap unless the pilot chose one.
 - Replay ×1 to ×300, "Suivre" keeps the glider in the centre; in 3D the camera comes close and
   flies behind it, turned along its track of the last minute (`chaseBearing()`: the course, not

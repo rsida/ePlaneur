@@ -6,7 +6,7 @@ import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { bearing, distance } from '../flight/geo.js';
 import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
-import { angleDifference, chaseBearing, gliderLayers } from '../flight/scene.js';
+import { angleDifference, chaseBearing, gliderLayers, positionAt, readings, taskLayers, thermalLayers } from '../flight/scene.js';
 
 /*
  * Flight viewer (templates/flight/show.html.twig): the flight of FlightController::analysis() on a
@@ -17,8 +17,9 @@ import { angleDifference, chaseBearing, gliderLayers } from '../flight/scene.js'
  * - The task is drawn by the map itself, so it lies on the relief.
  * - Charts (uPlot) share the cursor with the map; clicking a chart, the seek bar or a phase moves
  *   the glider there.
- * - The glider is drawn turned and banked with its flag (../flight/scene.js); "Suivre" keeps it in
- *   view, and in 3D flies the camera behind it.
+ * - The glider is drawn turned and banked with its flag and readings (../flight/scene.js); in 3D
+ *   the cylinders of the task stand up and the thermals climbed so far rise as columns. "Suivre"
+ *   keeps the glider in view, and in 3D flies the camera behind it.
  * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
  * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
  * - Two thermals picked in the list are compared: figures and the height gained over time.
@@ -42,7 +43,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks'];
 
     static values = { url: String, label: String };
 
@@ -67,9 +68,12 @@ export default class extends Controller {
         this.count = this.series.time.length;
         this.seekTarget.max = String(this.count - 1);
         this.phaseAt = this.phaseIndex();
+        this.thermalPhases = this.flight.phases.filter((phase) => phase.type === 'thermal');
+        this.top = this.series.altitude.reduce((top, altitude) => Math.max(top, altitude), 0);
         this.buildMap();
         this.buildCharts();
         this.buildPhases();
+        this.buildMarks();
         this.resizeObserver = new ResizeObserver(() => this.resizeCharts());
         this.resizeObserver.observe(this.element);
         // A link to a moment of the flight: #t=seconds
@@ -202,9 +206,16 @@ export default class extends Controller {
         ];
         // In the pilot view the camera is in the glider
         if (!this.pilotView) {
-            layers.push(...gliderLayers('flight', [{ track: this.series, index: this.index, color: [255, 255, 255], flagColor: [25, 38, 48], label: this.labelValue, selected: false }], { is3d: this.is3d, zoom: this.map.getZoom() }));
+            const [lon, lat] = positionAt(this.series, this.index);
+            const ground = this.is3d ? this.map.queryTerrainElevation([lon, lat]) : null;
+            const details = readings(this.series, this.index, ground);
+            layers.push(...gliderLayers('flight', [{ track: this.series, index: this.index, color: [255, 255, 255], flagColor: [25, 38, 48], label: this.labelValue, details, selected: false }], { is3d: this.is3d, zoom: this.map.getZoom() }));
         }
         if (this.is3d) {
+            layers.unshift(
+                ...taskLayers('flight', this.flight.task, { top: this.top }),
+                ...thermalLayers('flight', this.series, this.thermalPhases, this.index),
+            );
             // Lines down to the ground: the relief hides their lower part
             if (!this.curtain) {
                 this.curtain = [];
@@ -378,6 +389,8 @@ export default class extends Controller {
 
         this.charts = this.chartTargets.map((target) => {
             const name = target.dataset.series;
+            // Under the vario, the netto of the glides when the polar of the glider is known
+            const netto = name === 'vario' && this.series.netto ? this.series.netto : null;
             const options = {
                 width: target.clientWidth || 600,
                 height: 130,
@@ -388,8 +401,11 @@ export default class extends Controller {
                     { values: (u, ticks) => ticks.map((t) => formatTime(t)), size: 28, font: '11px Inter, sans-serif' },
                     { size: 46, font: '11px Inter, sans-serif' },
                 ],
-                series: [{}, { ...settings[name], width: 1.5, points: { show: false } }],
-                plugins: [valueTip((u, i) => [`${FORMATS[name](u.data[1][i])} · ${formatTime(u.data[0][i])}`])],
+                series: [{}, { ...settings[name], width: 1.5, points: { show: false } }, ...(netto ? [{ stroke: '#a85b2a', width: 1.5, dash: [4, 3], points: { show: false } }] : [])],
+                plugins: [valueTip((u, i) => [
+                    `${FORMATS[name](u.data[1][i])} · ${formatTime(u.data[0][i])}`,
+                    ...(netto && u.data[2][i] != null ? [{ text: `Netto ${FORMATS.vario(u.data[2][i])}`, color: '#a85b2a' }] : []),
+                ])],
                 hooks: {
                     // Thermals shaded behind the altitude
                     drawClear: name === 'altitude' ? [(u) => {
@@ -409,7 +425,7 @@ export default class extends Controller {
                 },
             };
             if (name === 'vario') options.scales.y = { range: (u, min, max) => [Math.min(min, -4), Math.max(max, 4)] };
-            const chart = new uPlot(options, [time, this.series[name]], target);
+            const chart = new uPlot(options, netto ? [time, this.series[name], netto] : [time, this.series[name]], target);
             sync.sub(chart);
             chart.over.addEventListener('mouseenter', () => { this.hovering = chart; });
             chart.over.addEventListener('mouseleave', () => { this.hovering = null; });
@@ -604,6 +620,28 @@ export default class extends Controller {
             drift,
             gains: Array.from({ length: duration + 1 }, (_, t) => altitude[phase.start + t] - altitude[phase.start]),
         };
+    }
+
+    /* ---------- Turnpoints on the timeline ---------- */
+
+    /** A tick above the slider at each turnpoint reached (start, turnpoints, finish). */
+    buildMarks() {
+        if (!this.hasMarksTarget || !this.flight.task) return;
+        const points = this.flight.task.turnpoints.slice(1);
+        const marks = points.flatMap((point, n) => {
+            if (point.reached === null || point.reached === undefined) return [];
+            const mark = document.createElement('button');
+            mark.type = 'button';
+            mark.className = 'p-flight__mark';
+            mark.style.left = `${(point.reached / Math.max(1, this.count - 1)) * 100}%`;
+            const name = n === 0 ? 'Départ' : n === points.length - 1 ? 'Arrivée' : `Point ${n}`;
+            mark.title = `${name} · ${point.name} · ${formatTime(this.series.time[point.reached])}`;
+            mark.setAttribute('aria-label', mark.title);
+            mark.addEventListener('click', () => this.goToMoment({ detail: { at: point.reached } }));
+
+            return [mark];
+        });
+        this.marksTarget.replaceChildren(...marks);
     }
 
     /* ---------- Comments ---------- */

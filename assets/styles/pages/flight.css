@@ -280,9 +280,46 @@
     display: block;
 }
 
+.p-flight__timeline {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+}
+
 .p-flight__seek {
     flex: 1;
+    min-width: 0;
     accent-color: var(--color-primary);
+}
+
+/* Turnpoints on the timeline, as on Condor Club: a tick above the slider, clickable */
+.p-flight__marks {
+    position: absolute;
+    inset: auto var(--space-2) 100%;
+    height: var(--space-3);
+    pointer-events: none;
+}
+
+.p-flight__mark {
+    position: absolute;
+    bottom: 0;
+    width: var(--space-3);
+    height: var(--space-3);
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    pointer-events: auto;
+    transform: translateX(-50%);
+}
+
+.p-flight__mark::before {
+    position: absolute;
+    inset: 15% 40%;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-pilot-a);
+    content: "";
 }
 
 /* Charts */
