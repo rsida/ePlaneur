@@ -12,6 +12,7 @@
         {key: 'dashboard', label: 'Tableau de bord', route: 'app_account'},
         {key: 'flights', label: 'Mes vols', route: 'app_account_flights'},
         {key: 'logbook', label: 'Mon carnet de vol', route: 'app_account_logbook'},
+        {key: 'messages', label: 'Mes messages', route: 'app_account_messages', count: unread_messages()},
         {key: 'membership', label: 'Mon adhésion', route: 'app_account_membership'},
         {key: 'profile', label: 'Mon profil', route: 'app_account_profile'},
         {key: 'privacy', label: 'Confidentialité et données', route: 'app_account_privacy'},
@@ -31,7 +32,7 @@
                 <nav class="p-account__nav" aria-label="Espace personnel">
                     <ul role="list">
                         {% for item in nav %}
-                            <li><a href="{{ path(item.route) }}"{% if section|default('') == item.key %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+                            <li><a href="{{ path(item.route) }}"{% if section|default('') == item.key %} aria-current="page"{% endif %}>{{ item.label }}{% if item.count|default(0) > 0 %} <span class="p-account__count">{{ item.count }}<span class="u-visually-hidden"> non {{ item.count > 1 ? 'lus' : 'lu' }}</span></span>{% endif %}</a></li>
                         {% endfor %}
                     </ul>
                     <twig:Ui:Link href="{{ path('app_account_contact') }}" class="p-account__contact" aria-current="{{ section|default('') == 'contact' ? 'page' : 'false' }}">Contacter le club</twig:Ui:Link>

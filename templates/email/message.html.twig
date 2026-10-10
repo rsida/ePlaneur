@@ -1,0 +1,11 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block content %}
+    {% set conversation = message.conversation %}
+    <p>Bonjour {{ reader.displayName }},</p>
+    <p>{{ message.author ? message.author.displayName : 'Un membre' }} vous a écrit{% if conversation.group %} (message au {{ conversation.group.code == 'admin' ? 'groupe des administrateurs' : 'comité directeur' }}){% endif %} :</p>
+    <p style="margin:8px 0 0;font-weight:700;">{{ conversation.subject }}</p>
+    <p style="margin:8px 0 16px;padding:16px;background:#f7f5ef;border-radius:4px;white-space:pre-line;">{{ message.body }}</p>
+    <p style="margin:24px 0;"><a href="{{ url('app_account_message_show', {id: conversation.id}) }}#dernier" style="display:inline-block;padding:14px 20px;border-radius:4px;background:#3e5d83;color:#ffffff;font-weight:700;text-decoration:none;">Répondre sur le site</a></p>
+    <p style="font-size:13px;color:#586772;">Ne répondez pas à cet e-mail : votre réponse n’arriverait pas. Vous recevez cet e-mail parce que vous l’avez demandé dans « Mon profil ». Vous pouvez le désactiver à tout moment.</p>
+{% endblock %}

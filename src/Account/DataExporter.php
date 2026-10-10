@@ -6,6 +6,7 @@ namespace App\Account;
 
 use App\Entity\ContactRequest;
 use App\Entity\FlightComment;
+use App\Entity\Message;
 use App\Entity\StepProgress;
 use App\Entity\User;
 use App\Flight\FlightImporter;
@@ -110,6 +111,14 @@ final readonly class DataExporter
             'message' => $request->getMessage(),
             'envoye_le' => $date($request->getCreatedAt()),
         ], $this->entityManager->getRepository(ContactRequest::class)->findBy(['user' => $user], ['createdAt' => 'ASC']))));
+
+        // Messages written to other members, the committee or the administrators (the answers are theirs)
+        $zip->addFromString('messages.json', $json(array_map(static fn (Message $message): array => [
+            'conversation' => $message->getConversation()->getSubject(),
+            'avec' => $message->getConversation()->correspondentsFor($user),
+            'message' => $message->getBody(),
+            'envoye_le' => $date($message->getCreatedAt()),
+        ], $this->entityManager->getRepository(Message::class)->findBy(['author' => $user], ['createdAt' => 'ASC']))));
 
         $zip->addFromString('parcours_de_formation.json', $json(array_map(static fn (StepProgress $progress): array => [
             'etape' => $progress->getStep()->title(),

@@ -1,0 +1,34 @@
+{% extends 'account/_layout.html.twig' %}
+
+{# Messages (roadmap 9c): the conversations of the member, latest first, unread ones marked. #}
+{% set section = 'messages' %}
+{% block title %}Mes messages{% endblock %}
+{% block heading %}Mes messages{% endblock %}
+{% block lead %}Écrivez à un autre membre, au comité directeur ou aux administrateurs du site.{% endblock %}
+
+{% block content %}
+    {% if is_granted('MESSAGE_SEND') %}
+        <div><twig:Ui:Button href="{{ path('app_account_message_new') }}" size="sm" icon="">Nouveau message</twig:Ui:Button></div>
+    {% else %}
+        <p class="p-account__panel p-account__panel--sand">La messagerie est réservée aux membres du club : elle s’ouvre avec votre adhésion.</p>
+    {% endif %}
+
+    {% if conversations is empty %}
+        <p class="u-note">Aucun message pour l’instant.</p>
+    {% else %}
+        <ul class="p-messages" aria-label="Conversations">
+            {% for conversation in conversations %}
+                {% set unread = conversation.unreadFor(app.user) %}
+                {% set last = conversation.lastMessage %}
+                <li>
+                    <a class="p-messages__item{{ unread ? ' p-messages__item--unread' : '' }}" href="{{ path('app_account_message_show', {id: conversation.id}) }}">
+                        <span class="p-messages__who">{{ conversation.correspondentsFor(app.user)|join(', ') }}{% if conversation.group and app.user.inGroup(conversation.group.code) %} <span class="u-note">→ {{ conversation.group.name }}</span>{% endif %}</span>
+                        <span class="p-messages__subject">{% if unread %}<span class="p-messages__dot" aria-hidden="true"></span><span class="u-visually-hidden">Non lu : </span>{% endif %}{{ conversation.subject }}</span>
+                        {% if last %}<span class="p-messages__excerpt">{{ last.author is same as(app.user) ? 'Vous : ' : '' }}{{ last.body|u.truncate(110, '…') }}</span>{% endif %}
+                        <time class="p-messages__date" datetime="{{ conversation.lastMessageAt|date('c') }}">{{ conversation.lastMessageAt|format_datetime('short', 'short', locale: 'fr', timezone: 'Europe/Paris') }}</time>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

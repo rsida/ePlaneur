@@ -43,7 +43,7 @@ enum DefaultGroup: string
     {
         return match ($this) {
             self::Committee => [Permission::AdminAccess, Permission::PostCreate, Permission::PostEdit, Permission::PostPublish, Permission::CategoryManage, Permission::MediaManage, Permission::PageManage, Permission::DocumentManage, Permission::MembershipManage, Permission::ContactManage, Permission::SessionManage],
-            self::Member => [Permission::SessionOrganise],
+            self::Member => [Permission::SessionOrganise, Permission::MessageSend],
             default => [],
         };
     }

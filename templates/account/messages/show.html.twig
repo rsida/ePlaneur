@@ -1,0 +1,41 @@
+{% extends 'account/_layout.html.twig' %}
+
+{% set section = 'messages' %}
+{% block title %}{{ conversation.subject }}{% endblock %}
+{% block heading %}{{ conversation.subject }}{% endblock %}
+{% block lead %}
+    {%- if conversation.group -%}
+        Conversation avec {{ {committee: 'le comité directeur', admin: 'les administrateurs du site'}[conversation.group.code] ?? conversation.group.name }}{% if app.user.inGroup(conversation.group.code) and conversation.starter %}, ouverte par {{ conversation.starter.displayName }}{% endif %}.
+    {%- else -%}
+        Conversation avec {{ conversation.correspondentsFor(app.user)|join(', ') }}.
+    {%- endif -%}
+{% endblock %}
+
+{% block content %}
+    <div><twig:Ui:Link href="{{ path('app_account_messages') }}">Tous mes messages</twig:Ui:Link></div>
+    {% if conversation.flight %}
+        <p class="u-note">À propos du vol <a href="{{ path('app_flight_show', {id: conversation.flight.id}) }}">{{ conversation.flight.flightPlan ?? conversation.flight.originalName }}</a> de {{ conversation.flight.pilot }}.</p>
+    {% endif %}
+
+    <ol class="p-thread" aria-label="Messages">
+        {% for message in conversation.messages %}
+            {% set mine = message.author is same as(app.user) %}
+            <li class="p-thread__message{{ mine ? ' p-thread__message--mine' : '' }}"{% if loop.last %} id="dernier"{% endif %}>
+                <p class="p-thread__meta"><strong>{{ mine ? 'Vous' : (message.author ? message.author.displayName : 'Membre supprimé') }}</strong> · <time datetime="{{ message.createdAt|date('c') }}">{{ message.createdAt|format_datetime('long', 'short', locale: 'fr', timezone: 'Europe/Paris') }}</time></p>
+                <p class="p-thread__body">{{ message.body }}</p>
+            </li>
+        {% endfor %}
+    </ol>
+
+    {% if form %}
+        {{ form_start(form, {attr: {class: 'p-account__panel', novalidate: 'novalidate'}}) }}
+            {{ form_errors(form) }}
+            <div class="c-form">
+                {{ form_row(form.body) }}
+                <div><twig:Ui:Button type="submit">Répondre</twig:Ui:Button></div>
+            </div>
+        {{ form_end(form) }}
+    {% else %}
+        <p class="u-note">Vous ne pouvez plus répondre : la messagerie est réservée aux membres du club.</p>
+    {% endif %}
+{% endblock %}

@@ -6,6 +6,7 @@ namespace App\Twig;
 
 use App\Entity\Membership;
 use App\Entity\User;
+use App\Repository\ConversationRepository;
 use App\Repository\MembershipRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Clock\ClockInterface;
@@ -13,15 +14,26 @@ use Twig\Attribute\AsTwigFunction;
 
 /**
  * What the member space shows around every page (templates/account/_layout.html.twig): the latest
- * membership of the logged-in account; and the membership of the year of any account.
+ * membership of the logged-in account and its unread conversations; and the membership of the year
+ * of any account.
  */
 final readonly class AccountExtension
 {
     public function __construct(
         private Security $security,
         private MembershipRepository $memberships,
+        private ConversationRepository $conversations,
         private ClockInterface $clock,
     ) {
+    }
+
+    /** Conversations with a message the logged-in account has not read. */
+    #[AsTwigFunction('unread_messages')]
+    public function unreadMessages(): int
+    {
+        $user = $this->security->getUser();
+
+        return $user instanceof User ? $this->conversations->countUnread($user) : 0;
     }
 
     #[AsTwigFunction('account_membership')]

@@ -333,3 +333,122 @@
 .p-account__training {
     margin: 0;
 }
+
+/* Messages (roadmap 9c): unread count, conversation list and thread */
+.p-account__count {
+    display: inline-block;
+    min-width: 1.5em;
+    margin-left: var(--space-1);
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-align: center;
+}
+
+.p-messages {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-messages__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-paper);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.p-messages__item:hover {
+    outline-color: var(--color-primary);
+}
+
+.p-messages__item--unread {
+    background-color: var(--color-tint-cool);
+}
+
+.p-messages__who {
+    font-weight: 700;
+}
+
+.p-messages__date {
+    grid-row: 1;
+    grid-column: 2;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+}
+
+.p-messages__subject,
+.p-messages__excerpt {
+    grid-column: 1 / -1;
+    overflow-wrap: anywhere;
+}
+
+.p-messages__item--unread .p-messages__subject {
+    font-weight: 700;
+}
+
+.p-messages__excerpt {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.p-messages__dot {
+    display: inline-block;
+    width: 0.6em;
+    height: 0.6em;
+    margin-right: var(--space-2);
+    border-radius: 50%;
+    background-color: var(--color-primary);
+}
+
+.p-thread {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-thread__message {
+    display: grid;
+    gap: var(--space-2);
+    max-width: 48rem;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-paper);
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+}
+
+.p-thread__message--mine {
+    justify-self: end;
+    background-color: var(--color-tint-cool);
+    outline-color: transparent;
+}
+
+.p-thread__meta,
+.p-thread__body {
+    margin: 0;
+}
+
+.p-thread__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.p-thread__body {
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}

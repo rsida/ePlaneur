@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Account;
 
 use App\Entity\ContactRequest;
+use App\Entity\ConversationParticipant;
 use App\Entity\FlightComment;
 use App\Entity\Membership;
 use App\Entity\User;
@@ -16,7 +17,8 @@ use Doctrine\ORM\EntityManagerInterface;
 /**
  * Deletes an account at its owner's request (GDPR, "Confidentialité et données"):
  *
- * - its comments and messages to the club are deleted;
+ * - its comments, messages to the club and messages to other members are deleted, and so are the
+ *   conversations left without any message;
  * - its flights are deleted with their files, or kept anonymised (the owner's choice): the analysis
  *   stays for the sessions and records, without name, competition id, account or file;
  * - its memberships are kept for the books (ten years), with the name, season, amounts and dates
@@ -60,6 +62,18 @@ final readonly class AccountDeleter
         }
         foreach ($this->entityManager->getRepository(ContactRequest::class)->findBy(['user' => $user]) as $request) {
             $this->entityManager->remove($request);
+        }
+        foreach ($this->entityManager->getRepository(ConversationParticipant::class)->findBy(['user' => $user]) as $participant) {
+            $conversation = $participant->getConversation();
+            foreach ($conversation->getMessages()->toArray() as $message) {
+                if ($message->getAuthor() === $user) {
+                    $conversation->getMessages()->removeElement($message);
+                }
+            }
+            $conversation->getParticipants()->removeElement($participant);
+            if ($conversation->getMessages()->isEmpty()) {
+                $this->entityManager->remove($conversation);
+            }
         }
         foreach ($this->flights->findBy(['owner' => $user]) as $flight) {
             $this->importer->removeFile($flight);

@@ -152,6 +152,7 @@
 
     --radius-sm: 4px;
     --radius-md: 8px;
+    --radius-pill: 999px;   /* counters, round badges */
     --shadow-raised: 0 12px 32px rgb(25 38 48 / 13%);
     --focus-color: var(--color-primary);  /* keyboard focus outline: navy on light surfaces */
 

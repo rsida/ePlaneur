@@ -10,3 +10,8 @@ framework:
             policy: sliding_window
             limit: 5
             interval: '1 hour'
+        # Messages between members: enough for a conversation, not for spamming every member
+        message:
+            policy: sliding_window
+            limit: 20
+            interval: '1 hour'
