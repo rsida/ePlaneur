@@ -21,6 +21,7 @@ final readonly class FlightAnalysis
      * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
      * @param list<Phase>                                                                                                                          $phases
      * @param array<string, int|float|null>                                                                                                        $statistics
+     * @param list<array{start: int, end: int, vario: float, gain: float}>                                                                         $crossings  lift crossed in straight flight during the glides
      */
     public function __construct(
         public Track $track,
@@ -29,6 +30,7 @@ final readonly class FlightAnalysis
         public array $statistics,
         public ?TaskResult $task,
         public ?Launch $launch = null,
+        public array $crossings = [],
     ) {
     }
 
@@ -70,7 +72,10 @@ final readonly class FlightAnalysis
                 'windSpeed' => $phase->windSpeed,
                 'windFrom' => $phase->windFrom,
                 'centring' => $phase->centring,
+                'entry' => $phase->entry,
+                'exit' => $phase->exit,
             ], $this->phases),
+            'crossings' => $this->crossings,
             'climbByAltitude' => $this->climbByAltitude(),
             'task' => null === $this->task ? null : $this->taskArray($this->task),
         ];

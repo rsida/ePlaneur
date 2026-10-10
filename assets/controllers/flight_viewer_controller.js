@@ -5,8 +5,8 @@ import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { bearing, distance } from '../flight/geo.js';
-import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
-import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, gliderLayers, liftLayers, positionAt, readings, taskLayers, thermalLayers } from '../flight/scene.js';
+import { addShadow, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow } from '../flight/map.js';
+import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, crossingLayers, gliderLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
 
 /*
  * Flight viewer (templates/flight/show.html.twig): the flight of FlightController::analysis() on a
@@ -18,13 +18,18 @@ import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, gliderLayers, l
  * - Charts (uPlot) share the cursor with the map; clicking a chart, the seek bar or a phase moves
  *   the glider there.
  * - The glider is drawn turned and banked with its flag and readings (../flight/scene.js); in 3D
- *   the cylinders of the task stand up, the thermals climbed so far rise as arrows, the slope lift
- *   gets orange arrows, and a curtain in the colours of the track hangs down to the ground.
+ *   the cylinders of the task stand up, the thermals climbed so far rise as cylinders, the slope
+ *   lift gets orange arrows, lift crossed without turning lighter ones, strong sink blue arrows going
+ *   down, a windsock tops each thermal, a curtain in the colours of the track hangs down to the
+ *   ground and the shadow of the track lies on the relief.
  *   "Suivre" keeps the glider in view, and in 3D flies the camera behind it.
- * - Under the seek bar, the thermals (coloured by climb), slope lift, low points and final glide;
- *   above it, the turnpoints reached.
+ * - Under the seek bar, the thermals (coloured by climb, hatched while centring and at a weak top),
+ *   slope lift, lift crossed, strong sink, low points and final glide; above it, the turnpoints
+ *   reached.
  * - "Centrage": the climb on each side of the circles of the thermal shown (centring of the
  *   analysis), with which way to shift the circles.
+ * - "Course": the lift the other pilots of the race found (SessionLift), wide translucent cylinders,
+ *   those this flight missed in yellow, also as yellow triangles on the timeline.
  * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
  * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
  * - Two thermals picked in the list are compared: figures and the height gained over time.
@@ -46,6 +51,13 @@ const NO_NETTO = [150, 150, 150];
 // Low points on the timeline: the lowest of each glide ending in a thermal, when that low is this
 // many metres under the average entry of the thermals
 const LOW_POINT_MARGIN = 250;
+// Strong sink: the air (netto, total energy) going down faster than SINK_NETTO m/s over SINK_WINDOW
+// seconds, or the glider (vario, total energy) faster than SINK_VARIO m/s without the polar
+const SINK_NETTO = -2;
+const SINK_VARIO = -3;
+const SINK_WINDOW = 10;
+// Centring and weak tops shorter than this (seconds) are not hatched on the timeline
+const HATCH_MIN = 20;
 // Eighths of the centring radar, from north clockwise
 const SECTORS = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'];
 // Difference of climb between the best and the worst side under which a thermal is centred (m/s)
@@ -57,7 +69,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice'];
 
     static values = { url: String, label: String };
 
@@ -84,6 +96,10 @@ export default class extends Controller {
         this.phaseAt = this.phaseIndex();
         this.thermalPhases = this.flight.phases.filter((phase) => phase.type === 'thermal');
         this.liftPhases = this.flight.phases.filter((phase) => phase.type === 'lift');
+        this.crossings = this.flight.crossings ?? [];
+        this.sinks = this.strongSink();
+        this.air = this.flight.sessionLift ?? null;
+        if (this.hasAirChoiceTarget) this.airChoiceTarget.hidden = !this.air?.thermals.length;
         this.top = this.series.altitude.reduce((top, altitude) => Math.max(top, altitude), 0);
         this.buildMap();
         this.buildCharts();
@@ -112,6 +128,7 @@ export default class extends Controller {
         ({ map: this.map, overlay: this.overlay } = createMap(this.mapTarget, boundsOf(this.series.latitude, this.series.longitude)));
         this.map.on('load', () => {
             addTask(this.map, this.flight.task);
+            addShadow(this.map, this.series.latitude, this.series.longitude);
             this.trackSegments = this.segments();
             this.showLegend();
             this.render();
@@ -235,6 +252,9 @@ export default class extends Controller {
             layers.push(
                 ...thermalLayers('flight', this.series, this.thermalPhases, this.index, { zoom }),
                 ...liftLayers('flight', this.series, this.liftPhases, this.index, { zoom, windFrom: this.flight.statistics.windFrom ?? null }),
+                ...crossingLayers('flight', this.series, this.crossings, this.index, { zoom }),
+                ...sinkLayers('flight', this.series, this.sinks, this.index, { zoom }),
+                ...windLayers('flight', this.series, this.thermalPhases, this.index, { zoom }),
             );
         }
         // In the pilot view the camera is in the glider
@@ -244,6 +264,8 @@ export default class extends Controller {
             const details = readings(this.series, this.index, ground);
             layers.push(...gliderLayers('flight', [{ track: this.series, index: this.index, color: [255, 255, 255], flagColor: [25, 38, 48], label: this.labelValue, details, selected: false }], { is3d: this.is3d, zoom: this.map.getZoom() }));
         }
+        // Under the track: the lift of the other pilots of the race
+        layers.unshift(...sessionAirLayers('flight', this.air, { is3d: this.is3d, zoom: this.map.getZoom(), show: this.hasAirTarget ? this.airTarget.value : 'all' }));
         if (this.is3d) {
             layers.unshift(...taskLayers('flight', this.flight.task, { top: this.top }));
             // A curtain down to the ground in the colours of the track: the relief hides its lower part
@@ -277,6 +299,7 @@ export default class extends Controller {
         this.is3d = on;
         this.viewTargets.forEach((button) => button.setAttribute('aria-pressed', String((button.dataset.view === '3d') === on)));
         setTerrain(this.map, on);
+        showShadow(this.map, on);
         // The relief reads best on the photos, as long as the pilot kept the default map
         if (on && this.hasBasemapTarget && this.basemapTarget.value === 'topo' && !this.basemapChosen) {
             this.basemapTarget.value = 'satellite';
@@ -313,7 +336,9 @@ export default class extends Controller {
     centerOnGlider() {
         // Let the camera finish flying to the glider
         if (this.map.isEasing()) return;
-        const [lon, lat, altitude] = this.position(Math.round(this.index));
+        // Between two seconds like the glider: on whole seconds the camera would jump every second
+        const [lon, lat, height] = positionAt(this.series, this.index);
+        const altitude = this.is3d ? height : 0;
         if (this.is3d && this.playing) {
             // Behind the glider, turning with its course
             this.chase = chaseBearing(this.series, this.index, this.chase ?? this.map.getBearing());
@@ -557,6 +582,8 @@ export default class extends Controller {
             ['Inclinaison', (t) => (t.bank ? `${Math.round(t.bank)}°` : '—')],
             ['Sens', (t) => (t.direction === 'left' ? 'à gauche' : 'à droite')],
             ['Dérive (vent)', (t) => `${Math.round(t.drift)} km/h`],
+            ['Centrage', (t) => (t.entry !== null && t.entry !== undefined ? formatTime(t.entry) : '—')],
+            ['En haut sous la moyenne', (t) => (t.exit !== null && t.exit !== undefined ? formatTime(t.exit) : '—')],
         ];
         const table = document.createElement('table');
         const head = table.createTHead().insertRow();
@@ -651,6 +678,8 @@ export default class extends Controller {
             bank: omega > 0 ? Math.atan((meanSpeed * omega) / 9.81) * 180 / Math.PI : null,
             direction: phase.direction,
             drift,
+            entry: phase.entry,
+            exit: phase.exit,
             gains: Array.from({ length: duration + 1 }, (_, t) => altitude[phase.start + t] - altitude[phase.start]),
         };
     }
@@ -708,9 +737,21 @@ export default class extends Controller {
             if (phase.type === 'thermal') {
                 number += 1;
                 items.push(event('thermal', phase.start, phase.end, climbColor(phase.vario), `Thermique ${number} · ${phase.gain >= 0 ? '+' : ''}${phase.gain} m · ${FORMATS.vario(phase.vario)}`));
+                if (phase.entry >= HATCH_MIN) items.push(event('hatch', phase.start, phase.start + phase.entry, null, `Thermique ${number} · centrage en ${formatTime(phase.entry)}`));
+                if (phase.exit >= HATCH_MIN) items.push(event('hatch', phase.end - phase.exit, phase.end, null, `Thermique ${number} · ${formatTime(phase.exit)} en haut sous votre moyenne (${FORMATS.vario(this.flight.statistics.climbAverage)})`));
             } else if (phase.type === 'lift') {
                 items.push(event('lift', phase.start, phase.end, null, `Pente ou onde · +${phase.gain} m · ${FORMATS.vario(phase.vario)}`));
             }
+        }
+        for (const crossing of this.crossings) {
+            items.push(event('crossing', crossing.start, crossing.end, climbColor(crossing.vario), `Ascendance traversée sans spiraler · ${crossing.gain >= 0 ? '+' : ''}${crossing.gain} m · jusqu’à ${FORMATS.vario(crossing.vario)}`));
+        }
+        for (const thermal of this.air?.thermals ?? []) {
+            if (!thermal.missed) continue;
+            items.push(event('missed', thermal.closest.at, null, null, `Thermique de la course manqué à ${thermal.closest.distance} m · ${FORMATS.vario(thermal.climb)} · ${thermal.pilots.join(', ')}`));
+        }
+        for (const sink of this.sinks) {
+            items.push(event('sink', sink.start, sink.end, null, `Forte descendance · ${FORMATS.vario(sink.value)} ${sink.netto ? 'netto' : 'au vario'}`));
         }
         const final = this.flight.task?.finalGlide;
         const finish = this.flight.task?.turnpoints.at(-1)?.reached;
@@ -721,6 +762,41 @@ export default class extends Controller {
             items.push(event('low', low, null, null, `Point bas · ${FORMATS.altitude(altitude[low])}`));
         }
         this.eventsTarget.replaceChildren(...items);
+    }
+
+    /**
+     * Strong sink in the glides: runs where the total energy netto (or vario, without the polar)
+     * over SINK_WINDOW seconds is under SINK_NETTO (SINK_VARIO), with the worst value. Total energy:
+     * the height the glider turns into speed when it dives is not sink.
+     */
+    strongSink() {
+        const { vario, speed, netto } = this.series;
+        const { takeoff = 0, landing = this.count - 1 } = this.flight.statistics;
+        const limit = netto ? SINK_NETTO : SINK_VARIO;
+        const kinetic = (i) => (speed[i] / 3.6) ** 2 / (2 * 9.81);
+        const runs = [];
+        let run = null;
+        for (let i = takeoff; i + SINK_WINDOW <= landing; i += 1) {
+            let sum = 0;
+            let known = true;
+            for (let k = i; k < i + SINK_WINDOW && known; k += 1) {
+                const value = netto ? netto[k] : vario[k];
+                known = value !== null && value !== undefined && this.flight.phases[this.phaseAt[k]]?.type === 'glide';
+                sum += value;
+            }
+            const value = known ? sum / SINK_WINDOW + (kinetic(i + SINK_WINDOW) - kinetic(i)) / SINK_WINDOW : null;
+            if (value !== null && value < limit) {
+                if (run && i <= run.end) {
+                    run.end = i + SINK_WINDOW;
+                    run.value = Math.min(run.value, value);
+                } else {
+                    run = { start: i, end: i + SINK_WINDOW, value, netto: Boolean(netto) };
+                    runs.push(run);
+                }
+            }
+        }
+
+        return runs;
     }
 
     /** Seconds of the low points: the lowest of each glide followed by a thermal, well under the usual entry. */
@@ -754,6 +830,7 @@ export default class extends Controller {
         const number = this.thermalPhases.indexOf(thermal) + 1;
         this.radarTitleTarget.textContent = `Centrage du thermique ${number}`;
         this.radarAdviceTarget.textContent = centringAdvice(thermal.centring);
+        if (this.hasRadarTimingTarget) this.radarTimingTarget.textContent = timingAdvice(thermal, this.flight.statistics.climbAverage);
         this.drawRadar();
     }
 
@@ -922,6 +999,19 @@ function describePhase(phase) {
     }
 
     return `Transition · ${number(phase.distance / 1000)} km · ${Math.round(phase.speed)} km/h${phase.glideRatio ? ` · finesse ${Math.round(phase.glideRatio)}` : ''}`;
+}
+
+/** How long a thermal took to centre, and how long the glider stayed at its weak top. */
+function timingAdvice(thermal, average) {
+    const parts = [];
+    if (thermal.entry !== null && thermal.entry !== undefined) {
+        parts.push(thermal.entry === 0 ? 'Centré dès le premier tour.' : `Centré en ${formatTime(thermal.entry)} (premier tour à 70 % du meilleur).`);
+    }
+    if (thermal.exit > 0) {
+        parts.push(`Encore ${formatTime(thermal.exit)} en haut à monter moins vite que votre moyenne (${FORMATS.vario(average)}).`);
+    }
+
+    return parts.join(' ');
 }
 
 /** What the centring of a thermal says: centred, or which way to shift the circles. */

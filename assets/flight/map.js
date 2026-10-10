@@ -104,6 +104,20 @@ export function addTask(map, task) {
     map.addLayer({ id: 'turnpoints', type: 'circle', source: 'turnpoints', paint: { 'circle-radius': 4, 'circle-color': '#192630', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5 } });
 }
 
+/**
+ * The shadow of a track: a dark line lying on the relief under it, shown in 3D only (from above it
+ * would be under the track itself).
+ */
+export function addShadow(map, latitude, longitude) {
+    const coordinates = latitude.map((lat, i) => [longitude[i], lat]);
+    map.addSource('shadow', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates } } });
+    map.addLayer({ id: 'shadow', type: 'line', source: 'shadow', layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#192630', 'line-width': 2.5, 'line-opacity': 0.45, 'line-blur': 1 } });
+}
+
+export function showShadow(map, on) {
+    if (map.getLayer('shadow')) map.setLayoutProperty('shadow', 'visibility', on ? 'visible' : 'none');
+}
+
 /** Changes the basemap; `redraw` runs once the style is updated. */
 export function setBasemap(map, name, redraw) {
     const style = map.getStyle();

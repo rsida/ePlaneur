@@ -107,6 +107,61 @@ final class FlightAnalyzerTest extends TestCase
         self::assertGreaterThan(1.5, $thermal->centring[1] - $thermal->centring[5]);
     }
 
+    public function testTheEntryAndTheExitOfAThermal(): void
+    {
+        // The same six turns of 30 s: 0.5 m/s for a minute, 3 m/s, then 0.5 m/s for the last 40 s
+        $fixes = FlightSamples::glideThermalGlide();
+        $altitude = 1381.0;
+        foreach ($fixes as $t => $fix) {
+            if ($t >= 120) {
+                $fixes[$t] = new Fix($fix->time, $fix->latitude, $fix->longitude, $altitude);
+                $altitude += $t >= 300 ? -1.0 : ($t < 180 || $t >= 260 ? 0.5 : 3.0);
+            }
+        }
+        $analysis = (new FlightAnalyzer())->analyze(self::track($fixes));
+        $thermal = $analysis->phases[1];
+
+        // Centred once the circle climbs 70 % of 3 m/s, and above the average climb of the flight
+        // (about 1.6 m/s) until a little after 260 s
+        self::assertEqualsWithDelta(50, $thermal->entry, 8);
+        self::assertEqualsWithDelta(24, $thermal->exit, 8);
+        self::assertSame([], $analysis->crossings);
+    }
+
+    public function testLiftCrossedInAGlide(): void
+    {
+        // Climbing 1.5 m/s for 15 s in the second glide, flown straight at the same speed
+        $fixes = FlightSamples::glideThermalGlide();
+        $altitude = 1741.0;
+        foreach ($fixes as $t => $fix) {
+            if ($t >= 300) {
+                $fixes[$t] = new Fix($fix->time, $fix->latitude, $fix->longitude, $altitude);
+                $altitude += $t >= 350 && $t < 365 ? 1.5 : -1.0;
+            }
+        }
+        $crossings = (new FlightAnalyzer())->analyze(self::track($fixes))->crossings;
+
+        self::assertCount(1, $crossings);
+        self::assertEqualsWithDelta(350, $crossings[0]['start'], 3);
+        self::assertEqualsWithDelta(1.5, $crossings[0]['vario'], 0.1);
+        self::assertEqualsWithDelta(20.0, $crossings[0]['gain'], 4.0, '22.5 m gained, less the sink after it');
+    }
+
+    public function testAPullUpIsNotLift(): void
+    {
+        // Slowing from 50 to 30 m/s in 10 s turns speed into about 80 m of height: no lift
+        $fixes = [];
+        [$x, $altitude] = [0.0, 1500.0];
+        for ($t = 0; $t < 200; ++$t) {
+            $speed = $t < 100 ? 50.0 : ($t < 110 ? 50.0 - 2.0 * ($t - 100) : 30.0);
+            $fixes[] = new Fix((float) $t, ...FlightSamples::toLatLon($x, 0), altitude: $altitude);
+            $x += $speed;
+            $altitude += $t >= 100 && $t < 110 ? 7.0 : -1.5;
+        }
+
+        self::assertSame([], (new FlightAnalyzer())->analyze(self::track($fixes))->crossings);
+    }
+
     public function testAStraightClimbIsSlopeOrWaveLift(): void
     {
         // Straight flight climbing 1.5 m/s for two and a half minutes, after a glide

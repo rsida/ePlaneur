@@ -56,6 +56,25 @@ const SAME_THERMAL = 600;
 const SESSION_LABELS_ZOOM = 10.5;
 const LIFT_ARROW_STEP = 400;
 const LIFT_ARROW_RISE = 150;
+// Lift crossed in straight flight: lighter arrows rising at least CROSSING_RISE metres to the track
+const CROSSING_RISE = 60;
+const CROSSING_ALPHA = 150;
+// Lift of the other pilots of the race: their thermals AIR_RADIUS metres wide, yellow when missed,
+// the lift they crossed AIR_CROSSING_RADIUS metres wide
+const AIR_RADIUS = 150;
+const AIR_CROSSING_RADIUS = 60;
+const MISSED_COLOR = [255, 205, 0];
+const AIR_LABELS_ZOOM = 9;
+// Strong sink: blue arrows going down SINK_DROP metres from the track
+const SINK_COLOR = [40, 110, 220];
+const SINK_DROP = 150;
+// Windsocks over the thermals: white arrows going downwind, WIND_BASE metres plus WIND_PER_KMH a
+// km/h, WIND_ABOVE metres over the top of the thermal
+const WIND_COLOR = [245, 248, 252];
+const WIND_BASE = 150;
+const WIND_PER_KMH = 20;
+const WIND_ABOVE = 120;
+const WIND_MIN_SPEED = 5;
 // Half angle of the heads of the arrows
 const HEAD_ANGLE = (32 * Math.PI) / 180;
 
@@ -316,22 +335,38 @@ export function taskLayers(id, task, { top }) {
 }
 
 /**
- * Thermals of a flight in 3D, as arrows rising from the centre of the first circle at the altitude
- * of the entry to the centre of the last circle at the exit: tilted by the drift of the thermal
- * (the wind), thicker and darker with the climb rate. Those entered before `index` (the one being
- * climbed grows with the glider). `thermals` are the phases of the analysis ({ start, end, vario,
- * turns }); `color` replaces the colours of the climb rates (several pilots on one map: the colour
- * of the pilot); `zoom` (of the map) sets the size of the heads.
+ * Thermals of a flight in 3D, as cylinders from the altitude of the entry to the altitude so far,
+ * at the average position of the circles: those entered before `index` (the one being climbed
+ * grows with the glider), coloured by climb rate, or by `color` (several pilots on one map).
  */
-export function thermalLayers(id, track, thermals, index, { zoom, color = null } = {}) {
-    const arrows = thermalArrows(track, thermals, index).map((arrow) => ({ ...arrow, color: color ?? climbColor(arrow.vario), width: arrowWidth(arrow.vario) }));
+export function thermalLayers(id, track, thermals, index, { radius = 7, color = null } = {}) {
+    const columns = [];
+    for (const phase of thermals) {
+        if (phase.start > index) break;
+        const end = Math.min(phase.end, Math.floor(index));
+        const bottom = track.altitude[phase.start];
+        const height = track.altitude[end] - bottom;
+        if (height > 20) columns.push({ position: [...centreOf(track, phase.start, end), bottom], height, color: color ?? climbColor(phase.vario) });
+    }
 
-    return [arrowLayer(`${id}-thermals`, arrows, zoom)];
+    return [new ColumnLayer({
+        id: `${id}-thermals`,
+        data: columns,
+        getPosition: (column) => column.position,
+        getElevation: (column) => column.height,
+        getFillColor: (column) => [...column.color, 150],
+        // In pixels: a thermal a few hundred metres wide is a thread seen from afar
+        radius,
+        radiusUnits: 'pixels',
+        diskResolution: 24,
+        extruded: true,
+        parameters: SEE_THROUGH,
+    })];
 }
 
 /**
  * The thermals of every pilot of a session in 3D, the same thermal used by several pilots as one
- * arrow: thermals whose first circles are less than SAME_THERMAL metres apart are one, drawn from
+ * cylinder: thermals whose first circles are less than SAME_THERMAL metres apart are one, drawn from
  * the lowest entry to the highest exit, coloured by the average climb (weighted by the time spent),
  * with how many pilots climbed in it and their climb (when the map is close enough). `flights` are
  * { track, index, thermals }.
@@ -352,33 +387,43 @@ export function sessionThermalLayers(id, flights, { zoom }) {
             if (arrow.to[2] > group.to[2]) group.to = arrow.to;
         }
     });
-    const arrows = groups.map((group) => {
+    const columns = groups.map((group) => {
         const vario = group.seconds > 0 ? group.climb / group.seconds : 0;
         const pilots = group.pilots.size;
 
-        return { from: group.from, to: group.to, vario, color: climbColor(vario), width: arrowWidth(vario), label: `${pilots > 1 ? `${pilots} pilotes · ` : ''}${vario > 0 ? '+' : ''}${vario.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m/s` };
+        return { position: group.from, top: group.to, height: group.to[2] - group.from[2], color: climbColor(vario), label: `${pilots > 1 ? `${pilots} pilotes · ` : ''}${vario > 0 ? '+' : ''}${vario.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m/s` };
     });
 
     return [
-        arrowLayer(`${id}-session-thermals`, arrows, zoom),
+        new ColumnLayer({
+            id: `${id}-session-thermals`,
+            data: columns,
+            getPosition: (column) => column.position,
+            getElevation: (column) => column.height,
+            getFillColor: (column) => [...column.color, 150],
+            radius: 7,
+            radiusUnits: 'pixels',
+            diskResolution: 24,
+            extruded: true,
+            parameters: SEE_THROUGH,
+        }),
         new TextLayer({
             id: `${id}-session-thermal-labels`,
             // From afar the labels of a whole task pile up
             visible: zoom >= SESSION_LABELS_ZOOM,
-            data: arrows,
-            getPosition: (arrow) => arrow.to,
-            getText: (arrow) => arrow.label,
+            data: columns,
+            getPosition: (column) => column.top,
+            getText: (column) => column.label,
             characterSet: 'auto',
             getSize: 11,
             getColor: [255, 255, 255],
-            // Above the head of the arrow
-            getPixelOffset: (arrow) => [0, -((arrow.width * 3 + 10) * Math.max(0.5, Math.min(1, (zoom - 8) / 4)) + 4)],
+            getPixelOffset: [0, -6],
             getTextAnchor: 'middle',
             getAlignmentBaseline: 'bottom',
             fontFamily: 'Inter, sans-serif',
             fontWeight: 600,
             background: true,
-            getBackgroundColor: (arrow) => [...arrow.color, 220],
+            getBackgroundColor: (column) => [...column.color, 220],
             backgroundPadding: [4, 2],
         }),
     ];
@@ -445,18 +490,154 @@ export function liftLayers(id, track, lifts, index, { zoom, windFrom = null } = 
     ];
 }
 
+/**
+ * Lift crossed without turning (`crossings` of the analysis: { start, end, vario, gain }): a
+ * lighter arrow rising to the middle of the crossing, as long as the height gained, coloured by
+ * the best climb. Those passed before `index`.
+ */
+export function crossingLayers(id, track, crossings, index, { zoom }) {
+    const arrows = crossings.filter((crossing) => crossing.end <= index).map((crossing) => {
+        const k = Math.round((crossing.start + crossing.end) / 2);
+        const to = [track.longitude[k], track.latitude[k], track.altitude[k]];
+
+        return { from: offset(to, 0, 0, -Math.max(CROSSING_RISE, crossing.gain)), to, color: climbColor(crossing.vario), width: arrowWidth(crossing.vario) * 0.6, alpha: CROSSING_ALPHA };
+    });
+
+    return [arrowLayer(`${id}-crossings`, arrows, zoom)];
+}
+
+/**
+ * Strong sink ({ start, end, value } m/s, negative) as blue arrows going down from the middle of
+ * each, thicker with the sink. Those passed before `index`.
+ */
+export function sinkLayers(id, track, sinks, index, { zoom }) {
+    const arrows = sinks.filter((sink) => sink.end <= index).map((sink) => {
+        const k = Math.round((sink.start + sink.end) / 2);
+        const from = [track.longitude[k], track.latitude[k], track.altitude[k]];
+
+        return { from, to: offset(from, 0, 0, -SINK_DROP), color: SINK_COLOR, width: arrowWidth(-sink.value) };
+    });
+
+    return [arrowLayer(`${id}-sinks`, arrows, zoom)];
+}
+
+/**
+ * A windsock over each thermal left before `index`: a white arrow going downwind from above the
+ * centre of its last circle, longer with the wind of the thermal (its drift), with the speed
+ * written next to it when the map is close enough.
+ */
+export function windLayers(id, track, thermals, index, { zoom }) {
+    const socks = [];
+    for (const phase of thermals) {
+        if (phase.end > index) break;
+        if (phase.windFrom === null || phase.windFrom === undefined || !(phase.windSpeed >= WIND_MIN_SPEED)) continue;
+        const circle = circleSeconds(phase);
+        const from = [...centreOf(track, Math.max(phase.start, phase.end - circle + 1), phase.end), track.altitude[phase.end] + WIND_ABOVE];
+        const to = (phase.windFrom * Math.PI) / 180 + Math.PI;
+        const length = WIND_BASE + WIND_PER_KMH * phase.windSpeed;
+        socks.push({ from, to: offset(from, Math.sin(to) * length, Math.cos(to) * length, 0), color: WIND_COLOR, width: 3, label: `${Math.round(phase.windSpeed)} km/h` });
+    }
+
+    return [
+        arrowLayer(`${id}-wind`, socks, zoom),
+        new TextLayer({
+            id: `${id}-wind-labels`,
+            visible: zoom >= SESSION_LABELS_ZOOM,
+            data: socks,
+            getPosition: (sock) => sock.from,
+            getText: (sock) => sock.label,
+            getSize: 11,
+            getColor: [25, 38, 48],
+            getTextAnchor: 'middle',
+            getAlignmentBaseline: 'bottom',
+            getPixelOffset: [0, -6],
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: 600,
+            background: true,
+            getBackgroundColor: [...WIND_COLOR, 220],
+            backgroundPadding: [4, 2],
+        }),
+    ];
+}
+
+/**
+ * The lift the other pilots of the race found (`sessionLift` of the analysis, SessionLift): their
+ * thermals as wide translucent cylinders AIR_RADIUS metres around their centre, from their lowest
+ * entry to their highest exit, those the flight missed in yellow with a label; their lift crossed
+ * without turning as thin cylinders up to where they crossed it. In 2D, discs on the map.
+ * `show`: "all", "missed" (the missed thermals only) or "none"; the labels from AIR_LABELS_ZOOM.
+ */
+export function sessionAirLayers(id, air, { is3d, zoom, show = 'all' }) {
+    if (!air || show === 'none') return [];
+    const thermals = air.thermals.filter((thermal) => show === 'all' || thermal.missed);
+    const crossings = show === 'all' ? air.crossings : [];
+    const parameters = is3d ? SEE_THROUGH : { ...SEE_THROUGH, depthCompare: 'always' };
+    const missed = thermals.filter((thermal) => thermal.missed);
+    const number = (value) => value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+    return [
+        new ColumnLayer({
+            id: `${id}-air-crossings`,
+            data: crossings,
+            getPosition: (c) => [c.longitude, c.latitude, is3d ? c.altitude - Math.max(CROSSING_RISE, c.gain) : 0],
+            getElevation: (c) => (is3d ? Math.max(CROSSING_RISE, c.gain) : 0),
+            getFillColor: (c) => [...climbColor(c.climb), 90],
+            radius: AIR_CROSSING_RADIUS,
+            diskResolution: 16,
+            extruded: is3d,
+            material: false,
+            parameters,
+            updateTriggers: { getPosition: is3d, getElevation: is3d },
+        }),
+        new ColumnLayer({
+            id: `${id}-air-thermals`,
+            data: thermals,
+            getPosition: (t) => [t.longitude, t.latitude, is3d ? t.bottom : 0],
+            getElevation: (t) => (is3d ? Math.max(20, t.top - t.bottom) : 0),
+            getFillColor: (t) => (t.missed ? [...MISSED_COLOR, 120] : [...climbColor(t.climb), 55]),
+            radius: AIR_RADIUS,
+            diskResolution: 32,
+            extruded: is3d,
+            material: false,
+            parameters,
+            updateTriggers: { getPosition: is3d, getElevation: is3d },
+        }),
+        new TextLayer({
+            id: `${id}-air-labels`,
+            // From afar the labels of the whole task pile up
+            visible: zoom >= AIR_LABELS_ZOOM,
+            data: missed,
+            getPosition: (t) => [t.longitude, t.latitude, is3d ? t.top : 0],
+            getText: (t) => `Manqué à ${t.closest.distance} m · +${number(t.climb)} m/s · ${t.pilots.join(', ')}`,
+            characterSet: 'auto',
+            getSize: 11,
+            getColor: [25, 38, 48],
+            getPixelOffset: [0, -6],
+            getTextAnchor: 'middle',
+            getAlignmentBaseline: 'bottom',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: 600,
+            background: true,
+            getBackgroundColor: [...MISSED_COLOR, 230],
+            backgroundPadding: [4, 2],
+            parameters: is3d ? {} : { depthCompare: 'always' },
+            updateTriggers: { getPosition: is3d },
+        }),
+    ];
+}
+
 /** Colour of a climb rate (m/s), from weak to strong. */
 export function climbColor(vario) {
     return (CLIMB_COLORS.find((c) => vario <= c.max) ?? CLIMB_COLORS[0]).color;
 }
 
-/** Width in pixels of the arrow of a thermal: thicker with its climb rate (m/s). */
+/** Width in pixels of an arrow of lift or sink: thicker with its vertical speed (m/s). */
 export function arrowWidth(vario) {
     return Math.max(4, Math.min(18, 4 + 3 * vario));
 }
 
 /**
- * Arrows in 3D ({ from, to, color, width (pixels) }): a line and, beyond its end, a head of four
+ * Arrows in 3D ({ from, to, color, width (pixels), alpha }): a line and, beyond its end, a head of four
  * barbs in two planes across the line, which reads as a head from any side, about three times as
  * long as the line is wide on the screen. Thinner when the map is zoomed out (down to half), so that
  * a whole flight seen from afar is not a row of blots.
@@ -496,7 +677,7 @@ export function arrowLayer(id, arrows, zoom = 12) {
         id,
         data: paths,
         getPath: (part) => part.path,
-        getColor: (part) => [...part.arrow.color, 230],
+        getColor: (part) => [...part.arrow.color, part.arrow.alpha ?? 230],
         getWidth: (part) => part.arrow.width * thinner,
         widthUnits: 'pixels',
         capRounded: true,

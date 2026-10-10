@@ -33,6 +33,11 @@ final readonly class Phase
      * @param list<?float>|null $centring   average vario (m/s) in each eighth of the circles, from
      *                                      north clockwise: where the glider was around the centre of
      *                                      its circle (thermals, null when too short)
+     * @param int|null          $entry      seconds before the first circle climbing at least 70 %
+     *                                      of the best one: the time to centre (thermals)
+     * @param int|null          $exit       seconds at the top after the last circle climbing at
+     *                                      least the average climb of the flight: the time stayed
+     *                                      in a weakening thermal (thermals)
      */
     public function __construct(
         public string $type,
@@ -49,6 +54,8 @@ final readonly class Phase
         public ?float $windSpeed = null,
         public ?float $windFrom = null,
         public ?array $centring = null,
+        public ?int $entry = null,
+        public ?int $exit = null,
     ) {
     }
 
@@ -65,7 +72,13 @@ final readonly class Phase
      */
     public function withCircles(float $turns, ?float $radius, ?float $bank, ?float $windSpeed, ?float $windFrom, ?array $centring = null): self
     {
-        return new self($this->type, $this->start, $this->end, $this->gain, $this->distance, $this->glideRatio, $this->direction, $this->straight, $turns, $radius, $bank, $windSpeed, $windFrom, $centring);
+        return new self($this->type, $this->start, $this->end, $this->gain, $this->distance, $this->glideRatio, $this->direction, $this->straight, $turns, $radius, $bank, $windSpeed, $windFrom, $centring, $this->entry, $this->exit);
+    }
+
+    /** The same thermal with the seconds it took to centre and the seconds stayed at its weak top. */
+    public function withCoaching(?int $entry, ?int $exit): self
+    {
+        return new self($this->type, $this->start, $this->end, $this->gain, $this->distance, $this->glideRatio, $this->direction, $this->straight, $this->turns, $this->radius, $this->bank, $this->windSpeed, $this->windFrom, $this->centring, $entry, $exit);
     }
 
     /** Seconds. */

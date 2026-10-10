@@ -34,6 +34,25 @@ class FlightRepository extends ServiceEntityRepository
     }
 
     /**
+     * The other flights in the same air as a flight: those of its network session, or else of the
+     * same Condor race (race id of the .ftr). Not the same flight plan: flown another day, the
+     * weather and its thermals differ.
+     *
+     * @return list<Flight>
+     */
+    public function findSameAir(Flight $flight): array
+    {
+        $session = $flight->getSession();
+        $flights = match (true) {
+            null !== $session => array_values($session->getFlights()->toArray()),
+            null !== $flight->getRaceId() => $this->findBy(['raceId' => $flight->getRaceId()], ['id' => 'ASC']),
+            default => [],
+        };
+
+        return array_values(array_filter($flights, static fn (Flight $other): bool => $other->getId() !== $flight->getId()));
+    }
+
+    /**
      * The flights of the session of a flight: same flight plan (FlightSession).
      *
      * @return list<Flight>

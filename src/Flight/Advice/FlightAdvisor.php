@@ -29,7 +29,16 @@ use App\Training\TrainingStep;
  * - transitions that wander: 20 % or more longer than the straight lines (step 5);
  * - spiral wider than the one of the best climbs of the flight by 20 % or more (step 4);
  * - final glide too high: 150 m or more above the minimum finish altitude of the task, when the
- *   settings of the session are known (step 5).
+ *   settings of the session are known (step 5);
+ * - centring: 45 s or more on average before the first good circle, over three thermals or more
+ *   (step 4), 20 s or less is good;
+ * - leaving late: 2 min or more in all at the top of the thermals climbing slower than the average
+ *   of the flight (step 5);
+ * - lift crossed in straight flight: 200 m or more gained that way is good dolphin flight; crossed
+ *   twice or more at twice the climb of the thermal circled next (one minute or more), it was worth
+ *   a few turns (step 5);
+ * - thermals of the other pilots of the race missed (SessionLift), twice or more, at least as
+ *   strong as the average climb of the flight (step 5).
  */
 final class FlightAdvisor
 {
@@ -45,15 +54,23 @@ final class FlightAdvisor
     private const int MIN_GLIDES = 3;
     private const float SLOW_GLIDES = 20.0;
     private const float FAST_GLIDES = 30.0;
+    private const int MIN_CENTRED = 3;
+    private const int SLOW_CENTRING = 45;
+    private const int QUICK_CENTRING = 20;
+    private const int LATE_EXITS = 120;
+    private const int MIN_CROSSINGS = 2;
+    private const float DOLPHIN_GAIN = 200.0;
+    private const float MISSED_LIFT = 2.0;
 
     /**
      * @param array<string, mixed>   $analysis
      * @param TaskSettings|null      $settings    of the session of the flight, when known
      * @param GliderPerformance|null $performance the flight against the polar of its glider, when known
+     * @param array<string, mixed>   $sessionLift the lift the other pilots of the race found (SessionLift::around())
      *
      * @return list<Advice>
      */
-    public function advise(array $analysis, ?TaskSettings $settings = null, ?GliderPerformance $performance = null): array
+    public function advise(array $analysis, ?TaskSettings $settings = null, ?GliderPerformance $performance = null, array $sessionLift = []): array
     {
         $statistics = $analysis['statistics'];
         $thermals = array_values(array_filter($analysis['phases'], static fn (array $phase): bool => 'thermal' === $phase['type']));
@@ -151,6 +168,57 @@ final class FlightAdvisor
             }
         }
 
+        $centred = array_values(array_filter(array_map(static fn (array $phase): ?int => $phase['entry'] ?? null, $thermals), static fn (?int $entry): bool => null !== $entry));
+        if (\count($centred) >= self::MIN_CENTRED) {
+            $entry = array_sum($centred) / \count($centred);
+            if ($entry >= self::SLOW_CENTRING) {
+                $advice[] = new Advice(Advice::TIP, 'Un centrage lent', \sprintf(
+                    'En moyenne %s avant le premier bon tour (70 %% du meilleur) sur %d thermiques. Le radar de centrage de chaque thermique montre de quel côté décaler les cercles.',
+                    self::seconds($entry), \count($centred),
+                ), TrainingStep::Flaps);
+            } elseif ($entry <= self::QUICK_CENTRING) {
+                $advice[] = new Advice(Advice::GOOD, 'Un centrage rapide', \sprintf(
+                    'En moyenne %s avant le premier bon tour sur %d thermiques : vous trouvez vite le cœur.',
+                    self::seconds($entry), \count($centred),
+                ), TrainingStep::Flaps);
+            }
+        }
+
+        $late = array_filter($thermals, static fn (array $phase): bool => ($phase['exit'] ?? 0) > 0);
+        $lateTime = array_sum(array_map(static fn (array $phase): int => $phase['exit'], $late));
+        if (null !== $average && $lateTime >= self::LATE_EXITS) {
+            $advice[] = new Advice(Advice::TIP, 'Des sorties tardives', \sprintf(
+                '%s au total en haut de %d %s à monter moins vite que votre moyenne (%s m/s). Quand le thermique faiblit sous ce que la suite promet, partez : la frise des événements les montre.',
+                self::seconds($lateTime), \count($late), \count($late) > 1 ? 'thermiques' : 'thermique', self::number($average),
+            ), TrainingStep::MacCready);
+        }
+
+        $crossings = $analysis['crossings'] ?? [];
+        $dolphin = array_sum(array_map(static fn (array $crossing): float => max(0.0, $crossing['gain']), $crossings));
+        if ($dolphin >= self::DOLPHIN_GAIN) {
+            $advice[] = new Advice(Advice::GOOD, 'Du vol en dauphin', \sprintf(
+                '%s m gagnés en ligne droite dans %d ascendances traversées sans spiraler : autant de montée en moins à faire en thermique.',
+                number_format($dolphin, 0, ',', ' '), \count($crossings),
+            ), TrainingStep::MacCready);
+        }
+        $missed = self::missedLift($crossings, $analysis['phases']);
+        if (\count($missed) >= self::MIN_CROSSINGS) {
+            $advice[] = new Advice(Advice::TIP, 'Des ascendances laissées pour un thermique plus faible', \sprintf(
+                '%d fois, une ascendance traversée en ligne droite (jusqu’à %s m/s en vario énergie totale) était au moins deux fois plus forte que le thermique spiralé ensuite. Quelques tours dedans auraient payé : la frise des événements les montre.',
+                \count($missed), self::number(max(array_column($missed, 'vario'))),
+            ), TrainingStep::MacCready);
+        }
+
+        $missedThermals = array_values(array_filter($sessionLift['thermals'] ?? [], static fn (array $thermal): bool => $thermal['missed'] && null !== $average && $thermal['climb'] >= $average));
+        if (\count($missedThermals) >= self::MIN_CROSSINGS) {
+            usort($missedThermals, static fn (array $a, array $b): int => $b['climb'] <=> $a['climb']);
+            $best = $missedThermals[0];
+            $advice[] = new Advice(Advice::TIP, 'Des thermiques de la course manqués', \sprintf(
+                '%d thermiques où d’autres pilotes de la course ont monté au moins à votre moyenne (%s m/s), passés à moins de 500 m sans y tourner ; le meilleur à %s m/s (%s), frôlé à %d m. Ils sont en jaune sur la carte et la frise.',
+                \count($missedThermals), self::number($average), self::number($best['climb']), implode(', ', $best['pilots']), $best['closest']['distance'],
+            ), TrainingStep::MacCready);
+        }
+
         $badge = self::silverBadge($analysis);
         if (null !== $badge) {
             $advice[] = $badge;
@@ -187,6 +255,33 @@ final class FlightAdvisor
             $text.'. Indicatif : les épreuves se valident sur le Condor Club.',
             TrainingStep::Flaps,
         );
+    }
+
+    /**
+     * Lift crossed in straight flight at least MISSED_LIFT times as strong as the thermal circled
+     * next, when that thermal lasted WEAK_MIN_DURATION or more.
+     *
+     * @param list<array<string, mixed>> $crossings
+     * @param list<array<string, mixed>> $phases
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function missedLift(array $crossings, array $phases): array
+    {
+        $missed = [];
+        foreach ($crossings as $crossing) {
+            foreach ($phases as $phase) {
+                if ('thermal' !== $phase['type'] || ($phase['start'] ?? 0) < $crossing['end']) {
+                    continue;
+                }
+                if ($phase['duration'] >= self::WEAK_MIN_DURATION && $crossing['vario'] >= self::MISSED_LIFT * max(0.1, $phase['vario'])) {
+                    $missed[] = $crossing;
+                }
+                break;
+            }
+        }
+
+        return $missed;
     }
 
     /** Glide speed against the MacCready speed of the polar, with three glides or more. */

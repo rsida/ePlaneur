@@ -18,6 +18,7 @@ use App\Flight\Glider\GliderPerformance;
 use App\Flight\IgcExporter;
 use App\Flight\Logbook;
 use App\Flight\Reader\InvalidTrackException;
+use App\Flight\SessionLift;
 use App\Form\FlightCommentType;
 use App\Repository\FlightPlanRepository;
 use App\Repository\FlightRepository;
@@ -218,7 +219,7 @@ final class FlightController extends AbstractController
             'flight' => $flight,
             'race' => $race,
             'session_size' => $flights->countSession($flight),
-            'advice' => $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings(), $performance),
+            'advice' => $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings(), $performance, SessionLift::around($flight->getAnalysis(), $flights->findSameAir($flight))),
             'performance' => $performance,
             'comment_form' => $form?->createView(),
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
@@ -285,13 +286,15 @@ final class FlightController extends AbstractController
 
     /**
      * What the viewer draws: 1 s series, phases, statistics and task (FlightAnalysis::toArray()),
-     * and the netto vario of the glides when the polar of the glider is known.
+     * the netto vario of the glides when the polar of the glider is known, and the lift the other
+     * pilots of the race found (SessionLift).
      */
     #[Route('/{id<\d+>}/analyse.json', name: 'analysis', methods: ['GET'])]
     #[IsGranted(FlightVoter::VIEW, 'flight')]
-    public function analysis(Flight $flight): JsonResponse
+    public function analysis(Flight $flight, FlightRepository $flights): JsonResponse
     {
         $analysis = $flight->getAnalysis();
+        $analysis['sessionLift'] = SessionLift::around($analysis, $flights->findSameAir($flight));
         $glider = $this->gliders->findOneByName($flight->getGlider());
         if (null !== $glider) {
             $analysis['series']['netto'] = GliderPerformance::of($glider, $analysis)->netto;

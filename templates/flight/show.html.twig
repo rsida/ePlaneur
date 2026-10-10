@@ -166,6 +166,55 @@
         {% endif %}
 
         <div class="p-flight__viewer">
+            {# What the symbols of the map (in 3D mostly) and of the timeline mean #}
+            <details class="p-flight__key">
+                <summary>
+                    <twig:ux:icon name="info" class="p-flight__key-icon" />
+                    <span><strong>Légende</strong> : que veulent dire les cylindres, les flèches et les repères de la frise ?</span>
+                    <twig:ux:icon name="chevron-down" class="p-flight__key-chevron" />
+                </summary>
+                <div class="p-flight__key-columns">
+                    <section>
+                        <h2 class="p-flight__key-title">Sur la carte en 3D</h2>
+                        <ul class="p-flight__key-list">
+                            <li><span class="p-flight__swatch p-flight__swatch--column" aria-hidden="true"><i style="--swatch: var(--color-climb-1)"></i><i style="--swatch: var(--color-climb-2)"></i><i style="--swatch: var(--color-climb-3)"></i><i style="--swatch: var(--color-climb-4)"></i></span>
+                                <span><strong>Vos thermiques</strong> : un cylindre fin à la position moyenne de vos spirales, de l’entrée à la sortie, plus foncé quand ça monte plus (moins de 1, 1 à 2, 2 à 3, plus de 3 m/s).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--wide" aria-hidden="true"></span>
+                                <span><strong>Thermiques des autres pilotes de la course</strong> : un gros cylindre translucide là où ils ont spiralé, de leur entrée la plus basse à leur sortie la plus haute ; les petits sont les ascendances qu’ils ont traversées sans tourner.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--missed" aria-hidden="true"></span>
+                                <span><strong>Thermique manqué</strong> (jaune) : un thermique d’un autre pilote, passé à moins de 500 m de son centre, à une altitude où il marchait, sans y tourner.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--slope" aria-hidden="true"></span>
+                                <span><strong>Pente ou onde</strong> : bande orange sur la trace et flèches orange montant du côté du vent, là où vous avez monté en ligne droite.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--crossing" aria-hidden="true"></span>
+                                <span><strong>Ascendance traversée sans spiraler</strong> : flèche claire montant jusqu’à la trace, aussi longue que la hauteur gagnée (vol en dauphin).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--sink" aria-hidden="true"></span>
+                                <span><strong>Forte descendance</strong> : flèche bleue vers le bas, là où l’air descendait à plus de 2 m/s (netto).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--wind" aria-hidden="true"></span>
+                                <span><strong>Manche à air</strong> : flèche blanche au sommet de chaque thermique, dans le sens où va le vent, plus longue quand il est fort (vitesse affichée de près).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--curtain" aria-hidden="true"></span>
+                                <span><strong>Rideau et ombre</strong> : des traits vers le sol aux couleurs de la trace, pour lire la hauteur, et l’ombre de la trace sur le relief.</span></li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h2 class="p-flight__key-title">Sous la barre de lecture</h2>
+                        <ul class="p-flight__key-list">
+                            <li><span class="p-flight__swatch p-flight__swatch--band" aria-hidden="true"></span>
+                                <span><strong>Thermique</strong> : bande de la couleur de sa montée ; hachurée pendant le centrage et en haut quand il monte moins que votre moyenne.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--lift" aria-hidden="true"></span>
+                                <span><strong>Pente ou onde</strong>.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--tick" aria-hidden="true"></span>
+                                <span><strong>Ascendance traversée</strong> (trait en haut) et <strong>forte descendance</strong> (trait bleu en bas).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--low" aria-hidden="true"></span>
+                                <span><strong>Point bas</strong> : bien plus bas que vos entrées de thermique habituelles.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--missed-tick" aria-hidden="true"></span>
+                                <span><strong>Thermique de la course manqué</strong>, au moment où vous en étiez le plus près.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--final" aria-hidden="true"></span>
+                                <span><strong>Transition finale</strong>, et au-dessus de la barre les points de virage.</span></li>
+                        </ul>
+                        <p class="p-flight__key-hint">Survolez un repère pour ses valeurs, cliquez pour y aller.</p>
+                    </section>
+                </div>
+            </details>
             <div class="p-flight__map-wrap">
                 <div class="p-flight__map" data-flight-viewer-target="map" role="region" aria-label="Carte du vol"></div>
                 <div class="p-flight__map-tools">
@@ -187,6 +236,14 @@
                             <option value="vario">Trace : vario</option>
                             <option value="altitude">Trace : altitude</option>
                             {% if performance %}<option value="netto">Trace : netto</option>{% endif %}
+                        </select>
+                    </label>
+                    <label class="p-flight__select" data-flight-viewer-target="airChoice" hidden>
+                        <span class="u-visually-hidden">Thermiques des autres pilotes de la course</span>
+                        <select data-flight-viewer-target="air" data-action="flight-viewer#render">
+                            <option value="all">Course : thermiques des autres</option>
+                            <option value="missed">Course : thermiques manqués</option>
+                            <option value="none">Course : masquée</option>
                         </select>
                     </label>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
@@ -228,6 +285,7 @@
                             role="img" aria-label="Vario moyen de chaque côté des cercles"></canvas>
                     <p class="p-flight__radar-value" data-flight-viewer-target="radarValue"></p>
                     <p class="p-flight__radar-advice" data-flight-viewer-target="radarAdvice"></p>
+                    <p class="p-flight__radar-advice" data-flight-viewer-target="radarTiming"></p>
                 </section>
 
                 <section class="l-stack l-stack--sm">
@@ -308,7 +366,7 @@
                                         <td class="{{ phase.vario >= 0 ? 'p-flight__up' : 'p-flight__down' }}">{{ phase.vario >= 0 ? '+' : '' }}{{ phase.vario|number_format(1, ',', ' ') }} m/s</td>
                                         <td class="u-note">
                                             {%- if phase.type == 'thermal' -%}
-                                                {{ [phase.turns ? phase.turns|number_format(1, ',', ' ') ~ ' tours' : null, phase.radius ? 'r ' ~ phase.radius ~ ' m' : null, phase.bank ? phase.bank ~ '°' : null, phase.windSpeed is not null and phase.windFrom is not null ? 'vent ' ~ phase.windSpeed|number_format(0) ~ ' km/h du ' ~ phase.windFrom ~ '°' : null]|filter(v => v)|join(' · ') }}
+                                                {{ [phase.turns ? phase.turns|number_format(1, ',', ' ') ~ ' tours' : null, phase.radius ? 'r ' ~ phase.radius ~ ' m' : null, phase.bank ? phase.bank ~ '°' : null, phase.windSpeed is not null and phase.windFrom is not null ? 'vent ' ~ phase.windSpeed|number_format(0) ~ ' km/h du ' ~ phase.windFrom ~ '°' : null, phase.entry is defined and phase.entry is not null ? (phase.entry == 0 ? 'centré dès le 1er tour' : 'centré en ' ~ phase.entry ~ ' s') : null, phase.exit is defined and phase.exit ? phase.exit ~ ' s en haut sous la moyenne' : null]|filter(v => v)|join(' · ') }}
                                             {%- else -%}
                                                 {{ [phase.distance|flight_distance, phase.speed|number_format(0, ',', ' ') ~ ' km/h', phase.glideRatio ? 'finesse ' ~ phase.glideRatio|number_format(0, ',', ' ') : null]|filter(v => v)|join(' · ') }}
                                             {%- endif -%}

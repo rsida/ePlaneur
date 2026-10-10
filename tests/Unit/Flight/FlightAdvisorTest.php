@@ -70,14 +70,36 @@ final class FlightAdvisorTest extends TestCase
         self::assertStringContainsString('✗ 1 000 m de gain (300 m)', $advice[0]->text);
     }
 
+    public function testCentringLeavingAndLiftCrossed(): void
+    {
+        $thermals = [[300, 600, 2.0, 'left', 50, 60, 200], [300, 300, 1.0, 'left', 60, 40, 700], [300, 600, 2.0, 'right', 40, 30, 1200]];
+        // Before each thermal: 2.4 m/s before a 2 m/s one, 2.1 and 3.0 m/s before a 1 m/s one
+        $crossings = [['start' => 100, 'end' => 120, 'vario' => 2.4, 'gain' => 30.0], ['start' => 400, 'end' => 420, 'vario' => 2.1, 'gain' => 40.0], ['start' => 600, 'end' => 620, 'vario' => 3.0, 'gain' => 50.0]];
+        $advice = $this->advise(['climbAverage' => 2.0], $thermals, crossings: $crossings);
+        $titles = array_map(static fn (Advice $item): string => $item->title, $advice);
+
+        self::assertSame(['Un centrage lent', 'Des sorties tardives', 'Des ascendances laissées pour un thermique plus faible'], $titles);
+        self::assertStringContainsString('En moyenne 50 s', $advice[0]->text);
+        self::assertSame(TrainingStep::Flaps, $advice[0]->step);
+        self::assertStringContainsString('2 min 10 s au total en haut de 3 thermiques', $advice[1]->text);
+        self::assertStringContainsString('2 fois', $advice[2]->text);
+        self::assertStringContainsString('jusqu’à 3,0 m/s', $advice[2]->text);
+
+        $crossings = [['start' => 100, 'end' => 120, 'vario' => 4.0, 'gain' => 120.0], ['start' => 400, 'end' => 420, 'vario' => 3.5, 'gain' => 90.0]];
+        $advice = $this->advise(['climbAverage' => 2.0], [[300, 600, 2.0, 'left', 10, 0, 200], [300, 600, 2.0, 'right', 15, 0, 700], [300, 600, 2.0, 'left', 20, null, 1200]], crossings: $crossings);
+        self::assertSame(['Un centrage rapide', 'Du vol en dauphin'], array_map(static fn (Advice $item): string => $item->title, $advice));
+        self::assertStringContainsString('210 m gagnés en ligne droite dans 2 ascendances', $advice[1]->text);
+    }
+
     /**
-     * @param array<string, float>                   $statistics
-     * @param list<array{int, float, float, string}> $thermals   duration, gain, climb, direction
-     * @param array<string, float>|null              $finalGlide
+     * @param array<string, float>                                                           $statistics
+     * @param list<array{0: int, 1: float, 2: float, 3: string, 4?: int, 5?: ?int, 6?: int}> $thermals   duration, gain, climb, direction, and seconds to centre, stayed at the top and start
+     * @param list<array<string, int|float>>                                                 $crossings
+     * @param array<string, float>|null                                                      $finalGlide
      *
      * @return list<Advice>
      */
-    private function advise(array $statistics, array $thermals, bool $completed = false, int $duration = 1800, float $speed = 20.0, float $climb = 0.0, ?array $finalGlide = null, ?TaskSettings $settings = null): array
+    private function advise(array $statistics, array $thermals, bool $completed = false, int $duration = 1800, float $speed = 20.0, float $climb = 0.0, ?array $finalGlide = null, ?TaskSettings $settings = null, array $crossings = []): array
     {
         $series = ['time' => [], 'latitude' => [], 'longitude' => [], 'altitude' => []];
         for ($t = 0; $t <= $duration; ++$t) {
@@ -87,12 +109,13 @@ final class FlightAdvisorTest extends TestCase
             $series['longitude'][] = $longitude;
             $series['altitude'][] = 500.0 + $climb * $t / $duration;
         }
-        $phases = array_map(static fn (array $thermal): array => ['type' => 'thermal', 'duration' => $thermal[0], 'gain' => $thermal[1], 'vario' => $thermal[2], 'direction' => $thermal[3]], $thermals);
+        $phases = array_map(static fn (array $thermal): array => ['type' => 'thermal', 'duration' => $thermal[0], 'gain' => $thermal[1], 'vario' => $thermal[2], 'direction' => $thermal[3], 'entry' => $thermal[4] ?? null, 'exit' => $thermal[5] ?? null, 'start' => $thermal[6] ?? 0], $thermals);
 
         return (new FlightAdvisor())->advise([
             'statistics' => $statistics + ['duration' => $duration, 'takeoff' => 0, 'landing' => $duration],
             'series' => $series,
             'phases' => $phases,
+            'crossings' => $crossings,
             'task' => ['completed' => $completed || null !== $finalGlide, 'finalGlide' => $finalGlide],
         ], $settings);
     }

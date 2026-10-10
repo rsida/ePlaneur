@@ -123,7 +123,15 @@ administrator to add it.
      its last one; FDU: 10 km/h from 262°, Condor Club 10 km/h from 246°); from two full turns, its
      **centring** (roadmap 7h5): the average vario in each eighth of the circles, by the bearing of
      the glider from the centre of its circle (the average position over one circle around that
-     second, which follows the drift), an eighth crossed for less than 3 s left out;
+     second, which follows the drift), an eighth crossed for less than 3 s left out; and its
+     **entry and exit** (roadmap 7i1), from the climb over each circle: the seconds before the
+     first circle climbing 70 % of the best one (centring), and the seconds after the last circle
+     climbing the average climb of the flight (staying while it weakens);
+   - **lift crossed** in the glides without turning (roadmap 7i1, `crossings`): the total energy
+     vario over 10 s (height plus the height the speed is worth, so a pull-up is not lift) at
+     1 m/s or more for 5 s, away from the 20 s after a thermal and the 30 s before the next one,
+     with its best value and the height gained. In the Condor races of 2026-10 the good pilots
+     gain 1,000 to 3,300 m that way (dolphin flight);
    - straight flight that climbs (1 m/s over 30 s, for a minute and 50 m) is its own phase, slope
      or wave lift (FDU: 1, +299 m; Condor Club 1, +269 m). A height recovery of Condor ("miracle")
      reads as one too. Before the release it is the tow or winch climb, a "launch" phase
@@ -236,30 +244,57 @@ and says so in an L line. The export reads back with `IgcReader`.
   translucent, with the line of the task at that height (`taskLayers()`); a sky with haze at the
   horizon (MapLibre `sky`). Translucent volumes do not write the depth buffer, or the tracks drawn
   after them would disappear behind their walls.
-- Lift in 3D (roadmap 7h1, `arrowLayer()`: a line and a head of four barbs in two planes, readable
-  from any side, thinner when zoomed out): the thermals climbed so far are arrows from the centre
-  of their first circle at the entry to the centre of their last circle at the exit, so they lean
-  with the drift (the wind), thicker and darker with the climb (under 1, 1 to 2, 2 to 3, over
-  3 m/s), the one being climbed growing with the glider (`thermalLayers()`; the colour of the pilot
-  in a comparison; the thermals come with the replay data, `FlightSession::thermalsOf()`). The
-  slope or wave lift phases get an orange band over the track and orange arrows every 400 m coming
-  up to it from 150 m below on the side of the wind of the flight (`liftLayers()`).
+- Lift in 3D (roadmap 7h1): the thermals climbed so far are thin cylinders at the average position
+  of their circles, from the entry to the altitude reached, darker with the climb (under 1, 1 to 2,
+  2 to 3, over 3 m/s), the one being climbed growing with the glider (`thermalLayers()`; the colour
+  of the pilot in a comparison; the thermals come with the replay data,
+  `FlightSession::thermalsOf()`). Arrows for the thermals were tried on 2026-10-10 and dropped at
+  the user's request: the cylinders read the centring better. Other lift uses arrows
+  (`arrowLayer()`: a line and a head of four barbs in two planes, readable from any side, thinner
+  when zoomed out). The slope or wave lift phases get an orange band over the track and orange arrows every 400 m coming
+  up to it from 150 m below on the side of the wind of the flight (`liftLayers()`). Roadmap 7i2:
+  lift crossed without turning gets a lighter arrow rising to the track as long as the height
+  gained (`crossingLayers()`), strong sink a blue arrow going down 150 m (`sinkLayers()`), and each
+  thermal left a white windsock above its top pointing downwind, longer with its wind, with the
+  speed when close (`windLayers()`). The shadow of the track lies on the relief (a MapLibre line,
+  draped, `addShadow()`).
+- Lift of the race (roadmap 7i7, `SessionLift`, in `analyse.json` as `sessionLift`): Condor does
+  not record its thermals, but the pilots of one network race (same network session, or else same
+  Condor race id; not the same flight plan another day) fly in the same air, so where one of them
+  climbed there was a thermal. Their thermals, grouped within 600 m, are wide translucent cylinders
+  (150 m radius) from the lowest entry to the highest exit, their lift crossed thin ones; in 2D,
+  discs. A thermal is **missed** when the flight passed within 500 m of its centre, at an altitude
+  where it worked (from 200 m under its entry to its top), climbing 1 m/s or more, without circling
+  in it nor crossing lift within 30 s (dolphin flight through it counts as used): yellow, labelled
+  from zoom 9 ("Manqué à 129 m · +2,1 m/s · HL4, JC6"), and a yellow triangle above the timeline at
+  the closest moment. "Course : thermiques des autres / manqués / masquée" chooses what shows. The
+  recordings do not share a clock: a thermal may have died, or not be born yet, when the flight
+  passed. Advice when two or more missed thermals climbed at least the average of the flight.
 - Curtain (roadmap 7h2): in 3D a line down to the ground every 2 s, in the colour of the track, so
   the curtain reads altitude and height above the relief. The track (and the curtain) can be
   coloured by vario, altitude or, with the polar of the glider, netto (grey out of the glides).
 - Timeline (roadmap 7h3): above the seek bar a tick at each turnpoint reached (start, points,
   finish); under it each thermal as a band coloured by its climb, the slope lift in orange, the
   final glide as a line, and the low points (the lowest of a glide ending in a thermal, 250 m or
-  more under the average entry of the thermals) as red triangles. A click moves the replay there;
+  more under the average entry of the thermals) as red triangles. Roadmap 7i1/7i2: the centring
+  and the weak top of a thermal (20 s or more) are hatched over its band, lift crossed is a short
+  tick at the top in the colour of its climb, strong sink a blue tick at the bottom: the total
+  energy netto over 10 s under −2 m/s in a glide, or the total energy vario under −3 m/s without
+  the polar (`strongSink()`). A click moves the replay there;
   hovering gives the values. The list of phases gives the same moments to the keyboard.
 - Centring radar (roadmap 7h5), beside the map: for the thermal at the moment shown (or the last
   one before it), the eight sides of its circles as wedges, longer and darker the better they
   climbed, north up; hovering a side gives its vario, and a sentence says which way to shift the
   circles (or that the thermal was centred: less than 0.5 m/s between the best and the worst
-  side).
+  side). Under it, how long the thermal took to centre and how long the glider stayed at its weak
+  top; the phase table and the comparison of two thermals give the same figures.
+- Above the map, a tinted bar "Légende" (closed by default, opens on a click) draws and explains
+  every symbol of the 3D map and of the timeline. Its colours are tokens (`--color-climb-1` to `-4`,
+  `--color-slope-arrow`, `--color-windsock`...) that repeat the values of `scene.js`: change both.
 - Switching to 3D picks the "Satellite" basemap unless the pilot chose one.
 - Replay ×1 to ×300, "Suivre" keeps the glider in the centre; in 3D the camera comes close and
-  flies behind it, turned along its track of the last minute (`chaseBearing()`: the course, not
+  flies behind it (on the glider between two seconds, as it is drawn: on whole seconds the camera
+  jumped every second), turned along its track of the last minute (`chaseBearing()`: the course, not
   each circle of a thermal).
 - "Vue pilote" (3D): the camera sits in the glider (`calculateCameraOptionsFromCameraLngLatAltRotation`
   of MapLibre 5), looks along its track, 15° below the horizon (fewer far tiles to load), at least
@@ -332,7 +367,11 @@ rather than in time (`FlightComparison`):
   under 1 m/s or under half the average climb); circling without gain (three or more under 50 m);
   always turning the same way (85 %, four thermals or more); slow glides (20 km/h under the
   MacCready speed of a 15 m glider, about 95 km/h + 20 km/h per m/s of climb); marks of the Silver
-  badge (1 h, 1,000 m gained from a low point, 50 km from the take-off). No advice on flying too fast:
+  badge (1 h, 1,000 m gained from a low point, 50 km from the take-off); roadmap 7i1: slow centring
+  (45 s or more on average before the first good circle, three thermals or more; 20 s or less is
+  good), leaving late (2 min or more in all at the weak tops), dolphin flight (200 m or more gained
+  in lift crossed) and lift left for a weaker thermal (twice or more, lift crossed at twice the
+  climb of the next thermal of a minute or more). No advice on flying too fast:
   straight flight includes ridge running, and ballasted gliders fly much faster. Kinds: something
   to work on, something done well, or where the flight stands (badge marks reached in part).
 - **Logbook** (`/mon-compte/carnet`, in the member space; `/vols/carnet` redirects there): the pilot's

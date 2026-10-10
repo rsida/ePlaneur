@@ -38,6 +38,8 @@
     --palette-green-soft: #e1eee6;
     /* Data colors (flight comparison): not in the Figma file */
     --palette-orange: #d9822b;
+    --palette-blue: #286edc;
+    --palette-yellow: #f2c200;
 
     --font-display: 'Oswald', 'Arial Narrow', sans-serif;
     --font-heading: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
@@ -65,8 +67,19 @@
     /* The two pilots of a flight comparison, on the map, the charts and the tables */
     --color-pilot-a: var(--palette-orange);
     --color-pilot-b: var(--palette-navy);
-    /* Events of a flight under its timeline: slope lift, final glide, low points */
+    /* Events of a flight under its timeline: slope lift, final glide, low points, strong sink,
+       hatching of the centring and weak tops of the thermals */
     --color-lift: var(--palette-orange);
+    --color-sink: var(--palette-blue);
+    --color-missed-thermal: var(--palette-yellow);
+    --color-hatch: rgb(255 255 255 / 75%);
+    /* Lift in the 3D replay (scene.js): thermals by climb rate, slope arrows, windsocks */
+    --color-climb-1: #f08076;
+    --color-climb-2: #e23e34;
+    --color-climb-3: #ba1626;
+    --color-climb-4: #800030;
+    --color-slope-arrow: #ff8c00;
+    --color-windsock: #f5f8fc;
     --color-final-glide: var(--palette-navy);
     --color-low-point: var(--palette-red);
 

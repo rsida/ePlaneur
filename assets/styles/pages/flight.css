@@ -50,7 +50,9 @@
 /* Map, side panel, replay bar and charts */
 .p-flight__viewer {
     display: grid;
-    grid-template-areas: 'map' 'replay' 'side' 'charts';
+    grid-template-areas: 'key' 'map' 'replay' 'side' 'charts';
+    /* The key and the map never widen the page */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
     margin-inline: auto;
     padding-inline: var(--gutter);
@@ -59,7 +61,7 @@
 
 @media (width >= 64em) {
     .p-flight__viewer {
-        grid-template-areas: 'map side' 'replay side' 'charts charts';
+        grid-template-areas: 'key key' 'map side' 'replay side' 'charts charts';
         grid-template-columns: minmax(0, 1fr) 20rem;
     }
 }
@@ -352,6 +354,32 @@
     background-color: var(--color-final-glide);
 }
 
+/* Lift crossed without turning: a thin tick at the top of the strip */
+.p-flight__event--crossing {
+    height: 40%;
+}
+
+.p-flight__event--sink {
+    top: auto;
+    bottom: 0;
+    height: 40%;
+    background-color: var(--color-sink);
+}
+
+/* Centring and weak tops of the thermals: hatched over their band */
+.p-flight__event--hatch {
+    background: repeating-linear-gradient(135deg, var(--color-hatch) 0 2px, transparent 2px 4px);
+}
+
+/* A thermal of the race missed: a small triangle pointing up, above the strip */
+.p-flight__event--missed {
+    width: var(--space-2);
+    height: var(--space-2);
+    background-color: var(--color-missed-thermal);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    transform: translate(-50%, -100%);
+}
+
 /* A small triangle pointing down */
 .p-flight__event--low {
     width: var(--space-2);
@@ -359,6 +387,247 @@
     background-color: var(--color-low-point);
     clip-path: polygon(0 0, 100% 0, 50% 100%);
     transform: translate(-50%, 100%);
+}
+
+/* Key of the map and the timeline */
+/* Above the map, a tinted bar that opens on the key */
+.p-flight__key {
+    grid-area: key;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    background-color: var(--color-tint-cool);
+    font-size: var(--text-sm);
+}
+
+.p-flight__key summary {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-primary);
+    cursor: pointer;
+    list-style: none;
+}
+
+.p-flight__key summary::-webkit-details-marker {
+    display: none;
+}
+
+.p-flight__key summary > span {
+    flex: 1;
+}
+
+.p-flight__key-icon,
+.p-flight__key-chevron {
+    flex: none;
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.p-flight__key-chevron {
+    transition: transform 0.2s;
+}
+
+.p-flight__key[open] .p-flight__key-chevron {
+    transform: rotate(180deg);
+}
+
+.p-flight__key[open] summary {
+    border-bottom: 1px solid var(--color-line);
+}
+
+.p-flight__key-columns {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-3);
+}
+
+@media (min-width: 56rem) {
+    .p-flight__key-columns {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.p-flight__key-title {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.p-flight__key-list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-flight__key-list li {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+}
+
+.p-flight__key-hint {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+}
+
+/* A drawing of each symbol, on the dark of the satellite map */
+.p-flight__swatch {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    gap: 2px;
+    align-items: flex-end;
+    justify-content: center;
+    width: var(--space-8);
+    height: var(--space-6);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-dark-soft);
+}
+
+.p-flight__swatch--column i {
+    width: 4px;
+    height: 70%;
+    border-radius: 2px;
+    background-color: var(--swatch);
+}
+
+.p-flight__swatch--wide::after,
+.p-flight__swatch--missed::after {
+    width: 55%;
+    height: 80%;
+    margin-bottom: 2px;
+    border-radius: 3px;
+    background-color: var(--color-climb-2);
+    opacity: 0.45;
+    content: "";
+}
+
+.p-flight__swatch--missed::after {
+    background-color: var(--color-missed-thermal);
+    opacity: 0.8;
+}
+
+/* An arrow: a shaft and a head, up or down */
+.p-flight__swatch--arrow::before {
+    width: 3px;
+    height: 55%;
+    margin-bottom: 3px;
+    background-color: var(--arrow);
+    content: "";
+}
+
+.p-flight__swatch--arrow::after {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    border: 6px solid transparent;
+    border-bottom: 8px solid var(--arrow);
+    border-top-width: 0;
+    transform: translateX(-50%);
+    content: "";
+}
+
+.p-flight__swatch--slope {
+    --arrow: var(--color-slope-arrow);
+}
+
+.p-flight__swatch--crossing {
+    --arrow: var(--color-climb-1);
+}
+
+/* The windsock lies flat: an arrow pointing right */
+.p-flight__swatch--wind {
+    --arrow: var(--color-windsock);
+    align-items: center;
+}
+
+.p-flight__swatch--wind::before {
+    width: 55%;
+    height: 3px;
+    margin: 0 6px 0 0;
+}
+
+.p-flight__swatch--wind::after {
+    top: 50%;
+    right: 4px;
+    left: auto;
+    border: 6px solid transparent;
+    border-right-width: 0;
+    border-left: 8px solid var(--arrow);
+    transform: translateY(-50%);
+}
+
+.p-flight__swatch--sink {
+    --arrow: var(--color-sink);
+    transform: rotate(180deg);
+}
+
+.p-flight__swatch--curtain {
+    background: repeating-linear-gradient(90deg, var(--color-climb-1) 0 1px, transparent 1px 4px), var(--color-dark-soft);
+}
+
+/* The timeline symbols, on the light strip under the seek bar */
+.p-flight__swatch--band,
+.p-flight__swatch--tick,
+.p-flight__swatch--triangle,
+.p-flight__swatch--final {
+    align-items: center;
+    background-color: transparent;
+}
+
+.p-flight__swatch--band::after {
+    width: 100%;
+    height: var(--space-2);
+    background: repeating-linear-gradient(135deg, var(--color-hatch) 0 2px, transparent 2px 4px) 0 0 / 30% 100% no-repeat, var(--color-climb-2);
+    content: "";
+}
+
+.p-flight__swatch--lift::after {
+    background: var(--color-lift);
+}
+
+.p-flight__swatch--tick::before,
+.p-flight__swatch--tick::after {
+    width: 30%;
+    height: 40%;
+    content: "";
+}
+
+.p-flight__swatch--tick::before {
+    align-self: flex-start;
+    margin-top: 25%;
+    background-color: var(--color-climb-3);
+}
+
+.p-flight__swatch--tick::after {
+    align-self: flex-end;
+    margin-bottom: 25%;
+    background-color: var(--color-sink);
+}
+
+.p-flight__swatch--triangle::after {
+    width: var(--space-3);
+    height: var(--space-3);
+    content: "";
+}
+
+.p-flight__swatch--low::after {
+    background-color: var(--color-low-point);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.p-flight__swatch--missed-tick::after {
+    background-color: var(--color-missed-thermal);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.p-flight__swatch--final::after {
+    width: 100%;
+    height: 2px;
+    background-color: var(--color-final-glide);
+    content: "";
 }
 
 /* Centring radar of a thermal */

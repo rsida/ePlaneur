@@ -63,7 +63,7 @@ original name (the race id is read from it); comma, semicolon or tab separated, 
 ## Race view
 
 In 3D the replay shows the thermals of every pilot so far (roadmap 7h4, `sessionThermalLayers()`):
-thermals whose first circles are less than 600 m apart are one arrow, from the lowest entry to the
+thermals whose first circles are less than 600 m apart are one cylinder, from the lowest entry to the
 highest exit, coloured by the average climb weighted by the time spent, labelled from zoom 10.5
 with how many pilots climbed in it and their climb. "Thermiques : pilote suivi" shows only the
 thermals of the pilot followed, in their colour. With "Départ du circuit ensemble" on a flight plan

@@ -67,6 +67,21 @@ final class FlightAnalyzer
     private const float CENTRING_MIN_TURNS = 2.0;
     private const int CENTRING_MIN_SECONDS = 3;
 
+    /** A thermal is centred from its first circle climbing at least this share of its best circle. */
+    private const float CENTRED_SHARE = 0.7;
+
+    /**
+     * Lift crossed in a glide: the total energy vario over CROSSING_WINDOW seconds (height plus the
+     * height the speed is worth, so that a pull-up is not lift) at least CROSSING_CLIMB m/s for
+     * CROSSING_TIME seconds, away from the thermals around the glide (the turn-in and the
+     * acceleration after the exit).
+     */
+    private const int CROSSING_WINDOW = 10;
+    private const float CROSSING_CLIMB = 1.0;
+    private const int CROSSING_TIME = 5;
+    private const int CROSSING_MARGIN_AFTER = 20;
+    private const int CROSSING_MARGIN_BEFORE = 30;
+
     /** Seconds the glider stays still at the beginning of a track that begins on the ground. */
     private const int GROUND_STILL = 5;
 
@@ -128,8 +143,9 @@ final class FlightAnalyzer
             + self::spirals($turnRate, $altitude, $takeoff, $landing)
             + self::taskFlying($series, $phases, $task)
             + self::circling($series, $phases, $task);
+        $phases = self::coach($phases, $altitude, $statistics['climbAverage']);
 
-        return new FlightAnalysis($track, $series, $phases, $statistics, $task, $launch);
+        return new FlightAnalysis($track, $series, $phases, $statistics, $task, $launch, self::crossings($series, $phases));
     }
 
     /**
@@ -465,6 +481,101 @@ final class FlightAnalyzer
         }
 
         return array_map(static fn (float $sum, int $count): ?float => $count >= self::CENTRING_MIN_SECONDS ? round($sum / $count, 2) : null, $sums, $counts);
+    }
+
+    /**
+     * Entry and exit of the thermals of two turns or more, from the climb over each circle: the
+     * seconds before the first circle that climbs CENTRED_SHARE of the best one (centring), and the
+     * seconds after the last circle that climbs the average climb of the flight (`$average`), when
+     * the thermal reached it (staying while the thermal weakens, against MacCready).
+     *
+     * @param list<Phase> $phases
+     * @param list<float> $altitude
+     *
+     * @return list<Phase>
+     */
+    private static function coach(array $phases, array $altitude, int|float|null $average): array
+    {
+        return array_map(static function (Phase $phase) use ($altitude, $average): Phase {
+            if (Phase::THERMAL !== $phase->type || null === $phase->turns || $phase->turns < self::CENTRING_MIN_TURNS) {
+                return $phase;
+            }
+            $circle = (int) round($phase->duration() / $phase->turns);
+            $climbs = [];
+            for ($i = $phase->start + $circle; $i <= $phase->end; ++$i) {
+                $climbs[$i] = ($altitude[$i] - $altitude[$i - $circle]) / $circle;
+            }
+            $best = [] !== $climbs ? max($climbs) : 0.0;
+            if ($circle < 1 || $best <= 0.0) {
+                return $phase;
+            }
+            $entry = null;
+            foreach ($climbs as $i => $climb) {
+                if ($climb >= self::CENTRED_SHARE * $best) {
+                    $entry = $i - $circle - $phase->start;
+                    break;
+                }
+            }
+            $exit = null;
+            if (null !== $average && $average > 0 && $best >= $average) {
+                foreach (array_reverse($climbs, true) as $i => $climb) {
+                    if ($climb >= $average) {
+                        $exit = $phase->end - $i;
+                        break;
+                    }
+                }
+            }
+
+            return $phase->withCoaching($entry, $exit);
+        }, $phases);
+    }
+
+    /**
+     * Lift crossed in straight flight during the glides (dolphin flight, or lift not used), with
+     * the best total energy vario over CROSSING_WINDOW seconds in it (m/s) and the height gained
+     * across it (metres).
+     *
+     * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
+     * @param list<Phase>                                                                                                                          $phases
+     *
+     * @return list<array{start: int, end: int, vario: float, gain: float}>
+     */
+    private static function crossings(array $series, array $phases): array
+    {
+        $altitude = $series['altitude'];
+        $speed = $series['speed'];
+        $energy = static fn (int $i): float => $altitude[$i] + ($speed[$i] / 3.6) ** 2 / (2 * 9.81);
+        $crossings = [];
+        foreach ($phases as $phase) {
+            if (Phase::GLIDE !== $phase->type) {
+                continue;
+            }
+            $run = null;
+            $last = $phase->end - self::CROSSING_MARGIN_BEFORE - self::CROSSING_WINDOW;
+            for ($i = $phase->start + self::CROSSING_MARGIN_AFTER; $i <= $last + 1; ++$i) {
+                $climb = $i <= $last ? ($energy($i + self::CROSSING_WINDOW) - $energy($i)) / self::CROSSING_WINDOW : null;
+                if (null !== $climb && $climb >= self::CROSSING_CLIMB) {
+                    $run ??= ['start' => $i, 'end' => $i, 'vario' => $climb];
+                    $run['end'] = $i;
+                    $run['vario'] = max($run['vario'], $climb);
+                    continue;
+                }
+                if (null !== $run && $run['end'] - $run['start'] + 1 >= self::CROSSING_TIME) {
+                    $end = $run['end'] + self::CROSSING_WINDOW;
+                    $previous = array_key_last($crossings);
+                    // Two runs whose windows overlap are one lift
+                    if (null !== $previous && $crossings[$previous]['end'] >= $run['start']) {
+                        $crossings[$previous]['end'] = $end;
+                        $crossings[$previous]['vario'] = max($crossings[$previous]['vario'], round($run['vario'], 2));
+                    } else {
+                        $crossings[] = ['start' => $run['start'], 'end' => $end, 'vario' => round($run['vario'], 2), 'gain' => 0.0];
+                    }
+                }
+                $run = null;
+            }
+        }
+
+        return array_map(static fn (array $crossing): array => [...$crossing, 'gain' => round($altitude[$crossing['end']] - $altitude[$crossing['start']])], $crossings);
     }
 
     /**
