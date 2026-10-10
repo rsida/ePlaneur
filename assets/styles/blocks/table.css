@@ -13,6 +13,9 @@
 }
 
 .c-data-table__scroll {
+    /* Containing block of the visually hidden texts of the cells: clipped with the table, not
+       widening the page */
+    position: relative;
     overflow-x: auto;
     outline: 1px solid var(--color-line);
     outline-offset: -1px;
