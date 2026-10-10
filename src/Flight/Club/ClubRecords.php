@@ -55,7 +55,7 @@ final class ClubRecords
         $landscapes = [];
         foreach ($flights as $flight) {
             $name = $flight->getLandscape() ?? $flight->getSimulator();
-            $altitude = (float) ($flight->getAnalysis()['statistics']['altitudeMax'] ?? 0);
+            $altitude = (float) ($flight->getStatistics()['altitudeMax'] ?? 0);
             $record = $landscapes[$name] ?? ['landscape' => $name, 'distance' => $flight, 'duration' => $flight, 'altitude' => $flight, 'altitudeMax' => $altitude];
             if ($flight->getDistance() > $record['distance']->getDistance()) {
                 $record['distance'] = $flight;
@@ -96,7 +96,7 @@ final class ClubRecords
             $pilots[$id]['hours'] += $flight->getDuration();
             if (null !== $flight->getTaskSpeed()) {
                 ++$pilots[$id]['tasks'];
-                $pilots[$id]['kilometres'] += (float) ($flight->getAnalysis()['task']['distance'] ?? 0) / 1000;
+                $pilots[$id]['kilometres'] += (float) ($flight->getTaskDistance() ?? 0) / 1000;
                 $pilots[$id]['bestSpeed'] = max($pilots[$id]['bestSpeed'] ?? 0.0, $flight->getTaskSpeed());
             }
         }

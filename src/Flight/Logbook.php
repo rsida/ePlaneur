@@ -42,7 +42,7 @@ final readonly class Logbook
         $points = [];
         $tips = [];
         foreach ($logbook as $flight) {
-            $statistics = $flight->getAnalysis()['statistics'];
+            $statistics = $flight->getStatistics();
             $points[] = [
                 'url' => $this->urls->generate('app_flight_show', ['id' => $flight->getId()]),
                 'date' => $flight->getDate()->format('d/m/Y'),

@@ -72,9 +72,23 @@ class Flight
     #[ORM\Column(length: 10, nullable: true, enumType: Launch::class)]
     private ?Launch $launch;
 
-    /** @var array<string, mixed> */
+    /** The full analysis, loaded only when it is read (getAnalysis()). */
+    #[ORM\OneToOne(cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'LAZY')]
+    #[ORM\JoinColumn(nullable: false)]
+    private FlightData $data;
+
+    /**
+     * The statistics of the analysis, small: what the lists, records and rankings read without
+     * loading the full analysis.
+     *
+     * @var array<string, int|float|null>
+     */
     #[ORM\Column(type: Types::JSON)]
-    private array $analysis;
+    private array $statistics;
+
+    /** Metres of the task, when the track has one. */
+    #[ORM\Column(nullable: true)]
+    private ?int $taskDistance;
 
     #[ORM\Column(length: 80)]
     private string $fileName;
@@ -122,10 +136,17 @@ class Flight
         $this->raceId = $track->raceId;
         $this->flightPlan = null !== $track->flightPlan ? mb_substr($track->flightPlan, 0, 160) : null;
         $this->flownOn = $track->date;
-        $this->analysis = $analysis->toArray();
+        $data = $analysis->toArray();
+        if (isset($this->data)) {
+            $this->data->setAnalysis($data);
+        } else {
+            $this->data = new FlightData($data);
+        }
+        $this->statistics = $analysis->statistics;
         $this->duration = (int) $analysis->statistics['duration'];
         $this->distance = (int) $analysis->statistics['distance'];
-        $this->taskSpeed = $this->analysis['task']['speed'] ?? null;
+        $this->taskSpeed = $data['task']['speed'] ?? null;
+        $this->taskDistance = isset($data['task']['distance']) ? (int) $data['task']['distance'] : null;
         $this->launch = $analysis->launch;
     }
 
@@ -209,7 +230,22 @@ class Flight
      */
     public function getAnalysis(): array
     {
-        return $this->analysis;
+        return $this->data->getAnalysis();
+    }
+
+    /**
+     * The statistics of the analysis, without loading it.
+     *
+     * @return array<string, int|float|null>
+     */
+    public function getStatistics(): array
+    {
+        return $this->statistics;
+    }
+
+    public function getTaskDistance(): ?int
+    {
+        return $this->taskDistance;
     }
 
     /**
@@ -218,7 +254,7 @@ class Flight
      */
     public function getAnalysisVersion(): string
     {
-        return hash('xxh3', serialize($this->analysis));
+        return hash('xxh3', serialize($this->getAnalysis()));
     }
 
     public function getFileName(): string

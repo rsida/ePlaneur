@@ -185,7 +185,7 @@ final readonly class FlightSession
 
     public static function statistic(Flight $flight, string $name): ?float
     {
-        $value = $flight->getAnalysis()['statistics'][$name] ?? null;
+        $value = $flight->getStatistics()[$name] ?? null;
 
         return is_numeric($value) ? (float) $value : null;
     }

@@ -138,6 +138,7 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
 | 2026-10-10 | Gliders: take as much as possible from the Condor installation (`Condor3/Planes`: sheet and polar of each glider), imported by a command into the database, not committed |
 | 2026-10-10 | 3D replay: gliders drawn turned and banked with a flag (name, altitude), fading trails and a curtain under the pilot followed, camera behind the glider, satellite in 3D, after SportsTrackLive and Condor Club |
 | 2026-10-10 | Messages (9c): members write to each other, to the committee or to the administrators |
+| 2026-10-10 | The full analysis of a flight (about 250 KB of JSON) lives in its own table (`FlightData`), loaded only when a flight is shown, compared or replayed; the flight keeps its statistics and task distance for the lists, records and rankings (which no longer read any analysis) |
 | 2026-10-04 | Comments and "was this article useful?" feedback come later (moderation rules to define); step 2 split into 2a (posts, blocks) and 2b (pages, menus, documents) |
 
 ## Open questions
@@ -156,8 +157,6 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
   minimum wing loading. To check against a Condor Club flight analysis of a ballasted glider.
 - Season ranking: a season is a calendar year. Does the club count its seasons from September, like
   the membership? Should the ranking stay at all once the committee has seen it?
-- Flight lists hydrate the whole analysis (about 250 KB of JSON per flight): fine for a few dozen
-  flights; with hundreds, move the analysis to its own table loaded only by the viewer.
 
 - Memberships (8a): what does the membership form of the internal rules ask exactly (fields sent to
   the FFVP, image rights, emergency contact)? Is the club year the calendar year (assumed), and is a
