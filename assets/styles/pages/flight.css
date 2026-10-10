@@ -285,7 +285,8 @@
 .p-flight__timeline {
     position: relative;
     display: flex;
-    flex: 1;
+    /* On a phone the seek bar wraps onto its own line rather than shrink to nothing */
+    flex: 1 1 14rem;
     min-width: 0;
 }
 
@@ -1625,4 +1626,26 @@
 .p-compare__waterfall-detail {
     display: block;
     color: var(--color-text-muted);
+}
+
+/* Instruments over the map, bottom left (roadmap 7i5) */
+.p-flight__instruments {
+    position: absolute;
+    bottom: var(--space-8);
+    left: var(--space-3);
+    padding: var(--space-1);
+    border-radius: var(--radius-md);
+    background-color: color-mix(in srgb, var(--color-dark) 70%, transparent);
+    pointer-events: none;
+}
+
+.p-flight__instruments-canvas {
+    display: block;
+    width: 18rem;
+    height: 6rem;
+}
+
+.p-flight__fast {
+    flex: none;
+    white-space: nowrap;
 }

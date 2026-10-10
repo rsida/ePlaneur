@@ -27,6 +27,7 @@ final readonly class FlightAnalysis
      * @param array<string, int|float|null>                                                                                                        $statistics
      * @param list<?float>|null                                                                                                                    $ground     height of the ground under each second (Terrain), null when not known
      * @param array{cell?: int, cells?: list<array{float, float, float}>, wind?: array{from: float, speed: float}}                                 $slopes     slopes facing the wind of the flight, with the lift expected (FlightTerrain)
+     * @param array{bank: list<float>, pitch: list<float>}|null                                                                                    $attitude   bank and pitch of each second, degrees (Condor 3 .ftr)
      * @param list<array{start: int, end: int, vario: float, gain: float}>                                                                         $crossings  lift crossed in straight flight during the glides
      */
     public function __construct(
@@ -39,6 +40,7 @@ final readonly class FlightAnalysis
         public array $crossings = [],
         public ?array $ground = null,
         public array $slopes = [],
+        public ?array $attitude = null,
     ) {
     }
 
@@ -51,7 +53,7 @@ final readonly class FlightAnalysis
      */
     public function withTerrain(array $ground, array $slopes): self
     {
-        return new self($this->track, $this->series, $this->phases, $this->statistics, $this->task, $this->launch, $this->crossings, $ground, $slopes);
+        return new self($this->track, $this->series, $this->phases, $this->statistics, $this->task, $this->launch, $this->crossings, $ground, $slopes, $this->attitude);
     }
 
     /**
@@ -73,6 +75,8 @@ final readonly class FlightAnalysis
                 'altitude' => $round($this->series['altitude'], 1),
                 'speed' => $round($this->series['speed'], 1),
                 'vario' => $round($this->series['vario'], 2),
+                'bank' => null !== $this->attitude ? $round($this->attitude['bank'], 1) : null,
+                'pitch' => null !== $this->attitude ? $round($this->attitude['pitch'], 1) : null,
                 'ground' => null !== $this->ground ? array_map(static fn (?float $value): ?float => null !== $value ? round($value) : null, $this->ground) : null,
             ],
             'phases' => array_map(fn (Phase $phase): array => [

@@ -35,7 +35,7 @@ not documented; what follows was measured on Condor 3.1 files (2026-10-08):
 | 0xf3 | Number of task points (int); points of 84 bytes from 0xf7: name (short string), x, y, z (floats at +17), radius and angle (ints at +44 and +48: 360° cylinder, 180° half disc for a start or finish), then floats at +52 (1,500), +56 (minimum finish height?) and +60 (maximum height). The first point is the departure airfield, the second the start, the last the finish |
 | 0x52eb, 0x52fc | Glider class and model; the flight plan name follows (first short string after 0x531e) |
 | 0x549b | Six ints: 1, -1, Condor race id, 0, number of records, ? |
-| 0x54b3 | Records of 64 bytes: time (+0, see below), x, y, altitude (floats at +4, +8, +12), attitude, and 24 bytes that look encrypted |
+| 0x54b3 | Records of 64 bytes: time (+0, see below), x, y, altitude (floats at +4, +8, +12), a float at +16, the attitude as a quaternion (floats x, y, z, w at +20, see below), and bytes that look encrypted |
 
 The time of each record is a float in units of 32 hours (115,200 s) whose bits lack 0x500000:
 `unpack('g', pack('V', bits + 0x500000)) × 115,200` grows linearly with the time. Found on
@@ -47,6 +47,15 @@ whose times do not decode to growing values falls back on an even interval of 0.
 
 Task times checked against the Condor results: s0109 4,524 s (Condor 4,527), LastTrack 4,216 s
 (4,219), c060 4,846 s (4,909: the IGC export gives the same 4,846 s; the 63 s may be a penalty).
+
+The attitude (found on 2026-10-10 on C3-s117 and the C3-c046a race): the quaternion turns the world
+(x east, y north, z up) into the glider, so its conjugate turns the nose (body x) and the left wing
+(body y) into the world; it is not always of length 1 (up to 2 % off) and is normalised. With it,
+the heading of the nose follows the track within 2.4° (median), the pitch stays within a few
+degrees while circling and the bank reads 16° to 45° in the thermals. `FtrReader::attitude()` gives
+the bank (height of the left wing: positive banked right) and the pitch (height of the nose) of
+each record; the analysis keeps them for each second (`series.bank`, `series.pitch`) when every
+second has them, and the viewers draw the gliders with them (else the bank of a steady turn).
 
 Condor 2 tracks are not read (their format differs): pilots export an IGC.
 
@@ -328,6 +337,14 @@ and says so in an L line. The export reads back with `IgcReader`.
 - Above the map, a tinted bar "Légende" (closed by default, opens on a click) draws and explains
   every symbol of the 3D map and of the timeline. Its colours are tokens (`--color-climb-1` to `-4`,
   `--color-slope-arrow`, `--color-windsock`...) that repeat the values of `scene.js`: change both.
+- Replay comfort (roadmap 7i5): "Spirales × 5" plays the thermals five times faster; while
+  following in 3D, "Caméra : derrière" (the chase camera), "orbite" (turning around the glider at
+  8° a second) or "cinéma" (a new shot every 12 s: behind, side, high, front, other side, the
+  camera easing to it); "Instruments" over the map: artificial horizon (the bank and pitch
+  recorded, else the bank of a steady turn), vario needle with the average of the last 30 s in
+  green, ground speed and, in the glides with the polar, whether to slow down or speed up for the
+  MacCready speed of the climb met (within 20 km/h: "✓"). The pilot view banks with the recorded
+  bank too.
 - Switching to 3D picks the "Satellite" basemap unless the pilot chose one.
 - Replay ×1 to ×300, "Suivre" keeps the glider in the centre; in 3D the camera comes close and
   flies behind it (on the glider between two seconds, as it is drawn: on whole seconds the camera

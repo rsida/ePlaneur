@@ -261,7 +261,19 @@
                     {% endif %}
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="ghost" data-action="flight-viewer#toggleGhost" hidden><twig:ux:icon name="glider" /><span> Fantôme</span></button>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
+                    <label class="p-flight__select">
+                        <span class="u-visually-hidden">Caméra quand le planeur est suivi en 3D</span>
+                        <select data-flight-viewer-target="camera" data-action="flight-viewer#setCamera">
+                            <option value="chase">Caméra : derrière</option>
+                            <option value="orbit">Caméra : orbite</option>
+                            <option value="cinema">Caméra : cinéma</option>
+                        </select>
+                    </label>
+                    <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-action="flight-viewer#toggleInstruments" title="Horizon artificiel, variomètre et vitesse"><twig:ux:icon name="progress" /> Instruments</button>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="pilot" data-action="flight-viewer#togglePilot" title="En 3D, la caméra dans le planeur, inclinée avec lui"><twig:ux:icon name="glider" /> Vue pilote</button>
+                </div>
+                <div class="p-flight__instruments" data-flight-viewer-target="instruments" hidden>
+                    <canvas class="p-flight__instruments-canvas" data-flight-viewer-target="instrumentsCanvas" role="img" aria-label="Horizon artificiel, variomètre et vitesse au moment affiché"></canvas>
                 </div>
                 <div class="p-flight__legend" data-flight-viewer-target="legend" aria-hidden="true">
                     <span data-legend="low"></span><span class="p-flight__legend-bar" data-legend="bar"></span><span data-legend="high"></span>
@@ -328,6 +340,7 @@
                         <option value="300">× 300</option>
                     </select>
                 </label>
+                <button type="button" class="p-flight__toggle p-flight__fast" aria-pressed="false" data-flight-viewer-target="fastThermals" data-action="flight-viewer#toggleFastThermals" title="Pendant la lecture, les spirales défilent cinq fois plus vite">Spirales × 5</button>
                 <div class="p-flight__timeline">
                     <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="1" aria-label="Position dans le vol"
                            data-flight-viewer-target="seek" data-action="input->flight-viewer#seek">

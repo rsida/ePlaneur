@@ -62,6 +62,20 @@ final class FtrReaderTest extends TestCase
         self::assertLessThan(500, Geo::distance($track->fixes[0]->latitude, $track->fixes[0]->longitude, $track->turnpoints[0]->latitude, $track->turnpoints[0]->longitude), 'The flight starts at the departure point');
     }
 
+    public function testTheAttitudeIsRead(): void
+    {
+        $track = $this->reader->read($this->content);
+        $banks = array_map(static fn ($fix): ?float => $fix->bank, $track->fixes);
+        $pitches = array_map(static fn ($fix): ?float => $fix->pitch, $track->fixes);
+
+        self::assertNotContains(null, $banks);
+        self::assertNotContains(null, $pitches);
+        // Five minutes of an airborne start: some turning, the nose within a sensible range
+        self::assertGreaterThan(15.0, max(array_map('abs', $banks)));
+        self::assertLessThan(60.0, max(array_map('abs', $banks)));
+        self::assertLessThan(45.0, max(array_map('abs', $pitches)));
+    }
+
     public function testUnknownLandscapesAreReported(): void
     {
         $content = substr_replace($this->content, "\x08Atlantis", 0xDF, 9);

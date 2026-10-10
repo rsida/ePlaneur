@@ -45,6 +45,7 @@ final class Ghost
                 'longitude' => $round($series['longitude'], 6),
                 'altitude' => $round($series['altitude'], 1),
                 'speed' => $round($series['speed'], 1),
+                'bank' => $series['bank'] ?? null,
                 'step' => FlightComparison::STEP,
                 // Index of the flight at each step of the task, and its gap there (positive: behind)
                 'times' => $comparison->times[0],

@@ -87,7 +87,8 @@ final readonly class FtrReader
                 continue;
             }
             [$latitude, $longitude] = $landscape->toLatLon($x, $y);
-            $fixes[] = new Fix($times[$i] ?? $i * self::RECORD_INTERVAL, $latitude, $longitude, $altitude);
+            [$bank, $pitch] = self::attitude($content, $offset);
+            $fixes[] = new Fix($times[$i] ?? $i * self::RECORD_INTERVAL, $latitude, $longitude, $altitude, $bank, $pitch);
         }
         if (\count($fixes) < 2) {
             throw new InvalidTrackException('La trace ne contient aucune position.');
@@ -110,6 +111,36 @@ final readonly class FtrReader
             exactTimes: null !== $times,
             water: self::water($content),
         );
+    }
+
+    /**
+     * Bank (positive to the right) and pitch (positive nose up) of a record, in degrees, from the
+     * quaternion at +20 (x, y, z, w; x east, y north, z up). It turns the world into the glider: its
+     * conjugate turns the nose (body x) and the left wing (body y) into the world. Found on
+     * 2026-10-10 on C3-s117: the heading of the nose follows the track within 2.4° (median), the
+     * pitch stays within a few degrees in the circles, which bank 16° to 45°.
+     *
+     * @return array{?float, ?float}
+     */
+    private static function attitude(string $content, int $offset): array
+    {
+        $values = unpack('g4', $content, $offset + 20);
+        if (false === $values) {
+            return [null, null];
+        }
+        [$x, $y, $z, $w] = array_values($values);
+        // Not always of length 1 (up to 2 % off on C3-s117): normalised, unless it is not a rotation
+        $norm = sqrt($x * $x + $y * $y + $z * $z + $w * $w);
+        if (!is_finite($norm) || $norm < 0.5 || $norm > 1.5) {
+            return [null, null];
+        }
+        [$x, $y, $z, $w] = [$x / $norm, $y / $norm, $z / $norm, $w / $norm];
+        // Height (world z) of the nose and of the left wing, rotated by the conjugate (−x, −y, −z, w)
+        $noseUp = 2 * ($x * $z + $w * $y);
+        $wingUp = 2 * ($y * $z - $w * $x);
+        $angle = static fn (float $value): float => round(rad2deg(asin(max(-1.0, min(1.0, $value)))), 1);
+
+        return [$angle($wingUp), $angle($noseUp)];
     }
 
     /**

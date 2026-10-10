@@ -90,6 +90,8 @@ final readonly class FlightSession
                 'altitude' => $analysis['series']['altitude'],
                 // Ground speed, for the values of each pilot and the bank of their glider
                 'speed' => $analysis['series']['speed'],
+                // Recorded by Condor 3 (.ftr): the gliders bank as they did
+                'bank' => $analysis['series']['bank'] ?? null,
                 'thermals' => self::thermalsOf($analysis),
             ];
         }

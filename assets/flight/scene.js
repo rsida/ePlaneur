@@ -86,8 +86,10 @@ export function angleDifference(from, to) {
 }
 
 /**
- * Heading (degrees from north) and bank (degrees, to the right positive) of a glider at an index of
- * its track, between two seconds: the bank of a steady turn, tan(bank) = v·ω / g.
+ * Heading (degrees from north), bank (degrees, to the right positive) and pitch (degrees, nose up)
+ * of a glider at an index of its track, between two seconds: those recorded by Condor 3 when the
+ * track has them (`bank`, `pitch`), else the bank of a steady turn, tan(bank) = v·ω / g, and no
+ * pitch.
  */
 export function attitude(track, index) {
     const { latitude, longitude, speed } = track;
@@ -107,10 +109,13 @@ export function attitude(track, index) {
     const a = Math.max(0, Math.min(last, Math.floor(index)));
     const b = Math.min(last, a + 1);
     const f = index - a;
+    // The bank and pitch Condor recorded (.ftr), else the bank of a steady turn
+    const recorded = (values) => values[a] + (values[b] - values[a]) * f;
 
     return {
         heading: (heading(a) + angleDifference(heading(a), heading(b)) * f + 360) % 360,
-        bank: bankAt(a) + (bankAt(b) - bankAt(a)) * f,
+        bank: track.bank ? recorded(track.bank) : bankAt(a) + (bankAt(b) - bankAt(a)) * f,
+        pitch: track.pitch ? recorded(track.pitch) : 0,
     };
 }
 

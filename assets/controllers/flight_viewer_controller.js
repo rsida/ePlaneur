@@ -6,7 +6,7 @@ import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { bearing, distance } from '../flight/geo.js';
 import { addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
-import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, crossingLayers, gliderLayers, trailLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
+import { SEE_THROUGH, angleDifference, attitude, chaseBearing, climbColor, crossingLayers, gliderLayers, trailLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
 
 /*
  * Flight viewer (templates/flight/show.html.twig): the flight of FlightController::analysis() on a
@@ -32,6 +32,9 @@ import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, crossingLayers,
  *   those this flight missed in yellow, also as yellow triangles on the timeline.
  * - "Fantôme": the best other pilot of the race replayed from the same start (Ghost), with the gap
  *   along the task beside the map and on its flag.
+ * - Replay comfort (roadmap 7i5): thermals five times faster on demand, the camera behind, around
+ *   (orbit) or changing shots (cinema) while following in 3D, and instruments (horizon from the
+ *   attitude Condor 3 records, vario needle, speed against MacCready).
  * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
  * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
  * - Two thermals picked in the list are compared: figures and the height gained over time.
@@ -75,6 +78,15 @@ const TOO_LOW_END = 180;
 const SLOPE_NEAR = 300;
 // Required glide ratios above this are shown as this (the finish is out of reach)
 const REQUIRED_MAX = 100;
+// Replay: thermals FAST_THERMALS times faster when asked
+const FAST_THERMALS = 5;
+// Cameras following the glider in 3D: the orbit turns ORBIT_SPEED degrees a second; the cinema
+// changes shot every CINEMA_SHOT seconds (bearing from behind the glider, pitch), the camera moving
+// CAMERA_EASE of the way to its shot at each frame
+const ORBIT_SPEED = 8;
+const CINEMA_SHOT = 12;
+const CINEMA_SHOTS = [{ bearing: 0, pitch: 62 }, { bearing: 90, pitch: 76 }, { bearing: 30, pitch: 40 }, { bearing: 170, pitch: 72 }, { bearing: -90, pitch: 76 }];
+const CAMERA_EASE = 0.03;
 // The ghost (best other pilot of the race): its colour and the seconds of its trail
 const GHOST_COLOR = [190, 200, 255];
 const GHOST_TRAIL = 90;
@@ -89,7 +101,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'nowGhost', 'nowGhostLabel'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas'];
 
     static values = { url: String, label: String };
 
@@ -430,6 +442,137 @@ export default class extends Controller {
         return `${FORMATS.gap(Math.abs(gap)).replace('+', '')} ${gap > 0 ? 'derrière' : 'devant'}`;
     }
 
+    toggleFastThermals() {
+        this.fastThermalsTarget.setAttribute('aria-pressed', String(this.fastThermalsTarget.getAttribute('aria-pressed') !== 'true'));
+    }
+
+    setCamera() {
+        this.orbit = null;
+        this.cameraTime = null;
+    }
+
+    toggleInstruments() {
+        const on = this.instrumentsTarget.hidden;
+        this.instrumentsTarget.hidden = !on;
+        this.element.querySelector('[data-action="flight-viewer#toggleInstruments"]')?.setAttribute('aria-pressed', String(on));
+        this.drawInstruments();
+    }
+
+    /**
+     * The instruments at the moment shown: artificial horizon (bank and pitch recorded by Condor 3,
+     * else the bank of a steady turn), vario needle with the average of the last 30 s, and the speed
+     * against the MacCready speed of the climb met when the polar is known.
+     */
+    drawInstruments() {
+        if (!this.hasInstrumentsTarget || this.instrumentsTarget.hidden) return;
+        const canvas = this.instrumentsCanvasTarget;
+        const ratio = window.devicePixelRatio || 1;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        if (canvas.width !== width * ratio) {
+            canvas.width = width * ratio;
+            canvas.height = height * ratio;
+        }
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        const i = Math.round(this.index);
+        const { vario, speed, altitude } = this.series;
+        const { bank, pitch } = attitude(this.series, this.index);
+        const r = height / 2 - 8;
+        const font = (size, weight = 600) => `${weight} ${size}px Inter, sans-serif`;
+        const dial = (cx) => {
+            ctx.beginPath();
+            ctx.arc(cx, height / 2, r, 0, 2 * Math.PI);
+            ctx.fillStyle = '#192630';
+            ctx.fill();
+        };
+
+        // Artificial horizon: sky and ground turned by the bank, moved by the pitch
+        const hx = r + 8;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(hx, height / 2, r, 0, 2 * Math.PI);
+        ctx.clip();
+        ctx.translate(hx, height / 2);
+        ctx.rotate((-bank * Math.PI) / 180);
+        const shift = (pitch / 45) * r;
+        ctx.fillStyle = '#4f8fd6';
+        ctx.fillRect(-2 * r, -2 * r + shift, 4 * r, 2 * r);
+        ctx.fillStyle = '#8a6a43';
+        ctx.fillRect(-2 * r, shift, 4 * r, 2 * r);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-2 * r, shift);
+        ctx.lineTo(2 * r, shift);
+        ctx.stroke();
+        ctx.restore();
+        // The wings of the glider, fixed
+        ctx.strokeStyle = '#ffd200';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(hx - r * 0.6, height / 2);
+        ctx.lineTo(hx - r * 0.15, height / 2);
+        ctx.moveTo(hx + r * 0.15, height / 2);
+        ctx.lineTo(hx + r * 0.6, height / 2);
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = font(10);
+        ctx.textAlign = 'center';
+        ctx.fillText(`${Math.round(Math.abs(bank))}° ${bank > 1 ? 'D' : bank < -1 ? 'G' : ''}`, hx, height - 12);
+
+        // Vario: −5 to +5 m/s over 270°, needle and the average of the last 30 s
+        const vx = hx + 2 * r + 12;
+        dial(vx);
+        const angle = (value) => Math.PI + ((Math.max(-5, Math.min(5, value)) + 5) / 10) * 1.5 * Math.PI - Math.PI / 4;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = font(9, 500);
+        for (let v = -5; v <= 5; v += 1) {
+            const a = angle(v);
+            ctx.beginPath();
+            ctx.moveTo(vx + Math.cos(a) * r * 0.82, height / 2 + Math.sin(a) * r * 0.82);
+            ctx.lineTo(vx + Math.cos(a) * r * 0.95, height / 2 + Math.sin(a) * r * 0.95);
+            ctx.stroke();
+            if (v % 5 === 0) ctx.fillText(String(v), vx + Math.cos(a) * r * 0.62, height / 2 + Math.sin(a) * r * 0.62 + 3);
+        }
+        const back = Math.max(0, i - 30);
+        const average = i > back ? (altitude[i] - altitude[back]) / (i - back) : 0;
+        const needle = (value, color, length, width) => {
+            const a = angle(value);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(vx, height / 2);
+            ctx.lineTo(vx + Math.cos(a) * r * length, height / 2 + Math.sin(a) * r * length);
+            ctx.stroke();
+        };
+        needle(average, '#5cb070', 0.7, 4);
+        needle(vario[i], '#ffffff', 0.9, 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = font(10);
+        ctx.fillText(FORMATS.vario(vario[i]), vx, height - 12);
+
+        // Speed, and the way to the MacCready speed of the climb met
+        const sx = vx + 2 * r + 12;
+        dial(sx);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = font(18, 700);
+        ctx.fillText(String(Math.round(speed[i])), sx, height / 2 + 2);
+        ctx.font = font(9, 500);
+        ctx.fillText('km/h sol', sx, height / 2 + 15);
+        const best = this.flight.speedToFly?.speed;
+        const gliding = this.flight.phases[this.phaseAt[i]]?.type === 'glide';
+        if (best && gliding) {
+            const gap = speed[i] - best;
+            ctx.fillStyle = Math.abs(gap) < 20 ? '#5cb070' : '#ffd200';
+            ctx.font = font(10);
+            ctx.fillText(Math.abs(gap) < 20 ? `MC ${best} ✓` : gap > 0 ? `▲ ralentir (${best})` : `▼ accélérer (${best})`, sx, height / 2 - r * 0.45);
+        }
+    }
+
     toggleGhost() {
         this.ghostTarget.setAttribute('aria-pressed', String(this.ghostTarget.getAttribute('aria-pressed') !== 'true'));
         this.render();
@@ -451,7 +594,27 @@ export default class extends Controller {
         if (this.is3d && this.playing) {
             // Behind the glider, turning with its course
             this.chase = chaseBearing(this.series, this.index, this.chase ?? this.map.getBearing());
-            this.map.jumpTo({ center: [lon, lat], elevation: altitude, bearing: this.chase });
+            const mode = this.hasCameraTarget ? this.cameraTarget.value : 'chase';
+            if (mode === 'chase') {
+                this.map.jumpTo({ center: [lon, lat], elevation: altitude, bearing: this.chase });
+
+                return;
+            }
+            const now = performance.now() / 1000;
+            const elapsed = Math.min(0.1, now - (this.cameraTime ?? now));
+            this.cameraTime = now;
+            let shot;
+            if (mode === 'orbit') {
+                this.orbit = ((this.orbit ?? this.map.getBearing()) + elapsed * ORBIT_SPEED) % 360;
+                shot = { bearing: this.orbit, pitch: 62 };
+            } else {
+                const cinema = CINEMA_SHOTS[Math.floor(now / CINEMA_SHOT) % CINEMA_SHOTS.length];
+                shot = { bearing: this.chase + cinema.bearing, pitch: cinema.pitch };
+            }
+            const bearingNow = this.map.getBearing();
+            const pitchNow = this.map.getPitch();
+            const ease = mode === 'orbit' ? 1 : CAMERA_EASE;
+            this.map.jumpTo({ center: [lon, lat], elevation: altitude, bearing: bearingNow + angleDifference(bearingNow, shot.bearing) * ease, pitch: pitchNow + (shot.pitch - pitchNow) * CAMERA_EASE });
         } else {
             this.map.jumpTo({ center: [lon, lat], elevation: altitude });
         }
@@ -506,7 +669,8 @@ export default class extends Controller {
         };
         const target = {
             heading: heading(a) + angleDifference(heading(a), heading(b)) * f,
-            bank: bankAt(a) + (bankAt(b) - bankAt(a)) * f,
+            // The bank Condor recorded when the track has it
+            bank: this.series.bank ? attitude(this.series, this.index).bank : bankAt(a) + (bankAt(b) - bankAt(a)) * f,
         };
         // Smoothing: a quarter of the way to the target at each frame
         this.camera = this.camera
@@ -1153,7 +1317,9 @@ export default class extends Controller {
         let last = performance.now();
         const step = (now) => {
             if (!this.playing) return;
-            this.index = Math.min(this.count - 1, this.index + ((now - last) / 1000) * Number(this.rateTarget.value));
+            const inThermal = this.flight.phases[this.phaseAt[Math.floor(this.index)]]?.type === 'thermal';
+            const fast = inThermal && this.hasFastThermalsTarget && this.fastThermalsTarget.getAttribute('aria-pressed') === 'true' ? FAST_THERMALS : 1;
+            this.index = Math.min(this.count - 1, this.index + ((now - last) / 1000) * Number(this.rateTarget.value) * fast);
             last = now;
             this.moveTo(this.index, { keepFraction: true });
             if (this.index >= this.count - 1) {
@@ -1179,6 +1345,7 @@ export default class extends Controller {
         this.nowSpeedTarget.textContent = FORMATS.speed(speed[i]);
         this.nowVarioTarget.textContent = FORMATS.vario(vario[i]);
         if (this.hasNowHeightTarget) this.nowHeightTarget.textContent = this.series.height?.[i] == null ? '—' : FORMATS.altitude(this.series.height[i]);
+        this.drawInstruments();
         if (this.hasNowGhostTarget && this.ghost) this.nowGhostTarget.textContent = this.ghostGapText() ?? '—';
         if (this.hasNowRequiredTarget) {
             const required = this.series.required[i];

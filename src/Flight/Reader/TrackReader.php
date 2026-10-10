@@ -64,7 +64,7 @@ final readonly class TrackReader
                 if (!$horizontalJump) {
                     // A jump upwards only: Condor lifts the glider at the very fix where it crosses
                     // the finish line. That position ends the part, at the altitude it had
-                    $parts[\count($parts) - 1][] = new Fix($fix->time, $fix->latitude, $fix->longitude, $previous->altitude);
+                    $parts[\count($parts) - 1][] = new Fix($fix->time, $fix->latitude, $fix->longitude, $previous->altitude, $fix->bank, $fix->pitch);
                 }
                 $parts[] = [];
             }

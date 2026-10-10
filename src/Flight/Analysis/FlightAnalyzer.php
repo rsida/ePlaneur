@@ -145,7 +145,12 @@ final class FlightAnalyzer
             + self::circling($series, $phases, $task);
         $phases = self::coach($phases, $altitude, $statistics['climbAverage']);
 
-        return new FlightAnalysis($track, $series, $phases, $statistics, $task, $launch, self::crossings($series, $phases));
+        // Bank and pitch recorded by Condor 3 (.ftr), when every second has them
+        $bank = array_column($points, 4);
+        $pitch = array_column($points, 5);
+        $attitude = !\in_array(null, $bank, true) && !\in_array(null, $pitch, true) ? ['bank' => $bank, 'pitch' => $pitch] : null;
+
+        return new FlightAnalysis($track, $series, $phases, $statistics, $task, $launch, self::crossings($series, $phases), attitude: $attitude);
     }
 
     /**
@@ -199,7 +204,7 @@ final class FlightAnalyzer
      *
      * @param list<Fix> $fixes
      *
-     * @return list<array{int, float, float, float}> time, latitude, longitude, altitude
+     * @return list<array{int, float, float, float, ?float, ?float}> time, latitude, longitude, altitude, bank, pitch
      */
     private static function resample(array $fixes): array
     {
@@ -218,11 +223,14 @@ final class FlightAnalyzer
             $a = $fixes[$j];
             $b = $fixes[min($j + 1, $last)];
             $ratio = $b->time > $a->time ? min(1.0, max(0.0, ($time - $a->time) / ($b->time - $a->time))) : 0.0;
+            $lerp = static fn (?float $from, ?float $to): ?float => null !== $from && null !== $to ? $from + ($to - $from) * $ratio : null;
             $points[] = [
                 $t,
                 $a->latitude + ($b->latitude - $a->latitude) * $ratio,
                 $a->longitude + ($b->longitude - $a->longitude) * $ratio,
                 $a->altitude + ($b->altitude - $a->altitude) * $ratio,
+                $lerp($a->bank, $b->bank),
+                $lerp($a->pitch, $b->pitch),
             ];
         }
 
