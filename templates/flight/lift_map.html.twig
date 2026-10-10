@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ascendances du club{% endblock %}
+{% block description %}Où le club a trouvé les thermiques et les pentes qui portent, paysage par paysage, selon le vent.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-lift-map">
+        <div class="l-stack l-stack--md">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_flight_index') }}">Analyse de vols</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Savoir du club</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">Ascendances du club</twig:Ui:Heading>
+                <p class="u-lead">Tous les thermiques et toutes les pentes des vols déposés sur un paysage : où ça monte souvent, et quelles pentes portent selon le vent.</p>
+            </div>
+
+            {% if landscapes is empty %}
+                <p class="u-note">Aucun vol déposé pour l’instant.</p>
+            {% else %}
+                <div class="p-lift-map__tools">
+                    <form method="get" data-controller="autosubmit" class="p-flight__select">
+                        <label class="u-visually-hidden" for="landscape">Paysage</label>
+                        <select id="landscape" name="paysage" data-action="autosubmit#submit">
+                            {% for name, count in landscapes %}<option value="{{ name }}"{% if name == landscape %} selected{% endif %}>{{ name }} · {{ count }} {{ count > 1 ? 'vols' : 'vol' }}</option>{% endfor %}
+                        </select>
+                    </form>
+                </div>
+                <section class="l-stack l-stack--sm p-lift-map__viewer" data-controller="lift-map" data-lift-map-url-value="{{ path('app_flight_lift_map_data', {landscape: landscape}) }}">
+                    <div class="p-lift-map__tools">
+                        <label class="p-flight__select">
+                            <span class="u-visually-hidden">Direction du vent des pentes</span>
+                            <select data-lift-map-target="wind" data-action="lift-map#render">
+                                <option value="all">Pentes : tous les vents</option>
+                                {% for sector in ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'] %}
+                                    <option value="{{ loop.index0 }}">Pentes : vent de {{ sector }}</option>
+                                {% endfor %}
+                                <option value="none">Pentes : masquées</option>
+                            </select>
+                        </label>
+                        <p class="u-note" data-lift-map-target="summary"></p>
+                    </div>
+                    <div class="p-flight__map-wrap p-lift-map__map-wrap">
+                        <div class="p-flight__map" data-lift-map-target="map" role="region" aria-label="Carte des ascendances du club"></div>
+                        <p class="p-flight__loading" data-lift-map-target="status" role="status">Chargement des ascendances…</p>
+                    </div>
+                    <p class="u-note p-lift-map__legend">
+                        <span><span class="p-lift-map__swatch p-lift-map__swatch--heat"></span> Où l’on a spiralé souvent et fort (de loin)</span>
+                        <span><span class="p-lift-map__swatch p-lift-map__swatch--thermal"></span> Thermiques de près : taille selon le nombre de montées, plus foncé quand ça montait plus</span>
+                        <span><span class="p-lift-map__swatch p-lift-map__swatch--slope"></span> Pentes qui ont porté, plus épaisses quand ça montait plus</span>
+                        · Le vent d’une pente est celui de la tâche de sa session quand on la connaît. Survolez un thermique ou une pente pour ses valeurs.
+                    </p>
+                </section>
+            {% endif %}
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

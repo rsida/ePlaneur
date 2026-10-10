@@ -9,6 +9,7 @@ use App\Entity\FlightComment;
 use App\Entity\FlightPlan;
 use App\Entity\User;
 use App\Flight\Advice\FlightAdvisor;
+use App\Flight\Club\ClubLift;
 use App\Flight\Club\ClubRecords;
 use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
@@ -116,6 +117,35 @@ final class FlightController extends AbstractController
             'season' => $season,
             'seasons' => $seasons,
         ]);
+    }
+
+    /**
+     * Where the lift was on a landscape, from every club flight on it (`?paysage=`, by default the
+     * landscape with the most flights).
+     */
+    #[Route('/ascendances', name: 'lift_map', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function liftMap(Request $request, FlightRepository $flights): Response
+    {
+        $counts = $flights->countByLandscape();
+        $landscape = $request->query->getString('paysage') ?: (array_key_first($counts) ?? '');
+        if ('' !== $landscape && !isset($counts[$landscape])) {
+            throw $this->createNotFoundException('No flight on this landscape.');
+        }
+
+        return $this->render('flight/lift_map.html.twig', ['landscapes' => $counts, 'landscape' => $landscape]);
+    }
+
+    /** The data of the lift map of a landscape (ClubLift). */
+    #[Route('/ascendances/{landscape}.json', name: 'lift_map_data', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function liftMapData(string $landscape, FlightRepository $flights): JsonResponse
+    {
+        $response = new JsonResponse(ClubLift::of($flights->findBy(['landscape' => $landscape])));
+        $response->setPrivate();
+        $response->setMaxAge(600);
+
+        return $response;
     }
 
     /** The pilot's own logbook lives in the member space. */

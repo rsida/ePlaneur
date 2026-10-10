@@ -1,6 +1,6 @@
 /* stimulusFetch: 'lazy' */
 import { Controller } from '@hotwired/stimulus';
-import { LineLayer, PathLayer } from '@deck.gl/layers';
+import { LineLayer, PathLayer, TextLayer } from '@deck.gl/layers';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
@@ -35,6 +35,7 @@ import { SEE_THROUGH, angleDifference, attitude, chaseBearing, climbColor, cross
  * - Replay comfort (roadmap 7i5): thermals five times faster on demand, the camera behind, around
  *   (orbit) or changing shots (cinema) while following in 3D, and instruments (horizon from the
  *   attitude Condor 3 records, vario needle, speed against MacCready).
+ * - Comments at a moment (comments value): a bubble under the timeline and a label on the track.
  * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
  * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
  * - Two thermals picked in the list are compared: figures and the height gained over time.
@@ -78,6 +79,8 @@ const TOO_LOW_END = 180;
 const SLOPE_NEAR = 300;
 // Required glide ratios above this are shown as this (the finish is out of reach)
 const REQUIRED_MAX = 100;
+// Comments on the track: the name of the author from this zoom
+const COMMENT_NAMES_ZOOM = 11;
 // Replay: thermals FAST_THERMALS times faster when asked
 const FAST_THERMALS = 5;
 // Cameras following the glider in 3D: the orbit turns ORBIT_SPEED degrees a second; the cinema
@@ -103,7 +106,7 @@ const PILOT_GROUND_CLEARANCE = 30;
 export default class extends Controller {
     static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas'];
 
-    static values = { url: String, label: String };
+    static values = { url: String, label: String, comments: Array };
 
     async connect() {
         this.index = 0;
@@ -339,7 +342,7 @@ export default class extends Controller {
             const details = readings(this.series, this.index, ground);
             layers.push(...gliderLayers('flight', [{ track: this.series, index: this.index, color: [255, 255, 255], flagColor: [25, 38, 48], label: this.labelValue, details, selected: false }], { is3d: this.is3d, zoom: this.map.getZoom() }));
         }
-        layers.push(...this.ghostLayers());
+        layers.push(...this.ghostLayers(), ...this.commentLayers());
         // Under the track: the lift of the other pilots of the race
         layers.unshift(...sessionAirLayers('flight', this.air, { is3d: this.is3d, zoom: this.map.getZoom(), show: this.hasAirTarget ? this.airTarget.value : 'all' }));
         if (this.is3d) {
@@ -407,6 +410,34 @@ export default class extends Controller {
         } else {
             this.centerOnGlider();
         }
+    }
+
+    /** A label on the track at each comment at a moment, with its author when close. */
+    commentLayers() {
+        if (this.commentsValue.length === 0) return [];
+        const zoom = this.map.getZoom();
+        const always = this.is3d ? {} : { depthCompare: 'always' };
+
+        return [new TextLayer({
+            id: 'comments',
+            data: this.commentsValue,
+            getPosition: (comment) => this.position(comment.at),
+            // No emoji: the font of the map does not have them
+            getText: (comment) => (zoom >= COMMENT_NAMES_ZOOM ? `Commentaire · ${comment.author}` : 'Commentaire'),
+            characterSet: 'auto',
+            getSize: 11,
+            getColor: [255, 255, 255],
+            getTextAnchor: 'middle',
+            getAlignmentBaseline: 'bottom',
+            getPixelOffset: [0, -8],
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: 600,
+            background: true,
+            getBackgroundColor: [62, 93, 131, 235],
+            backgroundPadding: [5, 3],
+            parameters: always,
+            updateTriggers: { getPosition: this.is3d, getText: zoom >= COMMENT_NAMES_ZOOM },
+        })];
     }
 
     /** The ghost glider and its trail, when shown and in the air at that moment. */
@@ -731,6 +762,16 @@ export default class extends Controller {
             if (missing) target.closest('figure').hidden = true;
 
             return !missing;
+        }).filter((target) => {
+            // The required glide ratio only while the finish is within reach: a long task not
+            // finished stays out of reach all along, and a flat line at the top says nothing
+            if (target.dataset.series !== 'required' || this.series.required.some((value) => value !== null && value < REQUIRED_MAX)) return true;
+            const note = document.createElement('p');
+            note.className = 'u-note';
+            note.textContent = `L’arrivée n’a jamais été à portée : il fallait toujours une finesse de plus de ${REQUIRED_MAX} pour la rejoindre.`;
+            target.replaceWith(note);
+
+            return false;
         });
         this.charts = targets.map((target) => {
             const name = target.dataset.series;
@@ -787,7 +828,9 @@ export default class extends Controller {
             if (name === 'vario') options.scales.y = { range: (u, min, max) => [Math.min(min, -4), Math.max(max, 4)] };
             if (name === 'height') options.scales.y = { range: (u, min, max) => [Math.min(0, min), Math.max(max, HEIGHT_PLAN * 2)] };
             if (name === 'required') options.scales.y = { range: [0, REQUIRED_MAX] };
-            const chart = new uPlot(options, netto ? [time, this.series[name], netto] : [time, this.series[name]], target);
+            // Out of reach: no line rather than a line stuck at the top
+            const values = name === 'required' ? this.series.required.map((value) => (value !== null && value < REQUIRED_MAX ? value : null)) : this.series[name];
+            const chart = new uPlot(options, netto ? [time, values, netto] : [time, values], target);
             sync.sub(chart);
             chart.over.addEventListener('mouseenter', () => { this.hovering = chart; });
             chart.over.addEventListener('mouseleave', () => { this.hovering = null; });
@@ -1049,6 +1092,9 @@ export default class extends Controller {
         }
         for (const crossing of this.crossings) {
             items.push(event('crossing', crossing.start, crossing.end, climbColor(crossing.vario), `Ascendance traversée sans spiraler · ${crossing.gain >= 0 ? '+' : ''}${crossing.gain} m · jusqu’à ${FORMATS.vario(crossing.vario)}`));
+        }
+        for (const comment of this.commentsValue) {
+            items.push(event('comment', comment.at, null, null, `Commentaire de ${comment.author} : ${comment.text}`));
         }
         for (const thermal of this.air?.thermals ?? []) {
             if (!thermal.missed) continue;

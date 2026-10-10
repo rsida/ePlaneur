@@ -70,6 +70,31 @@ final class FlightTest extends WebTestCase
         self::assertTrue($analysis['exactTimes']);
     }
 
+    public function testTheLiftOfTheClubIsMappedByLandscape(): void
+    {
+        $this->client->request('GET', '/vols/ascendances');
+        self::assertResponseRedirects('/connexion');
+
+        $pilot = $this->user('pilote@example.org');
+        $this->client->loginUser($pilot);
+        $crawler = $this->client->request('GET', '/vols');
+        $this->client->request('POST', '/vols', ['_token' => $crawler->filter('input[name="_token"]')->attr('value')], ['trace' => $this->upload(\dirname(__DIR__).'/fixtures/flights/aa3-laragne-start.ftr', 'C3-c060-1.ftr')]);
+
+        $this->client->request('GET', '/vols/ascendances');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('#landscape', 'AA3 · 1 vol');
+        self::assertSelectorExists('[data-controller="lift-map"][data-lift-map-url-value="/vols/ascendances/AA3.json"]');
+        $this->client->request('GET', '/vols/ascendances?paysage=Inconnu');
+        self::assertResponseStatusCodeSame(404);
+
+        $this->client->request('GET', '/vols/ascendances/AA3.json');
+        self::assertResponseIsSuccessful();
+        /** @var array<string, mixed> $lift */
+        $lift = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame(1, $lift['flights']);
+        self::assertSame(['thermals', 'slopes', 'flights'], array_keys($lift));
+    }
+
     public function testAnIgcFileIsUploaded(): void
     {
         $this->client->loginUser($this->user('pilote@example.org'));
@@ -269,6 +294,9 @@ final class FlightTest extends WebTestCase
         self::assertSelectorTextContains('h1', 'Mon carnet de vol');
         self::assertSelectorTextContains('.p-flight__stats', 'Vols 1');
         self::assertSelectorExists('[data-controller="logbook-chart"]');
+        // One flight: the skills it measures, no trend yet
+        self::assertSelectorTextContains('.p-flight-logbook__skills', 'Montée en thermique');
+        self::assertSelectorTextContains('.p-flight-logbook__skills', 'pas encore assez de vols');
 
         $this->client->loginUser($this->user('autre@example.org'));
         $this->client->request('GET', '/vols/carnet/'.$pilot->getId());

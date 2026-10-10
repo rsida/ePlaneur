@@ -203,7 +203,9 @@ and 150 m; "Trop bas" under the timeline for 10 s or more under 150 m, from the 
 before the landing, farther than 300 m from a slope expected to work (ridge running is flown that
 low); and with a task, the glide ratio required to reach the finish (distance left through the
 turnpoints not reached over the height above the finish point, "hors de portée" from 100), as a
-chart with the average glide ratio of the flight dashed, and beside the map with the height above
+chart drawn only under 100 (a long task not finished stays out of reach all along: on the 201 km
+of flight 4, 150 to 280; then a sentence says so instead of the chart) with the average glide ratio
+of the flight dashed, and beside the map with the height above
 the ground.
 
 Not done yet: the glide cone with the reachable airfields needs the airfields of the landscapes
@@ -345,6 +347,9 @@ and says so in an L line. The export reads back with `IgcReader`.
   green, ground speed and, in the glides with the polar, whether to slow down or speed up for the
   MacCready speed of the climb met (within 20 km/h: "✓"). The pilot view banks with the recorded
   bank too.
+- Comments at a moment (roadmap 7i6): a blue bubble under the timeline (hover to read, click to
+  go there) and a label "Commentaire" on the track, with the author from zoom 11 (no emoji: the
+  font of the map has none). Only for logged-in users, who see the comments.
 - Switching to 3D picks the "Satellite" basemap unless the pilot chose one.
 - Replay ×1 to ×300, "Suivre" keeps the glider in the centre; in 3D the camera comes close and
   flies behind it (on the glider between two seconds, as it is drawn: on whole seconds the camera
@@ -430,6 +435,24 @@ Roadmap 7i4 on the flight page:
   airspeed is 20 km/h or more under the MacCready speed of the average climb of the flight, orange
   30 km/h or more over it (the thresholds of the advice), green between; the rest in grey.
 
+## Lift of the club
+
+Roadmap 7i6. `/vols/ascendances` (logged in; linked from the flight list and from each flight,
+"Ascendances du club sur <landscape>") maps, landscape by landscape (`?paysage=`, the most flown
+by default), every thermal and every slope lift phase of the club flights on it (`ClubLift`, data
+at `/vols/ascendances/{landscape}.json`):
+
+- thermals: from afar a heat map weighted by their climb (MapLibre `heatmap`); from zoom 11 the
+  thermals themselves, those closer than 700 m as one point, sized by the number of climbs and
+  coloured by their average climb, with the altitudes on hover;
+- slopes ("lift" phases that are not wave): orange lines, thicker with the climb, filtered by the
+  direction of the wind of their flight (eight sectors): which slopes work in which wind. The wind
+  is the task's (base weather zone of the session), else the one the relief was read with, else
+  the drift of the thermals.
+
+Computed from the stored analyses at each request (cached 10 min by the browser): fine for the
+hundreds of flights of the club; a stored aggregate will be needed beyond.
+
 ## Progression
 
 - **Advice** on the flight page (`FlightAdvisor`, from the stored analysis, so it applies to every
@@ -446,6 +469,11 @@ Roadmap 7i4 on the flight page:
   climb of the next thermal of a minute or more). No advice on flying too fast:
   straight flight includes ridge running, and ballasted gliders fly much faster. Kinds: something
   to work on, something done well, or where the flight stands (badge marks reached in part).
+- **Skills** (roadmap 7i6, in the logbook): centring (seconds before the first good circle), climb
+  in thermals, time circling, leaving the thermals (seconds an hour at their weak tops), dolphin
+  flight (metres an hour gained without circling) and glide ratio, each tied to its step, averaged
+  on the last 3 flights that measure it against the 3 before, with the trend (better, worse,
+  steady within 5 %).
 - **Logbook** (`/mon-compte/carnet`, in the member space; `/vols/carnet` redirects there): the pilot's
   flights from the oldest, totals, the advice that comes back most, and one chart per value (task
   speed, average climb, glide ratio, time circling) with the date, flight plan and value of each

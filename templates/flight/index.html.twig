@@ -10,7 +10,7 @@
                 <twig:Ui:Eyebrow>Voler</twig:Ui:Eyebrow>
                 <twig:Ui:Heading level="1" size="h1">Analyse de vols</twig:Ui:Heading>
                 <p class="u-lead">Revoyez vos vols Condor sur la carte et en 3D, à leur vraie altitude, et repérez où vous avez gagné ou perdu du temps : thermiques, transitions, branches du circuit.</p>
-                <p class="l-cluster"><twig:Ui:Link href="{{ path('app_flight_logbook') }}">Mon carnet de vol</twig:Ui:Link> <twig:Ui:Link href="{{ path('app_flight_records') }}">Records et classement du club</twig:Ui:Link></p>
+                <p class="l-cluster"><twig:Ui:Link href="{{ path('app_flight_logbook') }}">Mon carnet de vol</twig:Ui:Link> <twig:Ui:Link href="{{ path('app_flight_records') }}">Records et classement du club</twig:Ui:Link> <twig:Ui:Link href="{{ path('app_flight_lift_map') }}">Ascendances du club</twig:Ui:Link></p>
             </div>
 
             {% for message in app.flashes('success') %}

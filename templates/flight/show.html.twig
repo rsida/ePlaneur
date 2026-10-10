@@ -11,7 +11,9 @@
 {% block body %}
     <section class="p-flight t-light" data-controller="flight-viewer"
              data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id, v: flight.analysisVersion}) }}"
-             data-flight-viewer-label-value="{{ flight.competitionId ?: flight.pilot }}">
+             data-flight-viewer-label-value="{{ flight.competitionId ?: flight.pilot }}"
+             {#- Comments at a moment, on the timeline and the track: only for those who see the comments #}
+             data-flight-viewer-comments-value="{{ (app.user ? flight.comments|filter(c => c.at is not null)|map(c => {at: c.at, author: c.author ? c.author.displayName : 'Compte supprimé', text: c.body|u.truncate(140, '…')}) : [])|json_encode }}">
         <div class="l-container p-flight__head">
             <div class="l-stack l-stack--sm">
                 {% if app.user %}<twig:Ui:Link href="{{ path('app_flight_index') }}">Tous les vols</twig:Ui:Link>{% endif %}
@@ -20,6 +22,7 @@
                 <p class="p-flight__meta">
                     {{ [flight.glider, flight.landscape, flight.flightPlan, flight.flownOn ? flight.flownOn|format_date('long', locale: 'fr') : null]|filter(v => v)|join(' · ') }}
                 </p>
+                {% if app.user and flight.landscape %}<twig:Ui:Link href="{{ path('app_flight_lift_map', {paysage: flight.landscape}) }}">Ascendances du club sur {{ flight.landscape }}</twig:Ui:Link>{% endif %}
                 {% if flight.launch or flight.flightPlan or flight.owner or flight.public %}
                     <p class="p-flight__links">
                         {% if flight.launch %}<twig:Ui:Tag variant="soft" title="Lu sur le début de la trace">{{ flight.launch.label }}</twig:Ui:Tag>{% endif %}
@@ -214,6 +217,8 @@
                                 <span><strong>Trop bas</strong> : moins de 150 m au-dessus du sol, loin de toute pente prévue (le vol de pente se fait à cette hauteur), hors décollage et arrivée.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--tick" aria-hidden="true"></span>
                                 <span><strong>Ascendance traversée</strong> (trait en haut) et <strong>forte descendance</strong> (trait bleu en bas).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--comment" aria-hidden="true"></span>
+                                <span><strong>Commentaire</strong> à un instant du vol (bulle bleue ; sur la trace, une étiquette « Commentaire ») : survolez la bulle pour le lire, cliquez pour y aller.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--low" aria-hidden="true"></span>
                                 <span><strong>Point bas</strong> : bien plus bas que vos entrées de thermique habituelles.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--missed-tick" aria-hidden="true"></span>
@@ -362,7 +367,7 @@
                     <figure class="p-flight__chart"><figcaption>Hauteur au-dessus du sol (m) — sous 300 m, prévoir où se poser ; sous 150 m, trop bas hors vol de pente</figcaption><div data-flight-viewer-target="chart" data-series="height"></div></figure>
                 {% endif %}
                 {% if analysis.task %}
-                    <figure class="p-flight__chart"><figcaption>Finesse requise pour rejoindre l’arrivée (distance restante par les points ÷ hauteur au-dessus de l’arrivée){% if stats.glideRatio %} — en pointillés votre finesse moyenne en transition{% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="required"></div></figure>
+                    <figure class="p-flight__chart"><figcaption>Finesse requise pour rejoindre l’arrivée (distance restante par les points ÷ hauteur au-dessus de l’arrivée), tracée quand elle est sous 100{% if stats.glideRatio %} — en pointillés votre finesse moyenne en transition{% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="required"></div></figure>
                 {% endif %}
             </div>
         </div>

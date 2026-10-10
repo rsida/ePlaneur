@@ -28,6 +28,28 @@
         </ul>
     </section>
 
+    {% if skills is defined and skills is not empty %}
+        <section class="l-stack l-stack--sm">
+            <twig:Ui:Heading level="2" size="h4">Bilan par compétence</twig:Ui:Heading>
+            <p class="u-note">Moyenne des 3 derniers vols qui la mesurent, contre les 3 d’avant.</p>
+            <div class="c-data-table p-flight-logbook__skills">
+                <table>
+                    <thead><tr><th scope="col">Compétence</th><th scope="col">3 derniers vols</th><th scope="col">3 vols d’avant</th><th scope="col">Tendance</th></tr></thead>
+                    <tbody>
+                        {% for skill in skills %}
+                            <tr>
+                                <th scope="row">{{ skill.title }} <twig:Ui:Tag variant="soft">{{ skill.step.title }}</twig:Ui:Tag></th>
+                                <td>{{ skill.recent is not null ? skill.recent|number_format(skill.decimals, ',', ' ') : '—' }} {{ skill.unit }}</td>
+                                <td>{{ skill.before is not null ? skill.before|number_format(skill.decimals, ',', ' ') ~ ' ' ~ skill.unit : '—' }}</td>
+                                <td class="p-flight-logbook__trend p-flight-logbook__trend--{{ skill.trend ?? 'none' }}">{{ {better: '↗ en progrès', worse: '↘ en recul', steady: '→ stable'}[skill.trend] ?? 'pas encore assez de vols' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+
     {% if tips is not empty %}
         <section class="l-stack l-stack--sm">
             <twig:Ui:Heading level="2" size="h4">Ce qui revient le plus</twig:Ui:Heading>

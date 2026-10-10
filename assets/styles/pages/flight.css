@@ -384,6 +384,17 @@
     background: repeating-linear-gradient(135deg, var(--color-hatch) 0 2px, transparent 2px 4px);
 }
 
+/* A comment at a moment: a blue bubble under the strip */
+.p-flight__event--comment {
+    top: auto;
+    bottom: 0;
+    width: var(--space-3);
+    height: var(--space-3);
+    border-radius: 50% 50% 50% 0;
+    background-color: var(--color-primary);
+    transform: translate(-50%, 115%);
+}
+
 /* A thermal of the race missed: a small triangle pointing up, above the strip */
 .p-flight__event--missed {
     width: var(--space-2);
@@ -666,6 +677,11 @@
 .p-flight__swatch--low::after {
     background-color: var(--color-low-point);
     clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.p-flight__swatch--comment::after {
+    border-radius: 50% 50% 50% 0;
+    background-color: var(--color-primary);
 }
 
 .p-flight__swatch--missed-tick::after {
@@ -1648,4 +1664,70 @@
 .p-flight__fast {
     flex: none;
     white-space: nowrap;
+}
+
+/* Skills of the logbook: the trend coloured */
+.p-flight-logbook__trend--better {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.p-flight-logbook__trend--worse {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+.p-flight-logbook__trend--steady,
+.p-flight-logbook__trend--none {
+    color: var(--color-text-muted);
+}
+
+/* Lift map of the club (roadmap 7i6): the stack shrinks its children to their content */
+.p-lift-map__viewer {
+    --flight-map-height: min(70vh, 40rem);
+    align-self: stretch;
+}
+
+.p-lift-map__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* Not in the grid of the flight viewer */
+.p-lift-map__map-wrap {
+    position: relative;
+    align-self: stretch;
+    grid-area: auto;
+}
+
+.p-lift-map__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+}
+
+.p-lift-map__swatch {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.p-lift-map__swatch--heat {
+    background: radial-gradient(var(--color-climb-4), var(--color-climb-1) 60%, transparent 75%);
+}
+
+.p-lift-map__swatch--thermal {
+    border: 1px solid var(--color-paper);
+    background-color: var(--color-climb-2);
+}
+
+.p-lift-map__swatch--slope {
+    width: 1.25rem;
+    height: 0.25rem;
+    border-radius: 2px;
+    background-color: var(--color-slope-arrow);
 }

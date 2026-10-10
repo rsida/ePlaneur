@@ -34,6 +34,23 @@ class FlightRepository extends ServiceEntityRepository
     }
 
     /**
+     * Number of flights on each landscape, the most flown first.
+     *
+     * @return array<string, int>
+     */
+    public function countByLandscape(): array
+    {
+        $rows = $this->createQueryBuilder('flight')
+            ->select('flight.landscape AS landscape, COUNT(flight.id) AS flights')
+            ->where('flight.landscape IS NOT NULL')
+            ->groupBy('flight.landscape')
+            ->orderBy('flights', 'DESC')->addOrderBy('flight.landscape', 'ASC')
+            ->getQuery()->getArrayResult();
+
+        return array_combine(array_column($rows, 'landscape'), array_map('intval', array_column($rows, 'flights')));
+    }
+
+    /**
      * The other flights in the same air as a flight: those of its network session, or else of the
      * same Condor race (race id of the .ftr). Not the same flight plan: flown another day, the
      * weather and its thermals differ.
