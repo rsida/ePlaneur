@@ -51,8 +51,8 @@ class FlightRepository extends ServiceEntityRepository
     }
 
     /**
-     * The other flights in the same air as a flight: those of its network session, or else of the
-     * same Condor race (race id of the .ftr). Not the same flight plan: flown another day, the
+     * The other pilots' flights in the same air as a flight: those of its network session, or else
+     * of the same Condor race (race id of the .ftr). Not the same flight plan: flown another day, the
      * weather and its thermals differ.
      *
      * @return list<Flight>
@@ -66,7 +66,10 @@ class FlightRepository extends ServiceEntityRepository
             default => [],
         };
 
-        return array_values(array_filter($flights, static fn (Flight $other): bool => $other->getId() !== $flight->getId()));
+        // A pilot flies a race once: another flight of theirs in it is the same track uploaded twice
+        $same = static fn (Flight $other): bool => ($other->getCompetitionId() ?? $other->getPilot()) === ($flight->getCompetitionId() ?? $flight->getPilot());
+
+        return array_values(array_filter($flights, static fn (Flight $other): bool => $other->getId() !== $flight->getId() && !$same($other)));
     }
 
     /**

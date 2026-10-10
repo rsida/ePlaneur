@@ -10,7 +10,7 @@
 
 {% block body %}
     <section class="p-flight t-light" data-controller="flight-viewer"
-             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id, v: flight.analysisVersion}) }}"
+             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id, v: flight.analysisVersion ~ '-' ~ constant('App\\Controller\\FlightController::DATA_VERSION')}) }}"
              data-flight-viewer-label-value="{{ flight.competitionId ?: flight.pilot }}"
              {#- Comments at a moment, on the timeline and the track: only for those who see the comments #}
              data-flight-viewer-comments-value="{{ (app.user ? flight.comments|filter(c => c.at is not null)|map(c => {at: c.at, author: c.author ? c.author.displayName : 'Compte supprimé', text: c.body|u.truncate(140, '…')}) : [])|json_encode }}">
@@ -198,8 +198,10 @@
                                 <span><strong>Forte descendance</strong> : flèche bleue vers le bas, là où l’air descendait à plus de 2 m/s (netto).</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--wind" aria-hidden="true"></span>
                                 <span><strong>Manche à air</strong> : flèche blanche au sommet de chaque thermique, dans le sens où va le vent, plus longue quand il est fort (vitesse affichée de près).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--fields" aria-hidden="true"></span>
+                                <span><strong>Terrains</strong> (bouton « Terrains ») : en vert ceux qu’on rejoint en plané à la finesse de sécurité (70 % de la finesse max du planeur, arrivée à 200 m au-dessus), en gris les autres ; le cercle vert autour du planeur est le rayon de plané au-dessus du sol. En ligne droite, sans le relief ni le vent.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--ghost" aria-hidden="true"></span>
-                                <span><strong>Fantôme</strong> (bouton « Fantôme ») : le meilleur autre pilote de la course, parti au même moment que vous, avec sa traîne ; l’écart le long du circuit est sur son drapeau et à côté de la carte.</span></li>
+                                <span><strong>Fantôme</strong> (menu « Fantôme ») : le meilleur autre pilote de la course, ou votre meilleur vol sur la même tâche un autre jour, parti au même moment que vous, avec sa traîne ; l’écart le long du circuit est sur son drapeau et à côté de la carte.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--speed" aria-hidden="true"></span>
                                 <span><strong>Trace : vitesse / MacCready</strong> : chaque transition en bleu si elle était trop lente, en vert à la bonne vitesse, en orange trop rapide, pour la montée moyenne de vos thermiques (polaire du planeur, vent retiré).</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--curtain" aria-hidden="true"></span>
@@ -217,6 +219,8 @@
                                 <span><strong>Trop bas</strong> : moins de 150 m au-dessus du sol, loin de toute pente prévue (le vol de pente se fait à cette hauteur), hors décollage et arrivée.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--tick" aria-hidden="true"></span>
                                 <span><strong>Ascendance traversée</strong> (trait en haut) et <strong>forte descendance</strong> (trait bleu en bas).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--no-field" aria-hidden="true"></span>
+                                <span><strong>Aucun terrain à portée</strong> (trait gris foncé en haut) pendant 30 s ou plus.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--comment" aria-hidden="true"></span>
                                 <span><strong>Commentaire</strong> à un instant du vol (bulle bleue ; sur la trace, une étiquette « Commentaire ») : survolez la bulle pour le lire, cliquez pour y aller.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--low" aria-hidden="true"></span>
@@ -264,7 +268,11 @@
                     {% if analysis.slopes.cells ?? null %}
                         <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="slopes" data-action="flight-viewer#toggleSlopes" title="Les pentes face au vent de la tâche, où l’on attend de l’ascendance de pente"><twig:ux:icon name="mountain" /> Pentes</button>
                     {% endif %}
-                    <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="ghost" data-action="flight-viewer#toggleGhost" hidden><twig:ux:icon name="glider" /><span> Fantôme</span></button>
+                    <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="airfields" data-action="flight-viewer#toggleAirfields" title="Les terrains du paysage, en vert ceux qu’on peut rejoindre en plané, et le rayon de plané autour du planeur" hidden><twig:ux:icon name="map" /> Terrains</button>
+                    <label class="p-flight__select" data-flight-viewer-target="ghostChoice" hidden>
+                        <span class="u-visually-hidden">Fantôme rejoué à côté du vol</span>
+                        <select data-flight-viewer-target="ghost" data-action="flight-viewer#setGhost"></select>
+                    </label>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
                     <label class="p-flight__select">
                         <span class="u-visually-hidden">Caméra quand le planeur est suivi en 3D</span>
@@ -293,6 +301,7 @@
                     <div><dt>Vitesse sol</dt><dd data-flight-viewer-target="nowSpeed">—</dd></div>
                     <div><dt>Vario (4 s)</dt><dd data-flight-viewer-target="nowVario">—</dd></div>
                     {% if analysis.series.ground ?? null %}<div><dt>Hauteur sol</dt><dd data-flight-viewer-target="nowHeight">—</dd></div>{% endif %}
+                    <div hidden><dt>Terrain à portée le plus proche</dt><dd data-flight-viewer-target="nowField">—</dd></div>
                     <div hidden><dt data-flight-viewer-target="nowGhostLabel">Écart</dt><dd data-flight-viewer-target="nowGhost">—</dd></div>
                     {% if analysis.task %}<div><dt>Finesse requise (arrivée)</dt><dd data-flight-viewer-target="nowRequired">—</dd></div>{% endif %}
                 </dl>

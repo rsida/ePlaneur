@@ -129,3 +129,11 @@ make console c="app:gliders:import var/condor/Planes"
 ```
 
 Tests use a made-up glider in the same formats (`tests/Unit/Flight/Glider/GliderSamples.php`).
+
+The airfields of a landscape (glide cone of the flight viewer) come the same way from its `.apt`
+file, one command per landscape (the landscape is the name of the file):
+
+```bash
+cp /mnt/c/Condor3/Landscapes/AA3/AA3.apt var/condor/
+make console c="app:condor:airfields var/condor/AA3.apt"
+```

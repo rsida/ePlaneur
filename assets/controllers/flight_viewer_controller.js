@@ -1,6 +1,6 @@
 /* stimulusFetch: 'lazy' */
 import { Controller } from '@hotwired/stimulus';
-import { LineLayer, PathLayer, TextLayer } from '@deck.gl/layers';
+import { LineLayer, PathLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
@@ -35,6 +35,9 @@ import { SEE_THROUGH, angleDifference, attitude, chaseBearing, climbColor, cross
  * - Replay comfort (roadmap 7i5): thermals five times faster on demand, the camera behind, around
  *   (orbit) or changing shots (cinema) while following in 3D, and instruments (horizon from the
  *   attitude Condor 3 records, vario needle, speed against MacCready).
+ * - Glide cone (roadmap 7i3): the airfields of the landscape, green when within reach at the safe
+ *   glide ratio (GlideReach), a ring of reach around the glider, the nearest one beside the map and
+ *   the stretches with none on the timeline.
  * - Comments at a moment (comments value): a bubble under the timeline and a label on the track.
  * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
  * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
@@ -79,6 +82,15 @@ const TOO_LOW_END = 180;
 const SLOPE_NEAR = 300;
 // Required glide ratios above this are shown as this (the finish is out of reach)
 const REQUIRED_MAX = 100;
+// Glide cone: airfields within reach in green, the others grey; their names from AIRFIELD_NAMES_ZOOM
+// (those within reach from AIRFIELD_REACH_NAMES_ZOOM); no airfield within reach for NO_FIELD_TIME
+// seconds or more is marked on the timeline (from the release to TOO_LOW_END before the landing)
+const REACHABLE_COLOR = [47, 160, 90];
+const UNREACHABLE_COLOR = [120, 128, 136];
+const CONE_COLOR = [47, 160, 90];
+const AIRFIELD_NAMES_ZOOM = 11;
+const AIRFIELD_REACH_NAMES_ZOOM = 8;
+const NO_FIELD_TIME = 30;
 // Comments on the track: the name of the author from this zoom
 const COMMENT_NAMES_ZOOM = 11;
 // Replay: thermals FAST_THERMALS times faster when asked
@@ -104,7 +116,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'airfields', 'nowField'];
 
     static values = { url: String, label: String, comments: Array };
 
@@ -133,20 +145,26 @@ export default class extends Controller {
         this.liftPhases = this.flight.phases.filter((phase) => phase.type === 'lift');
         this.crossings = this.flight.crossings ?? [];
         this.sinks = this.strongSink();
+        this.reach = this.flight.reach ?? null;
+        this.nearestField = this.reach ? this.nearestFields() : null;
+        if (this.reach && this.hasAirfieldsTarget) this.airfieldsTarget.hidden = false;
+        if (this.reach && this.hasNowFieldTarget) this.nowFieldTarget.closest('div').hidden = false;
         const { altitude, ground } = this.series;
         this.series.height = ground ? altitude.map((value, i) => (ground[i] === null ? null : value - ground[i])) : null;
         this.series.required = this.requiredGlide();
         this.air = this.flight.sessionLift ?? null;
-        this.ghost = this.flight.ghost ?? null;
+        // The ghosts: the best of the race, the pilot's own best flight on this task
+        this.ghosts = this.flight.ghosts ?? [];
+        this.ghost = this.ghosts[0] ?? null;
         if (this.ghost && this.hasGhostTarget) {
-            this.ghostTarget.hidden = false;
-            this.ghostTarget.lastChild.textContent = ` Fantôme ${this.ghost.pilot}`;
-            this.ghostTarget.title = `Rejouer avec ${this.ghost.pilot} (${this.ghost.rank === 1 ? 'vainqueur' : `${this.ghost.rank}e`} de la course), parti au même moment`;
+            this.ghostChoiceTarget.hidden = false;
+            this.ghostTarget.replaceChildren(
+                ...this.ghosts.map((ghost, n) => new Option(ghost.kind === 'own' ? 'Fantôme : mon meilleur vol' : `Fantôme : ${ghost.pilot}`, String(n))),
+                new Option('Sans fantôme', 'none'),
+            );
+            this.ghostTarget.title = this.ghosts.map((ghost) => `Rejouer avec ${ghost.title}, parti au même moment`).join('\n');
         }
-        if (this.ghost && this.hasNowGhostLabelTarget) {
-            this.nowGhostLabelTarget.textContent = `Écart avec ${this.ghost.pilot}`;
-            this.nowGhostLabelTarget.closest('div').hidden = false;
-        }
+        this.showGhostLabel();
         if (this.hasAirChoiceTarget) this.airChoiceTarget.hidden = !this.air?.thermals.length;
         this.top = this.series.altitude.reduce((top, altitude) => Math.max(top, altitude), 0);
         this.buildMap();
@@ -342,7 +360,7 @@ export default class extends Controller {
             const details = readings(this.series, this.index, ground);
             layers.push(...gliderLayers('flight', [{ track: this.series, index: this.index, color: [255, 255, 255], flagColor: [25, 38, 48], label: this.labelValue, details, selected: false }], { is3d: this.is3d, zoom: this.map.getZoom() }));
         }
-        layers.push(...this.ghostLayers(), ...this.commentLayers());
+        layers.push(...this.ghostLayers(), ...this.commentLayers(), ...this.reachLayers());
         // Under the track: the lift of the other pilots of the race
         layers.unshift(...sessionAirLayers('flight', this.air, { is3d: this.is3d, zoom: this.map.getZoom(), show: this.hasAirTarget ? this.airTarget.value : 'all' }));
         if (this.is3d) {
@@ -412,6 +430,127 @@ export default class extends Controller {
         }
     }
 
+    /**
+     * The nearest airfield within reach at each second, as [index, metres] (null when none): within
+     * reach when the distance over the height above it, less the arrival margin, is at most the
+     * safe glide ratio (GlideReach).
+     */
+    nearestFields() {
+        const { latitude, longitude, altitude } = this.series;
+        const { ratio, margin, airfields } = this.reach;
+        const perLon = 111320 * Math.cos((latitude[0] * Math.PI) / 180);
+        const fields = airfields.map(([, lat, lon, alt]) => [lon * perLon, lat * 111320, alt]);
+        const nearest = new Array(this.count).fill(null);
+        for (let i = 0; i < this.count; i += 1) {
+            const x = longitude[i] * perLon;
+            const y = latitude[i] * 111320;
+            let best = null;
+            fields.forEach(([fx, fy, alt], n) => {
+                const height = altitude[i] - alt - margin;
+                if (height <= 0) return;
+                const metres = Math.hypot(fx - x, fy - y);
+                if (metres <= height * ratio && (best === null || metres < best[1])) best = [n, metres];
+            });
+            nearest[i] = best;
+        }
+
+        return nearest;
+    }
+
+    /** The airfields (within reach now in green, with their names) and the reach around the glider. */
+    reachLayers() {
+        if (!this.reach || (this.hasAirfieldsTarget && this.airfieldsTarget.getAttribute('aria-pressed') !== 'true')) return [];
+        const i = Math.round(this.index);
+        const { ratio, margin, airfields } = this.reach;
+        const zoom = this.map.getZoom();
+        const altitude = this.series.altitude[i];
+        const reachable = (field) => {
+            const height = altitude - field[3] - margin;
+
+            return height > 0 && distance(this.series.latitude[i], this.series.longitude[i], field[1], field[2]) <= height * ratio;
+        };
+        const fields = airfields.map((field) => ({ field, reachable: reachable(field) }));
+        const parameters = this.is3d ? {} : { depthCompare: 'always' };
+        const position = ({ field }) => [field[2], field[1], this.is3d ? field[3] + 5 : 0];
+        // The reach over the ground under the glider: a ring of (height above the ground − margin) × ratio
+        const height = this.series.height?.[i] ?? null;
+        const radius = height !== null ? Math.max(0, height - margin) * ratio : 0;
+        const [lon, lat] = positionAt(this.series, this.index);
+        const ground = this.is3d && height !== null ? altitude - height : 0;
+        const ring = [];
+        for (let a = 0; a <= 64 && radius > 0; a += 1) {
+            const angle = (a / 64) * 2 * Math.PI;
+            ring.push([lon + (Math.sin(angle) * radius) / (111320 * Math.cos((lat * Math.PI) / 180)), lat + (Math.cos(angle) * radius) / 111320, ground]);
+        }
+
+        return [
+            new PathLayer({
+                id: 'reach-ring',
+                data: ring.length > 1 ? [ring] : [],
+                getPath: (path) => path,
+                getColor: [...CONE_COLOR, 160],
+                getWidth: 2,
+                widthUnits: 'pixels',
+                parameters: SEE_THROUGH,
+            }),
+            new ScatterplotLayer({
+                id: 'airfields',
+                data: fields,
+                getPosition: position,
+                getRadius: (f) => (f.reachable ? 6 : 4),
+                radiusUnits: 'pixels',
+                getFillColor: (f) => [...(f.reachable ? REACHABLE_COLOR : UNREACHABLE_COLOR), 230],
+                getLineColor: [255, 255, 255],
+                lineWidthMinPixels: 1.5,
+                stroked: true,
+                parameters,
+                updateTriggers: { getPosition: this.is3d, getRadius: i, getFillColor: i },
+            }),
+            new TextLayer({
+                id: 'airfield-names',
+                data: fields.filter((f) => zoom >= AIRFIELD_NAMES_ZOOM || (f.reachable && zoom >= AIRFIELD_REACH_NAMES_ZOOM)),
+                getPosition: position,
+                getText: ({ field }) => field[0],
+                characterSet: 'auto',
+                getSize: 11,
+                getColor: (f) => (f.reachable ? [25, 90, 50] : [70, 78, 86]),
+                getTextAnchor: 'start',
+                getAlignmentBaseline: 'center',
+                getPixelOffset: [9, 0],
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 600,
+                background: true,
+                getBackgroundColor: [255, 255, 255, 210],
+                backgroundPadding: [3, 1],
+                parameters,
+                updateTriggers: { getPosition: this.is3d, getColor: i },
+            }),
+        ];
+    }
+
+    toggleAirfields() {
+        this.airfieldsTarget.setAttribute('aria-pressed', String(this.airfieldsTarget.getAttribute('aria-pressed') !== 'true'));
+        this.render();
+    }
+
+    /** Runs of NO_FIELD_TIME seconds or more with no airfield within reach, in flight. */
+    noFieldRuns() {
+        if (!this.nearestField) return [];
+        const { release = 0, landing = this.count - 1 } = this.flight.statistics;
+        const runs = [];
+        let start = null;
+        for (let i = release; i <= landing - TOO_LOW_END + 1; i += 1) {
+            const none = i <= landing - TOO_LOW_END && this.nearestField[i] === null;
+            if (none && start === null) start = i;
+            if (!none && start !== null) {
+                if (i - start >= NO_FIELD_TIME) runs.push({ start, end: i });
+                start = null;
+            }
+        }
+
+        return runs;
+    }
+
     /** A label on the track at each comment at a moment, with its author when close. */
     commentLayers() {
         if (this.commentsValue.length === 0) return [];
@@ -443,10 +582,10 @@ export default class extends Controller {
     /** The ghost glider and its trail, when shown and in the air at that moment. */
     ghostLayers() {
         const ghost = this.ghost;
-        if (!ghost || (this.hasGhostTarget && this.ghostTarget.getAttribute('aria-pressed') !== 'true')) return [];
+        if (!ghost) return [];
         const index = this.index + ghost.offset;
         if (index < 0 || index > ghost.latitude.length - 1) return [];
-        const glider = { track: ghost, index, color: GHOST_COLOR, flagColor: [62, 70, 120], label: `Fantôme ${ghost.pilot}`, details: [this.ghostGapText() ?? `${Math.round(ghost.altitude[Math.round(index)]).toLocaleString('fr-FR')} m`], selected: false };
+        const glider = { track: ghost, index, color: GHOST_COLOR, flagColor: [62, 70, 120], label: ghost.kind === 'own' ? 'Mon meilleur vol' : `Fantôme ${ghost.pilot}`, details: [this.ghostGapText() ?? `${Math.round(ghost.altitude[Math.round(index)]).toLocaleString('fr-FR')} m`], selected: false };
 
         return [
             ...trailLayers('ghost', [glider], { is3d: this.is3d, seconds: GHOST_TRAIL, width: 2 }),
@@ -604,9 +743,17 @@ export default class extends Controller {
         }
     }
 
-    toggleGhost() {
-        this.ghostTarget.setAttribute('aria-pressed', String(this.ghostTarget.getAttribute('aria-pressed') !== 'true'));
-        this.render();
+    setGhost() {
+        this.ghost = this.ghostTarget.value === 'none' ? null : this.ghosts[Number(this.ghostTarget.value)];
+        this.showGhostLabel();
+        this.moveTo(this.index, { keepFraction: true });
+    }
+
+    /** "Écart avec FDU" beside the map, while a ghost is shown. */
+    showGhostLabel() {
+        if (!this.hasNowGhostLabelTarget) return;
+        this.nowGhostLabelTarget.closest('div').hidden = !this.ghost;
+        if (this.ghost) this.nowGhostLabelTarget.textContent = this.ghost.kind === 'own' ? 'Écart avec mon meilleur vol' : `Écart avec ${this.ghost.pilot}`;
     }
 
     /** The slopes expected to work, on or off. */
@@ -1100,6 +1247,9 @@ export default class extends Controller {
             if (!thermal.missed) continue;
             items.push(event('missed', thermal.closest.at, null, null, `Thermique de la course manqué à ${thermal.closest.distance} m · ${FORMATS.vario(thermal.climb)} · ${thermal.pilots.join(', ')}`));
         }
+        for (const run of this.noFieldRuns()) {
+            items.push(event('no-field', run.start, run.end, null, `Aucun terrain à portée (finesse ${this.reach.ratio}, arrivée ${this.reach.margin} m au-dessus) · ${formatTime(run.end - run.start)}`));
+        }
         for (const low of this.tooLow()) {
             items.push(event('too-low', low.start, low.end, null, `Trop bas · ${FORMATS.height(low.lowest)}`));
         }
@@ -1393,6 +1543,11 @@ export default class extends Controller {
         if (this.hasNowHeightTarget) this.nowHeightTarget.textContent = this.series.height?.[i] == null ? '—' : FORMATS.altitude(this.series.height[i]);
         this.drawInstruments();
         if (this.hasNowGhostTarget && this.ghost) this.nowGhostTarget.textContent = this.ghostGapText() ?? '—';
+        if (this.hasNowFieldTarget && this.nearestField) {
+            const nearest = this.nearestField[i];
+            this.nowFieldTarget.textContent = nearest ? `${this.reach.airfields[nearest[0]][0]} · ${(nearest[1] / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km` : 'aucun';
+            this.nowFieldTarget.classList.toggle('p-flight__now-alert', !nearest);
+        }
         if (this.hasNowRequiredTarget) {
             const required = this.series.required[i];
             this.nowRequiredTarget.textContent = required === null ? '—' : required >= REQUIRED_MAX ? 'hors de portée' : String(Math.round(required));

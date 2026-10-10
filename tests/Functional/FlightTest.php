@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use App\Entity\Airfield;
 use App\Entity\Flight;
 use App\Entity\FlightComment;
 use App\Entity\Group;
@@ -62,12 +63,19 @@ final class FlightTest extends WebTestCase
         self::assertSelectorTextNotContains('body', 'sont estimées', 'Times decoded from the records');
         self::assertSelectorTextContains('.p-flight__legs', 'Laragne Chp → Ventoux');
 
+        // An airfield of the landscape near the track, for the glide cone
+        $this->entityManager->persist(new Airfield('AA3', 'Laragne', 44.3157, 5.8125, 655.0, 800));
+        $this->entityManager->persist(new Airfield('AA3', 'Far away', 47.0, 11.0, 500.0, 800));
+        $this->entityManager->flush();
+
         $this->client->request('GET', '/vols/'.$flight->getId().'/analyse.json');
         self::assertResponseIsSuccessful();
-        /** @var array{series: array{time: list<int>}, exactTimes: bool} $analysis */
+        /** @var array{series: array{time: list<int>}, exactTimes: bool, reach: array{ratio: float, margin: float, airfields: list<array{string, float, float, float}>}} $analysis */
         $analysis = json_decode((string) $this->client->getResponse()->getContent(), true);
         self::assertCount(306, $analysis['series']['time'], '3,000 records over 305 s, one point per second');
         self::assertTrue($analysis['exactTimes']);
+        self::assertSame(['Laragne'], array_column($analysis['reach']['airfields'], 0), 'Only the airfields around the track');
+        self::assertSame(200.0, (float) $analysis['reach']['margin']);
     }
 
     public function testTheLiftOfTheClubIsMappedByLandscape(): void

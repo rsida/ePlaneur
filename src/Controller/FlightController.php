@@ -17,6 +17,7 @@ use App\Flight\FlightMailer;
 use App\Flight\FlightSession;
 use App\Flight\Ghost;
 use App\Flight\Glider\GliderPerformance;
+use App\Flight\GlideReach;
 use App\Flight\IgcExporter;
 use App\Flight\Logbook;
 use App\Flight\Reader\InvalidTrackException;
@@ -61,6 +62,12 @@ final class FlightController extends AbstractController
     }
 
     private const string UPLOAD_TOKEN = 'flight_upload';
+
+    /**
+     * Version of what analysis() adds to the stored analysis, in the address of the data next to
+     * the version of the analysis: raise it when that changes, or browsers keep the old data an hour.
+     */
+    public const int DATA_VERSION = 2;
 
     /** Flights uploaded by the user, and the latest of the club; a track dropped here is analysed. */
     #[Route('', name: 'index', methods: ['GET', 'POST'])]
@@ -318,20 +325,25 @@ final class FlightController extends AbstractController
     /**
      * What the viewer draws: 1 s series, phases, statistics and task (FlightAnalysis::toArray()),
      * the netto vario and the speed of the glides against the MacCready speed when the polar of the
-     * glider is known, the lift the other pilots of the race found (SessionLift) and the ghost of
-     * its best pilot (Ghost).
+     * glider is known, the lift the other pilots of the race found (SessionLift) and the ghosts of
+     * the best pilot of the race and of the pilot's best flight on this task (Ghost), and the
+     * airfields within reach (GlideReach).
      */
     #[Route('/{id<\d+>}/analyse.json', name: 'analysis', methods: ['GET'])]
     #[IsGranted(FlightVoter::VIEW, 'flight')]
-    public function analysis(Flight $flight, FlightRepository $flights): JsonResponse
+    public function analysis(Flight $flight, FlightRepository $flights, GlideReach $reach): JsonResponse
     {
         $analysis = $flight->getAnalysis();
         $sameAir = $flights->findSameAir($flight);
         $analysis['sessionLift'] = SessionLift::around($analysis, $sameAir);
-        $analysis['ghost'] = Ghost::of($flight, $sameAir);
+        // The ghosts: the best of the race, the pilot's own best on this flight plan
+        $own = null !== $flight->getOwner() && null !== $flight->getFlightPlan() ? $flights->findBy(['owner' => $flight->getOwner(), 'flightPlan' => $flight->getFlightPlan()]) : [];
+        $analysis['ghosts'] = array_values(array_filter([Ghost::of($flight, $sameAir), Ghost::best($flight, $own)]));
         $glider = $this->gliders->findOneByName($flight->getGlider());
-        if (null !== $glider) {
-            $performance = GliderPerformance::of($glider, $analysis);
+        $performance = null !== $glider ? GliderPerformance::of($glider, $analysis) : null;
+        // The glide cone: the airfields around and the safe glide ratio
+        $analysis['reach'] = $reach->of($flight, $performance?->bestGlide['ratio']);
+        if (null !== $performance) {
             $analysis['series']['netto'] = $performance->netto;
             // The airspeed of each glide against the MacCready speed of the climb met
             $analysis['speedToFly'] = null !== $performance->speedToFly ? [

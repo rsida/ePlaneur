@@ -384,6 +384,13 @@
     background: repeating-linear-gradient(135deg, var(--color-hatch) 0 2px, transparent 2px 4px);
 }
 
+/* No airfield within reach: a dark line over the strip */
+.p-flight__event--no-field {
+    top: -4px;
+    height: 3px;
+    background-color: var(--color-no-field);
+}
+
 /* A comment at a moment: a blue bubble under the strip */
 .p-flight__event--comment {
     top: auto;
@@ -677,6 +684,29 @@
 .p-flight__swatch--low::after {
     background-color: var(--color-low-point);
     clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.p-flight__swatch--no-field::after {
+    height: 3px;
+    background: var(--color-no-field);
+}
+
+.p-flight__swatch--fields::before,
+.p-flight__swatch--fields::after {
+    width: 0.6rem;
+    height: 0.6rem;
+    align-self: center;
+    border: 1.5px solid var(--color-paper);
+    border-radius: 50%;
+    content: "";
+}
+
+.p-flight__swatch--fields::before {
+    background-color: var(--color-field-reachable);
+}
+
+.p-flight__swatch--fields::after {
+    background-color: var(--color-field-unreachable);
 }
 
 .p-flight__swatch--comment::after {
@@ -1730,4 +1760,9 @@
     height: 0.25rem;
     border-radius: 2px;
     background-color: var(--color-slope-arrow);
+}
+
+/* A value beside the map that calls for attention (no airfield within reach) */
+.p-flight__now-alert {
+    color: var(--color-danger);
 }

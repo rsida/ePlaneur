@@ -82,6 +82,10 @@
     --color-wave: #9650dc;
     /* The ghost, and the glides against the MacCready speed (flight_viewer_controller.js) */
     --color-ghost: #bec8ff;
+    /* Glide cone: airfields within reach or not, and the stretches with none */
+    --color-field-reachable: #2fa05a;
+    --color-field-unreachable: #788088;
+    --color-no-field: var(--palette-slate);
     --color-glide-slow: #4682dc;
     --color-glide-right: #5cb070;
     --color-glide-fast: #f09646;

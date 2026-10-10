@@ -81,6 +81,19 @@ final class FlightComparisonTest extends TestCase
         self::assertNull(Ghost::of($fast, []));
     }
 
+    public function testTheOwnBestFlightIsAGhostToo(): void
+    {
+        $slow = $this->flight('Slow', 1.5);
+        $fast = $this->flight('Fast');
+        $ghost = Ghost::best($slow, [$slow, $fast, $this->flight('Slower', 2.0)]);
+
+        self::assertNotNull($ghost);
+        self::assertSame('own', $ghost['kind']);
+        self::assertStringContainsString('votre meilleur vol sur cette tâche', $ghost['title']);
+        self::assertEqualsWithDelta(90, end($ghost['gaps']), 2, 'The fastest of the others');
+        self::assertNull(Ghost::best($fast, [$fast]), 'Not the flight itself');
+    }
+
     public function testFlightsOfDifferentTasksAreNotCompared(): void
     {
         self::assertNull(FlightComparison::of($this->flight('A'), $this->flight('B', plan: 'Autre tâche')));

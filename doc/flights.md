@@ -14,6 +14,7 @@ the latest public flights.
 | Analysis again | `app:flight:analyse`: every stored flight from its file, after the analysis changed |
 | Analysis | `App\Flight\Analysis\FlightAnalyzer` → `FlightAnalysis` (stored as JSON in `Flight::analysis`) |
 | Storage | `Flight` entity; files in `app.flights_dir` (`var/flights`, Docker volume `flights` in production) through `FlightImporter` |
+| Airfields | `Airfield` entity, `app:condor:airfields` (`CondorAirfields` reads the `.apt` file of a landscape), `GlideReach` (glide cone) |
 | Relief | `App\Flight\Terrain\Terrain` (AWS Terrain Tiles kept in `app.terrain_dir`, `var/terrain`), `FlightTerrain` (height of the ground, slopes, wave) |
 | Viewer | `assets/flight/map.js` (map shared by the viewers), `assets/flight/chart.js` (value label of every chart, formats), `assets/controllers/flight_viewer_controller.js` and `session_viewer_controller.js` (lazy), `templates/flight/`, `assets/styles/pages/flight.css` |
 | Session | `App\Flight\FlightSession` (ranking, podium), `FlightRepository::findSession()` |
@@ -208,8 +209,18 @@ of flight 4, 150 to 280; then a sentence says so instead of the chart) with the 
 of the flight dashed, and beside the map with the height above
 the ground.
 
-Not done yet: the glide cone with the reachable airfields needs the airfields of the landscapes
-(the `.apt` files of Condor).
+**Glide cone** (done 2026-10-10): the airfields of the landscape (`Airfield`, imported from its
+`.apt` file by `app:condor:airfields`, see `CondorAirfields` for the format; 304 on AA3) within
+about 40 km of the track come with the data of the flight (`GlideReach`), with a safe glide ratio:
+70 % of the best glide ratio of the polar, 40 at most, 25 without the polar, and an arrival 200 m
+above the airfield. The viewer shows them (button "Terrains"): green when within reach at the
+moment shown, with their names, grey otherwise, a green ring of the reach over the ground around
+the glider ((height above the ground − 200 m) × the ratio), the nearest airfield within reach
+beside the map ("aucun" in red), and on the timeline the stretches of 30 s or more with none. In
+straight lines: the relief in between and the wind are not counted.
+
+The address of the data of a flight carries `FlightController::DATA_VERSION` next to the version of
+its analysis: raise it when `analysis()` adds something, or browsers keep the old data an hour.
 
 ## Gliders and polars
 
@@ -428,8 +439,11 @@ Roadmap 7i4 on the flight page:
 - **Ghost** (`Ghost`, in `analyse.json`): the best other pilot of the same race (`findSameAir()`;
   the second when the flight won) replayed from the same start (both cross the start line
   together), with a trail of 90 s, in 2D, 3D and the pilot view, and the live gap along the task
-  (`FlightComparison` at each 250 m) on its flag and beside the map. Button "Fantôme <pilot>".
-  The best flight of the pilot on the same flight plan another day is not offered yet.
+  (`FlightComparison` at each 250 m) on its flag and beside the map. Menu "Fantôme": the best of
+  the race, or the pilot's own best flight on the same flight plan another day (`Ghost::best()`:
+  the fastest task finished, not the same race uploaded twice), or none. Another flight of the same
+  pilot in the same race is the same track uploaded twice: left out of the race
+  (`findSameAir()`).
 - **Track by speed against MacCready** ("Trace : vitesse / MacCready", with the polar): each
   glide measured by `GliderPerformance` (60 s and 2 km at least) in blue when its estimated
   airspeed is 20 km/h or more under the MacCready speed of the average climb of the flight, orange
