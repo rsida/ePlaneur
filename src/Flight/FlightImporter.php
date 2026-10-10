@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Flight\Analysis\FlightAnalyzer;
 use App\Flight\Reader\InvalidTrackException;
 use App\Flight\Reader\TrackReader;
+use App\Flight\Terrain\FlightTerrain;
 use App\Session\SessionLinker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Clock\ClockInterface;
@@ -16,8 +17,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
- * Adds a flight track to the flight viewer: reads it, analyses it and keeps the file (to analyse it
- * again when the analysis improves).
+ * Adds a flight track to the flight viewer: reads it, analyses it with the relief under it and keeps
+ * the file (to analyse it again when the analysis improves).
  */
 final readonly class FlightImporter
 {
@@ -27,6 +28,7 @@ final readonly class FlightImporter
         private EntityManagerInterface $entityManager,
         private ClockInterface $clock,
         private SessionLinker $linker,
+        private FlightTerrain $terrain,
         #[Autowire('%app.flights_dir%')]
         private string $directory,
     ) {
@@ -50,6 +52,8 @@ final readonly class FlightImporter
         // The pilot's choice in "Confidentialité et données"
         $flight->setPublic($owner?->isFlightsPublicByDefault() ?? false);
         $this->linker->link($flight);
+        // The relief once the session is known: its task gives the wind of the slopes
+        $flight->setAnalysis($this->terrain->apply($analysis, self::windOf($flight)));
         $this->entityManager->persist($flight);
         $this->entityManager->flush();
 
@@ -67,7 +71,19 @@ final readonly class FlightImporter
         if ('' === $flight->getFileName() || !is_file($path)) {
             throw new InvalidTrackException(\sprintf('The file %s is missing.', $path));
         }
-        $flight->setAnalysis($this->analyzer->analyze($this->reader->read((string) file_get_contents($path))));
+        $flight->setAnalysis($this->terrain->apply($this->analyzer->analyze($this->reader->read((string) file_get_contents($path))), self::windOf($flight)));
+    }
+
+    /**
+     * The wind of the task of the flight's session (its base weather zone), when known.
+     *
+     * @return array{from: float, speed: float}|null
+     */
+    private static function windOf(Flight $flight): ?array
+    {
+        $base = $flight->getSession()?->getTaskSettings()?->weather[0] ?? null;
+
+        return null !== $base ? ['from' => $base['windDirection'], 'speed' => $base['windSpeed']] : null;
     }
 
     /** Removes the stored file of a flight (deleted, or anonymised: the file holds the pilot's name). */

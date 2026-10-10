@@ -347,6 +347,18 @@
     background-color: var(--color-lift);
 }
 
+.p-flight__event--wave {
+    background-color: var(--color-wave);
+}
+
+/* Too low above the ground: a red line under the strip */
+.p-flight__event--too-low {
+    top: auto;
+    bottom: -3px;
+    height: 3px;
+    background-color: var(--color-danger);
+}
+
 .p-flight__event--final {
     top: auto;
     bottom: -3px;
@@ -533,6 +545,21 @@
     --arrow: var(--color-slope-arrow);
 }
 
+.p-flight__swatch--wave {
+    --arrow: var(--color-wave);
+}
+
+.p-flight__swatch--slopes {
+    background:
+        linear-gradient(
+            90deg,
+            color-mix(in srgb, var(--color-slope-arrow) 15%, transparent) 0 33%,
+            color-mix(in srgb, var(--color-slope-arrow) 35%, transparent) 33% 66%,
+            color-mix(in srgb, var(--color-slope-arrow) 55%, transparent) 66%
+        ),
+        var(--color-dark-soft);
+}
+
 .p-flight__swatch--crossing {
     --arrow: var(--color-climb-1);
 }
@@ -585,7 +612,12 @@
 }
 
 .p-flight__swatch--lift::after {
-    background: var(--color-lift);
+    background: linear-gradient(90deg, var(--color-lift) 50%, var(--color-wave) 50%);
+}
+
+.p-flight__swatch--too-low::after {
+    height: 3px;
+    background: var(--color-danger);
 }
 
 .p-flight__swatch--tick::before,

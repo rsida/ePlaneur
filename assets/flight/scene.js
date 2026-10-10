@@ -50,6 +50,8 @@ const CLIMB_COLORS = [
 ];
 // Slope lift: orange arrows every LIFT_ARROW_STEP metres, rising LIFT_ARROW_RISE metres
 const LIFT_COLOR = [255, 140, 0];
+// Wave (straight lift far above the relief): purple
+const WAVE_COLOR = [150, 80, 220];
 // Thermals of a session closer than this (metres between their first circles) are the same one
 const SAME_THERMAL = 600;
 // Zoom from which the thermals of a session get their label
@@ -449,9 +451,9 @@ function thermalArrows(track, thermals, index) {
 
 /**
  * Slope lift (straight flight that climbs, the "lift" phases) in 3D: the part of the track in an
- * orange band, and orange arrows every LIFT_ARROW_STEP metres coming up to it from below on the
- * side the wind comes from (`windFrom`, degrees; straight up when it is not known), like the air
- * pushed up the slope. Those entered before `index`.
+ * orange band (purple for wave, `phase.wave`), and arrows of the same colour every LIFT_ARROW_STEP
+ * metres coming up to it from below on the side the wind comes from (`windFrom`, degrees; straight
+ * up when it is not known), like the air pushed up the slope. Those entered before `index`.
  */
 export function liftLayers(id, track, lifts, index, { zoom, windFrom = null } = {}) {
     const bands = [];
@@ -460,26 +462,27 @@ export function liftLayers(id, track, lifts, index, { zoom, windFrom = null } = 
     for (const phase of lifts) {
         if (phase.start > index) break;
         const end = Math.min(phase.end, Math.floor(index));
-        const band = [];
+        const color = phase.wave ? WAVE_COLOR : LIFT_COLOR;
+        const band = { color, points: [] };
         let flown = LIFT_ARROW_STEP / 2;
         for (let k = phase.start; k <= end; k += 1) {
             const point = [track.longitude[k], track.latitude[k], track.altitude[k]];
-            band.push(point);
-            if (k > phase.start) flown += metresBetween(band[band.length - 2], point);
+            band.points.push(point);
+            if (k > phase.start) flown += metresBetween(band.points[band.points.length - 2], point);
             if (flown < LIFT_ARROW_STEP) continue;
             flown = 0;
             const [east, north] = upwind === null ? [0, 0] : [Math.sin(upwind) * LIFT_ARROW_RISE, Math.cos(upwind) * LIFT_ARROW_RISE];
-            arrows.push({ from: offset(point, east, north, -LIFT_ARROW_RISE), to: point, color: LIFT_COLOR, width: 5 });
+            arrows.push({ from: offset(point, east, north, -LIFT_ARROW_RISE), to: point, color, width: 5 });
         }
-        if (band.length > 1) bands.push(band);
+        if (band.points.length > 1) bands.push(band);
     }
 
     return [
         new PathLayer({
             id: `${id}-lift-bands`,
             data: bands,
-            getPath: (band) => band,
-            getColor: [...LIFT_COLOR, 120],
+            getPath: (band) => band.points,
+            getColor: (band) => [...band.color, 120],
             getWidth: 10,
             widthUnits: 'pixels',
             capRounded: true,

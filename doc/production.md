@@ -73,6 +73,11 @@ make deploy-prod TAG=v1.0.0
 The first deployment takes a few seconds more: Traefik requests the certificate on the first HTTPS
 request.
 
+When a release improves the flight analysis (see `doc/roadmap.md`), analyse the stored flights
+again: `make console c="app:flight:analyse"`. It downloads the relief tiles it needs (AWS Terrain
+Tiles, outbound HTTPS) into `var/terrain`, a cache inside the container, downloaded again after a
+deploy when needed.
+
 ## Rollback
 
 Deploy the previous tag:

@@ -118,6 +118,32 @@ export function showShadow(map, on) {
     if (map.getLayer('shadow')) map.setLayoutProperty('shadow', 'visibility', on ? 'visible' : 'none');
 }
 
+/**
+ * The slopes expected to work in the wind of the task (FlightTerrain): squares of `slopes.cell`
+ * metres lying on the relief, more opaque where the lift should be stronger.
+ */
+export function addSlopes(map, slopes) {
+    if (!slopes?.cells?.length) return;
+    const features = slopes.cells.map(([lat, lon, lift]) => {
+        const dLat = slopes.cell / 2 / 111320;
+        const dLon = slopes.cell / 2 / (111320 * Math.cos((lat * Math.PI) / 180));
+
+        return { type: 'Feature', properties: { lift }, geometry: { type: 'Polygon', coordinates: [[[lon - dLon, lat - dLat], [lon + dLon, lat - dLat], [lon + dLon, lat + dLat], [lon - dLon, lat + dLat], [lon - dLon, lat - dLat]]] } };
+    });
+    map.addSource('slopes', { type: 'geojson', data: { type: 'FeatureCollection', features } });
+    // Under the task line
+    map.addLayer({
+        id: 'slopes',
+        type: 'fill',
+        source: 'slopes',
+        paint: { 'fill-color': '#ff8c00', 'fill-opacity': ['interpolate', ['linear'], ['get', 'lift'], 1, 0.15, 4, 0.55] },
+    }, map.getLayer('task') ? 'task' : undefined);
+}
+
+export function showSlopes(map, on) {
+    if (map.getLayer('slopes')) map.setLayoutProperty('slopes', 'visibility', on ? 'visible' : 'none');
+}
+
 /** Changes the basemap; `redraw` runs once the style is updated. */
 export function setBasemap(map, name, redraw) {
     const style = map.getStyle();

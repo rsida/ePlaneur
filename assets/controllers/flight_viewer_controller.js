@@ -5,7 +5,7 @@ import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { bearing, distance } from '../flight/geo.js';
-import { addShadow, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow } from '../flight/map.js';
+import { addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
 import { SEE_THROUGH, angleDifference, chaseBearing, climbColor, crossingLayers, gliderLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
 
 /*
@@ -58,6 +58,16 @@ const SINK_VARIO = -3;
 const SINK_WINDOW = 10;
 // Centring and weak tops shorter than this (seconds) are not hatched on the timeline
 const HATCH_MIN = 20;
+// Height above the ground: plan where to land under HEIGHT_PLAN metres, too low under HEIGHT_LOW
+// (for TOO_LOW_TIME seconds or more, away from the launch and the last TOO_LOW_END seconds, and
+// farther than SLOPE_NEAR metres from a slope expected to work: ridge running is flown that low)
+const HEIGHT_PLAN = 300;
+const HEIGHT_LOW = 150;
+const TOO_LOW_TIME = 10;
+const TOO_LOW_END = 180;
+const SLOPE_NEAR = 300;
+// Required glide ratios above this are shown as this (the finish is out of reach)
+const REQUIRED_MAX = 100;
 // Eighths of the centring radar, from north clockwise
 const SECTORS = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'];
 // Difference of climb between the best and the worst side under which a thermal is centred (m/s)
@@ -69,7 +79,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired'];
 
     static values = { url: String, label: String };
 
@@ -98,6 +108,9 @@ export default class extends Controller {
         this.liftPhases = this.flight.phases.filter((phase) => phase.type === 'lift');
         this.crossings = this.flight.crossings ?? [];
         this.sinks = this.strongSink();
+        const { altitude, ground } = this.series;
+        this.series.height = ground ? altitude.map((value, i) => (ground[i] === null ? null : value - ground[i])) : null;
+        this.series.required = this.requiredGlide();
         this.air = this.flight.sessionLift ?? null;
         if (this.hasAirChoiceTarget) this.airChoiceTarget.hidden = !this.air?.thermals.length;
         this.top = this.series.altitude.reduce((top, altitude) => Math.max(top, altitude), 0);
@@ -129,6 +142,7 @@ export default class extends Controller {
         this.map.on('load', () => {
             addTask(this.map, this.flight.task);
             addShadow(this.map, this.series.latitude, this.series.longitude);
+            addSlopes(this.map, this.flight.slopes);
             this.trackSegments = this.segments();
             this.showLegend();
             this.render();
@@ -251,7 +265,7 @@ export default class extends Controller {
             const zoom = this.map.getZoom();
             layers.push(
                 ...thermalLayers('flight', this.series, this.thermalPhases, this.index, { zoom }),
-                ...liftLayers('flight', this.series, this.liftPhases, this.index, { zoom, windFrom: this.flight.statistics.windFrom ?? null }),
+                ...liftLayers('flight', this.series, this.liftPhases, this.index, { zoom, windFrom: this.flight.slopes?.wind?.from ?? this.flight.statistics.windFrom ?? null }),
                 ...crossingLayers('flight', this.series, this.crossings, this.index, { zoom }),
                 ...sinkLayers('flight', this.series, this.sinks, this.index, { zoom }),
                 ...windLayers('flight', this.series, this.thermalPhases, this.index, { zoom }),
@@ -331,6 +345,13 @@ export default class extends Controller {
         } else {
             this.centerOnGlider();
         }
+    }
+
+    /** The slopes expected to work, on or off. */
+    toggleSlopes() {
+        const on = this.slopesTarget.getAttribute('aria-pressed') !== 'true';
+        this.slopesTarget.setAttribute('aria-pressed', String(on));
+        showSlopes(this.map, on);
     }
 
     centerOnGlider() {
@@ -443,9 +464,23 @@ export default class extends Controller {
             altitude: { stroke: '#3e5d83', fill: 'rgba(62, 93, 131, 0.12)', label: 'Altitude', unit: 'm' },
             vario: { stroke: '#2f6b4f', label: 'Vario', unit: 'm/s' },
             speed: { stroke: '#a85b2a', label: 'Vitesse sol', unit: 'km/h' },
+            height: { stroke: '#7a5a3a', fill: 'rgba(122, 90, 58, 0.12)', label: 'Hauteur sol', unit: 'm' },
+            required: { stroke: '#586772', label: 'Finesse requise', unit: '' },
+        };
+        // Horizontal lines: the alert heights, and the average glide ratio of the flight
+        const levels = {
+            height: [[HEIGHT_PLAN, '#d9822b'], [HEIGHT_LOW, '#a8322d']],
+            required: this.flight.statistics.glideRatio ? [[this.flight.statistics.glideRatio, '#2f6b4f']] : [],
         };
 
-        this.charts = this.chartTargets.map((target) => {
+        // A chart whose values the data does not have (older analysis) is left out
+        const targets = this.chartTargets.filter((target) => {
+            const missing = !this.series[target.dataset.series];
+            if (missing) target.closest('figure').hidden = true;
+
+            return !missing;
+        });
+        this.charts = targets.map((target) => {
             const name = target.dataset.series;
             // Under the vario, the netto of the glides when the polar of the glider is known
             const netto = name === 'vario' && this.series.netto ? this.series.netto : null;
@@ -461,7 +496,7 @@ export default class extends Controller {
                 ],
                 series: [{}, { ...settings[name], width: 1.5, points: { show: false } }, ...(netto ? [{ stroke: '#a85b2a', width: 1.5, dash: [4, 3], points: { show: false } }] : [])],
                 plugins: [valueTip((u, i) => [
-                    `${FORMATS[name](u.data[1][i])} · ${formatTime(u.data[0][i])}`,
+                    u.data[1][i] == null ? formatTime(u.data[0][i]) : `${FORMATS[name](u.data[1][i])}${name === 'required' && u.data[1][i] >= REQUIRED_MAX ? ' ou plus' : ''} · ${formatTime(u.data[0][i])}`,
                     ...(netto && u.data[2][i] != null ? [{ text: `Netto ${FORMATS.vario(u.data[2][i])}`, color: '#a85b2a' }] : []),
                 ])],
                 hooks: {
@@ -477,12 +512,29 @@ export default class extends Controller {
                         }
                         ctx.restore();
                     }] : [],
+                    draw: levels[name] ? [(u) => {
+                        const { ctx } = u;
+                        ctx.save();
+                        ctx.setLineDash([5, 4]);
+                        ctx.lineWidth = 1.5;
+                        for (const [value, color] of levels[name]) {
+                            const y = u.valToPos(value, 'y', true);
+                            ctx.strokeStyle = color;
+                            ctx.beginPath();
+                            ctx.moveTo(u.bbox.left, y);
+                            ctx.lineTo(u.bbox.left + u.bbox.width, y);
+                            ctx.stroke();
+                        }
+                        ctx.restore();
+                    }] : [],
                     setCursor: [(u) => {
                         if (u.cursor.idx != null && !this.playing && this.hovering === u) this.moveTo(u.cursor.idx, { fromChart: true });
                     }],
                 },
             };
             if (name === 'vario') options.scales.y = { range: (u, min, max) => [Math.min(min, -4), Math.max(max, 4)] };
+            if (name === 'height') options.scales.y = { range: (u, min, max) => [Math.min(0, min), Math.max(max, HEIGHT_PLAN * 2)] };
+            if (name === 'required') options.scales.y = { range: [0, REQUIRED_MAX] };
             const chart = new uPlot(options, netto ? [time, this.series[name], netto] : [time, this.series[name]], target);
             sync.sub(chart);
             chart.over.addEventListener('mouseenter', () => { this.hovering = chart; });
@@ -496,7 +548,7 @@ export default class extends Controller {
     }
 
     resizeCharts() {
-        this.charts.forEach((chart, k) => chart.setSize({ width: this.chartTargets[k].clientWidth, height: 130 }));
+        this.charts.forEach((chart) => chart.setSize({ width: chart.root.parentElement.clientWidth, height: 130 }));
     }
 
     /* ---------- Phases ---------- */
@@ -740,7 +792,7 @@ export default class extends Controller {
                 if (phase.entry >= HATCH_MIN) items.push(event('hatch', phase.start, phase.start + phase.entry, null, `Thermique ${number} · centrage en ${formatTime(phase.entry)}`));
                 if (phase.exit >= HATCH_MIN) items.push(event('hatch', phase.end - phase.exit, phase.end, null, `Thermique ${number} · ${formatTime(phase.exit)} en haut sous votre moyenne (${FORMATS.vario(this.flight.statistics.climbAverage)})`));
             } else if (phase.type === 'lift') {
-                items.push(event('lift', phase.start, phase.end, null, `Pente ou onde · +${phase.gain} m · ${FORMATS.vario(phase.vario)}`));
+                items.push(event(phase.wave ? 'wave' : 'lift', phase.start, phase.end, null, `${liftName(phase)} · +${phase.gain} m · ${FORMATS.vario(phase.vario)}`));
             }
         }
         for (const crossing of this.crossings) {
@@ -749,6 +801,9 @@ export default class extends Controller {
         for (const thermal of this.air?.thermals ?? []) {
             if (!thermal.missed) continue;
             items.push(event('missed', thermal.closest.at, null, null, `Thermique de la course manqué à ${thermal.closest.distance} m · ${FORMATS.vario(thermal.climb)} · ${thermal.pilots.join(', ')}`));
+        }
+        for (const low of this.tooLow()) {
+            items.push(event('too-low', low.start, low.end, null, `Trop bas · ${FORMATS.height(low.lowest)}`));
         }
         for (const sink of this.sinks) {
             items.push(event('sink', sink.start, sink.end, null, `Forte descendance · ${FORMATS.vario(sink.value)} ${sink.netto ? 'netto' : 'au vario'}`));
@@ -797,6 +852,79 @@ export default class extends Controller {
         }
 
         return runs;
+    }
+
+    /**
+     * Runs of TOO_LOW_TIME seconds or more under HEIGHT_LOW metres above the ground, from the
+     * release to TOO_LOW_END seconds before the landing, with the lowest height.
+     */
+    tooLow() {
+        const height = this.series.height;
+        if (!height) return [];
+        const nearSlope = this.slopeFinder();
+        const { release = 0, landing = this.count - 1 } = this.flight.statistics;
+        const runs = [];
+        let run = null;
+        for (let i = release; i <= landing - TOO_LOW_END; i += 1) {
+            if (height[i] !== null && height[i] < HEIGHT_LOW && !nearSlope(i)) {
+                run ??= { start: i, end: i, lowest: height[i] };
+                run.end = i;
+                run.lowest = Math.min(run.lowest, height[i]);
+            } else if (run) {
+                if (run.end - run.start >= TOO_LOW_TIME) runs.push(run);
+                run = null;
+            }
+        }
+        if (run && run.end - run.start >= TOO_LOW_TIME) runs.push(run);
+
+        return runs;
+    }
+
+    /** Whether second `i` of the track is within SLOPE_NEAR metres of a slope expected to work. */
+    slopeFinder() {
+        const cells = this.flight.slopes?.cells ?? [];
+        const { latitude, longitude } = this.series;
+        const perLon = 111320 * Math.cos((latitude[0] * Math.PI) / 180);
+        const key = (x, y) => `${x}:${y}`;
+        const bins = new Set(cells.map(([lat, lon]) => key(Math.round((lon * perLon) / SLOPE_NEAR), Math.round((lat * 111320) / SLOPE_NEAR))));
+
+        return (i) => {
+            const x = Math.round((longitude[i] * perLon) / SLOPE_NEAR);
+            const y = Math.round((latitude[i] * 111320) / SLOPE_NEAR);
+            for (let dx = -1; dx <= 1; dx += 1) {
+                for (let dy = -1; dy <= 1; dy += 1) {
+                    if (bins.has(key(x + dx, y + dy))) return true;
+                }
+            }
+
+            return false;
+        };
+    }
+
+    /**
+     * Glide ratio needed to reach the finish from each second of the task: the distance left through
+     * the turnpoints not reached yet over the height above the finish (null outside the task;
+     * REQUIRED_MAX when out of reach).
+     */
+    requiredGlide() {
+        const { latitude, longitude, altitude } = this.series;
+        const required = new Array(this.count).fill(null);
+        const points = this.flight.task?.turnpoints.slice(1);
+        if (!points || points.length < 2 || points[0].reached == null) return required;
+        const finish = points.at(-1);
+        // Distance from each turnpoint to the finish through the next ones
+        const after = points.map(() => 0);
+        for (let n = points.length - 2; n >= 0; n -= 1) after[n] = after[n + 1] + distance(points[n].latitude, points[n].longitude, points[n + 1].latitude, points[n + 1].longitude);
+        let next = 1;
+        const end = finish.reached ?? this.flight.statistics.landing ?? this.count - 1;
+        for (let i = points[0].reached; i <= end; i += 1) {
+            while (next < points.length - 1 && points[next].reached != null && points[next].reached <= i) next += 1;
+            const left = distance(latitude[i], longitude[i], points[next].latitude, points[next].longitude) + after[next];
+            const height = altitude[i] - finish.altitude;
+            required[i] = height > 0 ? Math.min(REQUIRED_MAX, left / height) : REQUIRED_MAX;
+        }
+
+        return required;
     }
 
     /** Seconds of the low points: the lowest of each glide followed by a thermal, well under the usual entry. */
@@ -962,6 +1090,11 @@ export default class extends Controller {
         this.nowAltitudeTarget.textContent = FORMATS.altitude(altitude[i]);
         this.nowSpeedTarget.textContent = FORMATS.speed(speed[i]);
         this.nowVarioTarget.textContent = FORMATS.vario(vario[i]);
+        if (this.hasNowHeightTarget) this.nowHeightTarget.textContent = this.series.height?.[i] == null ? '—' : FORMATS.altitude(this.series.height[i]);
+        if (this.hasNowRequiredTarget) {
+            const required = this.series.required[i];
+            this.nowRequiredTarget.textContent = required === null ? '—' : required >= REQUIRED_MAX ? 'hors de portée' : String(Math.round(required));
+        }
         const p = this.phaseAt[i];
         this.showRadar(i);
         this.nowPhaseTarget.textContent = p >= 0 ? describePhase(this.flight.phases[p]) : '';
@@ -995,10 +1128,17 @@ function describePhase(phase) {
     }
 
     if (phase.type === 'lift') {
-        return `Pente ou onde · ${minutes} min · +${phase.gain} m · ${number(phase.vario)} m/s en ligne droite`;
+        return `${liftName(phase)} · ${minutes} min · +${phase.gain} m · ${number(phase.vario)} m/s en ligne droite`;
     }
 
     return `Transition · ${number(phase.distance / 1000)} km · ${Math.round(phase.speed)} km/h${phase.glideRatio ? ` · finesse ${Math.round(phase.glideRatio)}` : ''}`;
+}
+
+/** Straight lift: wave or slope lift once the relief is known. */
+function liftName(phase) {
+    if (phase.wave === true) return 'Onde';
+
+    return phase.wave === false ? 'Pente' : 'Pente ou onde';
 }
 
 /** How long a thermal took to centre, and how long the glider stayed at its weak top. */

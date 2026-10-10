@@ -13,6 +13,10 @@ use App\Flight\Track;
  */
 final readonly class FlightAnalysis
 {
+    /** Straight lift far above the ground and away from the slopes is wave (isWave()). */
+    private const float WAVE_HEIGHT = 600.0;
+    private const float SLOPE_REACH = 500.0;
+
     /** Height of the bands of the climb by altitude, metres, and the seconds a band needs. */
     private const int CLIMB_BAND = 200;
     private const int CLIMB_BAND_MIN_TIME = 20;
@@ -21,6 +25,8 @@ final readonly class FlightAnalysis
      * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
      * @param list<Phase>                                                                                                                          $phases
      * @param array<string, int|float|null>                                                                                                        $statistics
+     * @param list<?float>|null                                                                                                                    $ground     height of the ground under each second (Terrain), null when not known
+     * @param array{cell?: int, cells?: list<array{float, float, float}>, wind?: array{from: float, speed: float}}                                 $slopes     slopes facing the wind of the flight, with the lift expected (FlightTerrain)
      * @param list<array{start: int, end: int, vario: float, gain: float}>                                                                         $crossings  lift crossed in straight flight during the glides
      */
     public function __construct(
@@ -31,7 +37,21 @@ final readonly class FlightAnalysis
         public ?TaskResult $task,
         public ?Launch $launch = null,
         public array $crossings = [],
+        public ?array $ground = null,
+        public array $slopes = [],
     ) {
+    }
+
+    /**
+     * The same analysis with the height of the ground under the track and the slopes expected to
+     * work in the wind of the flight.
+     *
+     * @param list<?float>                                                                                         $ground
+     * @param array{cell?: int, cells?: list<array{float, float, float}>, wind?: array{from: float, speed: float}} $slopes
+     */
+    public function withTerrain(array $ground, array $slopes): self
+    {
+        return new self($this->track, $this->series, $this->phases, $this->statistics, $this->task, $this->launch, $this->crossings, $ground, $slopes);
     }
 
     /**
@@ -53,8 +73,9 @@ final readonly class FlightAnalysis
                 'altitude' => $round($this->series['altitude'], 1),
                 'speed' => $round($this->series['speed'], 1),
                 'vario' => $round($this->series['vario'], 2),
+                'ground' => null !== $this->ground ? array_map(static fn (?float $value): ?float => null !== $value ? round($value) : null, $this->ground) : null,
             ],
-            'phases' => array_map(static fn (Phase $phase): array => [
+            'phases' => array_map(fn (Phase $phase): array => [
                 'type' => $phase->type,
                 'start' => $phase->start,
                 'end' => $phase->end,
@@ -74,11 +95,43 @@ final readonly class FlightAnalysis
                 'centring' => $phase->centring,
                 'entry' => $phase->entry,
                 'exit' => $phase->exit,
+                // Straight lift: wave when high above the ground, slope lift otherwise (null: ground not known)
+                'wave' => Phase::LIFT === $phase->type ? $this->isWave($phase) : null,
             ], $this->phases),
+            'slopes' => $this->slopes,
             'crossings' => $this->crossings,
             'climbByAltitude' => $this->climbByAltitude(),
             'task' => null === $this->task ? null : $this->taskArray($this->task),
         ];
+    }
+
+    /**
+     * Straight lift is wave when it was on average WAVE_HEIGHT metres or more above the ground and
+     * passed no slope expected to work (within SLOPE_REACH metres), slope lift otherwise.
+     */
+    private function isWave(Phase $phase): ?bool
+    {
+        $heights = [];
+        for ($i = $phase->start; $i <= $phase->end; ++$i) {
+            if (null !== ($this->ground[$i] ?? null)) {
+                $heights[] = $this->series['altitude'][$i] - $this->ground[$i];
+            }
+        }
+        if ([] === $heights) {
+            return null;
+        }
+        if (array_sum($heights) / \count($heights) < self::WAVE_HEIGHT) {
+            return false;
+        }
+        foreach ($this->slopes['cells'] ?? [] as [$latitude, $longitude]) {
+            for ($i = $phase->start; $i <= $phase->end; $i += 10) {
+                if (Geo::distance($latitude, $longitude, $this->series['latitude'][$i], $this->series['longitude'][$i]) < self::SLOPE_REACH) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     /**

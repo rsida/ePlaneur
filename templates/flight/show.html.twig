@@ -10,7 +10,7 @@
 
 {% block body %}
     <section class="p-flight t-light" data-controller="flight-viewer"
-             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id}) }}"
+             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id, v: flight.analysisVersion}) }}"
              data-flight-viewer-label-value="{{ flight.competitionId ?: flight.pilot }}">
         <div class="l-container p-flight__head">
             <div class="l-stack l-stack--sm">
@@ -185,6 +185,10 @@
                                 <span><strong>Thermique manqué</strong> (jaune) : un thermique d’un autre pilote, passé à moins de 500 m de son centre, à une altitude où il marchait, sans y tourner.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--slope" aria-hidden="true"></span>
                                 <span><strong>Pente ou onde</strong> : bande orange sur la trace et flèches orange montant du côté du vent, là où vous avez monté en ligne droite.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--wave" aria-hidden="true"></span>
+                                <span><strong>Onde</strong> (violet) : montée en ligne droite loin au-dessus du relief, sans pente porteuse à côté.</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--slopes" aria-hidden="true"></span>
+                                <span><strong>Pentes prévues</strong> (cases orange au sol, bouton « Pentes ») : faces tournées vers le vent de la tâche et assez raides pour porter, plus soutenues là où ça doit monter fort. Un modèle, pas ce que Condor a fait.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--crossing" aria-hidden="true"></span>
                                 <span><strong>Ascendance traversée sans spiraler</strong> : flèche claire montant jusqu’à la trace, aussi longue que la hauteur gagnée (vol en dauphin).</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--sink" aria-hidden="true"></span>
@@ -201,7 +205,9 @@
                             <li><span class="p-flight__swatch p-flight__swatch--band" aria-hidden="true"></span>
                                 <span><strong>Thermique</strong> : bande de la couleur de sa montée ; hachurée pendant le centrage et en haut quand il monte moins que votre moyenne.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--lift" aria-hidden="true"></span>
-                                <span><strong>Pente ou onde</strong>.</span></li>
+                                <span><strong>Pente</strong> (orange) ou <strong>onde</strong> (violet).</span></li>
+                            <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--too-low" aria-hidden="true"></span>
+                                <span><strong>Trop bas</strong> : moins de 150 m au-dessus du sol, loin de toute pente prévue (le vol de pente se fait à cette hauteur), hors décollage et arrivée.</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--tick" aria-hidden="true"></span>
                                 <span><strong>Ascendance traversée</strong> (trait en haut) et <strong>forte descendance</strong> (trait bleu en bas).</span></li>
                             <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--low" aria-hidden="true"></span>
@@ -246,6 +252,9 @@
                             <option value="none">Course : masquée</option>
                         </select>
                     </label>
+                    {% if analysis.slopes.cells ?? null %}
+                        <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="slopes" data-action="flight-viewer#toggleSlopes" title="Les pentes face au vent de la tâche, où l’on attend de l’ascendance de pente"><twig:ux:icon name="mountain" /> Pentes</button>
+                    {% endif %}
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow"><twig:ux:icon name="crosshair" /> Suivre</button>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="pilot" data-action="flight-viewer#togglePilot" title="En 3D, la caméra dans le planeur, inclinée avec lui"><twig:ux:icon name="glider" /> Vue pilote</button>
                 </div>
@@ -261,6 +270,8 @@
                     <div><dt>Altitude</dt><dd data-flight-viewer-target="nowAltitude">—</dd></div>
                     <div><dt>Vitesse sol</dt><dd data-flight-viewer-target="nowSpeed">—</dd></div>
                     <div><dt>Vario (4 s)</dt><dd data-flight-viewer-target="nowVario">—</dd></div>
+                    {% if analysis.series.ground ?? null %}<div><dt>Hauteur sol</dt><dd data-flight-viewer-target="nowHeight">—</dd></div>{% endif %}
+                    {% if analysis.task %}<div><dt>Finesse requise (arrivée)</dt><dd data-flight-viewer-target="nowRequired">—</dd></div>{% endif %}
                 </dl>
                 <p class="p-flight__phase" data-flight-viewer-target="nowPhase"></p>
 
@@ -328,6 +339,12 @@
                 <figure class="p-flight__chart"><figcaption>Altitude (m) — en vert les thermiques</figcaption><div data-flight-viewer-target="chart" data-series="altitude"></div></figure>
                 <figure class="p-flight__chart"><figcaption>Vario sur 4 s (m/s){% if performance %} — en pointillés le netto des transitions (l’air, polaire retirée){% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="vario"></div></figure>
                 <figure class="p-flight__chart"><figcaption>Vitesse sol (km/h)</figcaption><div data-flight-viewer-target="chart" data-series="speed"></div></figure>
+                {% if analysis.series.ground ?? null %}
+                    <figure class="p-flight__chart"><figcaption>Hauteur au-dessus du sol (m) — sous 300 m, prévoir où se poser ; sous 150 m, trop bas hors vol de pente</figcaption><div data-flight-viewer-target="chart" data-series="height"></div></figure>
+                {% endif %}
+                {% if analysis.task %}
+                    <figure class="p-flight__chart"><figcaption>Finesse requise pour rejoindre l’arrivée (distance restante par les points ÷ hauteur au-dessus de l’arrivée){% if stats.glideRatio %} — en pointillés votre finesse moyenne en transition{% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="required"></div></figure>
+                {% endif %}
             </div>
         </div>
 
@@ -359,7 +376,7 @@
                             <tbody>
                                 {% for phase in analysis.phases %}
                                     <tr class="p-flight__phase-row p-flight__phase-row--{{ phase.type }}">
-                                        <th scope="row">{{ {thermal: 'Thermique', glide: 'Transition', lift: 'Pente ou onde', launch: 'Lancement'}[phase.type] }}{% if phase.direction %} {{ phase.direction == 'left' ? 'G' : 'D' }}{% endif %}</th>
+                                        <th scope="row">{{ phase.type == 'lift' and (phase.wave ?? null) is not null ? (phase.wave ? 'Onde' : 'Pente') : {thermal: 'Thermique', glide: 'Transition', lift: 'Pente ou onde', launch: 'Lancement'}[phase.type] }}{% if phase.direction %} {{ phase.direction == 'left' ? 'G' : 'D' }}{% endif %}</th>
                                         <td><button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ phase.start }}">{{ phase.start|flight_clock }}</button></td>
                                         <td>{{ phase.duration|flight_clock }}</td>
                                         <td>{{ altitude[phase.start]|number_format(0, ',', ' ') }} → {{ altitude[phase.end]|number_format(0, ',', ' ') }} m</td>

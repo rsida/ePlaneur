@@ -14,6 +14,7 @@ the latest public flights.
 | Analysis again | `app:flight:analyse`: every stored flight from its file, after the analysis changed |
 | Analysis | `App\Flight\Analysis\FlightAnalyzer` → `FlightAnalysis` (stored as JSON in `Flight::analysis`) |
 | Storage | `Flight` entity; files in `app.flights_dir` (`var/flights`, Docker volume `flights` in production) through `FlightImporter` |
+| Relief | `App\Flight\Terrain\Terrain` (AWS Terrain Tiles kept in `app.terrain_dir`, `var/terrain`), `FlightTerrain` (height of the ground, slopes, wave) |
 | Viewer | `assets/flight/map.js` (map shared by the viewers), `assets/flight/chart.js` (value label of every chart, formats), `assets/controllers/flight_viewer_controller.js` and `session_viewer_controller.js` (lazy), `templates/flight/`, `assets/styles/pages/flight.css` |
 | Session | `App\Flight\FlightSession` (ranking, podium), `FlightRepository::findSession()` |
 | Comparison | `App\Flight\FlightComparison`, `assets/controllers/compare_viewer_controller.js` |
@@ -162,6 +163,42 @@ administrator to add it.
 The viewer reads `FlightAnalysis::toArray()`, stored when the flight is uploaded (about 250 KB for a
 1 h 40 flight). After changing the analysis, `make console c="app:flight:analyse"` analyses the
 stored flights again from their files (in production too, after the deployment).
+
+## Relief
+
+Roadmap 7i3. `FlightImporter` adds the relief to the analysis once the session of the flight is
+known (on upload and with `app:flight:analyse`), through `FlightTerrain`:
+
+- **Ground**: the elevation under each second (`series.ground`), from the AWS Terrain Tiles of zoom
+  11 (about 55 m a pixel), the relief of the 3D view, interpolated between four pixels. The real
+  relief, which Condor's is built from: C3-s117 takes off at 180.6 m over a ground read at 179 m.
+  Tiles are downloaded once (`ClubEplaneur/1.0` user agent) into `app.terrain_dir` (`var/terrain`,
+  about 12 MB for the 17 local flights). Not a volume in production: a cache, downloaded again
+  when needed. Without tiles (no network; `app.terrain_tiles` is empty in the tests) the
+  elevations are null and the rest is left out.
+- **Slopes expected to work**: on a grid of 200 m within 3 km of the track, the faces looking into
+  the wind (downhill towards where it comes from) where it would rise at 1 m/s or more: wind ×
+  sin(slope) × cos(angle between the face and the wind). The wind is the one of the task (base
+  weather zone of the session's settings); without it the average drift of the thermals, often too
+  weak (4 km/h on C3-s117 for a task wind of 20 km/h from the south: then no slope is expected
+  under 10 km/h). On C3-s117 its slope lift phases were 29 m and 144 m from a cell expected to
+  work. A model: Condor's own lift also depends on the shape of the ridge and the height.
+- **Wave**: straight lift ("lift" phases) 600 m or more above the ground on average and farther
+  than 500 m from any slope expected to work is wave (`phase.wave`), the rest slope lift; null
+  without the ground.
+
+On the flight page: the slopes as orange squares lying on the relief, more opaque where the lift
+should be stronger (button "Pentes"); wave in purple in 3D and on the timeline, "Onde" / "Pente" in
+the lists; a chart of the height above the ground with dashed lines at 300 m (plan where to land)
+and 150 m; "Trop bas" under the timeline for 10 s or more under 150 m, from the release to 3 min
+before the landing, farther than 300 m from a slope expected to work (ridge running is flown that
+low); and with a task, the glide ratio required to reach the finish (distance left through the
+turnpoints not reached over the height above the finish point, "hors de portée" from 100), as a
+chart with the average glide ratio of the flight dashed, and beside the map with the height above
+the ground.
+
+Not done yet: the glide cone with the reachable airfields needs the airfields of the landscapes
+(the `.apt` files of Condor).
 
 ## Gliders and polars
 

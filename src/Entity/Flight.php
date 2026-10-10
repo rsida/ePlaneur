@@ -212,6 +212,15 @@ class Flight
         return $this->analysis;
     }
 
+    /**
+     * A short fingerprint of the stored analysis, in the address of its data: the browser keeps
+     * that data for an hour, a new analysis gets a new address.
+     */
+    public function getAnalysisVersion(): string
+    {
+        return hash('xxh3', serialize($this->analysis));
+    }
+
     public function getFileName(): string
     {
         return $this->fileName;

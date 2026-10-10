@@ -58,6 +58,8 @@ export const FORMATS = {
     altitude: (value) => `${Math.round(value).toLocaleString('fr-FR')} m`,
     vario: (value) => `${value > 0 ? '+' : ''}${value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m/s`,
     speed: (value) => `${Math.round(value)} km/h`,
+    height: (value) => `${Math.round(value).toLocaleString('fr-FR')} m sol`,
+    required: (value) => `finesse ${Math.round(value)}`,
     distance: (km) => `km ${km.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`,
     /** A time gained or lost: "+2 min 05 s", "−45 s". */
     gap: (seconds) => {

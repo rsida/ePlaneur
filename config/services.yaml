@@ -11,6 +11,10 @@ parameters:
     app.uploads_dir: '%kernel.project_dir%/var/uploads'
     # Flight tracks of the flight viewer (FlightImporter). A Docker volume in production as well.
     app.flights_dir: '%kernel.project_dir%/var/flights'
+    # Relief for the height above the ground and the slopes (Terrain): AWS Terrain Tiles, kept in
+    # app.terrain_dir once downloaded. Empty in the tests: no network, no elevations.
+    app.terrain_dir: '%kernel.project_dir%/var/terrain'
+    app.terrain_tiles: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
     # Time of the club: metropolitan France (see CLAUDE.md). PHP's default timezone (Kernel::boot()),
     # so dates are stored and shown in it whatever the server, and Twig's.
     app.timezone: Europe/Paris
@@ -33,3 +37,4 @@ when@test:
     parameters:
         app.uploads_dir: '%kernel.project_dir%/var/test-uploads'
         app.flights_dir: '%kernel.project_dir%/var/test-flights'
+        app.terrain_tiles: ''
