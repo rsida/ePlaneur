@@ -1,26 +1,35 @@
 /* stimulusFetch: 'lazy' */
 import { Controller } from '@hotwired/stimulus';
-import { LineLayer, PathLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { PathLayer } from '@deck.gl/layers';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { addTask, boundsOf, createMap, easeAt, newBounds, setBasemap, setTerrain } from '../flight/map.js';
+import { chaseBearing, gliderLayers, trailLayers } from '../flight/scene.js';
 
 /*
  * Comparison viewer (templates/flight/compare.html.twig): two flights of the same task
  * (FlightController::compareData()) placed by distance along the task rather than by time. Moving
  * along the task (charts, slider, key moments, thermals) puts each glider where it was when it had
  * flown that distance, and gives the gap between them.
+ *
+ * The replay moves along the task at the pace of the first pilot: both gliders are always at the
+ * same distance of the task, drawn with their flag and trail (../flight/scene.js); in 3D the camera
+ * flies behind the first one.
  */
 
+const TRAIL = 300; // seconds of track drawn behind each glider
+
 export default class extends Controller {
-    static targets = ['map', 'view', 'status', 'nowDistance', 'nowGap', 'nowAltitudeA', 'nowAltitudeB', 'seek', 'chart'];
+    static targets = ['map', 'view', 'basemap', 'status', 'nowDistance', 'nowGap', 'nowAltitudeA', 'nowAltitudeB', 'play', 'rate', 'seek', 'chart'];
 
     static values = { url: String };
 
     async connect() {
         this.k = 0;
         this.is3d = false;
+        this.playing = false;
+        this.chase = null;
         this.charts = [];
         try {
             const response = await fetch(this.urlValue, { headers: { Accept: 'application/json' } });
@@ -49,6 +58,7 @@ export default class extends Controller {
     }
 
     disconnect() {
+        cancelAnimationFrame(this.frame);
         this.resizeObserver?.disconnect();
         this.charts.forEach((chart) => chart.destroy());
         this.map?.remove();
@@ -69,6 +79,10 @@ export default class extends Controller {
             addTask(this.map, this.comparison.task);
             this.statusTarget.hidden = true;
             this.moveTo(0);
+        });
+        // The gliders keep their size on the screen
+        this.map.on('zoomend', () => {
+            if (!this.playing) this.render();
         });
     }
 
@@ -92,50 +106,44 @@ export default class extends Controller {
     render() {
         if (!this.overlay) return;
         const parameters = this.is3d ? {} : { depthCompare: 'always' };
-        const always = { depthCompare: 'always' };
-        const now = this.flights.map((flight) => ({ flight, i: this.indexAt(flight, this.k) }));
-        const layers = [
-            new PathLayer({
-                id: 'tracks',
-                data: this.paths(),
-                getPath: (f) => f.path,
-                getColor: (f) => [...f.color, 220],
-                getWidth: 3,
-                widthUnits: 'pixels',
-                jointRounded: true,
-                parameters,
-                updateTriggers: { getPath: this.is3d },
-            }),
-            new ScatterplotLayer({
-                id: 'gliders',
-                data: now,
-                getPosition: ({ flight, i }) => this.position(flight, i),
-                getRadius: 7,
-                radiusUnits: 'pixels',
-                getFillColor: ({ flight }) => flight.color,
-                getLineColor: [255, 255, 255],
-                lineWidthMinPixels: 2,
-                stroked: true,
-                parameters: always,
-            }),
-        ];
-        if (this.is3d) {
-            layers.push(new LineLayer({
-                id: 'stems',
-                data: now,
-                getSourcePosition: ({ flight, i }) => this.position(flight, i),
-                getTargetPosition: ({ flight, i }) => this.position(flight, i, true),
-                getColor: ({ flight }) => [...flight.color, 200],
-                getWidth: 2,
-            }));
-        }
-        this.overlay.setProps({ layers });
+        const gliders = this.flights.map((flight, n) => ({
+            track: flight,
+            index: this.indexAt(flight, this.k),
+            color: flight.color,
+            label: flight.competitionId || flight.pilot,
+            selected: n === 0,
+            // Both at the same distance of the task: one flag above the other
+            flagRow: n,
+        }));
+        this.overlay.setProps({
+            layers: [
+                new PathLayer({
+                    id: 'tracks',
+                    data: this.paths(),
+                    getPath: (f) => f.path,
+                    getColor: (f) => [...f.color, 120],
+                    getWidth: 2,
+                    widthUnits: 'pixels',
+                    jointRounded: true,
+                    parameters,
+                    updateTriggers: { getPath: this.is3d },
+                }),
+                ...trailLayers('compare', gliders, { is3d: this.is3d, seconds: TRAIL }),
+                ...gliderLayers('compare', gliders, { is3d: this.is3d, zoom: this.map.getZoom() }),
+            ],
+        });
     }
 
     setView({ currentTarget }) {
         this.is3d = currentTarget.dataset.view === '3d';
         this.viewTargets.forEach((button) => button.setAttribute('aria-pressed', String(button === currentTarget)));
         setTerrain(this.map, this.is3d);
+        // The relief reads best on the photos, as long as the pilot kept the default map
+        if (this.is3d && this.hasBasemapTarget && this.basemapTarget.value === 'topo' && !this.basemapChosen) {
+            this.basemapTarget.value = 'satellite';
+            setBasemap(this.map, 'satellite', () => this.render());
+        }
+        this.chase = null;
         const [a] = this.flights;
         const elevation = this.is3d ? a.altitude[this.indexAt(a, this.k)] : 0;
         easeAt(this.map, this.is3d ? { pitch: 62, bearing: this.map.getBearing() || -20, duration: 800 } : { pitch: 0, bearing: 0, duration: 600 }, elevation);
@@ -143,6 +151,7 @@ export default class extends Controller {
     }
 
     setBasemap({ currentTarget }) {
+        this.basemapChosen = true;
         setBasemap(this.map, currentTarget.value, () => this.render());
     }
 
@@ -213,6 +222,48 @@ export default class extends Controller {
 
     seek() {
         this.moveTo(Number(this.seekTarget.value));
+    }
+
+    /** Replay at the pace of the first pilot: their time since the start sets the distance shown. */
+    togglePlay() {
+        this.playing = !this.playing;
+        this.playTarget.classList.toggle('is-playing', this.playing);
+        this.playTarget.setAttribute('aria-label', this.playing ? 'Mettre en pause' : 'Rejouer les deux vols');
+        if (!this.playing) return;
+        const [a] = this.flights;
+        if (this.k >= this.steps - 1) this.k = 0;
+        if (this.is3d) {
+            // Close enough to see the gliders turn
+            const i = this.indexAt(a, this.k);
+            easeAt(this.map, { center: [a.longitude[i], a.latitude[i]], zoom: Math.max(this.map.getZoom(), 12.5), pitch: 55, duration: 600 }, a.altitude[i]);
+        }
+        let clock = a.times[Math.min(this.k, a.times.length - 1)] - a.start;
+        let last = performance.now();
+        const step = (now) => {
+            if (!this.playing) return;
+            clock += ((now - last) / 1000) * Number(this.rateTarget.value);
+            last = now;
+            let k = this.k;
+            while (k < a.times.length - 1 && a.times[k + 1] - a.start <= clock) k += 1;
+            this.moveTo(k);
+            if (this.is3d) this.followFirst();
+            if (k >= a.times.length - 1) {
+                this.togglePlay();
+
+                return;
+            }
+            this.frame = requestAnimationFrame(step);
+        };
+        this.frame = requestAnimationFrame(step);
+    }
+
+    /** In 3D, the camera behind the glider of the first pilot. */
+    followFirst() {
+        if (this.map.isEasing()) return;
+        const [a] = this.flights;
+        const i = this.indexAt(a, this.k);
+        this.chase = chaseBearing(a, i, this.chase ?? this.map.getBearing());
+        this.map.jumpTo({ center: [a.longitude[i], a.latitude[i]], elevation: a.altitude[i], bearing: this.chase });
     }
 
     /** A key moment: framed on the map, both gliders at its end. */

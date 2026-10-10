@@ -1,11 +1,12 @@
 /* stimulusFetch: 'lazy' */
 import { Controller } from '@hotwired/stimulus';
-import { LineLayer, PathLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { LineLayer, PathLayer } from '@deck.gl/layers';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { bearing, distance } from '../flight/geo.js';
 import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
+import { angleDifference, chaseBearing, gliderLayers } from '../flight/scene.js';
 
 /*
  * Flight viewer (templates/flight/show.html.twig): the flight of FlightController::analysis() on a
@@ -16,6 +17,8 @@ import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap
  * - The task is drawn by the map itself, so it lies on the relief.
  * - Charts (uPlot) share the cursor with the map; clicking a chart, the seek bar or a phase moves
  *   the glider there.
+ * - The glider is drawn turned and banked with its flag (../flight/scene.js); "Suivre" keeps it in
+ *   view, and in 3D flies the camera behind it.
  * - "Vue pilote": in 3D, the camera sits in the glider, looks where it goes and banks with it.
  * - A moment of the flight has an address (#t=seconds), copied with "Lien vers cet instant".
  * - Two thermals picked in the list are compared: figures and the height gained over time.
@@ -39,9 +42,9 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint'];
 
-    static values = { url: String };
+    static values = { url: String, label: String };
 
     async connect() {
         this.index = 0;
@@ -93,6 +96,10 @@ export default class extends Controller {
             this.showLegend();
             this.render();
             this.statusTarget.hidden = true;
+        });
+        // The glider keeps its size on the screen
+        this.map.on('zoomend', () => {
+            if (!this.playing) this.render();
         });
     }
 
@@ -160,12 +167,10 @@ export default class extends Controller {
 
     render() {
         if (!this.trackSegments) return;
-        const i = Math.round(this.index);
         // From above, everything lies at altitude 0 like the map tiles: no depth test, or they fight.
         // In 3D the relief hides the track behind it, the glider always shows, and the white casing
         // is left out (at the same depth as the track, it would hide parts of it).
         const parameters = this.is3d ? {} : { depthCompare: 'always' };
-        const always = { depthCompare: 'always' };
         const layers = [
             new PathLayer({
                 id: 'track-casing',
@@ -194,22 +199,11 @@ export default class extends Controller {
                 parameters,
                 updateTriggers: { getPath: this.is3d },
             }),
-            new ScatterplotLayer({
-                id: 'glider',
-                // In the pilot view the camera is in the glider
-                visible: !this.pilotView,
-                data: [i],
-                getPosition: (k) => this.position(k),
-                getRadius: 7,
-                radiusUnits: 'pixels',
-                getFillColor: [255, 255, 255],
-                getLineColor: [25, 38, 48],
-                lineWidthMinPixels: 3,
-                stroked: true,
-                parameters: always,
-                updateTriggers: { getPosition: [i, this.is3d] },
-            }),
         ];
+        // In the pilot view the camera is in the glider
+        if (!this.pilotView) {
+            layers.push(...gliderLayers('flight', [{ track: this.series, index: this.index, color: [255, 255, 255], flagColor: [25, 38, 48], label: this.labelValue, selected: false }], { is3d: this.is3d, zoom: this.map.getZoom() }));
+        }
         if (this.is3d) {
             // Lines down to the ground: the relief hides their lower part
             if (!this.curtain) {
@@ -226,16 +220,6 @@ export default class extends Controller {
                 getColor: [25, 38, 48, 70],
                 getWidth: 1,
             }));
-            layers.push(new LineLayer({
-                id: 'glider-stem',
-                visible: !this.pilotView,
-                data: [i],
-                getSourcePosition: (k) => this.position(k),
-                getTargetPosition: (k) => this.position(k, true),
-                getColor: [25, 38, 48, 200],
-                getWidth: 2,
-                updateTriggers: { getSourcePosition: i, getTargetPosition: i },
-            }));
         }
         this.overlay.setProps({ layers });
     }
@@ -249,6 +233,12 @@ export default class extends Controller {
         this.is3d = on;
         this.viewTargets.forEach((button) => button.setAttribute('aria-pressed', String((button.dataset.view === '3d') === on)));
         setTerrain(this.map, on);
+        // The relief reads best on the photos, as long as the pilot kept the default map
+        if (on && this.hasBasemapTarget && this.basemapTarget.value === 'topo' && !this.basemapChosen) {
+            this.basemapTarget.value = 'satellite';
+            setBasemap(this.map, 'satellite', () => this.render());
+        }
+        this.chase = null;
         if (animate && on) {
             easeAt(this.map, { pitch: 62, bearing: this.map.getBearing() || -20, roll: 0, duration: 800 }, this.series.altitude[Math.round(this.index)]);
         } else if (animate) {
@@ -258,18 +248,35 @@ export default class extends Controller {
     }
 
     setBasemap({ currentTarget }) {
+        this.basemapChosen = true;
         setBasemap(this.map, currentTarget.value, () => this.render());
     }
 
     toggleFollow() {
         this.following = !this.following;
         this.followTarget.setAttribute('aria-pressed', String(this.following));
-        if (this.following) this.centerOnGlider();
+        if (!this.following) return;
+        if (this.is3d) {
+            // Close enough to see the glider turn
+            const [lon, lat, altitude] = this.position(Math.round(this.index));
+            this.chase = null;
+            easeAt(this.map, { center: [lon, lat], zoom: Math.max(this.map.getZoom(), 12.5), pitch: 55, duration: 800 }, altitude);
+        } else {
+            this.centerOnGlider();
+        }
     }
 
     centerOnGlider() {
+        // Let the camera finish flying to the glider
+        if (this.map.isEasing()) return;
         const [lon, lat, altitude] = this.position(Math.round(this.index));
-        this.map.jumpTo({ center: [lon, lat], elevation: altitude });
+        if (this.is3d && this.playing) {
+            // Behind the glider, turning with its course
+            this.chase = chaseBearing(this.series, this.index, this.chase ?? this.map.getBearing());
+            this.map.jumpTo({ center: [lon, lat], elevation: altitude, bearing: this.chase });
+        } else {
+            this.map.jumpTo({ center: [lon, lat], elevation: altitude });
+        }
     }
 
     /* ---------- Pilot view ---------- */
@@ -601,6 +608,11 @@ export default class extends Controller {
 
     /* ---------- Comments ---------- */
 
+    /** A moment given by another controller (a glide clicked on the polar chart). */
+    goToMoment({ detail: { at } }) {
+        this.goTo({ params: { at } });
+    }
+
     /** A comment's moment: the glider there, the map in view. */
     goTo({ params: { at } }) {
         this.moveTo(Math.min(this.count - 1, Number(at)));
@@ -670,11 +682,6 @@ export default class extends Controller {
 }
 
 
-
-/** Signed difference from one heading to another, in degrees (-180 to 180, positive to the right). */
-function angleDifference(from, to) {
-    return ((to - from + 540) % 360) - 180;
-}
 
 /** One line describing a thermal, a glide or straight lift (slope, wave). */
 function describePhase(phase) {

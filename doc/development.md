@@ -115,3 +115,17 @@ task (`https://condor.club/task/<id>?tab=besttimes`). The list is public JSON
 id>`, after `/api/user/login`, a url-encoded form). These are real pilots: keep such data in `var/`
 (not versioned), never in fixtures, and never commit a password. The scripts used on 2026-10-09 for
 task 27105 (C3-c046a) live in `var/tmp/` on that machine only.
+
+## Gliders from a local Condor installation
+
+The sheets and polars of the gliders come from the Condor installation (see
+[flights](flights.md#gliders-and-polars)). The PHP container only sees the project, so copy the two
+small files of each glider into `var/` (not versioned: they are Condor's files), then import them.
+Under WSL, with Condor installed in `C:\Condor3`:
+
+```bash
+for d in /mnt/c/Condor3/Planes/*/; do n=$(basename "$d"); [ -f "$d/$n.pol" ] && mkdir -p "var/condor/Planes/$n" && cp "$d/$n.txt" "$d/$n.pol" "var/condor/Planes/$n/"; done
+make console c="app:gliders:import var/condor/Planes"
+```
+
+Tests use a made-up glider in the same formats (`tests/Unit/Flight/Glider/GliderSamples.php`).

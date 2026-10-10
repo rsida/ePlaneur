@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Flight\Advice;
 
 use App\Flight\Analysis\FlightMarks;
+use App\Flight\Glider\GliderPerformance;
 use App\Session\TaskSettings;
 use App\Training\TrainingStep;
 
@@ -18,9 +19,11 @@ use App\Training\TrainingStep;
  * - circling without gain: three thermals or more left after gaining less than 50 m (searching or
  *   centring);
  * - turning always the same way (85 % or more, four thermals or more);
- * - glide speed against climb rate: the MacCready speed of a 15 m glider is about 95 km/h plus
- *   20 km/h per m/s of the climbs expected; 20 km/h slower is worth a look. No advice on flying too
- *   fast: straight flight includes ridge running, and ballasted gliders fly much faster;
+ * - glide speed against climb rate: with the polar of the glider (GliderPerformance), the MacCready
+ *   speed for the average climb of the flight at its wing loading, against the estimated airspeed of
+ *   the glides: 20 km/h slower or 30 km/h faster is worth a look, within 20 km/h is good. Without
+ *   the polar, about 95 km/h plus 20 km/h per m/s for a 15 m glider, and only the slow side
+ *   (straight flight includes ridge running, ballasted gliders fly much faster);
  * - the marks of the Silver badge (step 4): 1 h of flight, 1,000 m gained from a low point, 50 km
  *   from the take-off;
  * - transitions that wander: 20 % or more longer than the straight lines (step 5);
@@ -39,14 +42,18 @@ final class FlightAdvisor
     private const float WANDERING = 0.20;
     private const float WIDE_SPIRAL = 1.20;
     private const float HIGH_FINISH = 150.0;
+    private const int MIN_GLIDES = 3;
+    private const float SLOW_GLIDES = 20.0;
+    private const float FAST_GLIDES = 30.0;
 
     /**
-     * @param array<string, mixed> $analysis
-     * @param TaskSettings|null    $settings of the session of the flight, when known
+     * @param array<string, mixed>   $analysis
+     * @param TaskSettings|null      $settings    of the session of the flight, when known
+     * @param GliderPerformance|null $performance the flight against the polar of its glider, when known
      *
      * @return list<Advice>
      */
-    public function advise(array $analysis, ?TaskSettings $settings = null): array
+    public function advise(array $analysis, ?TaskSettings $settings = null, ?GliderPerformance $performance = null): array
     {
         $statistics = $analysis['statistics'];
         $thermals = array_values(array_filter($analysis['phases'], static fn (array $phase): bool => 'thermal' === $phase['type']));
@@ -101,7 +108,10 @@ final class FlightAdvisor
         }
 
         $glideSpeed = $statistics['glideSpeed'] ?? null;
-        if (null !== $glideSpeed && null !== $average && $average > 0) {
+        $polarAdvice = null !== $performance ? self::speedToFly($performance) : null;
+        if (null !== $polarAdvice) {
+            $advice[] = $polarAdvice;
+        } elseif (null !== $glideSpeed && null !== $average && $average > 0) {
             $expected = 95 + 20 * $average;
             if ($glideSpeed < $expected - 20) {
                 $advice[] = new Advice(Advice::TIP, 'Transitions lentes', \sprintf(
@@ -177,6 +187,34 @@ final class FlightAdvisor
             $text.'. Indicatif : les épreuves se valident sur le Condor Club.',
             TrainingStep::Flaps,
         );
+    }
+
+    /** Glide speed against the MacCready speed of the polar, with three glides or more. */
+    private static function speedToFly(GliderPerformance $performance): ?Advice
+    {
+        $speedToFly = $performance->speedToFly;
+        if (null === $speedToFly || null === $performance->glideSpeed || \count($performance->glides) < self::MIN_GLIDES || null === $performance->climb) {
+            return null;
+        }
+        $flown = $performance->glideSpeed;
+        $best = $speedToFly['speed'];
+        $context = \sprintf(
+            'Pour des thermiques à %s m/s, la polaire du %s à %s kg/m² donne une vitesse de transition de %d km/h (MacCready %s) ; vos transitions : %d km/h (vitesse air estimée, vent retiré).',
+            self::number($performance->climb),
+            $performance->glider->getModel(),
+            self::number($performance->wingLoading),
+            round($best),
+            self::number($performance->climb),
+            round($flown),
+        );
+        if ($flown < $best - self::SLOW_GLIDES) {
+            return new Advice(Advice::TIP, 'Transitions lentes', $context.' Accélérer entre les thermiques fait gagner plus de temps que la hauteur perdue n’en coûte.', TrainingStep::MacCready);
+        }
+        if ($flown > $best + self::FAST_GLIDES) {
+            return new Advice(Advice::TIP, 'Transitions rapides', $context.' Au-delà, la hauteur perdue coûte plus de temps de montée que la vitesse n’en fait gagner, sauf le long d’une pente ou sous une rue de nuages.', TrainingStep::MacCready);
+        }
+
+        return new Advice(Advice::GOOD, 'Vitesse de transition adaptée', $context, TrainingStep::MacCready);
     }
 
     private static function number(float $value): string

@@ -21,7 +21,7 @@
                         <td><a href="{{ path('app_flight_show', {id: flight.id}) }}">{{ flight.pilot }}{% if flight.competitionId %} ({{ flight.competitionId }}){% endif %}</a></td>
                         <td>{{ flight.flightPlan ?: '—' }}</td>
                         <td>{% if flight.launch %}<twig:Ui:Tag variant="soft">{{ flight.launch.label }}</twig:Ui:Tag>{% else %}—{% endif %}</td>
-                        <td>{{ flight.glider ?: '—' }}</td>
+                        <td>{% set glider_link = glider_url(flight.glider) %}{% if glider_link %}<a href="{{ glider_link }}">{{ flight.glider }}</a>{% else %}{{ flight.glider ?: '—' }}{% endif %}</td>
                         <td>{{ flight.landscape ?: '—' }}</td>
                         <td>{{ flight.duration|flight_duration }}</td>
                         <td>{{ flight.distance|flight_distance }}</td>

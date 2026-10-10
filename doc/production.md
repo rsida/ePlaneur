@@ -105,6 +105,7 @@ Every command below is run on the server, in the project directory.
 | `make db-restore file=...` | Restore a dump |
 | `make console c="app:import-wordpress"` | Import or update the content of the WordPress site, with the redirects of its addresses (see [WordPress import](wordpress-import.md)) |
 | `make console c="app:sessions:import"` | Import the network sessions and their results from eplaneur.fr (see [sessions](sessions.md)) |
+| `make console c="app:gliders:import var/condor/Planes"` | Record or update the gliders (sheet and polar) from a copy of the `Condor3/Planes` folder: only its `<glider>/<glider>.txt` and `.pol` files are needed, copied into `var/condor/Planes/` on the server (see [flights](flights.md#gliders-and-polars)); again after each Condor update |
 | `make console c="messenger:failed:show"` | Messages that failed after 3 retries |
 | `make console c="messenger:failed:retry"` | Retry them |
 

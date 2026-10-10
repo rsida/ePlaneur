@@ -30,7 +30,7 @@
             </div>
             <label class="p-flight__select">
                 <span class="u-visually-hidden">Fond de carte</span>
-                <select data-action="session-viewer#setBasemap">
+                <select data-session-viewer-target="basemap" data-action="session-viewer#setBasemap">
                     <option value="topo">Relief</option>
                     <option value="satellite">Satellite</option>
                     <option value="osm">Plan</option>
@@ -101,7 +101,7 @@
                                 <span class="p-session__dot" data-session-viewer-target="dot" data-flight="{{ member.id }}"></span>
                                 <a href="{{ path('app_flight_show', {id: member.id}) }}">{{ member.pilot }}{% if member.competitionId %} ({{ member.competitionId }}){% endif %}</a>
                             </td>
-                            <td>{{ member.glider ?: '—' }}</td>
+                            <td>{% set glider_link = glider_url(member.glider) %}{% if glider_link %}<a href="{{ glider_link }}">{{ member.glider }}</a>{% else %}{{ member.glider ?: '—' }}{% endif %}</td>
                             <td>{{ member.launch ? member.launch.label : '—' }}</td>
                             <td>{{ member.taskSpeed ? member.taskSpeed|number_format(1, ',', ' ') ~ ' km/h' : (task ? 'non terminé' : '—') }}</td>
                             <td>{{ task and task.duration ? task.duration|flight_duration : '—' }}</td>

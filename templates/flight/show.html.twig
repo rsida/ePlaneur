@@ -10,7 +10,8 @@
 
 {% block body %}
     <section class="p-flight t-light" data-controller="flight-viewer"
-             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id}) }}">
+             data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id}) }}"
+             data-flight-viewer-label-value="{{ flight.competitionId ?: flight.pilot }}">
         <div class="l-container p-flight__head">
             <div class="l-stack l-stack--sm">
                 {% if app.user %}<twig:Ui:Link href="{{ path('app_flight_index') }}">Tous les vols</twig:Ui:Link>{% endif %}
@@ -28,6 +29,7 @@
                         {% if flight.owner and is_granted('LOGBOOK_VIEW', flight.owner) %}<twig:Ui:Link href="{{ flight.owner == app.user ? path('app_flight_logbook') : path('app_flight_logbook_pilot', {id: flight.owner.id}) }}">{{ flight.owner == app.user ? 'Mon carnet de vol' : 'Carnet de vol du pilote' }}</twig:Ui:Link>{% endif %}
                         {% if app.user and race and race.winner.id != flight.id and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare', {id: flight.id, other: race.winner.id}) }}">Comparer au vainqueur</twig:Ui:Link>{% endif %}
                         {% if app.user and session_size > 1 and task and task.turnpoints[1].reached is not null %}<twig:Ui:Link href="{{ path('app_flight_compare_pick', {id: flight.id}) }}">Comparer avec un autre pilote</twig:Ui:Link>{% endif %}
+                        {% if flight.owner and app.user and flight.owner != app.user and is_granted('MESSAGE_SEND') and flight.owner.hasPermission(enum('App\\Security\\Permission').MessageSend) %}<twig:Ui:Link href="{{ path('app_account_message_new', {a: flight.owner.id, vol: flight.id}) }}">Écrire au pilote</twig:Ui:Link>{% endif %}
                         {% if app.user and flight.fileName %}<twig:Ui:Link href="{{ path('app_flight_file', {id: flight.id}) }}" icon="download">Trace d’origine (.{{ flight.format }})</twig:Ui:Link>{% endif %}
                         {% if app.user %}<twig:Ui:Link href="{{ path('app_flight_igc', {id: flight.id}) }}" icon="download">Export IGC</twig:Ui:Link>{% endif %}
                     </p>
@@ -173,7 +175,7 @@
                     </div>
                     <label class="p-flight__select">
                         <span class="u-visually-hidden">Fond de carte</span>
-                        <select data-action="flight-viewer#setBasemap">
+                        <select data-flight-viewer-target="basemap" data-action="flight-viewer#setBasemap">
                             <option value="topo">Relief</option>
                             <option value="satellite">Satellite</option>
                             <option value="osm">Plan</option>
@@ -356,6 +358,36 @@
                         </section>
                     {% endif %}
                 </div>
+            </section>
+        {% endif %}
+
+        {% if performance %}
+            {% set glider = performance.glider %}
+            <section class="l-container p-flight__glider" aria-labelledby="glider-title">
+                <twig:Ui:Heading level="2" size="h3" id="glider-title">Le planeur et sa polaire</twig:Ui:Heading>
+                <div class="p-flight__glider-grid">
+                    <dl class="p-flight__facts">
+                        <div><dt>Planeur</dt><dd><a href="{{ path('app_glider_show', {name: glider.name}) }}">{{ glider.model }}</a></dd></div>
+                        <div><dt>Masse en vol <span class="u-note">({{ performance.water is not null ? performance.water ~ ' L d’eau' : 'eau inconnue' }})</span></dt><dd>{{ performance.mass|number_format(0, ',', ' ') }} kg</dd></div>
+                        <div><dt>Charge alaire</dt><dd>{{ performance.wingLoading|number_format(1, ',', ' ') }} kg/m² <span class="u-note">({{ glider.minWingLoading|number_format(1, ',', ' ') }} à {{ glider.maxWingLoading|number_format(1, ',', ' ') }})</span></dd></div>
+                        <div><dt>Finesse maximale à cette masse</dt><dd>{{ performance.bestGlide.ratio|number_format(0, ',', ' ') }} à {{ performance.bestGlide.speed|number_format(0, ',', ' ') }} km/h</dd></div>
+                        <div><dt>Taux de chute minimal</dt><dd>{{ performance.minimumSink.sink|number_format(2, ',', ' ') }} m/s à {{ performance.minimumSink.speed|number_format(0, ',', ' ') }} km/h</dd></div>
+                        {% if performance.speedToFly %}
+                            <div><dt>Vitesse MacCready <span class="u-note">(pour le vario moyen du vol, {{ performance.climb|number_format(1, ',', ' ') }} m/s)</span></dt><dd>{{ performance.speedToFly.speed|number_format(0, ',', ' ') }} km/h</dd></div>
+                            <div><dt>Vitesse moyenne espérée <span class="u-note">(montée et transitions, air calme)</span></dt><dd>{{ performance.speedToFly.average|number_format(0, ',', ' ') }} km/h</dd></div>
+                        {% endif %}
+                        {% if performance.glideSpeed %}<div><dt>Vos transitions <span class="u-note">(vitesse air estimée{{ performance.wind ? ', vent de ' ~ performance.wind.speed|number_format(0) ~ ' km/h retiré' : '' }})</span></dt><dd>{{ performance.glideSpeed|number_format(0, ',', ' ') }} km/h</dd></div>{% endif %}
+                    </dl>
+                    <figure class="p-flight__chart p-flight__polar" data-controller="polar-chart"
+                            data-polar-chart-curves-value="{{ [{label: 'Polaire à ' ~ performance.wingLoading|number_format(1, ',', ' ') ~ ' kg/m²', points: performance.chartData.curve}]|json_encode }}"
+                            data-polar-chart-glides-value="{{ performance.chartData.glides|json_encode }}"
+                            data-polar-chart-speed-to-fly-value="{{ performance.chartData.speedToFly ?? 0 }}"
+                            data-action="polar-chart:glide->flight-viewer#goToMoment">
+                        <figcaption>Polaire à la masse du vol (taux de chute selon la vitesse air), vos transitions en points{% if performance.speedToFly %}, la vitesse MacCready en pointillés{% endif %}</figcaption>
+                        <div data-polar-chart-target="chart"></div>
+                    </figure>
+                </div>
+                <p class="u-note">La trace donne la vitesse sol : la vitesse air d’une transition est estimée en retirant le vent mesuré par la dérive des thermiques. Une transition au-dessus de la courbe a traversé de l’air montant, en dessous de l’air descendant. Polaire et fiche du planeur lues dans les fichiers de Condor.</p>
             </section>
         {% endif %}
 

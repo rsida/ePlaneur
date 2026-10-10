@@ -88,6 +88,8 @@ final readonly class FlightSession
                 'latitude' => $analysis['series']['latitude'],
                 'longitude' => $analysis['series']['longitude'],
                 'altitude' => $analysis['series']['altitude'],
+                // Ground speed, for the values of each pilot and the bank of their glider
+                'speed' => $analysis['series']['speed'],
             ];
         }
 

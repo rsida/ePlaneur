@@ -910,6 +910,11 @@
     white-space: nowrap;
 }
 
+/* A note after a value goes to the next line on a narrow screen */
+.p-flight__facts dd .u-note {
+    white-space: normal;
+}
+
 .p-flight__turnpoints {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -1101,4 +1106,41 @@
 .p-training__edit > summary {
     cursor: pointer;
     font-weight: 600;
+}
+
+/* Glider and polar (GliderPerformance) */
+.p-flight__glider {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin-block: var(--space-7) var(--space-6);
+}
+
+.p-flight__glider-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+}
+
+@media (width >= 64em) {
+    .p-flight__glider-grid {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    }
+}
+
+/* Glider pages (templates/glider/) */
+.p-glider__list,
+.p-glider__sheet,
+.p-glider__speeds {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin-block: var(--space-6);
+}
+
+@media (width >= 64em) {
+    .p-glider__sheet {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    }
 }

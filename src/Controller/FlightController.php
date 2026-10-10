@@ -14,12 +14,14 @@ use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
 use App\Flight\FlightMailer;
 use App\Flight\FlightSession;
+use App\Flight\Glider\GliderPerformance;
 use App\Flight\IgcExporter;
 use App\Flight\Logbook;
 use App\Flight\Reader\InvalidTrackException;
 use App\Form\FlightCommentType;
 use App\Repository\FlightPlanRepository;
 use App\Repository\FlightRepository;
+use App\Repository\GliderRepository;
 use App\Repository\StepProgressRepository;
 use App\Security\Voter\FlightVoter;
 use App\Training\TrainingPath;
@@ -50,6 +52,11 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[Route('/vols', name: 'app_flight_')]
 final class FlightController extends AbstractController
 {
+    public function __construct(
+        private readonly GliderRepository $gliders,
+    ) {
+    }
+
     private const string UPLOAD_TOKEN = 'flight_upload';
 
     /** Flights uploaded by the user, and the latest of the club; a track dropped here is analysed. */
@@ -191,6 +198,8 @@ final class FlightController extends AbstractController
      */
     private function renderFlight(Flight $flight, FlightRepository $flights, FlightAdvisor $advisor, ?FormInterface $form = null): Response
     {
+        $glider = $this->gliders->findOneByName($flight->getGlider());
+        $performance = null !== $glider ? GliderPerformance::of($glider, $flight->getAnalysis()) : null;
         if (null === $form && $this->isGranted(FlightVoter::COMMENT, $flight)) {
             $user = $this->getUser();
             \assert($user instanceof User);
@@ -209,7 +218,8 @@ final class FlightController extends AbstractController
             'flight' => $flight,
             'race' => $race,
             'session_size' => $flights->countSession($flight),
-            'advice' => $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings()),
+            'advice' => $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings(), $performance),
+            'performance' => $performance,
             'comment_form' => $form?->createView(),
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
@@ -345,6 +355,7 @@ final class FlightController extends AbstractController
                 'latitude' => $analysis['series']['latitude'],
                 'longitude' => $analysis['series']['longitude'],
                 'altitude' => $analysis['series']['altitude'],
+                'speed' => $analysis['series']['speed'],
             ];
         }
         $response = new JsonResponse(['task' => $flight->getAnalysis()['task'], 'step' => FlightComparison::STEP, 'flights' => $tracks]);

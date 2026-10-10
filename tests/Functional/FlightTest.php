@@ -142,11 +142,12 @@ final class FlightTest extends WebTestCase
         self::assertCount(2, $this->client->getCrawler()->filter('.p-session__ranking tbody tr'));
 
         $this->client->request('GET', '/plans-de-vol/C3-c060/traces.json');
-        /** @var array{task: array<string, mixed>|null, flights: list<array{start: int, latitude: list<float>, altitude: list<float>}>} $session */
+        /** @var array{task: array<string, mixed>|null, flights: list<array{start: int, latitude: list<float>, altitude: list<float>, speed: list<float>}>} $session */
         $session = json_decode((string) $this->client->getResponse()->getContent(), true);
         self::assertCount(2, $session['flights']);
         self::assertNotNull($session['task']);
         self::assertCount(306, $session['flights'][0]['altitude']);
+        self::assertCount(306, $session['flights'][0]['speed'], 'For the bank of the gliders');
         self::assertSame(0, $session['flights'][0]['start']);
     }
 
@@ -174,9 +175,10 @@ final class FlightTest extends WebTestCase
 
         $this->client->request('GET', '/vols/'.$second->getId().'/comparer/'.$first->getId().'.json');
         self::assertResponseIsSuccessful();
-        /** @var array{step: int, flights: list<array{times: list<int>}>} $data */
+        /** @var array{step: int, flights: list<array{times: list<int>, altitude: list<float>, speed: list<float>}>} $data */
         $data = json_decode((string) $this->client->getResponse()->getContent(), true);
         self::assertSame(250, $data['step']);
+        self::assertCount(\count($data['flights'][0]['altitude']), $data['flights'][0]['speed'], 'For the bank of the gliders');
         self::assertCount(2, $data['flights']);
         self::assertSame($data['flights'][0]['times'], $data['flights'][1]['times'], 'The same track');
         self::assertGreaterThan(20, \count($data['flights'][0]['times']), 'From the start to the finish, 250 m apart');

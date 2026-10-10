@@ -151,6 +151,40 @@ The viewer reads `FlightAnalysis::toArray()`, stored when the flight is uploaded
 1 h 40 flight). After changing the analysis, `make console c="app:flight:analyse"` analyses the
 stored flights again from their files (in production too, after the deployment).
 
+## Gliders and polars
+
+The sheet and the polar of each glider come from the files of Condor (`App\Flight\Glider\CondorGliders`,
+`make console c="app:gliders:import <folder>"`): every folder of `Condor3/Planes` with a
+`<name>.txt` (the sheet Condor shows when choosing a glider: maker and model, span, wing area,
+length, masses, water ballast, wing loadings, speeds, minimum sink, best glide, DAeC handicap,
+engine) and a `<name>.pol` (the polar). Tow planes have no polar and are left out. Run it again after
+a Condor update: gliders are updated by name. The name is the one of the folder, which the tracks
+(`Flight::$glider`) and the results of the server use ("Diana2", "JS3-15").
+
+- **Polar** (`Polar`): a count, then six floats per node: the point (km/h, vertical speed in m/s),
+  the handle towards the previous node and the one towards the next; two nodes and the handles
+  between them are a cubic Bézier curve. Decoded on 2026-10-10: the minimum sink and best glide of
+  the curves match the sheets within 2 % (Diana 2: 0.47 m/s, 49.5 at 89 km/h; sheet 0.45 m/s, 50 at
+  91 km/h). Condor does not say at which mass: the curve is taken as the glider without water at its
+  minimum wing loading (`Glider::getReferenceMass()`; when the sheet gives none, empty plus a pilot of
+  90 kg). At a mass m, speeds and sink rates are multiplied by √(m / reference).
+- **Pages**: `/planeurs` (every glider: span, best glide, minimum sink, wing loading, water, handicap,
+  tracks of the club) and `/planeurs/{name}` (the sheet, aspect ratio, best glide and minimum sink
+  without water and full, the polar at both masses, MacCready speeds for 0.5 to 4 m/s), open to
+  everyone. Glider names in session results and rankings link to them (`glider_url()`).
+- **On the flight page** (`GliderPerformance`), when its glider is recorded: mass (reference plus
+  the water of the `.ftr`, a litre per kilogram), wing loading, best glide and minimum sink at that
+  mass, the MacCready speed for the average climb of the flight and the average speed it gives,
+  the polar at that mass with the glides of the flight as points (clicking one moves the viewer
+  there) and the MacCready speed. A track gives the ground speed: the airspeed of a glide is
+  estimated by taking away the wind of the flight (average drift of its thermals, as vectors); its
+  sink rate is the height lost over its duration, so a glide through rising air shows above the
+  curve.
+- **Advice**: the speed of the glides against that MacCready speed (see Progression).
+
+Not done: netto vario (needs the airspeed at each second, not only per glide), effective MacCready
+of each glide.
+
 ## Downloads
 
 Logged-in users can download, from the page of a flight, its original file (`/vols/{id}/fichier`,
@@ -178,7 +212,17 @@ and says so in an L line. The export reads back with `IgcReader`.
   hovering or clicking a chart, the seek bar or a phase moves the glider. Every chart of the flight
   pages has a label next to the cursor with the exact values of the point (`valueTip()` of
   `assets/flight/chart.js`): add it to any new chart.
-- Replay ×1 to ×300, "Suivre" keeps the glider in the centre.
+- Gliders (`assets/flight/scene.js`, shared by the three viewers, after the 3D replays of Condor
+  Club and SportsTrackLive): a glider drawn with deck.gl layers (wings and tailplane as polygons,
+  fuselage and fin as ribbons; no 3D model to load), turned to its heading and banked like it
+  (tan(bank) = speed × turn rate / g), drawn wider than a real 15 m glider and enlarged with the
+  zoom to stay about 56 px wide; a flag above it with its name and altitude in its colour; in 3D a
+  line down to the ground. Session and comparison: a trail of the last 5 minutes fading out behind
+  each glider, and under the trail of the pilot followed a curtain down to the ground.
+- Switching to 3D picks the "Satellite" basemap unless the pilot chose one.
+- Replay ×1 to ×300, "Suivre" keeps the glider in the centre; in 3D the camera comes close and
+  flies behind it, turned along its track of the last minute (`chaseBearing()`: the course, not
+  each circle of a thermal).
 - "Vue pilote" (3D): the camera sits in the glider (`calculateCameraOptionsFromCameraLngLatAltRotation`
   of MapLibre 5), looks along its track, 15° below the horizon (fewer far tiles to load), at least
   30 m above the relief of the map (the real one, not Condor's: low over a ridge the glider can be
@@ -209,12 +253,13 @@ Flights whose task is not a flight plan of the library are still grouped by task
 - **Ranking**: the pilots who finished by task speed, then the others by distance.
 - **Podium**, beyond speed: fastest, best average climb in thermals, best glide ratio in glides,
   least time circling (share of the flight).
-- **Replay** (`FlightSession::replayData()`, partial `flight/_session_replay.html.twig`): every pilot in a color, the whole track faded and the last two minutes bold, a label
-  with the competition id; from above or in 3D. Two clocks: "Heure de course", each recording from
+- **Replay** (`FlightSession::replayData()`, partial `flight/_session_replay.html.twig`): every
+  pilot in a color, the whole track faded, their glider with its flag and trail (see the viewer
+  above); from above or in 3D. Two clocks: "Heure de course", each recording from
   its beginning (in a network race everybody starts at once), or "Départ du circuit ensemble", the
   start lines crossed at the same moment (ghost race between flights of different days). The side
-  list gives the altitude and vario of each pilot at the current time; clicking a pilot centres the
-  map on them, highlights their track and follows them during the replay.
+  list gives the altitude, vario and ground speed of each pilot at the current time; clicking a
+  pilot follows them (in 3D from behind their glider) and highlights their track.
 
 ## Comparison
 
@@ -235,13 +280,16 @@ rather than in time (`FlightComparison`):
   begin.
 - **Viewer**: both tracks on the map, a chart of the gap and one of both altitudes along the task;
   the slider, the charts, the key moments and the thermals move both gliders to the same distance.
+  The replay moves along the task at the pace of the first pilot (both gliders always at the same
+  distance), the camera behind the first one in 3D.
   The colors of the two pilots are the tokens `--color-pilot-a` and `--color-pilot-b`, read by the
   JavaScript.
 
 ## Progression
 
 - **Advice** on the flight page (`FlightAdvisor`, from the stored analysis, so it applies to every
-  flight already uploaded), each tied to a step of the training path (`TrainingStep`): too much
+  flight already uploaded; the glide speed uses the polar of the glider when it is recorded), each
+  tied to a step of the training path (`TrainingStep`): too much
   time circling (over 40 %) or little (under 25 %, task done); weak thermals taken (a minute or more
   under 1 m/s or under half the average climb); circling without gain (three or more under 50 m);
   always turning the same way (85 %, four thermals or more); slow glides (20 km/h under the

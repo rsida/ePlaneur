@@ -135,7 +135,7 @@
                     </div>
                     <label class="p-flight__select">
                         <span class="u-visually-hidden">Fond de carte</span>
-                        <select data-action="compare-viewer#setBasemap">
+                        <select data-compare-viewer-target="basemap" data-action="compare-viewer#setBasemap">
                             <option value="topo">Relief</option>
                             <option value="satellite">Satellite</option>
                             <option value="osm">Plan</option>
@@ -168,6 +168,18 @@
             </aside>
 
             <div class="p-flight__replay">
+                <button type="button" class="p-flight__play" data-compare-viewer-target="play" data-action="compare-viewer#togglePlay" aria-label="Rejouer les deux vols">
+                    <twig:ux:icon name="play" class="p-flight__play-icon--play" /><twig:ux:icon name="pause" class="p-flight__play-icon--pause" />
+                </button>
+                <label class="p-flight__select">
+                    <span class="u-visually-hidden">Vitesse de lecture</span>
+                    <select data-compare-viewer-target="rate">
+                        <option value="10">× 10</option>
+                        <option value="30" selected>× 30</option>
+                        <option value="60">× 60</option>
+                        <option value="120">× 120</option>
+                    </select>
+                </label>
                 <input type="range" class="p-flight__seek" min="0" max="{{ gaps|length - 1 }}" value="0" step="1" aria-label="Distance du circuit"
                        data-compare-viewer-target="seek" data-action="input->compare-viewer#seek">
             </div>

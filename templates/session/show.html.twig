@@ -67,7 +67,7 @@
                                             <td>{{ row.rank }}</td>
                                             <td>{{ row.player }}</td>
                                             <td>{{ row.competitionId ?: '—' }}</td>
-                                            <td>{{ row.glider ?: '—' }}</td>
+                                            <td>{% set glider_link = glider_url(row.glider) %}{% if glider_link %}<a href="{{ glider_link }}">{{ row.glider }}</a>{% else %}{{ row.glider ?: '—' }}{% endif %}</td>
                                             <td>{{ row.status|session_status }}</td>
                                             <td>{{ row.distance is not null ? row.distance|flight_distance : '—' }}</td>
                                             <td>{{ row.time is not null ? row.time|flight_duration : '—' }}</td>

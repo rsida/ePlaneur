@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ glider.model }}{% endblock %}
+{% block description %}Fiche et polaire du {{ glider.model }} dans Condor : envergure, masses, charge alaire, finesse, taux de chute, vitesses MacCready.{% endblock %}
+
+{% block body %}
+    <section class="p-flight p-glider t-light">
+        <div class="l-container p-flight__head">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Link href="{{ path('app_glider_index') }}">Tous les planeurs</twig:Ui:Link>
+                <twig:Ui:Eyebrow>Planeur · Condor 3 · {{ glider.name }}</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ glider.model }}</twig:Ui:Heading>
+            </div>
+        </div>
+
+        <div class="l-container p-flight__glider-grid p-glider__sheet">
+            <dl class="p-flight__facts">
+                <div><dt>Envergure</dt><dd>{{ glider.span|number_format(glider.span == glider.span|round ? 0 : 2, ',', ' ') }} m</dd></div>
+                <div><dt>Surface alaire</dt><dd>{{ glider.wingArea|number_format(2, ',', ' ') }} m²</dd></div>
+                {% if glider.length %}<div><dt>Longueur</dt><dd>{{ glider.length|number_format(2, ',', ' ') }} m</dd></div>{% endif %}
+                <div><dt>Allongement</dt><dd>{{ (glider.span ** 2 / glider.wingArea)|number_format(1, ',', ' ') }}</dd></div>
+                <div><dt>Masse à vide</dt><dd>{{ glider.emptyMass|number_format(0, ',', ' ') }} kg</dd></div>
+                <div><dt>Masse maximale</dt><dd>{{ glider.maxMass|number_format(0, ',', ' ') }} kg</dd></div>
+                <div><dt>Eau (ballast)</dt><dd>{{ glider.waterBallast > 0 ? glider.waterBallast ~ ' L' : 'non' }}</dd></div>
+                <div><dt>Charge alaire</dt><dd>{{ glider.minWingLoading|number_format(1, ',', ' ') }}{% if glider.maxWingLoading > glider.minWingLoading %} à {{ glider.maxWingLoading|number_format(1, ',', ' ') }}{% endif %} kg/m²</dd></div>
+                <div><dt>Vitesse à ne jamais dépasser</dt><dd>{{ glider.maxSpeed|number_format(0) }} km/h</dd></div>
+                {% if glider.maneuveringSpeed %}<div><dt>Vitesse de manœuvre</dt><dd>{{ glider.maneuveringSpeed|number_format(0) }} km/h</dd></div>{% endif %}
+                {% if glider.minSpeed %}<div><dt>Vitesse de décrochage</dt><dd>{{ glider.minSpeed|number_format(0) }} km/h</dd></div>{% endif %}
+                <div><dt>Finesse maximale</dt><dd>{{ empty.bestGlide.ratio|number_format(0) }} à {{ empty.bestGlide.speed|number_format(0) }} km/h{% if full %} <span class="u-note">({{ full.bestGlide.speed|number_format(0) }} km/h à pleine charge)</span>{% endif %}</dd></div>
+                <div><dt>Taux de chute minimal</dt><dd>{{ empty.minimumSink.sink|number_format(2, ',', ' ') }} m/s à {{ empty.minimumSink.speed|number_format(0) }} km/h{% if full %} <span class="u-note">({{ full.minimumSink.sink|number_format(2, ',', ' ') }} m/s à pleine charge)</span>{% endif %}</dd></div>
+                {% if glider.handicap %}<div><dt>Indice DAeC <span class="u-note">(handicap des compétitions)</span></dt><dd>{{ glider.handicap }}</dd></div>{% endif %}
+                {% if glider.engine %}<div><dt>Moteur</dt><dd>{{ glider.engine }}</dd></div>{% endif %}
+            </dl>
+            <figure class="p-flight__chart p-flight__polar" data-controller="polar-chart" data-polar-chart-curves-value="{{ curves|json_encode }}">
+                <figcaption>Polaire : taux de chute selon la vitesse air{% if full %}, sans eau et à pleine charge{% endif %}</figcaption>
+                <div data-polar-chart-target="chart"></div>
+            </figure>
+        </div>
+
+        <div class="l-container p-glider__speeds">
+            <twig:Ui:Heading level="2" size="h3">Vitesses MacCready</twig:Ui:Heading>
+            <figure class="c-data-table">
+                <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Vitesses de transition selon le vario attendu">
+                    <table>
+                        <thead><tr><th scope="col">Vario attendu</th><th scope="col">Vitesse de transition</th><th scope="col">Taux de chute</th><th scope="col">Vitesse moyenne espérée</th></tr></thead>
+                        <tbody>
+                            {% for row in speedsToFly %}
+                                <tr>
+                                    <th scope="row">{{ row.climb|number_format(1, ',', ' ') }} m/s</th>
+                                    <td>{{ row.speed|number_format(0) }} km/h</td>
+                                    <td>{{ row.sink|number_format(2, ',', ' ') }} m/s</td>
+                                    <td>{{ row.average|number_format(0) }} km/h</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </figure>
+            <p class="u-note">Sans eau, en air calme : la vitesse de transition qui donne la meilleure vitesse moyenne pour des thermiques au vario attendu (montée comprise). Avec de l’eau, toutes les vitesses augmentent comme la racine carrée de la masse. Fiche et polaire lues dans les fichiers de Condor ; la polaire est supposée donnée sans eau.</p>
+        </div>
+    </section>
+{% endblock %}
