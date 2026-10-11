@@ -1,6 +1,6 @@
 import { ColumnLayer, LineLayer, PathLayer, SolidPolygonLayer, TextLayer } from '@deck.gl/layers';
 import { SimpleMeshLayer } from '@deck.gl/mesh-layers';
-import { bearing } from './geo.js';
+import { bearing, taskGate } from './geo.js';
 import { GLIDER_MESH, gliderMatrix } from './glider-mesh.js';
 
 /*
@@ -54,6 +54,9 @@ const TRAIL_CHUNKS = 6;
 const AVERAGE_CLIMB = 30;
 // Metres the cylinders of the turnpoints and the line of the task rise above the highest glider
 const TASK_ABOVE = 300;
+
+/** Thickness of the wall of a start or finish gate in 3D, metres. */
+const GATE_THICKNESS = 12;
 // Translucent volumes (cylinders, thermals) leave the depth buffer alone: otherwise the tracks drawn
 // after them disappear behind their walls
 export const SEE_THROUGH = { depthWriteEnabled: false };
@@ -345,19 +348,49 @@ export function readings(track, index, ground = null) {
 
 /**
  * The task in 3D: each cylinder of a turnpoint as a column from the ground to `top` metres (the
- * highest altitude of the flights), translucent, and the line of the task at that height.
+ * highest altitude of the flights), translucent, and the line of the task at that height. A 180°
+ * start or finish is a flat gate as Condor shows it: a wall on the line across the leg, from its
+ * minimum altitude (the ground when it has none) to its maximum (the ceiling when it has none or
+ * is above it), its top edge marked, so that a start too high or a finish too low shows.
  */
 export function taskLayers(id, task, { top }) {
     if (!task) return [];
     const points = task.turnpoints.slice(1);
     const ceiling = top + TASK_ABOVE;
+    const gates = points.map((point, k) => taskGate(points, k)).filter(Boolean).map((gate) => ({
+        ...gate,
+        bottom: gate.min ?? 0,
+        top: gate.max !== null && gate.max < ceiling ? gate.max : ceiling,
+    }));
+    const cylinders = points.filter((point, k) => !taskGate(points, k));
     // One layer per radius: the radius of a column layer is the same for all its columns
-    const radii = [...new Set(points.map((point) => point.radius))];
+    const radii = [...new Set(cylinders.map((point) => point.radius))];
 
     return [
+        new SolidPolygonLayer({
+            id: `${id}-gates`,
+            data: gates,
+            // A thin slab on the line: deck.gl extrudes horizontal polygons only
+            getPolygon: (gate) => slab(gate.line, GATE_THICKNESS).map(([lon, lat]) => [lon, lat, gate.bottom]),
+            getElevation: (gate) => gate.top - gate.bottom,
+            extruded: true,
+            getFillColor: [80, 220, 235, 70],
+            material: false,
+            parameters: SEE_THROUGH,
+        }),
+        new PathLayer({
+            id: `${id}-gate-edges`,
+            data: gates,
+            getPath: (gate) => [
+                [...gate.line[0], gate.bottom], [...gate.line[0], gate.top], [...gate.line[1], gate.top], [...gate.line[1], gate.bottom],
+            ],
+            getColor: [80, 220, 235, 230],
+            getWidth: 2,
+            widthUnits: 'pixels',
+        }),
         ...radii.map((radius) => new ColumnLayer({
             id: `${id}-cylinders-${radius}`,
-            data: points.filter((point) => point.radius === radius),
+            data: cylinders.filter((point) => point.radius === radius),
             getPosition: (point) => [point.longitude, point.latitude, 0],
             getElevation: ceiling,
             radius,
@@ -784,4 +817,17 @@ function shape(lon, lat, altitude, heading, bank, scale) {
 
         return [lon + east / metresPerDegreeLon, lat + north / metresPerDegreeLat, altitude + zb * scale];
     });
+}
+
+/** The rectangle `thickness` metres wide around a line of two [longitude, latitude] points. */
+function slab([a, b], thickness) {
+    const middle = (a[1] + b[1]) / 2;
+    const east = (b[0] - a[0]) * 111320 * Math.cos((middle * Math.PI) / 180);
+    const north = (b[1] - a[1]) * 111320;
+    const length = Math.hypot(east, north) || 1;
+    // Half the thickness across the line
+    const [dx, dy] = [(-north / length) * (thickness / 2), (east / length) * (thickness / 2)];
+    const shift = ([lon, lat], sign) => offset([lon, lat, 0], sign * dx, sign * dy, 0).slice(0, 2);
+
+    return [shift(a, 1), shift(b, 1), shift(b, -1), shift(a, -1)];
 }

@@ -360,7 +360,15 @@ opens its tab):
   of the last 30 s ("ø"), altitude and, in 3D, the height above the relief of the map (the real
   relief, not Condor's: a guide only).
 - 3D scene: the cylinders of the task stand up from the ground to 300 m above the highest glider,
-  translucent, with the line of the task at that height (`taskLayers()`); a sky with haze at the
+  translucent, with the line of the task at that height (`taskLayers()`). A 180° start or finish is
+  a flat gate as Condor shows it (roadmap 7m3): a translucent wall on the line across the leg, twice
+  the radius wide, from the minimum altitude of the point (the ground when it has none: the start)
+  to its maximum (the maximum start height; the ceiling when it is above it), its edges marked. On
+  the map, the same gate is a solid line across the leg and its half disc is fainter
+  (`addTask()`, geometry in `taskGate()` of `assets/flight/geo.js`, as the analysis counts it). The
+  altitudes of the points are read with the task: floats at +56 and +60 of each point of a `.ftr`,
+  `TPWidth`/`TPHeight` of the flight plan of Condor's IGC export, `MaxAlt` of the `LSEEYOU` zones
+  otherwise; a sky with haze at the
   horizon (MapLibre `sky`). Translucent volumes do not write the depth buffer, or the tracks drawn
   after them would disappear behind their walls.
 - Lift in 3D (roadmap 7h1): the thermals climbed so far are thin cylinders at the average position

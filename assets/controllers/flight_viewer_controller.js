@@ -6,7 +6,7 @@ import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { readStored, writeStored } from '../flight/storage.js';
 import { bearing, distance } from '../flight/geo.js';
-import { addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
+import { TASK_LAYERS, addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
 import { SEE_THROUGH, angleDifference, attitude, chaseBearing, climbColor, crossingLayers, gliderLayers, trailLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
 
 /*
@@ -680,7 +680,7 @@ export default class extends Controller {
     /** The layers drawn by the map itself rather than deck.gl: task, slopes, shadow. */
     showMapLayers() {
         if (!this.map?.getLayer('task') && !this.map?.getLayer('shadow')) return;
-        ['task', 'turnpoints'].forEach((id) => {
+        TASK_LAYERS.forEach((id) => {
             if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', this.shows('task') ? 'visible' : 'none');
         });
         showSlopes(this.map, this.shows('slopes'));

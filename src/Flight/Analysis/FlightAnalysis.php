@@ -246,6 +246,9 @@ final readonly class FlightAnalysis
                 'altitude' => round($point->altitude),
                 'radius' => $point->radius,
                 'angle' => $point->angle,
+                // Altitudes of the gate of a 180° start or finish, as Condor shows it
+                'minAltitude' => null !== $point->minAltitude ? round($point->minAltitude) : null,
+                'maxAltitude' => null !== $point->maxAltitude ? round($point->maxAltitude) : null,
                 'reached' => $reached,
                 // Altitude and ground speed when the point was reached
                 'reachedAltitude' => null !== $reached ? round($series['altitude'][$reached]) : null,

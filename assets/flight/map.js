@@ -1,6 +1,7 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MapboxOverlay } from '@deck.gl/mapbox';
+import { taskGate } from './geo.js';
 
 /*
  * The map shared by the flight viewers (flight_viewer and session_viewer controllers): MapLibre with
@@ -71,10 +72,18 @@ export function newBounds() {
     return new maplibregl.LngLatBounds();
 }
 
-/** The task: dashed line between the turnpoints and their cylinders, lying on the relief. */
+/** Layers of the task, to show or hide together. */
+export const TASK_LAYERS = ['task', 'task-gates', 'turnpoints'];
+
+/**
+ * The task, lying on the relief: dashed line between the turnpoints, their cylinders, and for a
+ * 180° start or finish the gate as Condor shows it (the line across the leg) with its half disc,
+ * fainter.
+ */
 export function addTask(map, task) {
     if (!task) return;
     const points = task.turnpoints.slice(1);
+    const gates = points.map((point, k) => taskGate(points, k));
     const circle = (point) => {
         const ring = [];
         const dLat = point.radius / 111320;
@@ -92,11 +101,18 @@ export function addTask(map, task) {
             type: 'FeatureCollection',
             features: [
                 { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: points.map((p) => [p.longitude, p.latitude]) } },
-                ...points.map(circle),
+                ...points.map((point, k) => (gates[k]
+                    ? { type: 'Feature', properties: { faded: true }, geometry: { type: 'LineString', coordinates: gates[k].arc } }
+                    : circle(point))),
             ],
         },
     });
-    map.addLayer({ id: 'task', type: 'line', source: 'task', paint: { 'line-color': '#192630', 'line-width': 1.5, 'line-dasharray': [3, 2], 'line-opacity': 0.8 } });
+    map.addLayer({ id: 'task', type: 'line', source: 'task', paint: { 'line-color': '#192630', 'line-width': 1.5, 'line-dasharray': [3, 2], 'line-opacity': ['case', ['boolean', ['get', 'faded'], false], 0.35, 0.8] } });
+    map.addSource('task-gates', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: gates.filter(Boolean).map((gate) => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: gate.line } })) },
+    });
+    map.addLayer({ id: 'task-gates', type: 'line', source: 'task-gates', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#192630', 'line-width': 3.5, 'line-opacity': 0.9 } });
     map.addSource('turnpoints', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: points.map((p, i) => ({ type: 'Feature', properties: { label: `${i === 0 ? 'Départ' : i === points.length - 1 ? 'Arrivée' : i}. ${p.name}` }, geometry: { type: 'Point', coordinates: [p.longitude, p.latitude] } })) },

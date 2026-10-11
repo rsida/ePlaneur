@@ -58,6 +58,7 @@ final class IgcReaderTest extends TestCase
         self::assertSame(['NewTP', 'Laragne Chp', 'Ventoux', 'Le Laser', 'Fayence'], array_map(static fn ($point): string => $point->name, $track->turnpoints));
         self::assertSame([500.0, 2500.0, 500.0, 500.0, 250.0], array_map(static fn ($point): float => $point->radius, $track->turnpoints));
         self::assertSame([360.0, 180.0, 360.0, 360.0, 180.0], array_map(static fn ($point): float => $point->angle, $track->turnpoints));
+        self::assertSame([null, 1400.0, 3000.0, 3000.0, 5000.0], array_map(static fn ($point): ?float => $point->maxAltitude, $track->turnpoints), 'MaxAlt of the zones');
     }
 
     public function testTheReportOfCondorIsRead(): void
@@ -65,7 +66,13 @@ final class IgcReaderTest extends TestCase
         // As exported by Condor for C3-c060 (flight plan cut down to the keys read)
         $report = implode("\r\n", [
             'C210626145320210626000004',
-            'LCONFPL[Task]', 'LCONFPLLandscape=AA3', 'LCONFPLCount=2',
+            'C4420859N00551927ENewTP', 'C4419240N00547509ELaragne Chp', 'C4410417N00516725EVentoux', 'C4336625N00641793EFayence', 'C4336625N00641793EFayence',
+            'LSEEYOU OZ=-1,Style=2,R1=2500m,A1=90,MaxAlt=1400.0m',
+            'LSEEYOU OZ=0,Style=1,R1=500m,A1=180,MaxAlt=3000.0m',
+            'LSEEYOU OZ=1,Style=3,R1=250m,A1=90,MaxAlt=5000.0m',
+            'LCONFPL[Task]', 'LCONFPLLandscape=AA3', 'LCONFPLCount=4',
+            'LCONFPLTPSectorType1=0', 'LCONFPLTPWidth1=0', 'LCONFPLTPHeight1=1400',
+            'LCONFPLTPSectorType3=0', 'LCONFPLTPWidth3=260', 'LCONFPLTPHeight3=5000',
             'LCONFPL[Plane]', 'LCONFPLWater=146',
             'LCONFPL[GameOptions]', 'LCONFPLMaxStartGroundSpeed=170', 'LCONFPLPenaltyStartSpeed=2',
             'LCONFPL[Description]', 'LCONFPLText=C3-c060_Laragne-Ventoux-Fayence_D2_AA3 ePlaneur',
@@ -83,6 +90,7 @@ final class IgcReaderTest extends TestCase
         $track = (new IgcReader())->read(FlightSamples::igc(\array_slice(FlightSamples::glideThermalGlide(), 0, 5), extraHeaders: $report));
 
         self::assertSame(1930306707, $track->raceId, 'the race id joins the track to its session');
+        self::assertSame([260.0, 5000.0], [$track->turnpoints[3]->minAltitude, $track->turnpoints[3]->maxAltitude], 'the minimum finish altitude from the flight plan');
         self::assertSame('AA3', $track->landscape);
         self::assertSame(146, $track->water);
         self::assertSame('C3-c060_Laragne-Ventoux-Fayence_D2_AA3 ePlaneur', $track->flightPlan, 'the description of the flight plan');

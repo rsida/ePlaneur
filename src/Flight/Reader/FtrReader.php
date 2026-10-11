@@ -17,7 +17,9 @@ use App\Flight\Turnpoint;
  * - header of fixed size: "FTR", Condor version (int at 3), pilot first name, last name, country,
  *   registration, competition id and landscape (Pascal short strings at 0x9b, 0xac, 0xbd, 0xce, 0xd6,
  *   0xdf; registration "F-CFDU" and competition id "FDU" on a Condor Club track); task: count (int at 0xf3), then 84 bytes per point from 0xf7 (name, x, y, z as floats,
- *   radius and angle as ints at +44 and +48: 360° for a cylinder, 180° for a start or finish line); glider class and model (short strings at 0x52eb and 0x52fc), the
+ *   radius and angle as ints at +44 and +48: 360° for a cylinder, 180° for a start or finish line;
+ *   floats at +52, +56 and +60: TPAltitude, TPWidth and TPHeight of the .fpl, the minimum and maximum
+ *   altitude of the point, 260 and 1,400 m for the finish and the start of C3-c060); glider class and model (short strings at 0x52eb and 0x52fc), the
  *   litres of water ballast (int at 0x532f: 146 on a Diana 2 flight, as Condor Club shows), then
  *   the flight plan name;
  * - the settings of the task (penalties, realism, start time, weather) are between the task and
@@ -181,7 +183,13 @@ final readonly class FtrReader
             $offset = self::TASK_POINTS + $i * self::TASK_POINT_SIZE;
             [$x, $y, $altitude] = array_values(unpack('g3', $content, $offset + 17) ?: []);
             [$latitude, $longitude] = $landscape->toLatLon($x, $y);
-            $turnpoints[] = new Turnpoint(self::shortString($content, $offset), $latitude, $longitude, $altitude, (float) self::int($content, $offset + 44), (float) self::int($content, $offset + 48));
+            // Minimum and maximum altitude of the point (TPWidth and TPHeight of the .fpl), 0 for none
+            [$min, $max] = array_values(unpack('g2', $content, $offset + 56) ?: [0.0, 0.0]);
+            $turnpoints[] = new Turnpoint(
+                self::shortString($content, $offset), $latitude, $longitude, $altitude,
+                (float) self::int($content, $offset + 44), (float) self::int($content, $offset + 48),
+                is_finite($min) && $min > 0 ? $min : null, is_finite($max) && $max > 0 ? $max : null,
+            );
         }
 
         return $turnpoints;

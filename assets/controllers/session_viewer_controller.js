@@ -1,7 +1,7 @@
 /* stimulusFetch: 'lazy' */
 import { Controller } from '@hotwired/stimulus';
 import { PathLayer } from '@deck.gl/layers';
-import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
+import { TASK_LAYERS, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
 import { chaseBearing, gliderLayers, positionAt, readings, sessionThermalLayers, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
 import { readStored, writeStored } from '../flight/storage.js';
 
@@ -111,7 +111,7 @@ export default class extends Controller {
 
     /** The task is drawn by the map itself, under the tracks. */
     showTask() {
-        ['task', 'turnpoints'].forEach((id) => {
+        TASK_LAYERS.forEach((id) => {
             if (this.map?.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', this.shows('task') ? 'visible' : 'none');
         });
     }

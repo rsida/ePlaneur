@@ -46,6 +46,8 @@ final class FtrReaderTest extends TestCase
         self::assertSame(1896.0, $ventoux->altitude);
         self::assertSame(3000.0, $track->turnpoints[0]->radius);
         self::assertTrue($track->turnpoints[1]->isLine(), 'Start: 180°');
+        self::assertSame([null, 1400.0], [$track->turnpoints[1]->minAltitude, $track->turnpoints[1]->maxAltitude], 'the maximum start height of C3-c060');
+        self::assertSame([260.0, 5000.0], [$track->turnpoints[5]->minAltitude, $track->turnpoints[5]->maxAltitude], 'the minimum finish altitude');
         self::assertSame(360.0, $ventoux->angle);
 
         self::assertCount(3000, $track->fixes);

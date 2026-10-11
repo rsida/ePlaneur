@@ -66,8 +66,9 @@ final readonly class IgcReader
                 $taskName = 1 === preg_match('/\p{L}/u', $match[1]) ? trim($match[1]) : null;
             } elseif (1 === preg_match('/^LSEEYOU OZ=(-?\d+),.*?R1=(\d+(?:\.\d+)?)m(?:,A1=(\d+(?:\.\d+)?))?/', $line, $match)) {
                 // Zone of a task point (SeeYou extension, written by Condor): OZ=-1 is the start;
-                // A1 is half the angle
-                $zones[(int) $match[1]] = [(float) $match[2], isset($match[3]) ? 2 * (float) $match[3] : 360.0];
+                // A1 is half the angle, MaxAlt the maximum altitude
+                $maxAltitude = 1 === preg_match('/MaxAlt=(\d+(?:\.\d+)?)m/', $line, $max) ? (float) $max[1] : null;
+                $zones[(int) $match[1]] = [(float) $match[2], isset($match[3]) ? 2 * (float) $match[3] : 360.0, $maxAltitude];
             } elseif (1 === preg_match('/^C(\d{7}[NS])(\d{8}[EW])(.*)$/', $line, $match)) {
                 $latitude = self::latitude($match[1]);
                 $longitude = self::longitude($match[2]);
@@ -85,16 +86,21 @@ final readonly class IgcReader
         if (\count($turnpoints) >= 4) {
             array_pop($turnpoints);
         }
-        foreach ($turnpoints as $k => $point) {
-            if (isset($zones[$k - 2])) {
-                [$radius, $angle] = $zones[$k - 2];
-                $turnpoints[$k] = new Turnpoint($point->name, $point->latitude, $point->longitude, $point->altitude, $radius, $angle);
-            }
-        }
-
         $report = CondorReport::fromIgcLines($lines);
         $plan = null !== $report?->flightPlan ? @parse_ini_string($report->flightPlan, true, \INI_SCANNER_RAW) : false;
         $plan = \is_array($plan) ? $plan : [];
+        foreach ($turnpoints as $k => $point) {
+            if (isset($zones[$k - 2])) {
+                [$radius, $angle, $maxAltitude] = $zones[$k - 2];
+                // Minimum and maximum altitude: from the flight plan of Condor's export (TPWidth and
+                // TPHeight of a classic sector), the maximum from the zone otherwise
+                $task = $plan['Task'] ?? [];
+                $classic = 0 === (int) ($task['TPSectorType'.$k] ?? 0);
+                $min = $classic ? (float) ($task['TPWidth'.$k] ?? 0) : 0.0;
+                $max = $classic && isset($task['TPHeight'.$k]) ? (float) $task['TPHeight'.$k] : ($maxAltitude ?? 0.0);
+                $turnpoints[$k] = new Turnpoint($point->name, $point->latitude, $point->longitude, $point->altitude, $radius, $angle, $min > 0 ? $min : null, $max > 0 ? $max : null);
+            }
+        }
         $taskName ??= ($plan['Description']['Text'] ?? '') ?: null;
 
         $type = $headers['FTY'] ?? '';
