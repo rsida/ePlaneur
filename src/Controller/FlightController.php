@@ -263,6 +263,7 @@ final class FlightController extends AbstractController
         if (null === $settings && null !== ($condor['flightPlan'] ?? null)) {
             try {
                 $settings = TaskSettings::fromFpl($condor['flightPlan'], 'igc');
+                $settings = $settings->withJoinTime(null !== $condor['taskStart'] ? $settings->joinTimeFrom($condor['taskStart']) : null);
             } catch (\InvalidArgumentException) {
             }
         }

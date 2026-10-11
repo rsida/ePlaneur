@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Flight;
 
+use App\Flight\Condor\CondorReport;
 use App\Flight\Condor\LandscapeRegistry;
 use App\Flight\Fix;
 use App\Flight\Reader\FtrReader;
@@ -93,6 +94,7 @@ final class IgcReaderTest extends TestCase
         self::assertSame([182.83, 134.06, 0.2], [$condor->distance, $condor->speed, $condor->penaltyPoints]);
         self::assertSame(['StartSpeed' => 0.2], $condor->penalties);
         self::assertSame(170, TaskSettings::fromFpl((string) $condor->flightPlan, 'igc')->maxStartSpeed, 'the flight plan reads as a .fpl file');
+        self::assertNull(CondorReport::fromIgcLines(['LCONFlightInfoPlayerStatus=/'])?->status, 'later exports write "/" for the status');
     }
 
     public function testAnIgcWithoutReportHasNone(): void

@@ -175,4 +175,39 @@ The same program could save the flight plans of the site into Condor's folder, s
 | E3 | Airborne start: save a flight plan with `StartType` 2 and a given height, fly it | User | Where and how high the glider starts |
 | E4 | Copy the "Join" code of the club server from the server list while it runs, with its address | User | The encoding of `cndr3:` codes |
 | E5 | During a club race, watch `Logs\Spectate.json` (how often it changes, whether it needs spectator mode) | User | Whether a live race view is possible |
-| E6 | Export the IGC of a few races of the dev data (Condor > flight analysis > IGC export) | User | Check the reading of the `LCON` lines on several flights and penalties |
+| E6 | Export the IGC of a few races of the dev data (Condor > flight analysis > IGC export) | User | Done (2026-10-11), see below |
+
+## Findings of E6 (2026-10-11)
+
+Five races exported by the user (`var/condor-study/igc/`, own flights, CN RS2), read by
+`CondorReport` and compared with the analysis of the same track (`var/condor-study/compare.php`
+and `taskstart.php`):
+
+| Race | Condor's penalties | Our estimate | Our task time against Condor's |
+|---|---|---|---|
+| C3-c058 (regatta) | cloud flying 108.3, height recovery 200 | none: no task found | none |
+| C3-s109 (window) | airspace 40 | 0 (airspace not shown in the track) | 4,524 s / 4,527 s |
+| C3-c060 (regatta) | start speed 0.2 (170.1 km/h) | 0 (169.3 km/h) | 4,846 s / 4,909 s |
+| race 600724601 (window) | start speed 23.8 (161.9 km/h, limit 150) | 24 (162 km/h) | 3,798 s / 3,804 s |
+| C3-s117 (window) | height recovery 200 | start speed 3.8 (171.9 km/h) | 4,216 s / 4,219 s |
+
+- `LCONPenalties` lines name the rule of each penalty: the 200 points of flight 2 of the dev data
+  (C3-s117) are a height recovery, which the track cannot show.
+- The start speed measured on the 1 s series is within 1 to 2 km/h of Condor's: right on one race,
+  0.7 km/h under on another, 1.9 km/h over on a third (a penalty Condor did not count).
+- `TaskStart` is the opening of the gate in a regatta and the crossing of the start line in a window
+  (our crossing within 1 s). Our finish comes 2 to 5 s before Condor's: the finish is a line, which
+  the analysis takes as a cylinder.
+- In both regattas, `TaskStart` is 15 minutes after the gate opening the site computes from the
+  flight plan (`StartTime` + `RaceStartDelay`: 14:50 against 15:05 on C3-c060, 13:50 against 14:05
+  on C3-c058); on C3-s117 the start at 12:23 is after the end of the window the site computes
+  (12:05 to 12:20). Confirmed by the user: the server has a "stop join" time (`JoinTimeLimit` in
+  `Host.ini`, not in the flight plan; 10 minutes on the user's own host), after which the race delay
+  runs. It is in no file Condor writes (10 flight plans, the results and the IGC exports checked).
+  The club's dedicated server uses 15 minutes: `TaskSettings::JOIN_TIME`, the default of the
+  "Stop join" field of a session, which an IGC export of a regatta fills by itself.
+- C3-c058 has a height recovery: Condor moves the glider at once, `TrackReader` keeps the longest
+  continuous part and the start of the task is lost. The analysis should keep the parts of a
+  flight with a recovery.
+- `PlayerStatus` is `/` in these exports, `Finished` in the export of C3-c060 of 2026-06-21: not
+  reliable, read as unknown.

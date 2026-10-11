@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Session\SessionData;
+use App\Session\TaskSettings;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TimeType;
@@ -18,7 +20,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * A network session: date, flight plan (code typed with suggestions, sheet on eplaneur.fr),
- * dedicated group, Condor Club circuit, notes; once flown, the results file of the server.
+ * dedicated group, Condor Club circuit, stop join of the server, notes; once flown, the results file of the server.
  *
  * @extends AbstractType<SessionData>
  */
@@ -66,10 +68,16 @@ final class SessionType extends AbstractType
                 'help' => 'Si le circuit n’est pas sur Condor Club : le fichier .fpl de la session. Ses réglages sont repris de la même façon (ils remplacent ceux de Condor Club).',
                 'attr' => ['accept' => '.fpl'],
             ])
+            ->add('joinTime', IntegerType::class, [
+                'label' => 'Stop join (minutes)',
+                'required' => false,
+                'help' => \sprintf('Le temps que le serveur laisse pour rejoindre après l’heure du plan de vol ; le délai avant le départ court ensuite. Vide : %d min, le réglage du serveur du club. Repris tout seul de l’IGC exporté par Condor d’une régate.', TaskSettings::JOIN_TIME),
+                'attr' => ['min' => 0, 'max' => 120, 'placeholder' => (string) TaskSettings::JOIN_TIME],
+            ])
             ->add('notes', TextareaType::class, [
                 'label' => 'Informations pratiques',
                 'required' => false,
-                'help' => 'Serveur, durée du Stop Join, type de départ, salon Discord…',
+                'help' => 'Serveur, type de départ, salon Discord…',
                 'attr' => ['rows' => 4, 'maxlength' => 3000],
             ]);
         if ($options['with_results']) {

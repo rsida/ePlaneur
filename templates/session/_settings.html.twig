@@ -11,9 +11,10 @@
             <dl class="p-flight__facts">
                 {% if settings.date %}<div><dt>Date dans Condor</dt><dd>{{ settings.date|format_date('long', locale: 'fr') }}{% if settings.season %} <span class="u-note">({{ settings.season|lower }})</span>{% endif %}</dd></div>{% endif %}
                 {% if settings.startTime is not null %}<div><dt>Heure dans Condor</dt><dd>{{ settings.startTime|day_minutes }}</dd></div>{% endif %}
+                {% if settings.joinClosing is not null %}<div><dt>Fin des connexions <span class="u-note">(stop join)</span></dt><dd>{{ settings.joinClosing|day_minutes }} <span class="u-note">({{ settings.joinMinutes }} min après{{ settings.joinTime is null ? ', réglage habituel du serveur' : '' }})</span></dd></div>{% endif %}
                 <div><dt>Délai avant le départ</dt><dd>{{ settings.startDelay }} min</dd></div>
                 <div><dt>Départ</dt><dd>{{ settings.regatta ? 'Régate (tous à l’ouverture)' : 'Fenêtre de ' ~ settings.startWindow ~ ' min' }}</dd></div>
-                {% if settings.gateOpening is not null %}<div><dt>Ouverture de la porte</dt><dd>{{ settings.gateOpening|day_minutes }}</dd></div>{% endif %}
+                {% if settings.gateOpening is not null %}<div><dt>Ouverture de la porte</dt><dd>{{ settings.gateOpening|day_minutes }}{% if not settings.regatta %} → {{ (settings.gateOpening + settings.startWindow)|day_minutes }}{% endif %}</dd></div>{% endif %}
                 {% if settings.launch %}<div><dt>Démarrage</dt><dd>{{ settings.launch.label }}{% if settings.startHeight %} <span class="u-note">({{ settings.launch.value == 'aerotow' ? 'largage' : 'altitude' }} {{ settings.startHeight|number_format(0, ',', ' ') }} m)</span>{% endif %}</dd></div>{% endif %}
                 {% if settings.startMaxHeight %}<div><dt>Hauteur maximale au départ</dt><dd>{{ settings.startMaxHeight|number_format(0, ',', ' ') }} m</dd></div>{% endif %}
                 {% if settings.maxStartSpeed %}<div><dt>Vitesse sol maximale au départ</dt><dd>{{ settings.maxStartSpeed }} km/h</dd></div>{% endif %}

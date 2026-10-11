@@ -14,7 +14,8 @@ to (decision of 2026-10-09, see [ecosystem](project/ecosystem.md)).
   task name of the club's files gives the rest (`C3-c060_Laragne-Ventoux-Fayence_D2_AA3 ePlaneur`).
 - **`NetworkSession`**: flight plan, date, briefing time (metropolitan France; unknown for the
   history), dedicated group (`dedicatedTo`, empty: open to everyone), organiser, Condor Club circuit,
-  practical notes, and the results of the dedicated server: the name of its file
+  stop join (`joinTime`, minutes; empty: the 15 minutes of the club's server), practical notes, and
+  the results of the dedicated server: the name of its file
   (`DSRace-971793592-on-2026-10-08`), the race id read from it, and one row per pilot (rank, status,
   player, CN, registration, glider, distance, time, speed, penalty, score; `App\Session\SessionResults`).
 - **`Flight::$session`**: the session a track was flown in.
@@ -116,6 +117,16 @@ an aerotow, 2 an airborne start (1, a winch, is assumed); the minimum finish alt
 `TPWidth` of the finish, the maximum start height the `TPHeight` of the start; wind speeds are m/s
 in the `.fpl`, km/h on Condor Club; the cloud base is 125 m per degree between temperature and dew
 point; thermal strength 2 is "Faible", activity 3 "Faible" and 4 "Normale".
+The gate opens `RaceStartDelay` after the server stops letting pilots join, which is a setting of
+the server ("stop join", `JoinTimeLimit` of `Host.ini`), in no file Condor writes (flight plan,
+results, IGC export): 15 minutes on the club's dedicated server (`TaskSettings::JOIN_TIME`, found on
+the IGC exports of three races of 2026), so the gate of C3-c060 (14:45, delay 5 min) opens at 15:05.
+A session whose server joins differently gives its own in the "Stop join" field of the session form
+(and of the back-office), and the times follow. Without it, the first IGC exported by Condor of a
+regatta that joins the session sets it (`TaskSettings::joinTimeFrom()`: `TaskStart`, the gate opening
+in a regatta, minus the start time and the race delay); a start window does not tell it, as its task
+starts at the crossing of the line. The settings show the end of joining and the gate opening, with
+the end of the window when there is one.
 
 The session page shows them ("Le circuit dans Condor", "Météo", "Pénalités et options de
 réalisme"), and so does the page of each flight of the session, with the official result of the

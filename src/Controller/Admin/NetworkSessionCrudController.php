@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\NetworkSession;
 use App\Security\Permission;
+use App\Session\TaskSettings;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -87,6 +88,7 @@ final class NetworkSessionCrudController extends AbstractCrudController
         yield AssociationField::new('organiser', 'Organisateur')->autocomplete();
         yield IntegerField::new('participantCount', 'Pilotes')->onlyOnIndex()->setSortable(false);
         yield UrlField::new('condorClubUrl', 'Circuit Condor Club')->hideOnIndex();
+        yield IntegerField::new('joinTime', 'Stop join (minutes)')->hideOnIndex()->setHelp(\sprintf('Vide : %d min, le réglage du serveur du club.', TaskSettings::JOIN_TIME));
         yield TextareaField::new('notes', 'Informations pratiques')->hideOnIndex();
         yield TextField::new('resultsFile', 'Fichier de résultats')->hideOnForm()->hideOnIndex();
     }

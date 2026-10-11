@@ -468,12 +468,12 @@
                                 <span>{{ [official.time is not null ? official.time|flight_time : null, official.speed ? official.speed|number_format(1, ',', ' ') ~ ' km/h' : null, official.score is not null ? official.score|number_format(1, ',', ' ') ~ ' pts' : null]|filter(v => v)|join(' · ') }}{% if official.penalty %} · <span class="p-flight__alert">pénalités {{ official.penalty|number_format(0, ',', ' ') }} pts</span>{% endif %}</span>
                                 {% if settings and settings.regatta %}<span class="u-note">Départ en régate : le temps officiel court depuis l’ouverture de la porte, pas depuis le passage de la ligne.</span>{% endif %}
                             </p>
-                        {% elseif condor and condor.status %}
+                        {% elseif condor and (condor.status or condor.taskTime is not null) %}
                             {# What Condor computed, read in the IGC it exported (App\Flight\Condor\CondorReport) #}
                             <p class="p-flight__official">
-                                <strong>Résultat officiel de Condor : {{ condor.status|session_status }}</strong>
+                                <strong>Résultat officiel de Condor{% if condor.status %} : {{ condor.status|session_status }}{% endif %}</strong>
                                 <span>{{ [condor.taskTime is not null ? condor.taskTime|flight_time : null, condor.speed ? condor.speed|number_format(2, ',', ' ') ~ ' km/h' : null, condor.distance ? condor.distance|number_format(2, ',', ' ') ~ ' km' : null]|filter(v => v)|join(' · ') }}{% if condor.penaltyPoints %} · <span class="p-flight__alert">pénalités {{ condor.penaltyPoints|number_format(condor.penaltyPoints == condor.penaltyPoints|round ? 0 : 2, ',', ' ') }} pts</span>{% endif %}</span>
-                                <span class="u-note">Calculé par Condor et lu dans l’IGC qu’il a exporté.{% if condor.taskStart is not null and condor.taskTime is not null %} Le temps court depuis l’ouverture de la porte, à {{ (condor.taskStart // 60)|day_minutes }}.{% endif %}</span>
+                                <span class="u-note">Calculé par Condor et lu dans l’IGC qu’il a exporté.{% if condor.taskStart is not null and condor.taskTime is not null %} Le temps court depuis {{ settings and settings.regatta ? 'l’ouverture de la porte' : 'le passage de la ligne de départ' }}, à {{ (condor.taskStart // 60)|day_minutes }}.{% endif %}</span>
                             </p>
                         {% endif %}
                         <dl class="p-flight__facts">

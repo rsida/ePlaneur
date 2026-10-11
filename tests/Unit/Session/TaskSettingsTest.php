@@ -15,6 +15,15 @@ final class TaskSettingsTest extends TestCase
 {
     private const string FIXTURES = __DIR__.'/../../fixtures/condor/';
 
+    public function testTheStopJoinOfARegattaComesFromTheStartOfItsTask(): void
+    {
+        // C3-c060: 14:45, delay 5 min, regatta; Condor's IGC export: TaskStart 15:05:00
+        $settings = TaskSettings::fromArray(['source' => 'igc', 'startTime' => 14 * 60 + 45, 'startWindow' => 0, 'startDelay' => 5]);
+
+        self::assertSame(15, $settings->joinTimeFrom(15 * 3600 + 5 * 60));
+        self::assertSame(15 * 60 + 5, $settings->withJoinTime(15)->gateOpening());
+    }
+
     public function testTheFlightPlanOfARaceIsRead(): void
     {
         // C3-s117 of 2026-03-05; Condor Club: 15 August 2025, 12:00, delay 5 min, window 15 min,
@@ -27,7 +36,10 @@ final class TaskSettingsTest extends TestCase
         self::assertSame(15, $settings->startWindow);
         self::assertSame(5, $settings->startDelay);
         self::assertFalse($settings->isRegatta());
-        self::assertSame(12 * 60 + 5, $settings->gateOpening());
+        self::assertSame(12 * 60 + 15, $settings->joinClosing(), 'the stop join of the club server');
+        self::assertSame(12 * 60 + 20, $settings->gateOpening(), 'start at 12:23:06 in the IGC export of this race');
+        self::assertSame(12 * 60 + 15, $settings->withJoinTime(10)->gateOpening(), 'the stop join of the session');
+        self::assertNull($settings->joinTimeFrom(12 * 3600 + 23 * 60 + 6), 'a start window tells no stop join');
         self::assertSame(Launch::Aerotow, $settings->launch);
         self::assertSame(1500, $settings->startHeight);
         self::assertSame(1600, $settings->startMaxHeight);

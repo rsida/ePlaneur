@@ -35,6 +35,15 @@ final readonly class TaskSettings
         'LowFinish' => 'Arrivée trop basse (par mètre)',
     ];
 
+    /**
+     * Minutes the club's dedicated server lets pilots join after the start time ("stop join",
+     * JoinTimeLimit of the server, in no file Condor writes: not the flight plan, the results or the
+     * IGC export): the race delay counts from then. Found on the IGC exports of three races of 2026
+     * (C3-c058, C3-c060, C3-s117): the task started 15 + 5 minutes after the start time of the flight
+     * plan. The default when the session does not give its own ($joinTime).
+     */
+    public const int JOIN_TIME = 15;
+
     /** Realism options that are allowed or not, with their French label. */
     public const array OPTIONS = [
         'Bugwipers' => 'Essuie-insectes',
@@ -73,6 +82,7 @@ final readonly class TaskSettings
         public ?float $thermalHelpersRange,
         public ?float $turnpointHelpersRange,
         public array $weather,
+        public ?int $joinTime = null,
     ) {
     }
 
@@ -215,10 +225,46 @@ final readonly class TaskSettings
         return 0 === $this->startWindow;
     }
 
-    /** Minutes after midnight when the gate opens (Condor time). */
+    /** The same settings with the stop join of the session (minutes, null for the default). */
+    public function withJoinTime(?int $joinTime): self
+    {
+        $values = get_object_vars($this);
+        $values['joinTime'] = $joinTime;
+
+        return new self(...$values);
+    }
+
+    /** Minutes the server lets pilots join: the session's, or the default of the club's server. */
+    public function joinMinutes(): int
+    {
+        return $this->joinTime ?? self::JOIN_TIME;
+    }
+
+    /** Minutes after midnight when the server stops letting pilots join (Condor time). */
+    public function joinClosing(): ?int
+    {
+        return null !== $this->startTime ? $this->startTime + $this->joinMinutes() : null;
+    }
+
+    /** Minutes after midnight when the gate opens (Condor time): the race delay after the join closes. */
     public function gateOpening(): ?int
     {
-        return null !== $this->startTime ? $this->startTime + $this->startDelay : null;
+        return null !== $this->startTime ? $this->startTime + $this->joinMinutes() + $this->startDelay : null;
+    }
+
+    /**
+     * The stop join a regatta was flown with, from the clock time its task started (TaskStart of
+     * the IGC exported by Condor, seconds of the day): null for a start window, where the task starts
+     * at the crossing of the line.
+     */
+    public function joinTimeFrom(int $taskStart): ?int
+    {
+        if (!$this->isRegatta() || null === $this->startTime || 0 !== $taskStart % 60) {
+            return null;
+        }
+        $minutes = intdiv($taskStart, 60) - $this->startTime - $this->startDelay;
+
+        return $minutes >= 0 && $minutes <= 120 ? $minutes : null;
     }
 
     /** French label of a thermal strength of Condor (2 is "Faible" on Condor Club). */

@@ -37,6 +37,9 @@ final class SessionData
     #[Assert\Length(max: 255)]
     public ?string $condorClubUrl = null;
 
+    #[Assert\Range(min: 0, max: 120, notInRangeMessage: 'Indiquez une durée entre {{ min }} et {{ max }} minutes.')]
+    public ?int $joinTime = null;
+
     #[Assert\Length(max: 3000)]
     public ?string $notes = null;
 
@@ -55,6 +58,7 @@ final class SessionData
         $data->sheetUrl = $session->getFlightPlan()->getSheetUrl();
         $data->dedicatedTo = $session->getDedicatedTo();
         $data->condorClubUrl = $session->getCondorClubUrl();
+        $data->joinTime = $session->getJoinTime();
         $data->notes = $session->getNotes();
 
         return $data;

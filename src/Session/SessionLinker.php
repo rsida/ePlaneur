@@ -17,7 +17,9 @@ use App\Repository\NetworkSessionRepository;
  * results file of the server is named after it ("DSRace-<race id>-on-<date>"): a session with
  * results takes the tracks of its race and only them. A session without results yet (just flown)
  * takes the tracks on its flight plan uploaded within three days; they are sorted out when its
- * results arrive. IGC files have no race id: they join by flight plan and date.
+ * results arrive. IGC files join by race id when Condor exported them (CondorReport), by flight
+ * plan and date otherwise; an IGC exported by Condor of a regatta also gives the session its stop
+ * join (TaskSettings::joinTimeFrom()).
  */
 final readonly class SessionLinker
 {
@@ -50,6 +52,12 @@ final readonly class SessionLinker
             $session = $this->sessions->findOpenFor($code, $flight->getDate());
         }
         $flight->setSession($session);
+        // The stop join of a regatta, which only the IGC exported by Condor tells
+        $taskStart = $flight->getAnalysis()['condor']['taskStart'] ?? null;
+        $settings = $session?->getTaskSettings();
+        if (null !== $session && null === $session->getJoinTime() && null !== $settings && \is_int($taskStart)) {
+            $session->setJoinTime($settings->joinTimeFrom($taskStart));
+        }
 
         return $session;
     }

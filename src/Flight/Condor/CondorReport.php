@@ -10,17 +10,18 @@ namespace App\Flight\Condor;
  * official result (LCONFlightInfo) and the points of each penalty (LCONPenalties, only those that
  * cost points). These are the figures Condor Club shows, exact where the track only gives estimates.
  *
- * Read on the C3-c060 export of 2026-06-21: the times are clock times of the task, "hh:mm:ss"; the
- * task time runs from the opening of the start gate (TaskStart), not from the crossing of the line;
- * distances and speeds carry their unit ("182.83km", "134.06km/h").
+ * Read on six exports (2026-06-21 and 2026-10-11): the times are clock times of the task,
+ * "hh:mm:ss"; the task time runs from TaskStart, the opening of the start gate in a regatta (C3-c060,
+ * C3-c058) and the crossing of the start line in a start window (within 1 s of the track); distances and speeds carry their unit ("182.83km", "134.06km/h"). The status is not reliable:
+ * "Finished" in that export, "/" in exports of the same flights made on 2026-10-11 (read as null).
  */
 final readonly class CondorReport
 {
     /**
      * @param int|null             $startTime  seconds of the day, clock time of the task, when the flight started
-     * @param int|null             $taskStart  seconds of the day when the start gate opened
+     * @param int|null             $taskStart  seconds of the day when the task time starts (gate opening in a regatta, crossing of the line otherwise)
      * @param int|null             $flightTime seconds
-     * @param int|null             $taskTime   seconds from the opening of the start gate to the finish
+     * @param int|null             $taskTime   seconds from taskStart to the finish
      * @param string|null          $status     Condor's status of the pilot ("Finished"...)
      * @param float|null           $distance   kilometres flown on the task
      * @param float|null           $speed      average speed on the task, km/h
@@ -71,7 +72,7 @@ final readonly class CondorReport
             taskStart: self::time($info['TaskStart'] ?? null),
             flightTime: self::time($info['FlightTime'] ?? null),
             taskTime: self::time($info['TaskTime'] ?? null),
-            status: ($info['PlayerStatus'] ?? '') ?: null,
+            status: 1 === preg_match('/\p{L}/u', $info['PlayerStatus'] ?? '') ? $info['PlayerStatus'] : null,
             distance: self::number($info['DistanceFlown'] ?? null),
             speed: self::number($info['AverageSpeed'] ?? null),
             penaltyPoints: self::number($info['PenaltyPoints'] ?? null),

@@ -107,6 +107,7 @@ final class SessionTest extends WebTestCase
             'session[flightPlan]' => 'C3-s118 · StEynard-GdeSure-Colombier-Versoud',
             'session[sheetUrl]' => '',
             'session[condorClubUrl]' => 'https://www.condor.club/showcircuit/0/12345/',
+            'session[joinTime]' => '10',
             'session[notes]' => 'Serveur AuvRAlpes, Stop Join 10 min.',
         ]));
         self::assertResponseRedirects();
@@ -119,6 +120,7 @@ final class SessionTest extends WebTestCase
         $plan = $this->entityManager->getRepository(FlightPlan::class)->findOneBy(['code' => 'C3-s118']);
         self::assertSame('https://eplaneur.fr/afficher-fpl/?mode=simple&fpl=C3-s118', $plan?->getSheetUrl(), 'Recorded for the next sessions');
         self::assertSame('StEynard-GdeSure-Colombier-Versoud', $plan->getTitle());
+        self::assertSame(10, $this->entityManager->getRepository(NetworkSession::class)->findOneBy(['flightPlan' => $plan])?->getJoinTime(), 'the stop join of the session');
 
         $this->client->request('GET', '/');
         $this->client->request('GET', '/mon-compte');

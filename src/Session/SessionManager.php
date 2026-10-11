@@ -49,6 +49,7 @@ final readonly class SessionManager
             ->setStartTime($data->startTime)
             ->setDedicatedTo($data->dedicatedTo)
             ->setCondorClubUrl($data->condorClubUrl)
+            ->setJoinTime($data->joinTime)
             ->setNotes($data->notes);
 
         if (null !== $data->flightPlanFile) {

@@ -59,6 +59,14 @@ class NetworkSession
     #[Assert\Length(max: 3000)]
     private ?string $notes = null;
 
+    /**
+     * Minutes the server let pilots join after the start time ("stop join", a setting of the server,
+     * in no file Condor writes); null for the default of the club's server (TaskSettings::JOIN_TIME).
+     */
+    #[ORM\Column(type: Types::SMALLINT, nullable: true)]
+    #[Assert\Range(min: 0, max: 120)]
+    private ?int $joinTime = null;
+
     /** Race id of the dedicated server, also in the .ftr of every pilot of the race. */
     #[ORM\Column(type: Types::BIGINT, nullable: true)]
     private ?int $raceId = null;
@@ -195,6 +203,18 @@ class NetworkSession
         return $this;
     }
 
+    public function getJoinTime(): ?int
+    {
+        return $this->joinTime;
+    }
+
+    public function setJoinTime(?int $joinTime): static
+    {
+        $this->joinTime = $joinTime;
+
+        return $this;
+    }
+
     public function getRaceId(): ?int
     {
         return $this->raceId;
@@ -229,7 +249,7 @@ class NetworkSession
 
     public function getTaskSettings(): ?TaskSettings
     {
-        return null !== $this->taskSettings ? TaskSettings::fromArray($this->taskSettings) : null;
+        return null !== $this->taskSettings ? TaskSettings::fromArray($this->taskSettings)->withJoinTime($this->joinTime) : null;
     }
 
     public function setTaskSettings(?TaskSettings $settings): static
