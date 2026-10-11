@@ -71,5 +71,5 @@
             </dl>
         </div>
     </details>
-    <p class="u-note">Réglages lus {{ settings.source == 'fpl' ? 'dans le plan de vol (.fpl) de la session' : 'sur Condor Club' }}.</p>
+    <p class="u-note">Réglages lus {{ {fpl: 'dans le plan de vol (.fpl) de la session', igc: 'dans le plan de vol que Condor joint à l’IGC du vol'}[settings.source] ?? 'sur Condor Club' }}.</p>
 </div>

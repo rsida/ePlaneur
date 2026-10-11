@@ -38,6 +38,22 @@ final class PenaltiesTest extends TestCase
         self::assertNull($penalties['other'], 'no official total without results');
     }
 
+    public function testThePointsCondorCountedAreExact(): void
+    {
+        // IGC exported by Condor: 0.2 point for the start speed, 200 for cloud flying
+        $analysis = $this->analysis(completed: true) + ['condor' => ['penaltyPoints' => 200.2, 'penalties' => ['StartSpeed' => 0.2, 'CloudFlying' => 200.0]]];
+        $penalties = Penalties::of($analysis, $this->settings(), 200.0);
+
+        self::assertTrue($penalties['exact']);
+        self::assertSame(200.2, $penalties['official'], 'the total of Condor, not the rounded one of the results');
+        $rules = array_column($penalties['rules'], null, 'key');
+        self::assertSame(0.2, $rules['StartSpeed']['official']);
+        self::assertSame(170.1, $rules['StartSpeed']['measured'], 'the limit plus the points over the rate');
+        self::assertSame(200.0, $rules['CloudFlying']['official']);
+        self::assertSame(0.0, $rules['HighStart']['official'], 'no line: no point lost');
+        self::assertSame(1520.0, $rules['HighStart']['measured'], 'the measure of the track is kept');
+    }
+
     private function settings(): TaskSettings
     {
         return TaskSettings::fromArray([

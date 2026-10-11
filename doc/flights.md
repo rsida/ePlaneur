@@ -70,6 +70,15 @@ landing is left out) and the zones in `LSEEYOU OZ=` lines (R1 radius, A1 half an
 give the fixes (UTC time, GNSS altitude, pressure altitude when it is missing), H records the
 pilot, glider, competition id and date. Times are exact.
 
+Condor's export also has `LCON` lines (`App\Flight\Condor\CondorReport`, kept in the analysis as
+`condor`): the whole flight plan (`LCONFPL` + each line of the `.fpl`), the official result
+(`LCONFlightInfo…`: race id, start time and gate opening as clock times, flight and task times,
+status, distance, speed, total penalty) and the points of each penalty (`LCONPenalties<rule>`, only
+the rules that cost points). The race id joins the IGC to its session like a `.ftr`; the landscape,
+water ballast and flight plan name come from the flight plan. The flight page shows Condor's result
+when the session has no results, the exact penalties, and the settings of the task from that flight
+plan when the flight has no session. See [condor-integration](condor-integration.md).
+
 ### Discontinuities
 
 Condor moves the glider at once in some cases: 500 m higher after a crash, and at the very record

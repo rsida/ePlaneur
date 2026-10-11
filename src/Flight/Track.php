@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace App\Flight;
 
+use App\Flight\Condor\CondorReport;
+
 /**
  * A flight track as read from its file (TrackReader), before analysis.
  */
 final readonly class Track
 {
     /**
-     * @param list<Fix>       $fixes      in time order
-     * @param list<Turnpoint> $turnpoints the task, empty when the file has none
-     * @param bool            $exactTimes false when the times are estimated (Condor .ftr files)
-     * @param int|null        $water      litres of water ballast at take-off (Condor .ftr files)
+     * @param list<Fix>         $fixes      in time order
+     * @param list<Turnpoint>   $turnpoints the task, empty when the file has none
+     * @param bool              $exactTimes false when the times are estimated (Condor .ftr files)
+     * @param int|null          $water      litres of water ballast at take-off (Condor files)
+     * @param CondorReport|null $report     what Condor computed for the flight (IGC exported by Condor)
      */
     public function __construct(
         public string $format,
@@ -29,6 +32,7 @@ final readonly class Track
         public bool $exactTimes,
         public ?\DateTimeImmutable $date = null,
         public ?int $water = null,
+        public ?CondorReport $report = null,
     ) {
     }
 
@@ -37,6 +41,6 @@ final readonly class Track
      */
     public function withFixes(array $fixes): self
     {
-        return new self($this->format, $this->simulator, $this->pilot, $this->competitionId, $this->glider, $this->landscape, $this->raceId, $this->flightPlan, $this->turnpoints, $fixes, $this->exactTimes, $this->date, $this->water);
+        return new self($this->format, $this->simulator, $this->pilot, $this->competitionId, $this->glider, $this->landscape, $this->raceId, $this->flightPlan, $this->turnpoints, $fixes, $this->exactTimes, $this->date, $this->water, $this->report);
     }
 }

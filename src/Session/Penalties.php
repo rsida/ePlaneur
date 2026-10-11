@@ -13,6 +13,10 @@ namespace App\Session;
  * not give the airspeed, and the airspeed of the records is not readable), and counts what the track
  * does not show (cloud flying, thermal helpers, recoveries, airspace, windows). The official total
  * of the results, when known, comes with the gap between the two.
+ *
+ * A track exported in IGC by Condor carries the points Condor counted for each rule (CondorReport):
+ * the penalties are then exact, and so is the measure of a rule that cost points (its limit plus the
+ * points over the rate: 0.2 point at 2 points per km/h above 170 km/h is 170.1 km/h).
  */
 final class Penalties
 {
@@ -22,13 +26,18 @@ final class Penalties
     /**
      * @param array<string, mixed> $analysis the analysis of the flight (FlightAnalysis::toArray())
      *
-     * @return array{rules: list<array{key: string, label: string, points: int, limit: ?int, measured: ?float, lost: ?float, at: ?int}>, estimated: float, official: ?float, other: ?float}
+     * @return array{rules: list<array{key: string, label: string, points: int, limit: ?int, measured: ?float, lost: ?float, official: ?float, at: ?int}>, estimated: float, official: ?float, other: ?float, exact: bool}
      */
     public static function of(array $analysis, TaskSettings $settings, ?float $official = null): array
     {
         $points = $analysis['task']['turnpoints'] ?? [];
         $start = $points[1] ?? null;
         $finish = \count($points) > 2 && ($analysis['task']['completed'] ?? false) ? end($points) : null;
+        // Points per rule computed by Condor (IGC exported by Condor)
+        $condor = $analysis['condor'] ?? null;
+        $exact = \is_array($condor);
+        // Condor's total is exact; the results file of the server rounds it (0 for 0.2 on C3-c060)
+        $official = $exact ? $condor['penaltyPoints'] ?? $official : $official;
 
         $rules = [];
         $estimated = 0.0;
@@ -45,7 +54,11 @@ final class Penalties
             };
             $lost = \in_array($key, self::MEASURED, true) && null !== $excess ? round($excess * $rate, 2) : null;
             $estimated += $lost ?? 0.0;
-            $rules[] = ['key' => $key, 'label' => $label, 'points' => $rate, 'limit' => $limit, 'measured' => $measured, 'lost' => $lost, 'at' => $lost > 0 ? $at : null];
+            $counted = $exact ? (float) ($condor['penalties'][$key] ?? 0.0) : null;
+            if ($counted > 0 && null !== $limit && \in_array($key, self::MEASURED, true)) {
+                $measured = round('LowFinish' === $key ? $limit - $counted / $rate : $limit + $counted / $rate, 1);
+            }
+            $rules[] = ['key' => $key, 'label' => $label, 'points' => $rate, 'limit' => $limit, 'measured' => $measured, 'lost' => $lost, 'official' => $counted, 'at' => ($lost ?? 0) > 0 || ($counted ?? 0) > 0 ? $at : null];
         }
 
         return [
@@ -54,6 +67,7 @@ final class Penalties
             'official' => $official,
             // What the server counted beyond the estimate: rules the track does not show
             'other' => null !== $official ? round($official - $estimated, 2) : null,
+            'exact' => $exact,
         ];
     }
 

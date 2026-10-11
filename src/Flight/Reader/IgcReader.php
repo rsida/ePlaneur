@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Flight\Reader;
 
+use App\Flight\Condor\CondorReport;
 use App\Flight\Fix;
 use App\Flight\Track;
 use App\Flight\Turnpoint;
@@ -14,6 +15,9 @@ use App\Flight\Turnpoint;
  * first one declares it, with its name: the flight plan; then take-off, start, turnpoints, finish
  * and landing), LSEEYOU lines the zones of the task points (500 m cylinders otherwise), H records the
  * pilot, glider and date. GNSS altitude is used, pressure altitude when it is missing.
+ *
+ * Condor's export also has LCON lines (CondorReport): its flight plan, from which come the race id,
+ * the landscape, the water ballast and the name of the flight plan, and the official result.
  */
 final readonly class IgcReader
 {
@@ -34,8 +38,9 @@ final readonly class IgcReader
         $firstTime = null;
         $previousTime = null;
         $dayOffset = 0;
+        $lines = preg_split('/\R/', $content) ?: [];
 
-        foreach (preg_split('/\R/', $content) ?: [] as $line) {
+        foreach ($lines as $line) {
             if (1 === preg_match('/^H[FOP]([A-Z]{3})[^:]*:?(.*)$/', $line, $match)) {
                 $headers[$match[1]] ??= trim($match[2]);
             } elseif (1 === preg_match('/^B(\d{2})(\d{2})(\d{2})(\d{7}[NS])(\d{8}[EW])([AV])(\d{5}|-\d{4})(\d{5}|-\d{4})/', $line, $match)) {
@@ -87,6 +92,11 @@ final readonly class IgcReader
             }
         }
 
+        $report = CondorReport::fromIgcLines($lines);
+        $plan = null !== $report?->flightPlan ? @parse_ini_string($report->flightPlan, true, \INI_SCANNER_RAW) : false;
+        $plan = \is_array($plan) ? $plan : [];
+        $taskName ??= ($plan['Description']['Text'] ?? '') ?: null;
+
         $type = $headers['FTY'] ?? '';
         $date = null;
         if (1 === preg_match('/(\d{2})(\d{2})(\d{2})/', $headers['DTE'] ?? '', $match)) {
@@ -99,13 +109,15 @@ final readonly class IgcReader
             pilot: $headers['PLT'] ?? '',
             competitionId: ($headers['CID'] ?? '') ?: null,
             glider: ($headers['GTY'] ?? '') ?: null,
-            landscape: null,
-            raceId: null,
+            landscape: ($plan['Task']['Landscape'] ?? '') ?: null,
+            raceId: $report?->raceId,
             flightPlan: null !== $taskName ? mb_substr($taskName, 0, 160) : null,
             turnpoints: $turnpoints,
             fixes: $fixes,
             exactTimes: true,
             date: $date,
+            water: isset($plan['Plane']['Water']) ? (int) $plan['Plane']['Water'] : null,
+            report: $report,
         );
     }
 

@@ -10,6 +10,7 @@ use App\Flight\Reader\FtrReader;
 use App\Flight\Reader\IgcReader;
 use App\Flight\Reader\InvalidTrackException;
 use App\Flight\Reader\TrackReader;
+use App\Session\TaskSettings;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -57,6 +58,46 @@ final class IgcReaderTest extends TestCase
         self::assertSame(['NewTP', 'Laragne Chp', 'Ventoux', 'Le Laser', 'Fayence'], array_map(static fn ($point): string => $point->name, $track->turnpoints));
         self::assertSame([500.0, 2500.0, 500.0, 500.0, 250.0], array_map(static fn ($point): float => $point->radius, $track->turnpoints));
         self::assertSame([360.0, 180.0, 360.0, 360.0, 180.0], array_map(static fn ($point): float => $point->angle, $track->turnpoints));
+    }
+
+    public function testTheReportOfCondorIsRead(): void
+    {
+        // As exported by Condor for C3-c060 (flight plan cut down to the keys read)
+        $report = implode("\r\n", [
+            'C210626145320210626000004',
+            'LCONFPL[Task]', 'LCONFPLLandscape=AA3', 'LCONFPLCount=2',
+            'LCONFPL[Plane]', 'LCONFPLWater=146',
+            'LCONFPL[GameOptions]', 'LCONFPLMaxStartGroundSpeed=170', 'LCONFPLPenaltyStartSpeed=2',
+            'LCONFPL[Description]', 'LCONFPLText=C3-c060_Laragne-Ventoux-Fayence_D2_AA3 ePlaneur',
+            'LCONFlightInfoRaceID=1930306707',
+            'LCONFlightInfoStartTime=14:45:00',
+            'LCONFlightInfoFlightTime=01:46:51',
+            'LCONFlightInfoTaskStart=15:05:00',
+            'LCONFlightInfoTaskTime=01:21:49',
+            'LCONFlightInfoPlayerStatus=Finished',
+            'LCONFlightInfoDistanceFlown=182.83km',
+            'LCONFlightInfoAverageSpeed=134.06km/h',
+            'LCONFlightInfoPenaltyPoints=0.2',
+            'LCONPenaltiesStartSpeed=0.2',
+        ]);
+        $track = (new IgcReader())->read(FlightSamples::igc(\array_slice(FlightSamples::glideThermalGlide(), 0, 5), extraHeaders: $report));
+
+        self::assertSame(1930306707, $track->raceId, 'the race id joins the track to its session');
+        self::assertSame('AA3', $track->landscape);
+        self::assertSame(146, $track->water);
+        self::assertSame('C3-c060_Laragne-Ventoux-Fayence_D2_AA3 ePlaneur', $track->flightPlan, 'the description of the flight plan');
+        $condor = $track->report;
+        self::assertNotNull($condor);
+        self::assertSame([53100, 54300, 6411, 4909], [$condor->startTime, $condor->taskStart, $condor->flightTime, $condor->taskTime]);
+        self::assertTrue($condor->isFinished());
+        self::assertSame([182.83, 134.06, 0.2], [$condor->distance, $condor->speed, $condor->penaltyPoints]);
+        self::assertSame(['StartSpeed' => 0.2], $condor->penalties);
+        self::assertSame(170, TaskSettings::fromFpl((string) $condor->flightPlan, 'igc')->maxStartSpeed, 'the flight plan reads as a .fpl file');
+    }
+
+    public function testAnIgcWithoutReportHasNone(): void
+    {
+        self::assertNull((new IgcReader())->read(FlightSamples::igc(\array_slice(FlightSamples::glideThermalGlide(), 0, 5)))->report);
     }
 
     public function testTwoFixesInTheSameSecondAreKept(): void

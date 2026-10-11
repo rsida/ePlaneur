@@ -129,9 +129,16 @@ rules of the task (cloud flying, thermal helpers, recoveries, windows, zones) in
 track does not show them. The estimate comes with the official total of the results and the gap
 between the two, the server's total being the one that counts. Measured on the races of the dev
 data (2026-10-11), the two often differ: the server penalised a start at 185 km/h of ground speed
-63 points instead of 29 and did not penalise one at 173 km/h, so it measures the start speed
-another way (airspeed, which the encrypted part of the records may hold); 200 points on another
-flight came from a rule the track does not show.
+63 points instead of 29 and did not penalise one at 173 km/h; 200 points on another flight came
+from a rule the track does not show. The rule is on ground speed (`MaxStartGroundSpeed` in the
+`.fpl`), but Condor measures it at the exact moment of the crossing, which the 1 s series and the
+0.03 s precision of the `.ftr` times cannot match.
+
+When the flight is an IGC exported by Condor, its `LCON` lines give the points of each rule
+(`CondorReport`): the table shows them instead of the estimate ("Total calculé par Condor"), with
+every rule that cost points, and the measure of a rule that cost points follows exactly (limit plus
+points over the rate: 0.2 point at 2 points per km/h above 170 km/h is 170.1 km/h on C3-c060).
+Condor's total is preferred to the one of the results file, which rounds it (0 for 0.2).
 
 ## History from eplaneur.fr
 

@@ -77,11 +77,11 @@ final readonly class TaskSettings
     }
 
     /**
-     * A Condor flight plan (.fpl).
+     * A Condor flight plan (.fpl); source "igc" when it comes from the IGC export of a flight.
      *
      * @throws \InvalidArgumentException when the text is not a flight plan
      */
-    public static function fromFpl(string $content): self
+    public static function fromFpl(string $content, string $source = 'fpl'): self
     {
         $content = (string) preg_replace('/^\xEF\xBB\xBF/', '', $content);
         $ini = @parse_ini_string($content, true, \INI_SCANNER_RAW);
@@ -109,7 +109,7 @@ final readonly class TaskSettings
             );
         }
 
-        return self::build('fpl', (string) ($ini['Description']['Text'] ?? '') ?: null, $options, (int) ($task['TPWidth'.$last] ?? 0), (int) ($task['TPHeight1'] ?? 0), $zones);
+        return self::build($source, (string) ($ini['Description']['Text'] ?? '') ?: null, $options, (int) ($task['TPWidth'.$last] ?? 0), (int) ($task['TPHeight1'] ?? 0), $zones);
     }
 
     /**

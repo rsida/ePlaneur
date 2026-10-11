@@ -30,6 +30,7 @@ use App\Repository\GliderRepository;
 use App\Repository\StepProgressRepository;
 use App\Security\Voter\FlightVoter;
 use App\Session\Penalties;
+use App\Session\TaskSettings;
 use App\Training\TrainingPath;
 use App\Training\TrainingStep;
 use Doctrine\ORM\EntityManagerInterface;
@@ -255,8 +256,16 @@ final class FlightController extends AbstractController
             $race = $ranked->ranks($flight) + ['winner' => $ranked->flights[0]];
         }
 
-        // Penalties against the settings of the task, with the official total of the results
+        // Penalties against the settings of the task, with the official total of the results; without
+        // a session, the settings of the flight plan Condor writes in its IGC export
         $settings = $session?->getTaskSettings();
+        $condor = $flight->getAnalysis()['condor'] ?? null;
+        if (null === $settings && null !== ($condor['flightPlan'] ?? null)) {
+            try {
+                $settings = TaskSettings::fromFpl($condor['flightPlan'], 'igc');
+            } catch (\InvalidArgumentException) {
+            }
+        }
         $official = null;
         foreach ($session?->getResults() ?? [] as $row) {
             if (null !== $row['competitionId'] && null !== $flight->getCompetitionId() && 0 === strcasecmp($row['competitionId'], $flight->getCompetitionId())) {
@@ -266,7 +275,7 @@ final class FlightController extends AbstractController
         }
         $penalties = null !== $settings ? Penalties::of($flight->getAnalysis(), $settings, $official['penalty'] ?? null) : null;
 
-        $advice = $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings(), $performance, SessionLift::around($flight->getAnalysis(), $flights->findSameAir($flight)));
+        $advice = $advisor->advise($flight->getAnalysis(), $settings, $performance, SessionLift::around($flight->getAnalysis(), $flights->findSameAir($flight)));
 
         return $this->render('flight/show.html.twig', [
             'flight' => $flight,
@@ -276,6 +285,8 @@ final class FlightController extends AbstractController
             'highlights' => FlightAdvisor::highlights($advice),
             'debrief' => FlightDebrief::chapters($flight->getAnalysis(), $advice),
             'penalties' => $penalties,
+            'settings' => $settings,
+            'condor' => $condor,
             'performance' => $performance,
             'comment_form' => $form?->createView(),
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));

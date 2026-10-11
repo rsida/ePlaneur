@@ -20,7 +20,7 @@ exact figures like Condor Club does. Work in progress: the experiments still to 
 | Source | Where | What | Status |
 |---|---|---|---|
 | Flight track `.ftr` | `Documents\Condor3\FlightTracks` | Position, altitude, attitude about every 0.1 s; the rest encrypted | Read since 7a ([flights](flights.md)) |
-| IGC export | Flight analysis > "IGC export", into `FlightTracks\IGC` | 1 s fixes at the time of day of the flight, the whole flight plan (`LCONFPL` lines), the official figures of the flight (`LCONFlightInfo…`), each penalty by cause (`LCONPenalties…`), a security record (G) checked by `VALI_CON.exe` | Fixes and task read since 7a; the `LCON` lines are not read yet |
+| IGC export | Flight analysis > "IGC export", into `FlightTracks\IGC` | 1 s fixes at the time of day of the flight, the whole flight plan (`LCONFPL` lines), the official figures of the flight (`LCONFlightInfo…`), each penalty by cause (`LCONPenalties…`), a security record (G) checked by `VALI_CON.exe` | Fixes and task read since 7a; the `LCON` lines since 7l1 (`CondorReport`) |
 | Race results | `Documents\Condor3\RaceResults`, written after each network race | `Race <id> on <date>.csv` (rank, status, CN, distance, time, speed, penalty, score) and the `.fpl` of the race | Read when uploaded for a session (7b, 9f) |
 | Live race state | `Condor3\Logs\Spectate.json` | For every pilot of the race: CN, name, country, glider, position, altitude, speed, heading, vario, status, rank, score, penalty, average speed, distance, time | Not used |
 | UDP output | `Condor3\Settings\UDP.ini` (off by default) | A packet every `SendIntervalMs` on 127.0.0.1:55278, see below | Not used |
@@ -114,7 +114,7 @@ plan), `#` for a number:
 
 ## What it allows
 
-### 1. Exact official figures (easy, no install)
+### 1. Exact official figures (easy, no install) — done (7l1)
 
 Read the `LCON` lines of IGC files exported by Condor: official status, task time, distance and
 speed, total penalty and each penalty by cause, start time of day, settings of the task. Members

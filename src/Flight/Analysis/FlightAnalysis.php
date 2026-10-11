@@ -106,6 +106,8 @@ final readonly class FlightAnalysis
             'crossings' => $this->crossings,
             'climbByAltitude' => $this->climbByAltitude(),
             'task' => null === $this->task ? null : $this->taskArray($this->task),
+            // What Condor computed itself (IGC exported by Condor): the official figures
+            'condor' => $this->track->report?->toArray(),
         ];
     }
 

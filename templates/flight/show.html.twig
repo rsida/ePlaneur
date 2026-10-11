@@ -454,7 +454,6 @@
             <div class="p-flight__panel" role="tabpanel" id="panel-synthese" aria-labelledby="tab-synthese" tabindex="0" data-tabs-target="panel">
 
         {# Details beyond the key figures (Condor Club parity, roadmap 7g1); older analyses lack them until analysed again #}
-        {% set settings = flight.session ? flight.session.taskSettings : null %}
         {% set official = flight.session and flight.competitionId ? flight.session.results|filter(row => row.competitionId and row.competitionId|lower == flight.competitionId|lower)|first : null %}
         {% if stats.totalClimb is defined %}
             {% set final = task.finalGlide|default(null) %}
@@ -468,6 +467,13 @@
                                 <strong>Résultat officiel : {{ official.rank }}<sup>{{ official.rank == 1 ? 'er' : 'e' }}</sup> · {{ official.status|session_status }}</strong>
                                 <span>{{ [official.time is not null ? official.time|flight_time : null, official.speed ? official.speed|number_format(1, ',', ' ') ~ ' km/h' : null, official.score is not null ? official.score|number_format(1, ',', ' ') ~ ' pts' : null]|filter(v => v)|join(' · ') }}{% if official.penalty %} · <span class="p-flight__alert">pénalités {{ official.penalty|number_format(0, ',', ' ') }} pts</span>{% endif %}</span>
                                 {% if settings and settings.regatta %}<span class="u-note">Départ en régate : le temps officiel court depuis l’ouverture de la porte, pas depuis le passage de la ligne.</span>{% endif %}
+                            </p>
+                        {% elseif condor and condor.status %}
+                            {# What Condor computed, read in the IGC it exported (App\Flight\Condor\CondorReport) #}
+                            <p class="p-flight__official">
+                                <strong>Résultat officiel de Condor : {{ condor.status|session_status }}</strong>
+                                <span>{{ [condor.taskTime is not null ? condor.taskTime|flight_time : null, condor.speed ? condor.speed|number_format(2, ',', ' ') ~ ' km/h' : null, condor.distance ? condor.distance|number_format(2, ',', ' ') ~ ' km' : null]|filter(v => v)|join(' · ') }}{% if condor.penaltyPoints %} · <span class="p-flight__alert">pénalités {{ condor.penaltyPoints|number_format(condor.penaltyPoints == condor.penaltyPoints|round ? 0 : 2, ',', ' ') }} pts</span>{% endif %}</span>
+                                <span class="u-note">Calculé par Condor et lu dans l’IGC qu’il a exporté.{% if condor.taskStart is not null and condor.taskTime is not null %} Le temps court depuis l’ouverture de la porte, à {{ (condor.taskStart // 60)|day_minutes }}.{% endif %}</span>
                             </p>
                         {% endif %}
                         <dl class="p-flight__facts">
@@ -497,35 +503,41 @@
                                     <table>
                                         <thead><tr><th scope="col">Pénalité</th><th scope="col">Barème</th><th scope="col">Limite</th><th scope="col">Mesuré</th><th scope="col">Points perdus</th></tr></thead>
                                         <tbody>
-                                            {% for rule in penalties.rules|filter(rule => units[rule.key] is defined) %}
-                                                {% set unit = units[rule.key] %}
+                                            {% for rule in penalties.rules|filter(rule => units[rule.key] is defined or rule.official > 0) %}
+                                                {% set unit = units[rule.key] ?? null %}
+                                                {% set lost = penalties.exact ? rule.official : rule.lost %}
                                                 <tr>
                                                     <th scope="row">{{ rule.label }}</th>
                                                     <td>{{ rule.points|number_format(0, ',', ' ') }} {{ rule.points > 1 ? 'pts' : 'pt' }}</td>
-                                                    <td>{{ rule.limit ? (rule.key == 'LowFinish' ? 'min. ' : 'max. ') ~ rule.limit|number_format(0, ',', ' ') ~ ' ' ~ unit : '—' }}</td>
-                                                    {% if rule.measured is null %}
-                                                        <td>—</td><td>—</td>
-                                                    {% else %}
-                                                        <td>
-                                                            {% if rule.at is not null %}<button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ rule.at }}">{{ rule.measured|number_format(0, ',', ' ') }} {{ unit }}</button>{% else %}{{ rule.measured|number_format(0, ',', ' ') }} {{ unit }}{% endif %}
-                                                        </td>
-                                                        <td{% if rule.lost > 0 %} class="p-flight__alert"{% endif %}>{{ rule.lost|number_format(rule.lost == rule.lost|round ? 0 : 2, ',', ' ') }}</td>
-                                                    {% endif %}
+                                                    <td>{{ rule.limit and unit ? (rule.key == 'LowFinish' ? 'min. ' : 'max. ') ~ rule.limit|number_format(0, ',', ' ') ~ ' ' ~ unit : '—' }}</td>
+                                                    {% set decimals = rule.measured is not null and rule.measured != rule.measured|round ? 1 : 0 %}
+                                                    <td>
+                                                        {% if rule.measured is null or not unit %}—
+                                                        {% elseif rule.at is not null %}<button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ rule.at }}">{{ rule.measured|number_format(decimals, ',', ' ') }} {{ unit }}</button>
+                                                        {% else %}{{ rule.measured|number_format(decimals, ',', ' ') }} {{ unit }}{% endif %}
+                                                    </td>
+                                                    <td{% if lost > 0 %} class="p-flight__alert"{% endif %}>{{ lost is null ? '—' : lost|number_format(lost == lost|round ? 0 : 2, ',', ' ') }}</td>
                                                 </tr>
                                             {% endfor %}
                                         </tbody>
                                         <tfoot>
+                                            {% if penalties.exact %}
+                                            <tr><th scope="row" colspan="4">Total calculé par Condor</th><td>{{ (penalties.official ?? 0)|number_format((penalties.official ?? 0) == (penalties.official ?? 0)|round ? 0 : 2, ',', ' ') }} pts</td></tr>
+                                            {% else %}
                                             <tr><th scope="row" colspan="4">Estimation d’après la trace</th><td>{{ penalties.estimated|number_format(penalties.estimated == penalties.estimated|round ? 0 : 2, ',', ' ') }} pts</td></tr>
                                             {% if penalties.official is not null %}<tr><th scope="row" colspan="4">Total officiel du serveur</th><td>{{ penalties.official|number_format(penalties.official == penalties.official|round ? 0 : 2, ',', ' ') }} pts</td></tr>{% endif %}
+                                            {% endif %}
                                         </tfoot>
                                     </table>
                                 </div>
                             </figure>
-                            {% set hidden = penalties.rules|filter(rule => units[rule.key] is not defined) %}
+                            {% set hidden = penalties.rules|filter(rule => units[rule.key] is not defined and not (rule.official > 0)) %}
                             {% if hidden is not empty %}
-                                <p class="u-note">Ne se voient pas dans la trace : {{ hidden|map(rule => (rule.label|split(' (')|first|lower) ~ ' ' ~ rule.points|number_format(0, ',', ' ') ~ ' pts' ~ (' (' in rule.label ? ' ' ~ rule.label|split(' (')|last|trim(')') : ''))|join(' · ') }}.</p>
+                                <p class="u-note">{{ penalties.exact ? 'Sans pénalité' : 'Ne se voient pas dans la trace' }} : {{ hidden|map(rule => (rule.label|split(' (')|first|lower) ~ ' ' ~ rule.points|number_format(0, ',', ' ') ~ ' pts' ~ (' (' in rule.label ? ' ' ~ rule.label|split(' (')|last|trim(')') : ''))|join(' · ') }}.</p>
                             {% endif %}
-                            {% if penalties.other is null %}
+                            {% if penalties.exact %}
+                                <p class="u-note">Points calculés par Condor et lus dans l’IGC qu’il a exporté : ils font foi. Une mesure qui a coûté des points s’en déduit exactement (limite + points ÷ barème).</p>
+                            {% elseif penalties.other is null %}
                                 <p class="u-note">Mesuré au passage des lignes de départ et d’arrivée (vitesse sol sur 4 s). Le total officiel vient des résultats du serveur, quand la session les a.</p>
                             {% elseif penalties.other > 0.5 %}
                                 <p class="u-note">Le serveur a compté {{ penalties.other|number_format(penalties.other == penalties.other|round ? 0 : 2, ',', ' ') }} pts de plus : des pénalités que la trace ne montre pas (vol dans les nuages, aides thermiques, récupération, zones) ou une vitesse au départ mesurée autrement (la trace ne donne que la vitesse sol). Son total fait foi.</p>
