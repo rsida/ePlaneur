@@ -73,7 +73,8 @@ final class FlightAdvisor
     public function advise(array $analysis, ?TaskSettings $settings = null, ?GliderPerformance $performance = null, array $sessionLift = []): array
     {
         $statistics = $analysis['statistics'];
-        $thermals = array_values(array_filter($analysis['phases'], static fn (array $phase): bool => 'thermal' === $phase['type']));
+        // Keyed by their index in the phases: the advice points at the one that shows it best
+        $thermals = array_filter($analysis['phases'], static fn (array $phase): bool => 'thermal' === $phase['type']);
         $advice = [];
 
         $circling = $statistics['circlingShare'] ?? null;
@@ -95,24 +96,24 @@ final class FlightAdvisor
             && ($phase['vario'] < self::WEAK_CLIMB || (null !== $average && $phase['vario'] < $average / 2)));
         $weakTime = array_sum(array_column($weak, 'duration'));
         if (\count($weak) >= 2 || $weakTime >= 180) {
-            $advice[] = new Advice(Advice::TIP, 'Des thermiques faibles acceptés', \sprintf(
+            $advice[] = (new Advice(Advice::TIP, 'Des thermiques faibles acceptés', \sprintf(
                 '%d %s à moins de %s m/s pendant %s au total, pour un vario moyen de %s m/s sur le vol. Avec un MacCready réglé sur les thermiques attendus, ces pompes-là se traversent.',
                 \count($weak),
                 \count($weak) > 1 ? 'thermiques' : 'thermique',
                 self::number(max(self::WEAK_CLIMB, null !== $average ? $average / 2 : 0)),
                 self::minutes($weakTime),
                 null !== $average ? self::number($average) : '—',
-            ), TrainingStep::MacCready);
+            ), TrainingStep::MacCready))->at(...self::moment($weak, static fn (array $phase): float => $phase['duration']));
         }
 
         $noGain = array_filter($thermals, static fn (array $phase): bool => $phase['gain'] < self::NO_GAIN);
         if (\count($noGain) >= 3) {
-            $advice[] = new Advice(Advice::TIP, 'Des spirales sans gain', \sprintf(
+            $advice[] = (new Advice(Advice::TIP, 'Des spirales sans gain', \sprintf(
                 '%d spirales quittées après moins de %d m de gain (%s au total). Centrer plus vite, ou ne pas spiraler dans une pompe qui ne se confirme pas : revoyez-les sur la carte.',
                 \count($noGain),
                 self::NO_GAIN,
                 self::minutes(array_sum(array_column($noGain, 'duration'))),
-            ), TrainingStep::Flaps);
+            ), TrainingStep::Flaps))->at(...self::moment($noGain, static fn (array $phase): float => -$phase['start']));
         }
 
         $left = $statistics['leftShare'] ?? null;
@@ -149,10 +150,10 @@ final class FlightAdvisor
         $radius = $statistics['spiralRadius'] ?? null;
         $target = $statistics['spiralTarget'] ?? null;
         if (null !== $radius && null !== $target && $target > 0 && $radius >= $target * self::WIDE_SPIRAL) {
-            $advice[] = new Advice(Advice::TIP, 'Une spirale large', \sprintf(
+            $advice[] = (new Advice(Advice::TIP, 'Une spirale large', \sprintf(
                 'Rayon moyen de %d m, quand vos meilleures montées tournaient à %d m. Plus serré et mieux centré, le planeur reste dans le cœur du thermique.',
                 round($radius), round($target),
-            ), TrainingStep::Flaps);
+            ), TrainingStep::Flaps))->at(...self::moment($thermals, static fn (array $phase): float => $phase['radius'] ?? 0));
         }
 
         $final = $analysis['task']['finalGlide'] ?? null;
@@ -160,63 +161,67 @@ final class FlightAdvisor
             $excess = $final['arrivalAltitude'] - $settings->finishMinHeight;
             if ($excess >= self::HIGH_FINISH) {
                 $climb = $final['climb'] ?? null;
-                $advice[] = new Advice(Advice::TIP, 'Une arrivée trop haute', \sprintf(
+                $advice[] = (new Advice(Advice::TIP, 'Une arrivée trop haute', \sprintf(
                     'Ligne d’arrivée franchie %d m au-dessus du minimum%s. Une finale calculée au plus juste, et accélérée, rapporte ce temps.',
                     round($excess),
                     null !== $climb && $climb > 0 ? \sprintf(' : au taux de votre dernière ascendance (%s m/s), %s de montée qui ne vous ont rien rapporté', self::number($climb), self::seconds($excess / $climb)) : '',
-                ), TrainingStep::MacCready);
+                ), TrainingStep::MacCready))->at(isset($final['from']) ? (int) $final['from'] : null);
             }
         }
 
-        $centred = array_values(array_filter(array_map(static fn (array $phase): ?int => $phase['entry'] ?? null, $thermals), static fn (?int $entry): bool => null !== $entry));
+        $withEntry = array_filter($thermals, static fn (array $phase): bool => null !== ($phase['entry'] ?? null));
+        $centred = array_values(array_map(static fn (array $phase): int => $phase['entry'], $withEntry));
         if (\count($centred) >= self::MIN_CENTRED) {
             $entry = array_sum($centred) / \count($centred);
             if ($entry >= self::SLOW_CENTRING) {
-                $advice[] = new Advice(Advice::TIP, 'Un centrage lent', \sprintf(
+                $advice[] = (new Advice(Advice::TIP, 'Un centrage lent', \sprintf(
                     'En moyenne %s avant le premier bon tour (70 %% du meilleur) sur %d thermiques. Le radar de centrage de chaque thermique montre de quel côté décaler les cercles.',
                     self::seconds($entry), \count($centred),
-                ), TrainingStep::Flaps);
+                ), TrainingStep::Flaps))->at(...self::moment($withEntry, static fn (array $phase): float => $phase['entry']));
             } elseif ($entry <= self::QUICK_CENTRING) {
-                $advice[] = new Advice(Advice::GOOD, 'Un centrage rapide', \sprintf(
+                $advice[] = (new Advice(Advice::GOOD, 'Un centrage rapide', \sprintf(
                     'En moyenne %s avant le premier bon tour sur %d thermiques : vous trouvez vite le cœur.',
                     self::seconds($entry), \count($centred),
-                ), TrainingStep::Flaps);
+                ), TrainingStep::Flaps))->at(...self::moment($withEntry, static fn (array $phase): float => $phase['gain'] - 1000 * $phase['entry']));
             }
         }
 
         $late = array_filter($thermals, static fn (array $phase): bool => ($phase['exit'] ?? 0) > 0);
         $lateTime = array_sum(array_map(static fn (array $phase): int => $phase['exit'], $late));
         if (null !== $average && $lateTime >= self::LATE_EXITS) {
-            $advice[] = new Advice(Advice::TIP, 'Des sorties tardives', \sprintf(
+            $key = self::moment($late, static fn (array $phase): float => $phase['exit'])[1];
+            $phase = $thermals[$key];
+            $advice[] = (new Advice(Advice::TIP, 'Des sorties tardives', \sprintf(
                 '%s au total en haut de %d %s à monter moins vite que votre moyenne (%s m/s). Quand le thermique faiblit sous ce que la suite promet, partez : la frise des événements les montre.',
                 self::seconds($lateTime), \count($late), \count($late) > 1 ? 'thermiques' : 'thermique', self::number($average),
-            ), TrainingStep::MacCready);
+            ), TrainingStep::MacCready))->at(self::end($phase) - $phase['exit'], $key);
         }
 
         $crossings = $analysis['crossings'] ?? [];
         $dolphin = array_sum(array_map(static fn (array $crossing): float => max(0.0, $crossing['gain']), $crossings));
         if ($dolphin >= self::DOLPHIN_GAIN) {
-            $advice[] = new Advice(Advice::GOOD, 'Du vol en dauphin', \sprintf(
+            $best = array_reduce($crossings, static fn (?array $carry, array $crossing): array => null === $carry || $crossing['gain'] > $carry['gain'] ? $crossing : $carry);
+            $advice[] = (new Advice(Advice::GOOD, 'Du vol en dauphin', \sprintf(
                 '%s m gagnés en ligne droite dans %d ascendances traversées sans spiraler : autant de montée en moins à faire en thermique.',
                 number_format($dolphin, 0, ',', ' '), \count($crossings),
-            ), TrainingStep::MacCready);
+            ), TrainingStep::MacCready))->at((int) $best['start']);
         }
         $missed = self::missedLift($crossings, $analysis['phases']);
         if (\count($missed) >= self::MIN_CROSSINGS) {
-            $advice[] = new Advice(Advice::TIP, 'Des ascendances laissées pour un thermique plus faible', \sprintf(
+            $advice[] = (new Advice(Advice::TIP, 'Des ascendances laissées pour un thermique plus faible', \sprintf(
                 '%d fois, une ascendance traversée en ligne droite (jusqu’à %s m/s en vario énergie totale) était au moins deux fois plus forte que le thermique spiralé ensuite. Quelques tours dedans auraient payé : la frise des événements les montre.',
                 \count($missed), self::number(max(array_column($missed, 'vario'))),
-            ), TrainingStep::MacCready);
+            ), TrainingStep::MacCready))->at((int) $missed[0]['start']);
         }
 
         $missedThermals = array_values(array_filter($sessionLift['thermals'] ?? [], static fn (array $thermal): bool => $thermal['missed'] && null !== $average && $thermal['climb'] >= $average));
         if (\count($missedThermals) >= self::MIN_CROSSINGS) {
             usort($missedThermals, static fn (array $a, array $b): int => $b['climb'] <=> $a['climb']);
             $best = $missedThermals[0];
-            $advice[] = new Advice(Advice::TIP, 'Des thermiques de la course manqués', \sprintf(
+            $advice[] = (new Advice(Advice::TIP, 'Des thermiques de la course manqués', \sprintf(
                 '%d thermiques où d’autres pilotes de la course ont monté au moins à votre moyenne (%s m/s), passés à moins de 500 m sans y tourner ; le meilleur à %s m/s (%s), frôlé à %d m. Ils sont en jaune sur la carte et la frise.',
                 \count($missedThermals), self::number($average), self::number($best['climb']), implode(', ', $best['pilots']), $best['closest']['distance'],
-            ), TrainingStep::MacCready);
+            ), TrainingStep::MacCready))->at((int) $best['closest']['at']);
         }
 
         $badge = self::silverBadge($analysis);
@@ -225,6 +230,66 @@ final class FlightAdvisor
         }
 
         return $advice;
+    }
+
+    /**
+     * The few pieces of advice to start a debrief with: something to work on first, then something
+     * done well, then the rest, those shown at a moment of the flight before the others.
+     *
+     * @param list<Advice> $advice
+     *
+     * @return list<Advice>
+     */
+    public static function highlights(array $advice, int $count = 3): array
+    {
+        $located = static fn (Advice $item): int => null !== $item->at ? 0 : 1;
+        $of = static function (string $kind) use ($advice, $located): array {
+            $items = array_values(array_filter($advice, static fn (Advice $item): bool => $kind === $item->kind));
+            usort($items, static fn (Advice $a, Advice $b): int => $located($a) <=> $located($b));
+
+            return $items;
+        };
+        [$tips, $goods, $infos] = [$of(Advice::TIP), $of(Advice::GOOD), $of(Advice::INFO)];
+        // At least one of each kind when the flight has both, tips first
+        $picked = [...\array_slice($tips, 0, [] !== $goods ? $count - 1 : $count), ...\array_slice($goods, 0, 1)];
+        foreach ([...$tips, ...$goods, ...$infos] as $item) {
+            if (\count($picked) >= $count) {
+                break;
+            }
+            if (!\in_array($item, $picked, true)) {
+                $picked[] = $item;
+            }
+        }
+
+        return \array_slice($picked, 0, $count);
+    }
+
+    /**
+     * The phase that shows an advice best, the one with the highest value, and its start.
+     *
+     * @param array<int, array<string, mixed>>      $phases keyed by their index in the phases
+     * @param callable(array<string, mixed>): float $value
+     *
+     * @return array{?int, ?int} the second, the phase
+     */
+    private static function moment(array $phases, callable $value): array
+    {
+        $best = null;
+        foreach ($phases as $key => $phase) {
+            if (null === $best || $value($phase) > $value($phases[$best])) {
+                $best = $key;
+            }
+        }
+
+        return null === $best ? [null, null] : [(int) ($phases[$best]['start'] ?? 0), $best];
+    }
+
+    /**
+     * @param array<string, mixed> $phase
+     */
+    private static function end(array $phase): int
+    {
+        return (int) ($phase['end'] ?? ($phase['start'] ?? 0) + $phase['duration']);
     }
 
     /**

@@ -44,6 +44,26 @@ final class SessionComparisonTest extends TestCase
         self::assertSame(0.25, $data['km'][1]);
     }
 
+    public function testTheStoryOfTheRaceSaysWhoLed(): void
+    {
+        $comparison = SessionComparison::of([$this->flight('Fast', 1.0), $this->flight('Slow', 2.0)]);
+        self::assertNotNull($comparison);
+        $story = $comparison->story();
+
+        self::assertCount(1, $story, 'Fast leads all along');
+        self::assertSame('Fast', $story[0]['leader']->getPilot());
+        self::assertSame(0, $story[0]['from']);
+        self::assertGreaterThan(60, $story[0]['lead']);
+
+        // Twice as fast after 200 s: the second pilot takes the lead and keeps it
+        $comparison = SessionComparison::of([$this->flight('Fast', 1.0), $this->flight('Quicker', 0.5)]);
+        self::assertNotNull($comparison);
+        $story = $comparison->story();
+        self::assertSame('Quicker', end($story)['leader']->getPilot());
+        self::assertSame(0, $story[0]['from']);
+        self::assertSame(end($story)['to'], (\count($comparison->best()) - 1) * 250, 'To the finish');
+    }
+
     public function testOneFlightIsNotAComparison(): void
     {
         self::assertNull(SessionComparison::of([$this->flight('Alone', 1.0)]));

@@ -195,3 +195,26 @@
     font-weight: 400;
     opacity: 0.8;
 }
+
+/* The story of the race: who led, where the lead changed (roadmap 7j3) */
+.p-session__story {
+    display: grid;
+    gap: var(--space-3);
+    margin-block: var(--space-6);
+    padding-block: var(--space-5);
+    border-block: 1px solid var(--color-line);
+}
+
+.p-session__story > p {
+    max-width: var(--article-column);
+    margin: 0;
+}
+
+.p-session__chapters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}

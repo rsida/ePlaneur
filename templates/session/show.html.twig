@@ -6,6 +6,9 @@
 {% block title %}Session {{ plan.code }} du {{ session.date|format_date('short', locale: 'fr') }}{% endblock %}
 {% block description %}Session de vol en réseau du {{ day }} sur le plan de vol {{ plan.label }} : résultats et traces des pilotes.{% endblock %}
 
+{% macro leader_name(run) %}{{ run.leader.competitionId ?: run.leader.pilot }}{% endmacro %}
+{% macro km_label(metres) %}{{ (metres / 1000)|number_format(0, ',', ' ') }}{% endmacro %}
+
 {% block body %}
     <section class="p-flight p-session t-light">
         <div class="l-container p-flight__head">
@@ -94,6 +97,33 @@
                         {% if ranked.flights|length > 1 %}<twig:Ui:Link href="{{ path('app_session_compare', {id: session.id}) }}">Comparer toute la session</twig:Ui:Link>{% endif %}
                         <twig:Ui:Link href="#thermiques">Carte des thermiques</twig:Ui:Link>
                     </div>
+                    {% if story is not empty %}
+                        {# Who led, where the lead changed (SessionComparison::story()); a chapter shows the moment in the replay #}
+                        {% set last = story|last %}
+                        <section class="l-container p-session__story" aria-labelledby="story-title">
+                            <twig:Ui:Eyebrow>Le récit de la course</twig:Ui:Eyebrow>
+                            {# Macros are not seen inside a component: the title is written before #}
+                            {% set headline %}{% if story|length == 1 %}{{ _self.leader_name(last) }} en tête de bout en bout{% else %}{{ _self.leader_name(last) }} prend la tête au km {{ _self.km_label(last.from) }}{% endif %}{% endset %}
+                            <twig:Ui:Heading level="2" size="h4" id="story-title">{{ headline }}</twig:Ui:Heading>
+                            <p>
+                                {%- for run in story -%}
+                                    {%- if loop.first %}{{ _self.leader_name(run) }} mène du départ{{ loop.last ? ' à l’arrivée' : ' au km ' ~ _self.km_label(run.to) }}{% else %}{{ loop.last ? ', puis ' : ', ' }}{{ _self.leader_name(run) }} passe devant au km {{ _self.km_label(run.from) }}{% endif -%}
+                                {%- endfor -%}
+                                {%- if last.lead is not null %} ; à l’arrivée, {{ _self.leader_name(last) }} a {{ last.lead|flight_time }} d’avance sur le suivant{% endif %}.
+                            </p>
+                            <ol class="p-session__chapters">
+                                {% for run in story %}
+                                    <li>
+                                        <button type="button" class="p-flight__switch" data-action="session-viewer#showMoment"
+                                                data-session-viewer-elapsed-param="{{ run.elapsed }}" data-session-viewer-flight-param="{{ run.leader.id }}">
+                                            {{ loop.first ? 'Départ' : 'km ' ~ _self.km_label(run.from) }} · {{ _self.leader_name(run) }} {{ loop.first ? 'mène' : 'passe devant' }}
+                                        </button>
+                                    </li>
+                                {% endfor %}
+                            </ol>
+                            <p class="u-note">Comme si tous les pilotes avaient passé la ligne de départ ensemble : en tête, celui qui arrive le plus vite à chaque point du circuit. Un chapitre montre ce moment dans le rejeu, en suivant le pilote en tête.</p>
+                        </section>
+                    {% endif %}
                     {{ include('flight/_session_replay.html.twig', {session: ranked, ranking_title: 'Analyse des traces déposées'}) }}
                 </div>
                 <section class="l-container p-session__thermals" id="thermiques" aria-labelledby="race-thermals-title"

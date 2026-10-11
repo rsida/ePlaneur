@@ -290,6 +290,25 @@ export default class extends Controller {
     }
 
     /**
+     * A moment of the race story (session page): the pilots started together, the replay at the
+     * leader's time since the start, following the leader.
+     */
+    showMoment({ params: { elapsed, flight: id } }) {
+        if (!this.flights) return;
+        if (this.alignTarget.value !== 'task') {
+            this.alignTarget.value = 'task';
+            this.align();
+        }
+        this.moveTo(Math.min(this.duration, Math.max(0, Number(elapsed) - this.clockOrigin)));
+        const leader = this.flights.find((flight) => flight.id === Number(id));
+        if (leader && this.selected !== leader.id) this.select(leader);
+        else if (leader) this.follow(leader, { animate: true });
+        // From above, close enough to see the gliders around the leader
+        if (leader && !this.is3d) this.map.easeTo({ zoom: Math.max(this.map.getZoom(), 10), duration: 600 });
+        this.mapTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    /**
      * Keeps the pilot followed in view; in 3D the camera flies behind their glider (chaseBearing()).
      */
     follow(flight, { animate = false } = {}) {

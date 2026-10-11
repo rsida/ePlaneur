@@ -82,9 +82,14 @@ final class SessionController extends AbstractController
             }
         }
 
+        $ranked = [] !== $flights ? FlightSession::of(array_values($flights)) : null;
+        // The story of the race, for those who see the tracks
+        $story = null !== $ranked && null !== $this->getUser() ? SessionComparison::of($ranked->flights)?->story() : null;
+
         return $this->render('session/show.html.twig', [
             'session' => $session,
-            'ranked' => [] !== $flights ? FlightSession::of(array_values($flights)) : null,
+            'ranked' => $ranked,
+            'story' => $story ?? [],
             'tracks' => $tracks,
             'past' => $session->isPast($clock->now()),
         ]);

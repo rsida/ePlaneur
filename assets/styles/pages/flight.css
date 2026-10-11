@@ -161,30 +161,55 @@
 
 .p-flight__now {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-2);
     margin: 0;
-}
-
-.p-flight__now div {
-    padding: var(--space-3);
+    padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-sm);
     background-color: var(--color-paper);
     outline: 1px solid var(--color-line);
     outline-offset: -1px;
 }
 
+/* One value a line: the label on the left, the figure on the right */
+.p-flight__now div {
+    display: flex;
+    gap: var(--space-3);
+    align-items: baseline;
+    justify-content: space-between;
+    padding-block: var(--space-1-5);
+}
+
+.p-flight__now div + div {
+    border-top: 1px solid var(--color-line);
+}
+
+.p-flight__now div[hidden] {
+    display: none;
+}
+
 .p-flight__now dt {
     color: var(--color-text-muted);
-    font-size: var(--text-eyebrow);
+    font-size: var(--text-sm);
 }
 
 .p-flight__now dd {
     margin: 0;
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: var(--text-title-sm);
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+/* Climbing, sinking, low (under 300 m), too low (under 150 m) */
+.p-flight .is-up {
+    color: var(--color-success);
+}
+
+.p-flight .is-down,
+.p-flight .is-danger {
+    color: var(--color-danger);
+}
+
+.p-flight .is-warning {
+    color: var(--color-warning);
 }
 
 .p-flight__phase {
@@ -1638,7 +1663,59 @@
 
 .p-compare__waterfall-leg {
     grid-area: leg;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font: inherit;
     font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.p-compare__waterfall-leg:hover {
+    text-decoration: underline;
+}
+
+/* Minutes under the bars, aligned on them */
+.p-compare__waterfall-scale {
+    align-self: stretch;
+    font-size: var(--text-sm);
+}
+
+/* Minutes under the bars */
+.p-compare__waterfall-axis {
+    grid-area: track;
+    position: relative;
+    height: 1.25rem;
+    border-top: 1px solid var(--color-line-strong);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+}
+
+.p-compare__waterfall-axis span {
+    position: absolute;
+    top: var(--space-1);
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+/* The gap of a figure, with a bar as long as it is large */
+.p-compare__gap {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-weight: 600;
+}
+
+.p-compare__gap-bar {
+    flex: none;
+    width: calc(var(--gap) * 4rem);
+    min-width: var(--space-1);
+    height: var(--space-2);
+    border-radius: var(--radius-sm);
+    background-color: currentcolor;
 }
 
 /* The scale of the gaps, with zero marked */
@@ -1765,4 +1842,323 @@
 /* A value beside the map that calls for attention (no airfield within reach) */
 .p-flight__now-alert {
     color: var(--color-danger);
+}
+
+/* ---------- Analysis pages, readability pass (roadmap 7j1) ---------- */
+
+/* "Gérer la trace": downloads, publication, deletion */
+.p-flight__menu {
+    position: relative;
+    align-self: flex-start;
+}
+
+.p-flight__menu summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.p-flight__menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.p-flight__menu-panel {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    z-index: 5;
+    display: grid;
+    min-width: 15rem;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    box-shadow: var(--shadow-raised);
+    outline: 1px solid var(--color-line);
+}
+
+.p-flight__menu-item {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.p-flight__menu-item:hover,
+.p-flight__menu-item:focus-visible {
+    background-color: var(--color-tint-cool);
+}
+
+.p-flight__menu-item--danger {
+    color: var(--color-danger);
+}
+
+/* Where to start a debrief, and every piece of advice */
+.p-flight__debrief {
+    display: grid;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+}
+
+@media (width >= 64em) {
+    .p-flight__debrief-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.p-flight__advice-item {
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
+}
+
+.p-flight__advice-kind {
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    background-color: color-mix(in srgb, var(--_advice-color) 14%, var(--color-paper));
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}
+
+.p-flight__advice-at {
+    display: inline-flex;
+    gap: var(--space-1);
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.p-flight__advice-at:hover {
+    text-decoration: underline;
+}
+
+.p-flight__advice-step {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+}
+
+/* "Affichage": every display setting in a panel over the map */
+.p-flight__display {
+    position: relative;
+}
+
+.p-flight__display summary {
+    list-style: none;
+}
+
+.p-flight__display summary::-webkit-details-marker {
+    display: none;
+}
+
+.p-flight__display[open] summary {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.p-flight__display[open] .p-flight__display-chevron {
+    transform: rotate(180deg);
+}
+
+.p-flight__display-panel {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    z-index: 3;
+    display: grid;
+    gap: var(--space-3);
+    width: min(20rem, calc(100vw - 4 * var(--gutter)));
+    max-height: calc(var(--flight-map-height) - 5rem);
+    padding: var(--space-4);
+    overflow-y: auto;
+    border-radius: var(--radius-md);
+    background-color: var(--color-paper);
+    box-shadow: var(--shadow-raised);
+    font-size: var(--text-sm);
+}
+
+.p-flight__display-row {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.p-flight__display-row[hidden] {
+    display: none;
+}
+
+.p-flight__display-row > span {
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.p-flight__display-row select {
+    padding: var(--space-2);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+    font: inherit;
+}
+
+.p-flight__display-switches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* A setting on or off, a chart chosen */
+.p-flight__switch {
+    padding: var(--space-1-5) var(--space-3);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.p-flight__switch[aria-pressed='true'] {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.p-flight__switch[hidden] {
+    display: none;
+}
+
+/* On a phone, altitude, vario and height on the map during the replay */
+/* Above the colour key of the track and the credits, at the bottom of the map */
+.p-flight__strip {
+    position: absolute;
+    bottom: calc(var(--space-3) + 3.5rem);
+    left: var(--space-3);
+    display: flex;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-1-5) var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: rgb(255 255 255 / 88%);
+    box-shadow: var(--shadow-raised);
+    font-size: var(--text-sm);
+}
+
+.p-flight__strip dt {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+}
+
+.p-flight__strip dd {
+    margin: 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (width >= 64em) {
+    .p-flight__strip {
+        display: none;
+    }
+}
+
+/* The phase at the cursor, with the advice it illustrates */
+.p-flight__current {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.p-flight__current-label {
+    justify-self: start;
+    margin: 0;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}
+
+.p-flight__current-title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-title-sm);
+    line-height: 1.2;
+}
+
+.p-flight__current-title[data-kind='tip'] {
+    color: var(--color-danger);
+}
+
+.p-flight__current-title[data-kind='good'] {
+    color: var(--color-success);
+}
+
+.p-flight__current .p-flight__phase {
+    margin: 0;
+}
+
+/* One chart, or all of them */
+.p-flight__chart-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.p-flight__chart[hidden] {
+    display: none;
+}
+
+/* The detail of the analysis, in tabs */
+.p-flight__more {
+    margin-top: var(--space-8);
+}
+
+.p-flight__tabs {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.p-flight__panel {
+    display: grid;
+    gap: var(--space-6);
+    padding-top: var(--space-6);
+}
+
+.p-flight__panel[hidden] {
+    display: none;
+}
+
+.p-flight__panel > * {
+    min-width: 0;
+}
+
+.p-flight__panel .p-flight__comments {
+    margin-top: 0;
+}
+
+/* On a phone, the replay bar stays at the bottom of the screen while the map is read */
+@media (width < 64em) {
+    .p-flight__replay {
+        position: sticky;
+        bottom: 0;
+        z-index: 4;
+        margin-inline: calc(-1 * var(--gutter));
+        padding: var(--space-2) var(--gutter);
+        background-color: var(--surface);
+        box-shadow: 0 -1px 0 var(--color-line);
+    }
 }

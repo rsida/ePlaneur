@@ -84,11 +84,29 @@ final class FlightAdvisorTest extends TestCase
         self::assertStringContainsString('2 min 10 s au total en haut de 3 thermiques', $advice[1]->text);
         self::assertStringContainsString('2 fois', $advice[2]->text);
         self::assertStringContainsString('jusqu’à 3,0 m/s', $advice[2]->text);
+        // Shown at the thermal centred the slowest, the longest weak top, the first lift left behind
+        self::assertSame([700, 1], [$advice[0]->at, $advice[0]->phase]);
+        self::assertSame([440, 0], [$advice[1]->at, $advice[1]->phase], 'End of the thermal (200 + 300 s) less 60 s at the top');
+        self::assertSame([400, null], [$advice[2]->at, $advice[2]->phase]);
 
         $crossings = [['start' => 100, 'end' => 120, 'vario' => 4.0, 'gain' => 120.0], ['start' => 400, 'end' => 420, 'vario' => 3.5, 'gain' => 90.0]];
         $advice = $this->advise(['climbAverage' => 2.0], [[300, 600, 2.0, 'left', 10, 0, 200], [300, 600, 2.0, 'right', 15, 0, 700], [300, 600, 2.0, 'left', 20, null, 1200]], crossings: $crossings);
         self::assertSame(['Un centrage rapide', 'Du vol en dauphin'], array_map(static fn (Advice $item): string => $item->title, $advice));
         self::assertStringContainsString('210 m gagnés en ligne droite dans 2 ascendances', $advice[1]->text);
+        self::assertSame([200, 0], [$advice[0]->at, $advice[0]->phase], 'The thermal centred the fastest');
+        self::assertSame(100, $advice[1]->at, 'The lift crossed with the best gain');
+    }
+
+    public function testADebriefStartsWithWhatToWorkOnAndSomethingDoneWell(): void
+    {
+        $tip = static fn (string $title, ?int $at = null): Advice => new Advice(Advice::TIP, $title, '', null, $at);
+        $good = new Advice(Advice::GOOD, 'Bien', '', null, 10);
+        $info = new Advice(Advice::INFO, 'Insigne', '');
+        $titles = static fn (array $advice): array => array_map(static fn (Advice $item): string => $item->title, $advice);
+
+        self::assertSame(['B', 'C', 'Bien'], $titles(FlightAdvisor::highlights([$tip('A'), $tip('B', 5), $tip('C', 8), $good, $info])), 'Tips shown at a moment first, one thing done well');
+        self::assertSame(['A', 'Bien', 'Insigne'], $titles(FlightAdvisor::highlights([$info, $good, $tip('A')])));
+        self::assertSame(['Bien'], $titles(FlightAdvisor::highlights([$good])));
     }
 
     /**

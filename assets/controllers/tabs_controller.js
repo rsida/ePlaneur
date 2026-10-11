@@ -3,6 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 /*
  * Accessible tabs (WAI-ARIA tabs pattern): click, arrow keys, Home and End.
  * Markup: Block/Tabs.html.twig. Without JavaScript every panel stays visible.
+ * A link to an element inside a panel (#comments) opens that panel.
  */
 export default class extends Controller {
     static targets = ['tab', 'panel'];
@@ -10,6 +11,25 @@ export default class extends Controller {
     connect() {
         const selected = this.tabTargets.findIndex((tab) => tab.getAttribute('aria-selected') === 'true');
         this.show(Math.max(selected, 0), false);
+        this.followHash = () => this.showHash();
+        window.addEventListener('hashchange', this.followHash);
+        this.showHash();
+    }
+
+    disconnect() {
+        window.removeEventListener('hashchange', this.followHash);
+    }
+
+    /** The panel holding the element the address points at, scrolled to that element. */
+    showHash() {
+        const id = decodeURIComponent(window.location.hash.slice(1));
+        const target = id ? document.getElementById(id) : null;
+        const index = target ? this.panelTargets.findIndex((panel) => panel.contains(target)) : -1;
+        if (index < 0) {
+            return;
+        }
+        this.show(index, false);
+        target.scrollIntoView({ block: 'start' });
     }
 
     select(event) {

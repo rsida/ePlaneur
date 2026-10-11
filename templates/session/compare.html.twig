@@ -20,9 +20,14 @@
         </div>
 
         <div class="l-container l-stack">
+            <p class="u-note">« Isoler » met un pilote en avant sur les courbes, les autres restent en clair.</p>
             <ul class="p-session-compare__pilots" aria-label="Pilotes">
                 {% for flight in flights %}
-                    <li><span class="p-session__dot" style="--pilot-color: {{ colors[loop.index0 % colors|length] }}"></span><a href="{{ path('app_flight_show', {id: flight.id}) }}">{{ flight.pilot }}{% if flight.competitionId %} ({{ flight.competitionId }}){% endif %}</a></li>
+                    <li>
+                        <span class="p-session__dot" style="--pilot-color: {{ colors[loop.index0 % colors|length] }}"></span><a href="{{ path('app_flight_show', {id: flight.id}) }}">{{ flight.pilot }}{% if flight.competitionId %} ({{ flight.competitionId }}){% endif %}</a>
+                        <button type="button" class="p-flight__switch p-session-compare__isolate" aria-pressed="false" data-session-compare-target="isolate"
+                                data-action="session-compare#isolate" data-session-compare-index-param="{{ loop.index0 }}">Isoler<span class="u-visually-hidden"> {{ flight.competitionId ?? flight.pilot }}</span></button>
+                    </li>
                 {% endfor %}
             </ul>
             <p class="p-flight__loading" data-session-compare-target="status" role="status">Chargement…</p>

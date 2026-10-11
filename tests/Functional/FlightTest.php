@@ -62,6 +62,10 @@ final class FlightTest extends WebTestCase
         self::assertSelectorTextContains('.p-flight__head .c-tag', 'Départ en vol');
         self::assertSelectorTextNotContains('body', 'sont estimées', 'Times decoded from the records');
         self::assertSelectorTextContains('.p-flight__legs', 'Laragne Chp → Ventoux');
+        // The detail of the analysis in tabs, the track managed from one menu
+        self::assertSelectorTextContains('#tab-synthese[aria-selected="true"]', 'Synthèse');
+        self::assertSelectorExists('#panel-phases .p-flight__phase-row');
+        self::assertSelectorTextContains('.p-flight__menu', 'Export IGC');
 
         // An airfield of the landscape near the track, for the glide cone
         $this->entityManager->persist(new Airfield('AA3', 'Laragne', 44.3157, 5.8125, 655.0, 800));
@@ -288,6 +292,7 @@ final class FlightTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('.c-field__errors', 'Écrivez votre commentaire.');
+        self::assertSelectorExists('#tab-conseils[aria-selected="true"]', 'The form and its error are in view');
     }
 
     public function testTheLogbookIsSeenByThePilotAndTrainers(): void

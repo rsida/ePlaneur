@@ -63,6 +63,8 @@
     --thermal-strong: rgb(25 120 60);
     --color-danger-soft: var(--palette-red-soft);
     --color-success: var(--palette-green);
+    /* A value to watch (height under 300 m): orange, before the danger red */
+    --color-warning: var(--palette-orange);
     --color-success-soft: var(--palette-green-soft);
     /* The two pilots of a flight comparison, on the map, the charts and the tables */
     --color-pilot-a: var(--palette-orange);

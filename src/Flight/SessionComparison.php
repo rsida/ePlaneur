@@ -22,6 +22,9 @@ final readonly class SessionComparison
     /** Shortest loss worth a key moment, seconds. */
     private const int MIN_MOMENT = 30;
 
+    /** Shortest lead worth a chapter of the race, metres: shorter changes of leader are noise. */
+    private const int LEAD_RUN = 5000;
+
     /**
      * @param list<Flight>    $flights ranked as the session (FlightSession), those that started
      * @param list<list<int>> $times   index in the series where each flight reaches each STEP
@@ -156,6 +159,85 @@ final readonly class SessionComparison
         }
 
         return $moments;
+    }
+
+    /**
+     * Who led the race along the task, as with all pilots starting together: at each STEP, the
+     * pilot who got there in the shortest time since their start. Leads held for less than
+     * LEAD_RUN metres join the run before them (the first one the run after it). Each run gives
+     * where it starts and ends along the task (metres), its leader, the leader's time since the
+     * start where the run begins, and their lead on the second at its end (seconds; null alone).
+     *
+     * @return list<array{from: int, to: int, leader: Flight, flight: int, elapsed: int, lead: ?int}>
+     */
+    public function story(): array
+    {
+        $steps = \count($this->best());
+        $leaders = [];
+        // From the first STEP: at the start line every pilot is at zero
+        for ($k = 1; $k < $steps; ++$k) {
+            $elapsed = [];
+            foreach ($this->times as $f => $times) {
+                if (isset($times[$k])) {
+                    $elapsed[$f] = $times[$k] - $this->starts[$f];
+                }
+            }
+            asort($elapsed);
+            $leaders[$k] = array_key_first($elapsed);
+        }
+        if ([] === $leaders) {
+            return [];
+        }
+
+        // Runs of the same leader, the short ones merged into their neighbour
+        $runs = [];
+        foreach ($leaders as $k => $f) {
+            if ([] !== $runs && $runs[array_key_last($runs)][2] === $f) {
+                $runs[array_key_last($runs)][1] = $k;
+            } else {
+                $runs[] = [$k, $k, $f];
+            }
+        }
+        $min = intdiv(self::LEAD_RUN, FlightComparison::STEP);
+        do {
+            $merged = false;
+            foreach ($runs as $r => [$from, $to]) {
+                if (\count($runs) > 1 && $to - $from + 1 < $min) {
+                    $into = $r > 0 ? $r - 1 : $r + 1;
+                    $runs[$into] = [min($runs[$into][0], $from), max($runs[$into][1], $to), $runs[$into][2]];
+                    unset($runs[$r]);
+                    $runs = array_values($runs);
+                    $merged = true;
+                    break;
+                }
+            }
+            for ($r = \count($runs) - 1; $r > 0; --$r) {
+                if ($runs[$r][2] === $runs[$r - 1][2]) {
+                    $runs[$r - 1][1] = $runs[$r][1];
+                    array_splice($runs, $r, 1);
+                }
+            }
+        } while ($merged);
+
+        return array_map(function (array $run): array {
+            [$from, $to, $f] = $run;
+            $elapsed = [];
+            foreach ($this->times as $g => $times) {
+                if (isset($times[$to])) {
+                    $elapsed[$g] = $times[$to] - $this->starts[$g];
+                }
+            }
+            sort($elapsed);
+
+            return [
+                'from' => (1 === $from ? 0 : $from) * FlightComparison::STEP,
+                'to' => $to * FlightComparison::STEP,
+                'leader' => $this->flights[$f],
+                'flight' => $f,
+                'elapsed' => $this->times[$f][$from] - $this->starts[$f],
+                'lead' => isset($elapsed[1]) ? $elapsed[1] - $elapsed[0] : null,
+            ];
+        }, $runs);
     }
 
     /**

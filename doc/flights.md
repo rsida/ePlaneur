@@ -272,6 +272,24 @@ and says so in an L line. The export reads back with `IgcReader`.
 
 ## Viewer
 
+Layout of the flight page (roadmap 7j1, from the Figma pass of 2026-10-10): key figures, then
+"Quelques repères" (the three pieces of advice of `FlightAdvisor::highlights()`: something to work
+on first, something done well; each advice knows the moment and the phase that show it,
+`Advice::$at` and `$phase`, a click moves the replay there), then the viewer, then the detail in
+tabs (`tabs` controller: a link to an element of a panel opens it; the comment form with errors
+opens its tab):
+
+- Map toolbar: `Carte · 3D · Suivre · Affichage`; "Affichage" is a panel over the map with the
+  basemap, the colour of the track, the lift of the race, the ghost, the camera and the switches
+  (expected slopes, airfields, instruments, pilot view). It closes outside it and with Escape.
+- Beside the map, the phase at the cursor ("Phase en cours · Thermique n° 4") with the advice it
+  illustrates as a title, then the values (vario in green or red, height in orange under 300 m,
+  red under 150 m), the legs, the centring radar and the list of phases.
+- Charts: one at a time or all ("Toutes les courbes"), the choice kept in the browser
+  (`localStorage`, nothing breaks without it); the key above the map is open on the first visit.
+- On a phone: altitude, vario and height on the map, the replay bar stuck to the bottom of the
+  screen.
+
 - Map: **MapLibre GL** 5 (version 6 is not supported yet by deck.gl's MapLibre integration).
   Basemaps: OpenTopoMap ("Relief", default), Esri World Imagery ("Satellite"), OpenStreetMap
   ("Plan"); relief: **AWS Terrain Tiles** (terrarium encoding). No API key. These free services ask
@@ -403,6 +421,13 @@ Flights whose task is not a flight plan of the library are still grouped by task
   start lines crossed at the same moment (ghost race between flights of different days). The side
   list gives the altitude, vario and ground speed of each pilot at the current time; clicking a
   pilot follows them (in 3D from behind their glider) and highlights their track.
+- **Story of the race** (`SessionComparison::story()`, roadmap 7j3): as with every pilot starting
+  together, the leader at each 250 m of the task is the one who got there in the shortest time
+  since their start; leads held for less than 5 km join the run before them. The page says who led
+  where and the lead at the finish; each change of leader is a chapter that sets the replay to
+  "Départ du circuit ensemble" at the leader's time and follows them.
+- **Comparer toute la session**: the name of each pilot at the end of their line, "Isoler" puts one
+  pilot forward on both charts (the others fade).
 
 ## Comparison
 
@@ -433,6 +458,12 @@ rather than in time (`FlightComparison`):
 - **Waterfall** (roadmap 7i4, `FlightComparison::waterfall()`): leg by leg, completed by both, the
   gap before and after as a floating bar (red lost, green gained), split into the time circling and
   the time flying straight, with the thermals, climb and glide speed of each pilot on the leg.
+  An axis in minutes under the bars; the name of a leg shows its stretch on the map (each row
+  knows where its leg lies along the task, `start` and `end`).
+- **Headline** (roadmap 7j2): who wins and by how much, then the leg of the waterfall that made
+  most of the gap, said "surtout en ligne droite" or "surtout en spirale" when two thirds of it
+  come from there. The table of figures colours each gap for the first pilot and says it in words
+  ("mieux", "moins bien"; neither for the number of thermals and the distance).
 
 Roadmap 7i4 on the flight page:
 

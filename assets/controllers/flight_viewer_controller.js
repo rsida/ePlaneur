@@ -109,6 +109,11 @@ const GHOST_TRAIL = 90;
 const SECTORS = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest'];
 // Difference of climb between the best and the worst side under which a thermal is centred (m/s)
 const CENTRED = 0.5;
+// Charts: their height, and the chart chosen (one, or 'all'), kept in the browser; the key above the
+// map is open until it has been seen once
+const CHART_HEIGHT = 150;
+const CHARTS_KEY = 'flight.charts';
+const KEY_SEEN = 'flight.key-seen';
 // Pilot view: looking ahead and a little down (fewer far tiles than the horizon, which MapLibre
 // draws with stretched walls while they load)
 const PILOT_PITCH = 75;
@@ -116,9 +121,9 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'airfields', 'nowField'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'airfields', 'nowField', 'display', 'stripAltitude', 'stripVario', 'stripHeight', 'currentLabel', 'currentTitle', 'chartPick'];
 
-    static values = { url: String, label: String, comments: Array };
+    static values = { url: String, label: String, comments: Array, advice: Array };
 
     async connect() {
         this.index = 0;
@@ -159,7 +164,7 @@ export default class extends Controller {
         if (this.ghost && this.hasGhostTarget) {
             this.ghostChoiceTarget.hidden = false;
             this.ghostTarget.replaceChildren(
-                ...this.ghosts.map((ghost, n) => new Option(ghost.kind === 'own' ? 'Fantôme : mon meilleur vol' : `Fantôme : ${ghost.pilot}`, String(n))),
+                ...this.ghosts.map((ghost, n) => new Option(ghost.kind === 'own' ? 'Mon meilleur vol' : ghost.pilot, String(n))),
                 new Option('Sans fantôme', 'none'),
             );
             this.ghostTarget.title = this.ghosts.map((ghost) => `Rejouer avec ${ghost.title}, parti au même moment`).join('\n');
@@ -167,8 +172,21 @@ export default class extends Controller {
         this.showGhostLabel();
         if (this.hasAirChoiceTarget) this.airChoiceTarget.hidden = !this.air?.thermals.length;
         this.top = this.series.altitude.reduce((top, altitude) => Math.max(top, altitude), 0);
+        this.openKeyOnce();
+        this.closeDisplayOutside = (event) => {
+            if (this.hasDisplayTarget && this.displayTarget.open && !this.displayTarget.contains(event.target)) this.displayTarget.open = false;
+        };
+        document.addEventListener('click', this.closeDisplayOutside);
+        if (this.hasDisplayTarget) {
+            this.displayTarget.addEventListener('keydown', (event) => {
+                if (event.key !== 'Escape') return;
+                this.displayTarget.open = false;
+                this.displayTarget.querySelector('summary').focus();
+            });
+        }
         this.buildMap();
         this.buildCharts();
+        this.showCharts(readStored(CHARTS_KEY) ?? 'altitude');
         this.buildPhases();
         this.buildMarks();
         this.buildEvents();
@@ -181,6 +199,7 @@ export default class extends Controller {
     }
 
     disconnect() {
+        document.removeEventListener('click', this.closeDisplayOutside);
         cancelAnimationFrame(this.frame);
         this.resizeObserver?.disconnect();
         this.charts.forEach((chart) => chart.destroy());
@@ -906,7 +925,10 @@ export default class extends Controller {
         // A chart whose values the data does not have (older analysis) is left out
         const targets = this.chartTargets.filter((target) => {
             const missing = !this.series[target.dataset.series];
-            if (missing) target.closest('figure').hidden = true;
+            if (missing) {
+                target.closest('figure').hidden = true;
+                target.closest('figure').dataset.missing = 'true';
+            }
 
             return !missing;
         }).filter((target) => {
@@ -916,7 +938,9 @@ export default class extends Controller {
             const note = document.createElement('p');
             note.className = 'u-note';
             note.textContent = `L’arrivée n’a jamais été à portée : il fallait toujours une finesse de plus de ${REQUIRED_MAX} pour la rejoindre.`;
-            target.replaceWith(note);
+            target.closest('figure').dataset.missing = 'true';
+            target.closest('figure').after(note);
+            target.closest('figure').hidden = true;
 
             return false;
         });
@@ -926,7 +950,7 @@ export default class extends Controller {
             const netto = name === 'vario' && this.series.netto ? this.series.netto : null;
             const options = {
                 width: target.clientWidth || 600,
-                height: 130,
+                height: CHART_HEIGHT,
                 cursor: { sync: { key: sync.key }, drag: { x: false, y: false }, points: { size: 6 } },
                 legend: { show: false },
                 scales: { x: { time: false } },
@@ -989,8 +1013,38 @@ export default class extends Controller {
         });
     }
 
+    /** One chart, or all of them: the choice is kept for the next flights. */
+    pickChart({ currentTarget }) {
+        this.showCharts(currentTarget.dataset.series);
+        writeStored(CHARTS_KEY, currentTarget.dataset.series);
+    }
+
+    showCharts(series) {
+        const shown = this.chartTargets.filter((target) => target.isConnected && !target.closest('figure').dataset.missing);
+        const available = shown.map((target) => target.dataset.series);
+        const chosen = series === 'all' || available.includes(series) ? series : 'altitude';
+        this.chartPickTargets.forEach((button) => {
+            if (button.dataset.series !== 'all' && !available.includes(button.dataset.series)) button.hidden = true;
+            button.setAttribute('aria-pressed', String(button.dataset.series === chosen));
+        });
+        shown.forEach((target) => { target.closest('figure').hidden = chosen !== 'all' && target.dataset.series !== chosen; });
+        // A chart shown again takes the width of the page
+        requestAnimationFrame(() => this.resizeCharts());
+    }
+
+    /** The key above the map is open on the first visit, closed after (the pilot knows it). */
+    openKeyOnce() {
+        const key = this.element.querySelector('.p-flight__key');
+        if (!key || readStored(KEY_SEEN)) return;
+        key.open = true;
+        writeStored(KEY_SEEN, '1');
+    }
+
     resizeCharts() {
-        this.charts.forEach((chart) => chart.setSize({ width: chart.root.parentElement.clientWidth, height: 130 }));
+        this.charts.forEach((chart) => {
+            const width = chart.root.parentElement.clientWidth;
+            if (width > 0) chart.setSize({ width, height: CHART_HEIGHT });
+        });
     }
 
     /* ---------- Phases ---------- */
@@ -1050,13 +1104,45 @@ export default class extends Controller {
         this.moveTo(phase.start);
     }
 
+    /**
+     * The phase at the cursor beside the map: its name and number, the advice it illustrates
+     * (FlightAdvisor, shown at this phase), and its figures.
+     */
+    showCurrent(p, i) {
+        if (p >= 0 && p === this.currentPhase) return;
+        this.currentPhase = p;
+        const phase = this.flight.phases[p];
+        if (!phase) {
+            const { takeoff = 0 } = this.flight.statistics;
+            this.currentLabelTarget.textContent = i < takeoff ? 'Avant le décollage' : 'Hors phase';
+            this.currentTitleTarget.hidden = true;
+            this.nowPhaseTarget.textContent = '';
+
+            return;
+        }
+        const number = phase.type === 'thermal' ? ` n° ${this.thermalPhases.indexOf(phase) + 1}` : '';
+        const name = { thermal: 'Thermique', glide: 'Transition', launch: 'Lancement' }[phase.type] ?? liftName(phase);
+        this.currentLabelTarget.textContent = `Phase en cours · ${name}${number}`;
+        const advice = this.adviceValue.find((item) => item.phase === p);
+        this.currentTitleTarget.hidden = !advice;
+        if (advice) {
+            this.currentTitleTarget.textContent = advice.title;
+            this.currentTitleTarget.dataset.kind = advice.kind;
+        }
+        this.nowPhaseTarget.textContent = describePhase(phase);
+    }
+
     /* ---------- Two thermals side by side ---------- */
 
     pickThermal(p) {
         this.compared = this.compared.includes(p) ? this.compared.filter((q) => q !== p) : [...this.compared, p].slice(-2);
         this.phasesTarget.querySelectorAll('[data-pick]').forEach((pick) => pick.setAttribute('aria-pressed', String(this.compared.includes(Number(pick.dataset.pick)))));
-        this.thermalsTarget.hidden = this.compared.length === 0;
         this.thermalHintTarget.hidden = this.compared.length === 2;
+        // Both picked: their tab, under the viewer
+        if (this.compared.length === 2) {
+            document.getElementById('tab-thermiques')?.click();
+            this.thermalsTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         this.thermalPlot?.destroy();
         this.thermalPlot = null;
         this.thermalTableTarget.replaceChildren();
@@ -1540,7 +1626,15 @@ export default class extends Controller {
         this.nowAltitudeTarget.textContent = FORMATS.altitude(altitude[i]);
         this.nowSpeedTarget.textContent = FORMATS.speed(speed[i]);
         this.nowVarioTarget.textContent = FORMATS.vario(vario[i]);
-        if (this.hasNowHeightTarget) this.nowHeightTarget.textContent = this.series.height?.[i] == null ? '—' : FORMATS.altitude(this.series.height[i]);
+        const height = this.series.height?.[i] ?? null;
+        const heightClass = height === null ? null : height < HEIGHT_LOW ? 'is-danger' : height < HEIGHT_PLAN ? 'is-warning' : null;
+        const varioClass = vario[i] >= 0.05 ? 'is-up' : vario[i] <= -0.05 ? 'is-down' : null;
+        if (this.hasNowHeightTarget) this.nowHeightTarget.textContent = height === null ? '—' : FORMATS.altitude(height);
+        if (this.hasStripAltitudeTarget) this.stripAltitudeTarget.textContent = FORMATS.altitude(altitude[i]);
+        if (this.hasStripVarioTarget) this.stripVarioTarget.textContent = FORMATS.vario(vario[i]);
+        if (this.hasStripHeightTarget) this.stripHeightTarget.textContent = height === null ? '—' : FORMATS.altitude(height);
+        [this.nowVarioTarget, ...(this.hasStripVarioTarget ? [this.stripVarioTarget] : [])].forEach((target) => setState(target, varioClass));
+        [...(this.hasNowHeightTarget ? [this.nowHeightTarget] : []), ...(this.hasStripHeightTarget ? [this.stripHeightTarget] : [])].forEach((target) => setState(target, heightClass));
         this.drawInstruments();
         if (this.hasNowGhostTarget && this.ghost) this.nowGhostTarget.textContent = this.ghostGapText() ?? '—';
         if (this.hasNowFieldTarget && this.nearestField) {
@@ -1554,7 +1648,7 @@ export default class extends Controller {
         }
         const p = this.phaseAt[i];
         this.showRadar(i);
-        this.nowPhaseTarget.textContent = p >= 0 ? describePhase(this.flight.phases[p]) : '';
+        this.showCurrent(p, i);
         this.phasesTarget.querySelectorAll('[aria-current]').forEach((item) => item.removeAttribute('aria-current'));
         this.phasesTarget.querySelector(`[data-phase="${p}"]`)?.setAttribute('aria-current', 'true');
         if (!fromChart) {
@@ -1571,6 +1665,29 @@ export default class extends Controller {
 }
 
 
+
+/** The state of a value (is-up, is-down, is-warning, is-danger) as a class. */
+function setState(element, state) {
+    element.classList.remove('is-up', 'is-down', 'is-warning', 'is-danger');
+    if (state) element.classList.add(state);
+}
+
+/** A choice kept in the browser; storage can be refused (private window), nothing breaks then. */
+function readStored(key) {
+    try {
+        return window.localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function writeStored(key, value) {
+    try {
+        window.localStorage.setItem(key, value);
+    } catch {
+        // Not kept, that is all
+    }
+}
 
 /** One line describing a thermal, a glide, straight lift (slope, wave) or the launch climb. */
 function describePhase(phase) {

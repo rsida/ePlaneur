@@ -253,11 +253,14 @@ final class FlightController extends AbstractController
             $race = $ranked->ranks($flight) + ['winner' => $ranked->flights[0]];
         }
 
+        $advice = $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings(), $performance, SessionLift::around($flight->getAnalysis(), $flights->findSameAir($flight)));
+
         return $this->render('flight/show.html.twig', [
             'flight' => $flight,
             'race' => $race,
             'session_size' => $flights->countSession($flight),
-            'advice' => $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings(), $performance, SessionLift::around($flight->getAnalysis(), $flights->findSameAir($flight))),
+            'advice' => $advice,
+            'highlights' => FlightAdvisor::highlights($advice),
             'performance' => $performance,
             'comment_form' => $form?->createView(),
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));

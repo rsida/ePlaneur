@@ -15,12 +15,31 @@
 {% block title %}{{ flight.pilot }} face à {{ reference.pilot }}{% endblock %}
 {% block description %}Comparaison des vols de {{ flight.pilot }} et {{ reference.pilot }} sur {{ flight.flightPlan }}.{% endblock %}
 
-{% macro row(label, valueA, valueB, gap = null) %}
+{#
+    A figure of both pilots and its gap: `better` says which way is better for the pilot (high, low,
+    or null when neither is), the gap is said in words as well as in colour, with a bar as long as
+    the gap is large against the figure.
+#}
+{% macro row(label, valueA, valueB, numA = null, numB = null, better = null, format = '0', unit = '') %}
     <tr>
         <th scope="row">{{ label }}</th>
         <td>{{ valueA }}</td>
         <td>{{ valueB }}</td>
-        {% if gap is not null %}<td>{{ gap }}</td>{% else %}<td></td>{% endif %}
+        <td>
+            {%- if numA is not null and numB is not null -%}
+                {% set diff = numA - numB %}
+                {% set good = (better == 'high' and diff > 0) or (better == 'low' and diff < 0) %}
+                {% set bad = (better == 'high' and diff < 0) or (better == 'low' and diff > 0) %}
+                {% set scale = max(numA|abs, numB|abs) %}
+                <span class="p-compare__gap{{ good ? ' p-compare__won' : (bad ? ' p-compare__lost' : '') }}">
+                    <span class="p-compare__gap-bar" style="--gap: {{ scale > 0 ? min(1, (diff|abs) / scale * 2)|round(2) : 0 }}" aria-hidden="true"></span>
+                    <span>
+                        {%- if format == 'time' %}{{ diff|flight_gap }}{% else %}{{ diff > 0 ? '+' : (diff < 0 ? '−' : '') }}{{ (diff|abs)|number_format(format == '1' ? 1 : 0, ',', ' ') }}{{ unit }}{% endif -%}
+                        {%- if good %} · mieux{% elseif bad %} · moins bien{% elseif diff == 0 %} · égal{% endif -%}
+                    </span>
+                </span>
+            {%- endif -%}
+        </td>
     </tr>
 {% endmacro %}
 
@@ -42,10 +61,16 @@
                     <span class="p-compare__pilot p-compare__pilot--a">{{ flight.pilot }}</span> face à
                     <span class="p-compare__pilot p-compare__pilot--b">{{ reference.pilot }}</span>
                 </twig:Ui:Heading>
+                {# Who wins, by how much, and where it was played: the leg that made most of the gap #}
+                {% set waterfall = comparison.waterfall %}
+                {% set total = waterfall is not empty ? (waterfall|last).after : 0 %}
+                {% set key = total != 0 ? waterfall|filter(r => r.gap * total > 0)|sort((x, y) => y.gap|abs <=> x.gap|abs)|first : null %}
                 <p class="p-compare__verdict">
                     {% if finishGap is not null %}
                         À l’arrivée,
-                        {% if finishGap > 0 %}{{ flight.pilot }} a <strong class="p-compare__lost">{{ finishGap|flight_time }} de retard</strong>{% elseif finishGap < 0 %}{{ flight.pilot }} a <strong class="p-compare__won">{{ (-finishGap)|flight_time }} d’avance</strong>{% else %}les deux pilotes sont à égalité{% endif %}{{ approx }}.
+                        {% if finishGap > 0 %}{{ flight.pilot }} a <strong class="p-compare__lost">{{ finishGap|flight_time }} de retard</strong>{% elseif finishGap < 0 %}{{ flight.pilot }} a <strong class="p-compare__won">{{ (-finishGap)|flight_time }} d’avance</strong>{% else %}les deux pilotes sont à égalité{% endif %}{{ approx }}
+                        {%- if key %} ; l’essentiel se joue entre {{ key.from }} et {{ key.to }} (<strong class="{{ key.gap > 0 ? 'p-compare__lost' : 'p-compare__won' }}">{{ key.gap|flight_gap }}</strong>,
+                            {% if key.straight * key.gap > 0 and key.straight|abs >= (key.gap|abs) * 2 / 3 %}surtout en ligne droite{% elseif key.circling * key.gap > 0 and key.circling|abs >= (key.gap|abs) * 2 / 3 %}surtout en spirale{% else %}en spirale et en ligne droite{% endif %}){% endif %}.
                     {% elseif gaps is not empty %}
                         Au dernier point atteint par les deux pilotes (km {{ ((gaps|length - 1) * constant('App\\Flight\\FlightComparison::STEP') / 1000)|number_format(1, ',', ' ') }}), l’écart est de {{ gaps|last|flight_gap }}{{ approx }}.
                     {% endif %}
@@ -82,13 +107,13 @@
                         <tbody>
                             {% set sa = a.statistics %}
                             {% set sb = b.statistics %}
-                            {{ _self.row('Temps circuit' ~ approx, a.task.duration|flight_time, b.task.duration|flight_time, finishGap is not null ? finishGap|flight_gap : null) }}
-                            {{ _self.row('Vitesse circuit' ~ approx, a.task.speed ? a.task.speed|number_format(1, ',', ' ') ~ ' km/h' : 'non terminé', b.task.speed ? b.task.speed|number_format(1, ',', ' ') ~ ' km/h' : 'non terminé') }}
-                            {{ _self.row('Temps en spirale', sa.circlingShare is not null ? (sa.circlingShare * 100)|round ~ ' %' : '—', sb.circlingShare is not null ? (sb.circlingShare * 100)|round ~ ' %' : '—') }}
-                            {{ _self.row('Thermiques', sa.thermals, sb.thermals) }}
-                            {{ _self.row('Vario moyen en thermique', sa.climbAverage is not null ? sa.climbAverage|number_format(1, ',', ' ') ~ ' m/s' : '—', sb.climbAverage is not null ? sb.climbAverage|number_format(1, ',', ' ') ~ ' m/s' : '—') }}
-                            {{ _self.row('Vitesse en transition', sa.glideSpeed is not null ? sa.glideSpeed|number_format(0, ',', ' ') ~ ' km/h' : '—', sb.glideSpeed is not null ? sb.glideSpeed|number_format(0, ',', ' ') ~ ' km/h' : '—') }}
-                            {{ _self.row('Finesse en transition', sa.glideRatio is not null ? sa.glideRatio|number_format(0, ',', ' ') : '—', sb.glideRatio is not null ? sb.glideRatio|number_format(0, ',', ' ') : '—') }}
+                            {{ _self.row('Temps circuit' ~ approx, a.task.duration|flight_time, b.task.duration|flight_time, finishGap is not null ? a.task.duration : null, finishGap is not null ? b.task.duration : null, 'low', 'time') }}
+                            {{ _self.row('Vitesse circuit' ~ approx, a.task.speed ? a.task.speed|number_format(1, ',', ' ') ~ ' km/h' : 'non terminé', b.task.speed ? b.task.speed|number_format(1, ',', ' ') ~ ' km/h' : 'non terminé', a.task.speed ?: null, b.task.speed ?: null, 'high', '1', ' km/h') }}
+                            {{ _self.row('Temps en spirale', sa.circlingShare is not null ? (sa.circlingShare * 100)|round ~ ' %' : '—', sb.circlingShare is not null ? (sb.circlingShare * 100)|round ~ ' %' : '—', sa.circlingShare is not null ? (sa.circlingShare * 100)|round : null, sb.circlingShare is not null ? (sb.circlingShare * 100)|round : null, 'low', '0', ' pts') }}
+                            {{ _self.row('Thermiques', sa.thermals, sb.thermals, sa.thermals, sb.thermals) }}
+                            {{ _self.row('Vario moyen en thermique', sa.climbAverage is not null ? sa.climbAverage|number_format(1, ',', ' ') ~ ' m/s' : '—', sb.climbAverage is not null ? sb.climbAverage|number_format(1, ',', ' ') ~ ' m/s' : '—', sa.climbAverage, sb.climbAverage, 'high', '1', ' m/s') }}
+                            {{ _self.row('Vitesse en transition', sa.glideSpeed is not null ? sa.glideSpeed|number_format(0, ',', ' ') ~ ' km/h' : '—', sb.glideSpeed is not null ? sb.glideSpeed|number_format(0, ',', ' ') ~ ' km/h' : '—', sa.glideSpeed, sb.glideSpeed, 'high', '0', ' km/h') }}
+                            {{ _self.row('Finesse en transition', sa.glideRatio is not null ? sa.glideRatio|number_format(0, ',', ' ') : '—', sb.glideRatio is not null ? sb.glideRatio|number_format(0, ',', ' ') : '—', sa.glideRatio, sb.glideRatio, 'high') }}
                             {{ _self.row('Distance parcourue', flight.distance|flight_distance, reference.distance|flight_distance) }}
                         </tbody>
                     </table>
@@ -190,7 +215,6 @@
             </div>
         </div>
 
-        {% set waterfall = comparison.waterfall %}
         {% if waterfall|length > 0 %}
             {# Where the time was lost or gained, leg by leg: floating bars from the gap before the leg to the gap after it #}
             {% set ends = [0]|merge(waterfall|map(r => r.before))|merge(waterfall|map(r => r.after)) %}
@@ -203,7 +227,7 @@
                         {% set left = (min(row.before, row.after) - low) / span * 100 %}
                         {% set width = max(0.5, (row.gap|abs) / span * 100) %}
                         <li class="p-compare__waterfall-row">
-                            <span class="p-compare__waterfall-leg">{{ row.from }} → {{ row.to }}</span>
+                            <button type="button" class="p-compare__waterfall-leg" data-action="compare-viewer#showStretch" data-from="{{ row.start }}" data-to="{{ row.end }}" title="Voir cette branche sur la carte">{{ row.from }} → {{ row.to }}</button>
                             <span class="p-compare__waterfall-track" title="Écart avant : {{ row.before|flight_gap }} · après : {{ row.after|flight_gap }}">
                                 <span class="p-compare__waterfall-bar {{ row.gap > 0 ? 'p-compare__waterfall-bar--lost' : 'p-compare__waterfall-bar--won' }}" style="left: {{ left|round(2) }}%; width: {{ width|round(2) }}%"></span>
                             </span>
@@ -215,6 +239,16 @@
                         </li>
                     {% endfor %}
                 </ol>
+                {# Minutes under the bars, every 1, 2, 5, 10, 15, 30 or 60 min, as many as fit #}
+                {% set tick = [60, 120, 300, 600, 900, 1800, 3600]|filter(t => span / t <= 6)|first ?: 3600 %}
+                <div class="p-compare__waterfall-row p-compare__waterfall-scale" aria-hidden="true">
+                    <span class="p-compare__waterfall-leg"></span>
+                    <div class="p-compare__waterfall-axis">
+                        {% for value in range((low / tick)|round(0, 'ceil') * tick, high, tick) %}
+                            <span style="left: {{ ((value - low) / span * 100)|round(2) }}%">{{ value == 0 ? '0' : (value > 0 ? '+' : '−') ~ ((value|abs) / 60)|round ~ ' min' }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
                 <p class="u-note">Écart total à la fin de la dernière branche faite par les deux : <strong>{{ (waterfall|last).after|flight_gap }}</strong> (positif : {{ nameA }} derrière).</p>
             </section>
         {% endif %}
