@@ -50,12 +50,13 @@ Task times checked against the Condor results: s0109 4,524 s (Condor 4,527), Las
 (4,219), c060 4,846 s (4,909: the IGC export gives the same 4,846 s; the 63 s may be a penalty).
 
 The attitude (found on 2026-10-10 on C3-s117 and the C3-c046a race): the quaternion turns the world
-(x east, y north, z up) into the glider, so its conjugate turns the nose (body x) and the left wing
+(x east, y north, z up) into the glider, so its conjugate turns the nose (body x) and the right wing
 (body y) into the world; it is not always of length 1 (up to 2 % off) and is normalised. With it,
 the heading of the nose follows the track within 2.4° (median), the pitch stays within a few
 degrees while circling and the bank reads 16° to 45° in the thermals. `FtrReader::attitude()` gives
-the bank (height of the left wing: positive banked right) and the pitch (height of the nose) of
-each record; the analysis keeps them for each second (`series.bank`, `series.pitch`) when every
+the bank (minus the height of the right wing: positive banked right; read on the wrong side from
+2026-10-10 to 2026-10-11, now checked against the turns of the track by `FtrReaderTest`) and the
+pitch (height of the nose) of each record; the analysis keeps them for each second (`series.bank`, `series.pitch`) when every
 second has them, and the viewers draw the gliders with them (else the bank of a steady turn).
 
 Condor 2 tracks are not read (their format differs): pilots export an IGC.
@@ -279,9 +280,16 @@ on first, something done well; each advice knows the moment and the phase that s
 tabs (`tabs` controller: a link to an element of a panel opens it; the comment form with errors
 opens its tab):
 
-- Map toolbar: `Carte · 3D · Suivre · Affichage`; "Affichage" is a panel over the map with the
-  basemap, the colour of the track, the lift of the race, the ghost, the camera and the switches
-  (expected slopes, airfields, instruments, pilot view). It closes outside it and with Escape.
+- Map toolbar: `Carte · 3D · Suivre · Instruments · Affichage`; "Instruments" shows or hides the
+  instruments over the map (shown by default, the choice kept in the browser). "Affichage" is a
+  panel over the map with how the map is seen: basemap, colour of the track, ghost, camera and
+  pilot view. It closes outside it and with Escape.
+- What the map draws: a layers button under the zoom of the map (roadmap 7j5) opens a list of
+  check boxes, each kept in the browser (`flight.layers-off`): own thermals, slope and wave lift,
+  lift crossed, strong sink, windsocks, curtain and shadow of the track (these in 3D only), thermals
+  of the other pilots and the ones missed (when the race has other tracks), task and turnpoints,
+  expected slopes, airfields and glide reach, comments. Rows without data for the flight are left
+  out.
 - Beside the map, the phase at the cursor ("Phase en cours · Thermique n° 4") with the advice it
   illustrates as a title, then the values (vario in green or red, height in orange under 300 m,
   red under 150 m), the legs, the centring radar and the list of phases.
@@ -289,6 +297,16 @@ opens its tab):
   (`localStorage`, nothing breaks without it); the key above the map is open on the first visit.
 - On a phone: altitude, vario and height on the map, the replay bar stuck to the bottom of the
   screen.
+- "Débrief guidé" in the replay bar (roadmap 7j4, track B of the Figma pass): the flight told in
+  chapters in place of the current phase beside the map (`FlightDebrief::chapters()`): the launch
+  and the start, each leg of the task (distance, time and speed, thermals and their climb, share
+  of time circling, lowest height above the ground), the final glide, then the review (task time,
+  arrival height). Each piece of advice goes to the chapter of its moment; advice without a moment
+  goes to the review. A final glide begun before the last leg (often, in a race in the mountains)
+  is not a chapter: the leg where it begins says so and the review gives the arrival. Without a
+  task: launch, the flight, the review. "Précédent / Suivant" frame the chapter on the map and put
+  the cursor at its start; the replay stops at the end of the chapter; moving the cursor elsewhere
+  shows the chapter there.
 
 - Map: **MapLibre GL** 5 (version 6 is not supported yet by deck.gl's MapLibre integration).
   Basemaps: OpenTopoMap ("Relief", default), Esri World Imagery ("Satellite"), OpenStreetMap
@@ -307,10 +325,13 @@ opens its tab):
   pages has a label next to the cursor with the exact values of the point (`valueTip()` of
   `assets/flight/chart.js`): add it to any new chart.
 - Gliders (`assets/flight/scene.js`, shared by the three viewers, after the 3D replays of Condor
-  Club and SportsTrackLive): a glider drawn with deck.gl layers (wings and tailplane as polygons,
-  fuselage and fin as ribbons; no 3D model to load), turned to its heading and banked like it
-  (tan(bank) = speed × turn rate / g), drawn wider than a real 15 m glider and enlarged with the
-  zoom to stay about 56 px wide; a flag above it with its name and altitude in its colour; in 3D a
+  Club and SportsTrackLive): from above a flat glider (tapered wings with red tips, fuselage,
+  canopy, tailplane, an outline and a light shadow), in 3D a lit model in volume
+  (`assets/flight/glider-mesh.js`: fuselage, canopy, tapered wings with 4° of dihedral and red
+  tips, fin and T-tail, a few hundred triangles built in code and drawn once per glider by
+  `SimpleMeshLayer`, no file to load), turned to its heading, banked and pitched like it
+  (recorded by Condor 3, else tan(bank) = speed × turn rate / g), drawn wider than a real 15 m
+  glider and enlarged with the zoom to stay about 56 px wide (1.6 times more in 3D); a flag above it with its name and altitude in its colour; in 3D a
   line down to the ground. Session and comparison: a trail of the last 5 minutes fading out behind
   each glider, and under the trail of the pilot followed a curtain down to the ground.
 - Readings in the flag, as on Condor Club (`readings()`): for the glider of the flight page, the

@@ -66,6 +66,11 @@ final class FlightTest extends WebTestCase
         self::assertSelectorTextContains('#tab-synthese[aria-selected="true"]', 'Synthèse');
         self::assertSelectorExists('#panel-phases .p-flight__phase-row');
         self::assertSelectorTextContains('.p-flight__menu', 'Export IGC');
+        // The guided debrief, from the start of the flight to the review
+        self::assertSelectorExists('.p-flight__guide-toggle');
+        $chapters = $this->client->getCrawler()->filter('.p-flight__chapter-title')->each(static fn ($title): string => $title->text());
+        self::assertSame('Le lancement', $chapters[0], 'the sample never crosses the start line');
+        self::assertStringContainsString('bilan', (string) end($chapters));
 
         // An airfield of the landscape near the track, for the glide cone
         $this->entityManager->persist(new Airfield('AA3', 'Laragne', 44.3157, 5.8125, 655.0, 800));

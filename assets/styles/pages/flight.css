@@ -2162,3 +2162,164 @@
         box-shadow: 0 -1px 0 var(--color-line);
     }
 }
+
+/* Guided debrief (FlightDebrief): the flight in chapters beside the map, in place of the current phase */
+.p-flight__guide {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: var(--color-tint-cool);
+}
+
+.p-flight__guide[hidden],
+.p-flight__chapter[hidden],
+.p-flight.is-guided .p-flight__current {
+    display: none;
+}
+
+.p-flight__guide-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.p-flight__guide .p-flight__current-label {
+    background-color: var(--color-page);
+}
+
+.p-flight__guide-close {
+    display: inline-grid;
+    place-items: center;
+    padding: var(--space-1);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.p-flight__chapter {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.p-flight__chapter p {
+    margin: 0;
+}
+
+.p-flight__chapter-title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-title-sm);
+    line-height: 1.2;
+}
+
+.p-flight__chapter-time {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.p-flight__chapter .p-flight__advice-list {
+    gap: var(--space-2);
+}
+
+.p-flight__guide-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.p-flight__guide-nav button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* Layers of the map: a button under the zoom of the map, a list of what it draws */
+.p-flight__layers {
+    position: absolute;
+    top: 6.75rem;
+    right: 10px;
+    z-index: 3;
+}
+
+.p-flight__layers-button {
+    display: grid;
+    place-items: center;
+    width: 29px;
+    height: 29px;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-dark) 10%, transparent);
+    color: var(--color-dark);
+    list-style: none;
+    cursor: pointer;
+}
+
+.p-flight__layers-button::-webkit-details-marker {
+    display: none;
+}
+
+.p-flight__layers[open] .p-flight__layers-button {
+    background-color: var(--color-primary);
+    color: var(--color-paper);
+}
+
+.p-flight__layers-button svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.p-flight__layers-panel {
+    position: absolute;
+    top: 0;
+    right: calc(100% + var(--space-2));
+    display: grid;
+    gap: var(--space-1);
+    width: min(16rem, calc(100vw - 6rem));
+    max-height: calc(var(--flight-map-height) - 8rem);
+    margin: 0;
+    padding: var(--space-3);
+    overflow-y: auto;
+    border: 0;
+    border-radius: var(--radius-md);
+    background-color: var(--color-paper);
+    box-shadow: var(--shadow-raised);
+    font-size: var(--text-sm);
+}
+
+.p-flight__layers-title {
+    float: left;
+    margin-bottom: var(--space-1);
+    padding: 0;
+    font-weight: 700;
+}
+
+.p-flight__layer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    cursor: pointer;
+}
+
+.p-flight__layer[hidden] {
+    display: none;
+}
+
+.p-flight__layer-input {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-primary);
+}
+
+.p-flight__layer-note {
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-tint-cool);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+}

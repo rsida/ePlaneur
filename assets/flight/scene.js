@@ -1,5 +1,7 @@
 import { ColumnLayer, LineLayer, PathLayer, SolidPolygonLayer, TextLayer } from '@deck.gl/layers';
+import { SimpleMeshLayer } from '@deck.gl/mesh-layers';
 import { bearing } from './geo.js';
+import { GLIDER_MESH, gliderMatrix } from './glider-mesh.js';
 
 /*
  * The gliders of the flight viewers (flight_viewer, compare_viewer and session_viewer controllers),
@@ -7,7 +9,7 @@ import { bearing } from './geo.js';
  *
  * - a glider seen from anywhere: wings, tailplane, fuselage and fin, turned to its heading and banked
  *   like it, enlarged to stay about GLIDER_PIXELS wide whatever the zoom (at its real size a 15 m
- *   glider is a dot);
+ *   glider is a dot); in 3D a lit model in volume (glider-mesh.js), from above flat shapes;
  * - a flag above it: its name (or competition id) and altitude on its colour;
  * - its trail: the last minutes of its track, fading out behind it;
  * - in 3D, for the glider followed, a curtain down to the ground under its trail, which shows how
@@ -25,14 +27,28 @@ import { bearing } from './geo.js';
 
 /*
  * Shape of the glider in metres: x to the right wing, y forward, z up. A 15 m glider drawn wider
- * than it is (chord, fuselage, tailplane): with its real slender wings it reads as a line.
+ * than it is (chord, fuselage, tailplane): with its real slender wings it reads as a line. Seen from
+ * above: tapered wings with rounded tips marked red, a fuselage narrowing to the tail, its canopy
+ * and a tapered tailplane; the outlines are given for the left half and mirrored.
  */
-const WINGS = [[-7.5, 0.6, 0], [-0.6, 1.6, 0], [0.6, 1.6, 0], [7.5, 0.6, 0], [7.5, -0.5, 0], [0.6, -0.6, 0], [-0.6, -0.6, 0], [-7.5, -0.5, 0]];
-const TAILPLANE = [[-2.6, -5.2, 0.9], [2.6, -5.2, 0.9], [2.6, -6.3, 0.9], [-2.6, -6.3, 0.9]];
-const FUSELAGE = [[0, 3.4, -0.2], [0, 0, 0], [0, -6.3, 0.3]];
-const FIN = [[0, -5.3, 0.2], [0, -6.3, 1.8]];
+const WING = [[-0.4, 1.45, 0], [-3.5, 1.15, 0], [-6.4, 0.75, 0], [-7.3, 0.55, 0], [-7.65, 0.3, 0], [-7.6, -0.05, 0], [-7.3, -0.3, 0], [-6.4, -0.4, 0], [-3.5, -0.55, 0], [-0.4, -0.75, 0]];
+const WING_TIP = [[-6.4, 0.75, 0], [-7.3, 0.55, 0], [-7.65, 0.3, 0], [-7.6, -0.05, 0], [-7.3, -0.3, 0], [-6.4, -0.4, 0]];
+const TAILPLANE = [[-0.3, -5.35, 0.9], [-2.5, -5.7, 0.9], [-2.65, -5.95, 0.9], [-2.5, -6.25, 0.9], [-0.3, -6.55, 0.9]];
+const FUSELAGE = [[0, 3.7, 0], [-0.3, 3.35, 0], [-0.52, 2.6, 0], [-0.6, 1.4, 0], [-0.52, 0, 0], [-0.32, -2, 0], [-0.2, -4.5, 0], [-0.16, -6.6, 0], [0, -6.7, 0]];
+const CANOPY = [[0, 3.15, 0], [-0.26, 2.75, 0], [-0.34, 2.0, 0], [-0.26, 1.15, 0], [0, 0.95, 0]];
+const WINGS = [...WING, ...mirror(WING)];
+const TAILPLANE_BOTH = [...TAILPLANE, ...mirror(TAILPLANE)];
+const FUSELAGE_BOTH = [...FUSELAGE, ...mirror(FUSELAGE).slice(1, -1)];
+const CANOPY_BOTH = [...CANOPY, ...mirror(CANOPY).slice(1, -1)];
+const CANOPY_COLOR = [44, 62, 80];
+const TIP_COLOR = [214, 48, 39];
+// Shadow of the glider on the map from above: pixels to the south-east, opacity
+const SHADOW_PIXELS = 3;
+const SHADOW_ALPHA = 70;
 const SPAN = 15;
 const GLIDER_PIXELS = 56;
+// In 3D the glider is seen from the side and from afar: larger, so that its volume and bank read
+const GLIDER_3D = 1.6;
 const TRAIL_CHUNKS = 6;
 // Seconds of the average climb in the flag ("ø"), the integrator of a glider's vario
 const AVERAGE_CLIMB = 30;
@@ -150,14 +166,17 @@ export function positionAt(track, index) {
 export function gliderLayers(id, gliders, { is3d, zoom }) {
     const items = gliders.map((glider) => {
         const [lon, lat, altitude] = positionAt(glider.track, glider.index);
-        const { heading, bank } = attitude(glider.track, glider.index);
+        const { heading, bank, pitch } = attitude(glider.track, glider.index);
         const metresPerPixel = (40075016.686 * Math.cos((lat * Math.PI) / 180)) / (512 * 2 ** zoom);
         // The glider followed a little bigger
         const scale = Math.max(1, ((glider.selected ? 1.4 : 1) * GLIDER_PIXELS * metresPerPixel) / SPAN);
         const z = is3d ? altitude : 0;
         const place = shape(lon, lat, z, heading, is3d ? bank : 0, scale);
+        const east = (SHADOW_PIXELS * metresPerPixel) / (111320 * Math.cos((lat * Math.PI) / 180));
+        const south = (SHADOW_PIXELS * metresPerPixel) / 111320;
+        const shadow = (points) => points.map(([x, y, h]) => [x + east, y - south, h]);
 
-        return { ...glider, position: [lon, lat, z], ground: [lon, lat, 0], altitude, place, scale };
+        return { ...glider, position: [lon, lat, z], ground: [lon, lat, 0], altitude, place, shadow, scale, matrix: is3d ? gliderMatrix(heading, bank, pitch, scale * GLIDER_3D) : null };
     });
     // The glider followed is drawn last, over the others
     items.sort((a, b) => Number(a.selected) - Number(b.selected));
@@ -167,31 +186,50 @@ export function gliderLayers(id, gliders, { is3d, zoom }) {
     const row = Math.max(0, ...items.map((item) => lines(item).length * size(item) * 1.15 + 10));
     const always = { depthCompare: 'always' };
     const outline = (item) => (item.selected ? [255, 255, 255] : [25, 38, 48]);
-    const layers = [
+    // In 3D a lit glider in volume (glider-mesh.js), from above flat shapes with an outline
+    const body = is3d ? [
+        new SimpleMeshLayer({
+            id: `${id}-mesh`,
+            data: items,
+            mesh: GLIDER_MESH,
+            getPosition: (item) => item.position,
+            getColor: (item) => item.color,
+            getTransformMatrix: (item) => item.matrix,
+            material: { ambient: 0.45, diffuse: 0.65, shininess: 40, specularColor: [90, 90, 90] },
+        }),
+    ] : [
         new SolidPolygonLayer({
-            id: `${id}-wings`,
-            data: items.flatMap((item) => [{ item, polygon: item.place(WINGS) }, { item, polygon: item.place(TAILPLANE) }]),
+            id: `${id}-planform`,
+            // In drawing order: shadow, wings and tailplane, red tips, fuselage, canopy
+            data: items.flatMap((item) => [
+                { item, polygon: item.shadow(item.place(WINGS)), color: [0, 0, 0, SHADOW_ALPHA] },
+                { item, polygon: item.shadow(item.place(TAILPLANE_BOTH)), color: [0, 0, 0, SHADOW_ALPHA] },
+                { item, polygon: item.shadow(item.place(FUSELAGE_BOTH)), color: [0, 0, 0, SHADOW_ALPHA] },
+                { item, polygon: item.place(WINGS), color: item.color },
+                { item, polygon: item.place(TAILPLANE_BOTH), color: item.color },
+                { item, polygon: item.place(WING_TIP), color: TIP_COLOR },
+                { item, polygon: item.place(mirror(WING_TIP)), color: TIP_COLOR },
+                { item, polygon: item.place(FUSELAGE_BOTH), color: item.color },
+                { item, polygon: item.place(CANOPY_BOTH), color: CANOPY_COLOR },
+            ]),
             getPolygon: (part) => part.polygon,
-            getFillColor: (part) => part.item.color,
+            getFillColor: (part) => part.color,
             parameters: always,
         }),
         new PathLayer({
-            id: `${id}-body`,
-            data: items.flatMap((item) => [
-                { item, path: item.place(FUSELAGE), width: 1.6 },
-                { item, path: item.place(FIN), width: 1 },
-                { item, path: item.place([...WINGS, WINGS[0]]), width: 0.25 },
-                { item, path: item.place([...TAILPLANE, TAILPLANE[0]]), width: 0.25 },
-            ]),
+            id: `${id}-outline`,
+            data: items.flatMap((item) => [WINGS, TAILPLANE_BOTH, FUSELAGE_BOTH].map((edge) => ({ item, path: item.place([...edge, edge[0]]) }))),
             getPath: (part) => part.path,
-            getColor: (part) => (part.width < 0.5 ? outline(part.item) : part.item.color),
-            getWidth: (part) => part.width * part.item.scale,
+            getColor: (part) => outline(part.item),
+            getWidth: (part) => 0.2 * part.item.scale,
             widthUnits: 'meters',
             widthMinPixels: 1,
-            capRounded: true,
             jointRounded: true,
             parameters: always,
         }),
+    ];
+    const layers = [
+        ...body,
         new TextLayer({
             id: `${id}-flags`,
             data: items.filter((item) => item.label),
@@ -577,8 +615,9 @@ export function windLayers(id, track, thermals, index, { zoom }) {
  */
 export function sessionAirLayers(id, air, { is3d, zoom, show = 'all' }) {
     if (!air || show === 'none') return [];
-    const thermals = air.thermals.filter((thermal) => show === 'all' || thermal.missed);
-    const crossings = show === 'all' ? air.crossings : [];
+    // 'all', 'missed' (only the thermals missed), 'others' (all but those)
+    const thermals = air.thermals.filter((thermal) => show === 'all' || (show === 'missed') === Boolean(thermal.missed));
+    const crossings = show === 'missed' ? [] : air.crossings;
     const parameters = is3d ? SEE_THROUGH : { ...SEE_THROUGH, depthCompare: 'always' };
     const missed = thermals.filter((thermal) => thermal.missed);
     const number = (value) => value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -724,6 +763,11 @@ function metresBetween(a, b) {
 }
 
 /** Places a shape of the glider (metres) at a point, turned to `heading`, banked by `bank`, scaled. */
+/** The right half of an outline given for the left half, in the order that closes it. */
+function mirror(points) {
+    return points.map(([x, y, z]) => [-x, y, z]).reverse();
+}
+
 function shape(lon, lat, altitude, heading, bank, scale) {
     const h = (heading * Math.PI) / 180;
     const b = (bank * Math.PI) / 180;

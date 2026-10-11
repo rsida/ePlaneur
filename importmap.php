@@ -64,4 +64,12 @@ return [
     'maplibre-gl' => ['version' => '5.24.0'],
     'maplibre-gl/dist/maplibre-gl.css' => ['version' => '5.24.0', 'type' => 'css'],
     'maplibre-gl/dist/maplibre-gl.min.css' => ['version' => '5.24.0', 'type' => 'css'],
+    '@deck.gl/mesh-layers' => ['version' => '9.4.0'],
+    '@loaders.gl/schema' => ['version' => '4.4.5'],
+    '@luma.gl/gltf' => ['version' => '9.4.0'],
+    '@loaders.gl/gltf' => ['version' => '4.4.5'],
+    '@loaders.gl/textures' => ['version' => '4.4.5'],
+    'meshoptimizer/decoder' => ['version' => '1.2.0'],
+    '@loaders.gl/draco' => ['version' => '4.4.5'],
+    'ktx-parse' => ['version' => '0.7.1'],
 ];

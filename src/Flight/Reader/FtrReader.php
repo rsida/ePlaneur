@@ -116,9 +116,10 @@ final readonly class FtrReader
     /**
      * Bank (positive to the right) and pitch (positive nose up) of a record, in degrees, from the
      * quaternion at +20 (x, y, z, w; x east, y north, z up). It turns the world into the glider: its
-     * conjugate turns the nose (body x) and the left wing (body y) into the world. Found on
+     * conjugate turns the nose (body x) and the right wing (body y) into the world. Found on
      * 2026-10-10 on C3-s117: the heading of the nose follows the track within 2.4° (median), the
-     * pitch stays within a few degrees in the circles, which bank 16° to 45°.
+     * pitch stays within a few degrees in the circles, which bank 16° to 45°; the side of the bank
+     * checked on 2026-10-11 against the turns of the track (FtrReaderTest).
      *
      * @return array{?float, ?float}
      */
@@ -135,12 +136,13 @@ final readonly class FtrReader
             return [null, null];
         }
         [$x, $y, $z, $w] = [$x / $norm, $y / $norm, $z / $norm, $w / $norm];
-        // Height (world z) of the nose and of the left wing, rotated by the conjugate (−x, −y, −z, w)
+        // Height (world z) of the nose and of the right wing, rotated by the conjugate (−x, −y, −z, w)
         $noseUp = 2 * ($x * $z + $w * $y);
         $wingUp = 2 * ($y * $z - $w * $x);
         $angle = static fn (float $value): float => round(rad2deg(asin(max(-1.0, min(1.0, $value)))), 1);
 
-        return [$angle($wingUp), $angle($noseUp)];
+        // Banked right, the right wing goes down
+        return [-$angle($wingUp), $angle($noseUp)];
     }
 
     /**

@@ -24,6 +24,53 @@
     </li>
 {% endmacro %}
 
+{# The figures of a chapter of the guided debrief (FlightDebrief), in words #}
+{% macro chapter_text(chapter) %}
+    {% set f = chapter.figures %}
+    {% set circling %}
+        {% if f.thermals is defined %}
+            {% if f.thermals > 0 %}
+                {{ f.thermals }} thermique{{ f.thermals > 1 ? 's' }}{% if f.climb is not null %} à {{ f.climb|number_format(1, ',', ' ') }} m/s en moyenne{% endif %}, {{ (f.circling * 100)|number_format(0) }} % du temps en spirale.
+            {% elseif f.circling %}
+                Une spirale commencée avant, {{ (f.circling * 100)|number_format(0) }} % du temps en spirale.
+            {% else %}
+                Aucune spirale : tout en transition.
+            {% endif %}
+        {% endif %}
+    {% endset %}
+    {% set lowest %}
+        {% if f.lowest is defined and f.lowest is not null %}
+            Point bas : <button type="button" class="p-flight__advice-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ f.lowestAt }}">{{ f.lowest|number_format(0, ',', ' ') }} m sol à {{ f.lowestAt|flight_clock }}</button>.
+        {% endif %}
+    {% endset %}
+    {% if chapter.kind == 'launch' %}
+        <p>
+            {{ {airborne: 'Départ en vol', aerotow: 'Remorquage', winch: 'Treuil'}[f.launch] ?? 'Décollage' }}{% if f.release %}, largage à {{ f.releaseAltitude|number_format(0, ',', ' ') }} m à {{ f.release|flight_clock }}{% endif %}.
+            {% if f.start is not null %}
+                Départ du circuit à {{ f.start|flight_clock }}{% if f.startAltitude is not null %}, à {{ f.startAltitude|number_format(0, ',', ' ') }} m et {{ f.startSpeed|number_format(0, ',', ' ') }} km/h{% endif %}{% if f.release %}, {{ (f.start - f.release)|flight_duration }} après le largage{% endif %}.
+            {% endif %}
+        </p>
+    {% elseif chapter.kind == 'leg' %}
+        <p>{% if f.reached %}{{ f.distance|flight_distance }} en {{ f.duration|flight_duration }}, soit {{ f.speed|number_format(0, ',', ' ') }} km/h.{% else %}Point non atteint : le vol s’arrête sur cette branche.{% endif %}</p>
+        <p>{{ circling }} {{ lowest }}</p>
+        {% if f.finalGlide %}<p>Fin du dernier thermique à {{ f.finalGlide.from|flight_clock }} : la transition finale commence ici, {{ f.finalGlide.distance|flight_distance }} depuis {{ f.finalGlide.startAltitude|number_format(0, ',', ' ') }} m.</p>{% endif %}
+    {% elseif chapter.kind == 'final' %}
+        <p>{{ f.distance|flight_distance }} en {{ f.duration|flight_duration }}{% if f.speed %} à {{ f.speed|number_format(0, ',', ' ') }} km/h{% endif %}, depuis {{ f.startAltitude|number_format(0, ',', ' ') }} m.
+            Arrivée à {{ f.arrivalAltitude|number_format(0, ',', ' ') }} m, {{ f.height|number_format(0, ',', ' ') }} m au-dessus du point d’arrivée{% if f.heightTime %} : cette marge a coûté environ {{ f.heightTime|flight_time }} de spirale au rythme du dernier thermique{% endif %}.</p>
+        <p>{{ lowest }}</p>
+    {% elseif chapter.kind == 'flight' %}
+        <p>{{ circling }} {{ lowest }}</p>
+    {% else %}
+        <p>
+            {% if f.completed %}Circuit bouclé en {{ f.duration|flight_duration }}, à {{ f.speed|number_format(1, ',', ' ') }} km/h.
+            {% elseif f.completed is same as(false) %}Circuit non terminé{% if f.lastPoint %} : dernier point atteint, {{ f.lastPoint }}{% endif %}.
+            {% endif %}
+            Vol de {{ f.flightTime|flight_duration }}, {{ f.distance|flight_distance }} parcourus.
+        </p>
+        {% if f.finalGlide %}<p>Transition finale de {{ f.finalGlide.distance|flight_distance }} en {{ f.finalGlide.duration|flight_duration }}, arrivée à {{ f.finalGlide.height|number_format(0, ',', ' ') }} m au-dessus du point d’arrivée{% if f.finalGlide.heightTime %} : cette marge a coûté environ {{ f.finalGlide.heightTime|flight_time }} de spirale au rythme du dernier thermique{% endif %}.</p>{% endif %}
+    {% endif %}
+{% endmacro %}
+
 {% block body %}
     <section class="p-flight t-light" data-controller="flight-viewer"
              data-flight-viewer-url-value="{{ path('app_flight_analysis', {id: flight.id, v: flight.analysisVersion ~ '-' ~ constant('App\\Controller\\FlightController::DATA_VERSION')}) }}"
@@ -188,6 +235,7 @@
                         <button type="button" class="p-flight__toggle" aria-pressed="false" data-flight-viewer-target="view" data-view="3d" data-action="flight-viewer#setView"><twig:ux:icon name="mountain" /> 3D</button>
                     </div>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow" title="Garder le planeur au centre ; en 3D, la caméra le suit"><twig:ux:icon name="crosshair" /> Suivre</button>
+                    <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="instrumentsToggle" data-action="flight-viewer#toggleInstruments" title="Horizon artificiel, variomètre et vitesse, sur la carte"><twig:ux:icon name="progress" /> Instruments</button>
                     {# Every display setting in one panel over the map, grouped by subject #}
                     <details class="p-flight__display" data-flight-viewer-target="display">
                         <summary class="p-flight__toggle p-flight__follow"><twig:ux:icon name="settings" /> Affichage <twig:ux:icon name="chevron-down" class="p-flight__display-chevron" /></summary>
@@ -208,14 +256,6 @@
                                     {% if performance %}<option value="netto">Netto (l’air)</option><option value="speed">Vitesse / MacCready</option>{% endif %}
                                 </select>
                             </label>
-                            <label class="p-flight__display-row" data-flight-viewer-target="airChoice" hidden>
-                                <span>Thermiques de la course</span>
-                                <select data-flight-viewer-target="air" data-action="flight-viewer#render">
-                                    <option value="all">Ceux des autres pilotes</option>
-                                    <option value="missed">Seulement ceux manqués</option>
-                                    <option value="none">Masqués</option>
-                                </select>
-                            </label>
                             <label class="p-flight__display-row" data-flight-viewer-target="ghostChoice" hidden>
                                 <span>Fantôme</span>
                                 <select data-flight-viewer-target="ghost" data-action="flight-viewer#setGhost"></select>
@@ -229,16 +269,39 @@
                                 </select>
                             </label>
                             <div class="p-flight__display-row p-flight__display-switches" role="group" aria-label="Sur la carte">
-                                {% if analysis.slopes.cells ?? null %}
-                                    <button type="button" class="p-flight__switch" aria-pressed="true" data-flight-viewer-target="slopes" data-action="flight-viewer#toggleSlopes" title="Les pentes face au vent de la tâche, où l’on attend de l’ascendance de pente">Pentes prévues</button>
-                                {% endif %}
-                                <button type="button" class="p-flight__switch" aria-pressed="true" data-flight-viewer-target="airfields" data-action="flight-viewer#toggleAirfields" title="Les terrains du paysage, en vert ceux qu’on peut rejoindre en plané, et le rayon de plané autour du planeur" hidden>Terrains</button>
-                                <button type="button" class="p-flight__switch" aria-pressed="false" data-action="flight-viewer#toggleInstruments" title="Horizon artificiel, variomètre et vitesse, sur la carte">Instruments</button>
                                 <button type="button" class="p-flight__switch" aria-pressed="false" data-flight-viewer-target="pilot" data-action="flight-viewer#togglePilot" title="En 3D, la caméra dans le planeur, inclinée avec lui">Vue pilote</button>
                             </div>
                         </div>
                     </details>
                 </div>
+                {# What the map draws, each on or off (kept in the browser); "3D" ones only show in 3D #}
+                {% set layer_rows = [
+                    {name: 'thermals', label: 'Vos thermiques', note: '3D'},
+                    {name: 'lift', label: 'Pentes et onde', note: '3D'},
+                    {name: 'crossings', label: 'Ascendances traversées', note: '3D'},
+                    {name: 'sinks', label: 'Fortes descendances', note: '3D'},
+                    {name: 'wind', label: 'Manches à air', note: '3D'},
+                    {name: 'air', label: 'Thermiques des autres pilotes', needs: 'air'},
+                    {name: 'missed', label: 'Thermiques manqués', needs: 'air'},
+                    {name: 'task', label: 'Circuit et points de virage'},
+                    {name: 'slopes', label: 'Pentes prévues', needs: (analysis.slopes.cells ?? null) ? null : 'never'},
+                    {name: 'airfields', label: 'Terrains et rayon de plané', needs: 'reach'},
+                    {name: 'curtain', label: 'Rideau sous la trace', note: '3D'},
+                    {name: 'shadow', label: 'Ombre de la trace', note: '3D'},
+                    {name: 'comments', label: 'Commentaires', needs: 'comments'},
+                ] %}
+                <details class="p-flight__layers" data-flight-viewer-target="layers">
+                    <summary class="p-flight__layers-button" title="Ce que la carte affiche"><twig:ux:icon name="layers" /><span class="u-visually-hidden">Calques de la carte</span></summary>
+                    <fieldset class="p-flight__layers-panel">
+                        <legend class="p-flight__layers-title">Sur la carte</legend>
+                        {% for row in layer_rows|filter(row => row.needs is not defined or row.needs != 'never') %}
+                            <label class="p-flight__layer"{% if row.needs is defined and row.needs %} data-needs="{{ row.needs }}" hidden{% endif %}>
+                                <input type="checkbox" class="p-flight__layer-input" value="{{ row.name }}" checked data-flight-viewer-target="layer" data-action="flight-viewer#toggleLayer">
+                                <span>{{ row.label }}{% if row.note is defined %} <span class="p-flight__layer-note">{{ row.note }}</span>{% endif %}</span>
+                            </label>
+                        {% endfor %}
+                    </fieldset>
+                </details>
                 {# On a phone the values at the cursor stay on the map during the replay #}
                 <dl class="p-flight__strip" aria-hidden="true">
                     <div><dt>Alt.</dt><dd data-flight-viewer-target="stripAltitude">—</dd></div>
@@ -255,6 +318,32 @@
             </div>
 
             <aside class="p-flight__side" aria-label="Valeurs au point courant">
+                {# Guided debrief (FlightDebrief): the flight in chapters, the replay stops at the end of each #}
+                {% if debrief is not empty %}
+                    <section class="p-flight__guide" data-flight-viewer-target="guide" aria-labelledby="guide-title" hidden>
+                        <div class="p-flight__guide-head">
+                            <h2 class="p-flight__current-label" id="guide-title">Débrief guidé · chapitre <span data-flight-viewer-target="guideNumber">1</span> sur {{ debrief|length }}</h2>
+                            <button type="button" class="p-flight__guide-close" data-action="flight-viewer#toggleGuide" aria-label="Quitter le débrief guidé"><twig:ux:icon name="x" /></button>
+                        </div>
+                        {% for chapter in debrief %}
+                            <article class="p-flight__chapter" data-flight-viewer-target="chapter" data-from="{{ chapter.from }}" data-to="{{ chapter.to }}" hidden>
+                                <h3 class="p-flight__chapter-title">{{ chapter.title }}</h3>
+                                <p class="p-flight__chapter-time">{{ chapter.from|flight_clock }} → {{ chapter.to|flight_clock }}</p>
+                                {{ _self.chapter_text(chapter) }}
+                                {% if chapter.advice is not empty %}
+                                    <ul class="p-flight__advice-list">
+                                        {% for item in chapter.advice %}{{ _self.advice_item(item, analysis.phases) }}{% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </article>
+                        {% endfor %}
+                        <div class="p-flight__guide-nav">
+                            <button type="button" class="p-flight__toggle" data-flight-viewer-target="guidePrevious" data-action="flight-viewer#previousChapter">← Précédent</button>
+                            <button type="button" class="p-flight__toggle" data-flight-viewer-target="guideNext" data-action="flight-viewer#nextChapter">Suivant →</button>
+                        </div>
+                        <p class="u-note">La lecture s’arrête à la fin de chaque chapitre.</p>
+                    </section>
+                {% endif %}
                 {# The phase at the cursor, with the advice it illustrates #}
                 <section class="p-flight__current">
                     <p class="p-flight__current-label" data-flight-viewer-target="currentLabel">Avant le décollage</p>
@@ -320,6 +409,9 @@
                     </select>
                 </label>
                 <button type="button" class="p-flight__toggle p-flight__fast" aria-pressed="false" data-flight-viewer-target="fastThermals" data-action="flight-viewer#toggleFastThermals" title="Pendant la lecture, les spirales défilent cinq fois plus vite">Spirales × 5</button>
+                {% if debrief is not empty %}
+                    <button type="button" class="p-flight__toggle p-flight__guide-toggle" aria-pressed="false" data-flight-viewer-target="guideToggle" data-action="flight-viewer#toggleGuide" title="Le vol raconté chapitre par chapitre : départ, branches, transition finale, bilan">Débrief guidé</button>
+                {% endif %}
                 <div class="p-flight__timeline">
                     <input type="range" class="p-flight__seek" min="0" max="0" value="0" step="1" aria-label="Position dans le vol"
                            data-flight-viewer-target="seek" data-action="input->flight-viewer#seek">

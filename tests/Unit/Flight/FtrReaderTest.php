@@ -74,6 +74,22 @@ final class FtrReaderTest extends TestCase
         self::assertGreaterThan(15.0, max(array_map('abs', $banks)));
         self::assertLessThan(60.0, max(array_map('abs', $banks)));
         self::assertLessThan(45.0, max(array_map('abs', $pitches)));
+
+        // Banked to the side the track turns to: right positive
+        $fixes = $track->fixes;
+        $agree = 0;
+        $turning = 0;
+        for ($i = 20; $i < \count($fixes) - 20; $i += 10) {
+            $before = Geo::bearing($fixes[$i - 20]->latitude, $fixes[$i - 20]->longitude, $fixes[$i]->latitude, $fixes[$i]->longitude);
+            $after = Geo::bearing($fixes[$i]->latitude, $fixes[$i]->longitude, $fixes[$i + 20]->latitude, $fixes[$i + 20]->longitude);
+            $turn = Geo::turn($before, $after);
+            if (abs($turn) > 15.0 && abs((float) $fixes[$i]->bank) > 10.0) {
+                ++$turning;
+                $agree += ($turn > 0) === ($fixes[$i]->bank > 0) ? 1 : 0;
+            }
+        }
+        self::assertGreaterThan(10, $turning);
+        self::assertGreaterThan(0.9, $agree / $turning);
     }
 
     public function testUnknownLandscapesAreReported(): void

@@ -9,6 +9,7 @@ use App\Entity\FlightComment;
 use App\Entity\FlightPlan;
 use App\Entity\User;
 use App\Flight\Advice\FlightAdvisor;
+use App\Flight\Advice\FlightDebrief;
 use App\Flight\Club\ClubLift;
 use App\Flight\Club\ClubRecords;
 use App\Flight\FlightComparison;
@@ -261,6 +262,7 @@ final class FlightController extends AbstractController
             'session_size' => $flights->countSession($flight),
             'advice' => $advice,
             'highlights' => FlightAdvisor::highlights($advice),
+            'debrief' => FlightDebrief::chapters($flight->getAnalysis(), $advice),
             'performance' => $performance,
             'comment_form' => $form?->createView(),
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));

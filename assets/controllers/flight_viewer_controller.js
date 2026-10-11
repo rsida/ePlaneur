@@ -113,6 +113,9 @@ const CENTRED = 0.5;
 // map is open until it has been seen once
 const CHART_HEIGHT = 150;
 const CHARTS_KEY = 'flight.charts';
+// What the map draws: the layers turned off, and whether the instruments are shown (on by default)
+const LAYERS_KEY = 'flight.layers-off';
+const INSTRUMENTS_KEY = 'flight.instruments';
 const KEY_SEEN = 'flight.key-seen';
 // Pilot view: looking ahead and a little down (fewer far tiles than the horizon, which MapLibre
 // draws with stretched walls while they load)
@@ -121,7 +124,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'air', 'airChoice', 'slopes', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'airfields', 'nowField', 'display', 'stripAltitude', 'stripVario', 'stripHeight', 'currentLabel', 'currentTitle', 'chartPick'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'instrumentsToggle', 'layers', 'layer', 'nowField', 'display', 'stripAltitude', 'stripVario', 'stripHeight', 'currentLabel', 'currentTitle', 'chartPick', 'guide', 'guideToggle', 'guideNumber', 'chapter', 'guidePrevious', 'guideNext'];
 
     static values = { url: String, label: String, comments: Array, advice: Array };
 
@@ -131,6 +134,7 @@ export default class extends Controller {
         this.is3d = false;
         this.following = false;
         this.pilotView = false;
+        this.guiding = false;
         this.compared = [];
         this.charts = [];
         try {
@@ -152,7 +156,6 @@ export default class extends Controller {
         this.sinks = this.strongSink();
         this.reach = this.flight.reach ?? null;
         this.nearestField = this.reach ? this.nearestFields() : null;
-        if (this.reach && this.hasAirfieldsTarget) this.airfieldsTarget.hidden = false;
         if (this.reach && this.hasNowFieldTarget) this.nowFieldTarget.closest('div').hidden = false;
         const { altitude, ground } = this.series;
         this.series.height = ground ? altitude.map((value, i) => (ground[i] === null ? null : value - ground[i])) : null;
@@ -170,20 +173,20 @@ export default class extends Controller {
             this.ghostTarget.title = this.ghosts.map((ghost) => `Rejouer avec ${ghost.title}, parti au même moment`).join('\n');
         }
         this.showGhostLabel();
-        if (this.hasAirChoiceTarget) this.airChoiceTarget.hidden = !this.air?.thermals.length;
+        this.buildLayers();
         this.top = this.series.altitude.reduce((top, altitude) => Math.max(top, altitude), 0);
         this.openKeyOnce();
-        this.closeDisplayOutside = (event) => {
-            if (this.hasDisplayTarget && this.displayTarget.open && !this.displayTarget.contains(event.target)) this.displayTarget.open = false;
-        };
+        // The panels over the map close outside them and with Escape
+        const panels = [...(this.hasDisplayTarget ? [this.displayTarget] : []), ...(this.hasLayersTarget ? [this.layersTarget] : [])];
+        this.closeDisplayOutside = (event) => panels.forEach((panel) => {
+            if (panel.open && !panel.contains(event.target)) panel.open = false;
+        });
         document.addEventListener('click', this.closeDisplayOutside);
-        if (this.hasDisplayTarget) {
-            this.displayTarget.addEventListener('keydown', (event) => {
-                if (event.key !== 'Escape') return;
-                this.displayTarget.open = false;
-                this.displayTarget.querySelector('summary').focus();
-            });
-        }
+        panels.forEach((panel) => panel.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            panel.open = false;
+            panel.querySelector('summary').focus();
+        }));
         this.buildMap();
         this.buildCharts();
         this.showCharts(readStored(CHARTS_KEY) ?? 'altitude');
@@ -215,6 +218,7 @@ export default class extends Controller {
             addTask(this.map, this.flight.task);
             addShadow(this.map, this.series.latitude, this.series.longitude);
             addSlopes(this.map, this.flight.slopes);
+            this.showMapLayers();
             this.trackSegments = this.segments();
             this.showLegend();
             this.render();
@@ -365,11 +369,11 @@ export default class extends Controller {
         if (this.is3d) {
             const zoom = this.map.getZoom();
             layers.push(
-                ...thermalLayers('flight', this.series, this.thermalPhases, this.index, { zoom }),
-                ...liftLayers('flight', this.series, this.liftPhases, this.index, { zoom, windFrom: this.flight.slopes?.wind?.from ?? this.flight.statistics.windFrom ?? null }),
-                ...crossingLayers('flight', this.series, this.crossings, this.index, { zoom }),
-                ...sinkLayers('flight', this.series, this.sinks, this.index, { zoom }),
-                ...windLayers('flight', this.series, this.thermalPhases, this.index, { zoom }),
+                ...(this.shows('thermals') ? thermalLayers('flight', this.series, this.thermalPhases, this.index, { zoom }) : []),
+                ...(this.shows('lift') ? liftLayers('flight', this.series, this.liftPhases, this.index, { zoom, windFrom: this.flight.slopes?.wind?.from ?? this.flight.statistics.windFrom ?? null }) : []),
+                ...(this.shows('crossings') ? crossingLayers('flight', this.series, this.crossings, this.index, { zoom }) : []),
+                ...(this.shows('sinks') ? sinkLayers('flight', this.series, this.sinks, this.index, { zoom }) : []),
+                ...(this.shows('wind') ? windLayers('flight', this.series, this.thermalPhases, this.index, { zoom }) : []),
             );
         }
         // In the pilot view the camera is in the glider
@@ -381,9 +385,9 @@ export default class extends Controller {
         }
         layers.push(...this.ghostLayers(), ...this.commentLayers(), ...this.reachLayers());
         // Under the track: the lift of the other pilots of the race
-        layers.unshift(...sessionAirLayers('flight', this.air, { is3d: this.is3d, zoom: this.map.getZoom(), show: this.hasAirTarget ? this.airTarget.value : 'all' }));
+        layers.unshift(...sessionAirLayers('flight', this.air, { is3d: this.is3d, zoom: this.map.getZoom(), show: this.airShown() }));
         if (this.is3d) {
-            layers.unshift(...taskLayers('flight', this.flight.task, { top: this.top }));
+            if (this.shows('task')) layers.unshift(...taskLayers('flight', this.flight.task, { top: this.top }));
             // A curtain down to the ground in the colours of the track: the relief hides its lower part
             if (!this.curtain) {
                 this.curtain = [];
@@ -393,7 +397,7 @@ export default class extends Controller {
             layers.unshift(new LineLayer({
                 id: 'curtain',
                 // Seen from the glider they become bars across the view
-                visible: !this.pilotView,
+                visible: !this.pilotView && this.shows('curtain'),
                 data: this.curtain,
                 getSourcePosition: (k) => this.position(k),
                 getTargetPosition: (k) => this.position(k, true),
@@ -415,7 +419,7 @@ export default class extends Controller {
         this.is3d = on;
         this.viewTargets.forEach((button) => button.setAttribute('aria-pressed', String((button.dataset.view === '3d') === on)));
         setTerrain(this.map, on);
-        showShadow(this.map, on);
+        showShadow(this.map, on && this.shows('shadow'));
         // The relief reads best on the photos, as long as the pilot kept the default map
         if (on && this.hasBasemapTarget && this.basemapTarget.value === 'topo' && !this.basemapChosen) {
             this.basemapTarget.value = 'satellite';
@@ -478,7 +482,7 @@ export default class extends Controller {
 
     /** The airfields (within reach now in green, with their names) and the reach around the glider. */
     reachLayers() {
-        if (!this.reach || (this.hasAirfieldsTarget && this.airfieldsTarget.getAttribute('aria-pressed') !== 'true')) return [];
+        if (!this.reach || !this.shows('airfields')) return [];
         const i = Math.round(this.index);
         const { ratio, margin, airfields } = this.reach;
         const zoom = this.map.getZoom();
@@ -547,11 +551,6 @@ export default class extends Controller {
         ];
     }
 
-    toggleAirfields() {
-        this.airfieldsTarget.setAttribute('aria-pressed', String(this.airfieldsTarget.getAttribute('aria-pressed') !== 'true'));
-        this.render();
-    }
-
     /** Runs of NO_FIELD_TIME seconds or more with no airfield within reach, in flight. */
     noFieldRuns() {
         if (!this.nearestField) return [];
@@ -572,7 +571,7 @@ export default class extends Controller {
 
     /** A label on the track at each comment at a moment, with its author when close. */
     commentLayers() {
-        if (this.commentsValue.length === 0) return [];
+        if (this.commentsValue.length === 0 || !this.shows('comments')) return [];
         const zoom = this.map.getZoom();
         const always = this.is3d ? {} : { depthCompare: 'always' };
 
@@ -641,10 +640,58 @@ export default class extends Controller {
     }
 
     toggleInstruments() {
-        const on = this.instrumentsTarget.hidden;
+        this.showInstruments(this.instrumentsTarget.hidden);
+        writeStored(INSTRUMENTS_KEY, this.instrumentsTarget.hidden ? 'off' : 'on');
+    }
+
+    showInstruments(on) {
         this.instrumentsTarget.hidden = !on;
-        this.element.querySelector('[data-action="flight-viewer#toggleInstruments"]')?.setAttribute('aria-pressed', String(on));
+        if (this.hasInstrumentsToggleTarget) this.instrumentsToggleTarget.setAttribute('aria-pressed', String(on));
         this.drawInstruments();
+    }
+
+    /* ---------- What the map draws ---------- */
+
+    /** The layers panel: the rows this flight has data for, each as the pilot left it. */
+    buildLayers() {
+        this.layersOff = new Set((readStored(LAYERS_KEY) ?? '').split(',').filter(Boolean));
+        const has = { air: Boolean(this.air?.thermals.length), reach: Boolean(this.reach), comments: this.commentsValue.length > 0 };
+        this.layerTargets.forEach((input) => {
+            const row = input.closest('[data-needs]');
+            if (row) row.hidden = !has[row.dataset.needs];
+            input.checked = !this.layersOff.has(input.value);
+        });
+        this.showInstruments(readStored(INSTRUMENTS_KEY) !== 'off');
+    }
+
+    shows(name) {
+        return !this.layersOff?.has(name);
+    }
+
+    toggleLayer({ currentTarget }) {
+        if (currentTarget.checked) this.layersOff.delete(currentTarget.value);
+        else this.layersOff.add(currentTarget.value);
+        writeStored(LAYERS_KEY, [...this.layersOff].join(','));
+        this.showMapLayers();
+        this.render();
+    }
+
+    /** The layers drawn by the map itself rather than deck.gl: task, slopes, shadow. */
+    showMapLayers() {
+        if (!this.map?.getLayer('task') && !this.map?.getLayer('shadow')) return;
+        ['task', 'turnpoints'].forEach((id) => {
+            if (this.map.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', this.shows('task') ? 'visible' : 'none');
+        });
+        showSlopes(this.map, this.shows('slopes'));
+        showShadow(this.map, this.is3d && this.shows('shadow'));
+    }
+
+    /** Lift of the other pilots of the race: all of it, only the thermals missed, the others, or none. */
+    airShown() {
+        const others = this.shows('air');
+        const missed = this.shows('missed');
+
+        return others && missed ? 'all' : missed ? 'missed' : others ? 'others' : 'none';
     }
 
     /**
@@ -773,13 +820,6 @@ export default class extends Controller {
         if (!this.hasNowGhostLabelTarget) return;
         this.nowGhostLabelTarget.closest('div').hidden = !this.ghost;
         if (this.ghost) this.nowGhostLabelTarget.textContent = this.ghost.kind === 'own' ? 'Écart avec mon meilleur vol' : `Écart avec ${this.ghost.pilot}`;
-    }
-
-    /** The slopes expected to work, on or off. */
-    toggleSlopes() {
-        const on = this.slopesTarget.getAttribute('aria-pressed') !== 'true';
-        this.slopesTarget.setAttribute('aria-pressed', String(on));
-        showSlopes(this.map, on);
     }
 
     centerOnGlider() {
@@ -1088,11 +1128,16 @@ export default class extends Controller {
 
     showPhase(p) {
         const phase = this.flight.phases[p];
+        this.showStretch(phase.start, phase.end);
+    }
+
+    /** A stretch of the flight in view (a phase, a chapter of the debrief), the glider at its start. */
+    showStretch(from, to) {
         const bounds = newBounds();
         let altitude = 0;
-        for (let i = phase.start; i <= phase.end; i += 1) {
+        for (let i = from; i <= to; i += 1) {
             bounds.extend([this.series.longitude[i], this.series.latitude[i]]);
-            altitude += this.series.altitude[i] / (phase.end - phase.start + 1);
+            altitude += this.series.altitude[i] / (to - from + 1);
         }
         if (this.is3d) {
             // Framed from the side, around the phase at its own altitude
@@ -1101,7 +1146,60 @@ export default class extends Controller {
         } else {
             this.map.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 600 });
         }
-        this.moveTo(phase.start);
+        this.moveTo(from);
+    }
+
+    /* ---------- Guided debrief ---------- */
+
+    /** The debrief in chapters beside the map (FlightDebrief), from the chapter at the cursor. */
+    toggleGuide() {
+        this.guiding = !this.guiding;
+        this.guideTarget.hidden = !this.guiding;
+        this.guideToggleTarget.setAttribute('aria-pressed', String(this.guiding));
+        this.element.classList.toggle('is-guided', this.guiding);
+        if (this.guiding) {
+            this.openChapter(this.chapterAt(Math.round(this.index)));
+            this.guideTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    previousChapter() {
+        this.openChapter(Math.max(0, this.chapter - 1));
+    }
+
+    nextChapter() {
+        this.openChapter(Math.min(this.chapterTargets.length - 1, this.chapter + 1));
+    }
+
+    openChapter(c) {
+        this.showChapter(c);
+        // The column beside the map scrolls on its own: back to the top of the chapter
+        this.guideTarget.parentElement.scrollTop = 0;
+        const { from, to } = this.chapterBounds(c);
+        if (this.playing) this.togglePlay();
+        if (to > from) this.showStretch(from, to);
+        else this.moveTo(from);
+    }
+
+    showChapter(c) {
+        this.chapter = c;
+        this.chapterTargets.forEach((chapter, k) => { chapter.hidden = k !== c; });
+        this.guideNumberTarget.textContent = String(c + 1);
+        this.guidePreviousTarget.disabled = c === 0;
+        this.guideNextTarget.disabled = c === this.chapterTargets.length - 1;
+    }
+
+    chapterBounds(c) {
+        const { from, to } = this.chapterTargets[c].dataset;
+
+        return { from: Number(from), to: Number(to) };
+    }
+
+    /** The chapter going on at a second: the first that has not ended yet. */
+    chapterAt(i) {
+        const c = this.chapterTargets.findIndex((_, k) => i < this.chapterBounds(k).to);
+
+        return c < 0 ? this.chapterTargets.length - 1 : c;
     }
 
     /**
@@ -1596,6 +1694,12 @@ export default class extends Controller {
         this.playTarget.setAttribute('aria-label', this.playing ? 'Mettre en pause' : 'Rejouer le vol');
         if (!this.playing) return;
         if (this.index >= this.count - 1) this.index = 0;
+        // In the guided debrief, the replay stops at the end of the chapter
+        let stop = null;
+        if (this.guiding) {
+            const c = this.index < this.chapterBounds(this.chapter).to ? this.chapter : this.chapterAt(Math.round(this.index));
+            stop = this.chapterBounds(c).to;
+        }
         let last = performance.now();
         const step = (now) => {
             if (!this.playing) return;
@@ -1603,8 +1707,9 @@ export default class extends Controller {
             const fast = inThermal && this.hasFastThermalsTarget && this.fastThermalsTarget.getAttribute('aria-pressed') === 'true' ? FAST_THERMALS : 1;
             this.index = Math.min(this.count - 1, this.index + ((now - last) / 1000) * Number(this.rateTarget.value) * fast);
             last = now;
+            if (stop !== null && this.index >= stop) this.index = stop;
             this.moveTo(this.index, { keepFraction: true });
-            if (this.index >= this.count - 1) {
+            if (this.index >= this.count - 1 || (stop !== null && this.index >= stop)) {
                 this.togglePlay();
 
                 return;
@@ -1620,6 +1725,10 @@ export default class extends Controller {
         const { time, altitude, speed, vario } = this.series;
         this.seekTarget.value = String(i);
         this.nowTimeTarget.textContent = formatTime(time[i]);
+        if (this.guiding) {
+            const { from, to } = this.chapterBounds(this.chapter);
+            if (i < from || i > to) this.showChapter(this.chapterAt(i));
+        }
         // The comment form takes the moment shown
         if (this.hasCommentAtTarget) this.commentAtTarget.value = String(i);
         if (this.hasCommentTimeTarget) this.commentTimeTarget.textContent = formatTime(time[i]);
