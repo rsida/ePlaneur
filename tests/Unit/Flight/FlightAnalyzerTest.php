@@ -270,16 +270,16 @@ final class FlightAnalyzerTest extends TestCase
 
     public function testHalfDiscStartAndFinishOfCondor(): void
     {
-        // Start and finish of 180°: half discs behind the line across the leg. The start zone lies
-        // west of x = 1,000 m, left at once when crossing it; the finish zone lies west of x = 6,500 m,
-        // entered 400 m before the point
+        // Start and finish of 180°: half discs on each side of the line across the leg. The start
+        // zone lies west of x = 1,000 m, left when crossing the line; the finish zone lies east of
+        // x = 6,500 m, entered when crossing the line (not 400 m before, as Condor's times show)
         $point = static fn (string $name, float $x, float $radius, float $angle = 360.0): Turnpoint => new Turnpoint($name, ...FlightSamples::toLatLon($x, 0), altitude: 0.0, radius: $radius, angle: $angle);
         $task = [$point('Terrain', 0, 3000), $point('Départ', 1000, 2000, 180), $point('Arrivée', 6500, 400, 180)];
         $analysis = (new FlightAnalyzer())->analyze(self::track(FlightSamples::glideThermalGlide(), $task));
 
         self::assertNotNull($analysis->task);
-        // x = 1,000 m at 33.3 s; x = 6,100 m at 384.3 s
-        self::assertSame([null, 34, 385], $analysis->task->reached);
+        // x = 1,000 m at 33.3 s; x = 6,500 m at 397.7 s
+        self::assertSame([null, 34, 398], $analysis->task->reached);
     }
 
     public function testAFlightBeginningInTheAirIsAnAirborneStart(): void

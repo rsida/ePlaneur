@@ -175,8 +175,11 @@ administrator to add it.
    Netto, effective MacCready and wing loading come from the polar of the glider (see Gliders and
    polars).
 5. **Task**: each point is reached when the track enters its zone: a cylinder (360°), or for
-   Condor's 180° start and finish a half disc of the radius behind the line across the leg (Condor
-   counts the finish as soon as the glider is within the radius on the side it comes from); other
+   Condor's 180° start and finish a half disc of the radius on one side of the line across the leg:
+   behind it for the start (left when the glider crosses the line), beyond it for the finish
+   (entered when the glider crosses the line). Checked on five IGC exports of Condor (roadmap 7m2):
+   start and finish within 1 or 2 s of Condor's, task times within 1 s (the series is per second);
+   with the finish half disc on the near side, as before, the finish came 2 to 5 s early. Other
    angles (FAI sectors) are approximated by cylinders. The start is the first point out of the start
    zone, after the last time it was in it
    before the first turnpoint. Legs give their distance (between the centres), time and speed.

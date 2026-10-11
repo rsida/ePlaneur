@@ -941,9 +941,11 @@ final class FlightAnalyzer
     {
         $count = \count($latitude);
         $last = \count($turnpoints) - 1;
-        // Zone of a point: a cylinder, or for 180° a half disc on the side of the leg the glider comes
-        // from (finish) or goes to the start from (start), i.e. behind the line across the leg
-        $inside = static function (int $i, Turnpoint $point, ?Turnpoint $from = null, ?Turnpoint $to = null) use ($latitude, $longitude): bool {
+        // Zone of a point: a cylinder, or for 180° a half disc on one side of the line across the leg:
+        // behind it for the start (left when crossing the line), beyond it for the finish (entered
+        // when crossing the line). Measured against the IGC exports of Condor (2026-10-11): with the
+        // finish half disc on the near side, the finish came 2 to 5 s before Condor's
+        $inside = static function (int $i, Turnpoint $point, ?Turnpoint $from = null, ?Turnpoint $to = null, bool $beyond = false) use ($latitude, $longitude): bool {
             if (Geo::distance($latitude[$i], $longitude[$i], $point->latitude, $point->longitude) > $point->radius) {
                 return false;
             }
@@ -953,14 +955,16 @@ final class FlightAnalyzer
             [$x, $y] = self::metres($point, $latitude[$i], $longitude[$i]);
             [$ux, $uy] = self::metres($from, $to->latitude, $to->longitude);
 
-            return $x * $ux + $y * $uy <= 0;
+            $side = $x * $ux + $y * $uy;
+
+            return $beyond ? $side >= 0 : $side <= 0;
         };
 
         $reached = array_fill(0, \count($turnpoints), null);
         $from = 0;
         for ($k = 2; $k <= $last; ++$k) {
             $point = $turnpoints[$k];
-            for ($i = $from; $i < $count && !$inside($i, $point, $turnpoints[$k - 1], $point); ++$i) {
+            for ($i = $from; $i < $count && !$inside($i, $point, $turnpoints[$k - 1], $point, $k === $last); ++$i) {
             }
             if ($i >= $count) {
                 break;

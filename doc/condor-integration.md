@@ -196,8 +196,9 @@ and `taskstart.php`):
 - The start speed measured on the 1 s series is within 1 to 2 km/h of Condor's: right on one race,
   0.7 km/h under on another, 1.9 km/h over on a third (a penalty Condor did not count).
 - `TaskStart` is the opening of the gate in a regatta and the crossing of the start line in a window
-  (our crossing within 1 s). Our finish comes 2 to 5 s before Condor's: the finish is a line, which
-  the analysis takes as a cylinder.
+  (our crossing within 1 s). Our finish came 2 to 5 s before Condor's: the analysis put the finish
+  half disc on the near side of the line. Fixed in 7m2 (half disc beyond the line): start and finish
+  within 1 or 2 s, task times within 1 s.
 - In both regattas, `TaskStart` is 15 minutes after the gate opening the site computes from the
   flight plan (`StartTime` + `RaceStartDelay`: 14:50 against 15:05 on C3-c060, 13:50 against 14:05
   on C3-c058); on C3-s117 the start at 12:23 is after the end of the window the site computes
