@@ -4,6 +4,7 @@ import { LineLayer, PathLayer, ScatterplotLayer, TextLayer } from '@deck.gl/laye
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
+import { bindFullscreen } from '../flight/fullscreen.js';
 import { readStored, writeStored } from '../flight/storage.js';
 import { bearing, distance } from '../flight/geo.js';
 import { TASK_LAYERS, addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatClock, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
@@ -127,11 +128,13 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'instrumentsToggle', 'layers', 'layer', 'nowField', 'display', 'stripAltitude', 'stripVario', 'stripHeight', 'currentLabel', 'currentTitle', 'chartPick', 'guide', 'guideToggle', 'guideNumber', 'chapter', 'guidePrevious', 'guideNext', 'clockToggle'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'instrumentsToggle', 'layers', 'layer', 'nowField', 'display', 'stripAltitude', 'stripVario', 'stripHeight', 'currentLabel', 'currentTitle', 'chartPick', 'guide', 'guideToggle', 'guideNumber', 'chapter', 'guidePrevious', 'guideNext', 'clockToggle', 'viewer', 'fullscreen'];
 
     static values = { url: String, label: String, comments: Array, advice: Array };
 
     async connect() {
+        // The whole viewer full screen; the map takes its new size (the charts follow the viewer)
+        if (this.hasFullscreenTarget) this.unbindFullscreen = bindFullscreen(this.viewerTarget, this.fullscreenTarget, () => requestAnimationFrame(() => this.map?.resize()));
         this.index = 0;
         this.playing = false;
         this.is3d = false;
@@ -208,6 +211,7 @@ export default class extends Controller {
     }
 
     disconnect() {
+        this.unbindFullscreen?.();
         document.removeEventListener('click', this.closeDisplayOutside);
         cancelAnimationFrame(this.frame);
         this.resizeObserver?.disconnect();

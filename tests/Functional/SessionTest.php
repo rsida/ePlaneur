@@ -184,13 +184,19 @@ final class SessionTest extends WebTestCase
         // What the replay map draws, each on or off
         self::assertSelectorExists('[data-controller="session-viewer"] .p-flight__layer-input[value="followed"][data-action="session-viewer#toggleLayer"]');
         self::assertSelectorTextContains('[data-controller="session-viewer"] .p-flight__layers-panel', 'Thermiques de tous les pilotes');
+        // The whole replay full screen
+        self::assertSelectorExists('[data-controller="session-viewer"] [data-session-viewer-target="viewer"] [data-session-viewer-target="fullscreen"]');
         $this->client->request('GET', '/sessions/'.$session->getId().'/traces.json');
-        self::assertCount(1, json_decode((string) $this->client->getResponse()->getContent(), true)['flights']);
+        $replay = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertCount(1, $replay['flights']);
+        self::assertArrayHasKey('clouds', $replay['flights'][0], 'the cumulus over the thermals of each pilot');
 
         $this->client->request('GET', '/vols/'.$flight->getId());
         self::assertSelectorExists('a[href="/sessions/'.$session->getId().'"]');
         self::assertSelectorTextContains('.p-flight__official', 'Résultat officiel');
         self::assertSelectorTextContains('.p-session-settings', 'Fenêtre de 15 min');
+        self::assertSelectorExists('[data-flight-viewer-target="viewer"] [data-flight-viewer-target="fullscreen"]');
+        self::assertSelectorExists('[data-flight-viewer-target="clockToggle"][data-action="flight-viewer#toggleClock"]');
 
         // Downloads: the original file and an IGC export; the thermals of the race
         $this->client->request('GET', '/vols/'.$flight->getId().'/fichier');

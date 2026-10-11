@@ -66,6 +66,49 @@
     }
 }
 
+/*
+ * Full screen (roadmap 7k5, assets/flight/fullscreen.js): the whole viewer, the map as high as the
+ * screen leaves above the replay bar; with the Fullscreen API (:fullscreen) or, where it is
+ * missing, as a layer over the page (.is-fullscreen). What does not fit scrolls.
+ */
+.p-flight__viewer:fullscreen,
+.p-flight__viewer.is-fullscreen {
+    --flight-map-height: calc(100dvh - 7.5rem);
+    /* Rows at their content: the height of the screen would squeeze the map otherwise */
+    grid-template-rows: repeat(5, max-content);
+    align-content: start;
+    max-width: none;
+    padding: var(--space-3) var(--gutter);
+    overflow-y: auto;
+    background-color: var(--color-page);
+}
+
+/* The key stays on the page: the map comes first */
+.p-flight__viewer:fullscreen .p-flight__key,
+.p-flight__viewer.is-fullscreen .p-flight__key {
+    display: none;
+}
+
+.p-flight__viewer.is-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 200; /* above the site header (100) */
+}
+
+/* The page under the layer does not scroll */
+.has-fullscreen {
+    overflow: hidden;
+}
+
+.p-flight__fullscreen-off,
+.p-flight__fullscreen[aria-pressed='true'] .p-flight__fullscreen-on {
+    display: none;
+}
+
+.p-flight__fullscreen[aria-pressed='true'] .p-flight__fullscreen-off {
+    display: inline;
+}
+
 .p-flight__map-wrap {
     grid-area: map;
     position: relative;

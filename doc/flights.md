@@ -301,8 +301,12 @@ on first, something done well; each advice knows the moment and the phase that s
 tabs (`tabs` controller: a link to an element of a panel opens it; the comment form with errors
 opens its tab):
 
-- Map toolbar: `Carte · 3D · Suivre · Instruments · Affichage`; "Instruments" shows or hides the
-  instruments over the map (shown by default, the choice kept in the browser). "Affichage" is a
+- Map toolbar: `Carte · 3D · Suivre · Instruments · Plein écran · Affichage`; "Instruments" shows or
+  hides the instruments over the map (shown by default, the choice kept in the browser). "Plein
+  écran" (roadmap 7k5, `assets/flight/fullscreen.js`, also on the session replay) puts the whole
+  viewer full screen (map as high as the screen leaves above the replay bar, values beside it, the
+  charts below by scrolling, the key left out), with the Fullscreen API, or where it is missing
+  (Safari on iPhone) as a layer over the page left with Escape or "Quitter". "Affichage" is a
   panel over the map with how the map is seen: basemap, colour of the track, ghost, camera and
   pilot view. It closes outside it and with Escape.
 - What the map draws: a layers button under the zoom of the map (roadmap 7j5) opens a list of

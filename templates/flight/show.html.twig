@@ -161,7 +161,7 @@
             </section>
         {% endif %}
 
-        <div class="p-flight__viewer">
+        <div class="p-flight__viewer" data-flight-viewer-target="viewer">
             {# What the symbols of the map (in 3D mostly) and of the timeline mean #}
             <details class="p-flight__key">
                 <summary>
@@ -236,6 +236,7 @@
                     </div>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="false" data-flight-viewer-target="follow" data-action="flight-viewer#toggleFollow" title="Garder le planeur au centre ; en 3D, la caméra le suit"><twig:ux:icon name="crosshair" /> Suivre</button>
                     <button type="button" class="p-flight__toggle p-flight__follow" aria-pressed="true" data-flight-viewer-target="instrumentsToggle" data-action="flight-viewer#toggleInstruments" title="Horizon artificiel, variomètre et vitesse, sur la carte"><twig:ux:icon name="progress" /> Instruments</button>
+                    <button type="button" class="p-flight__toggle p-flight__follow p-flight__fullscreen" aria-pressed="false" data-flight-viewer-target="fullscreen" title="Afficher le replay en plein écran"><twig:ux:icon name="maximize" class="p-flight__fullscreen-on" /><twig:ux:icon name="minimize" class="p-flight__fullscreen-off" /> <span class="p-flight__fullscreen-label">Plein écran</span></button>
                     {# Every display setting in one panel over the map, grouped by subject #}
                     <details class="p-flight__display" data-flight-viewer-target="display">
                         <summary class="p-flight__toggle p-flight__follow"><twig:ux:icon name="settings" /> Affichage <twig:ux:icon name="chevron-down" class="p-flight__display-chevron" /></summary>

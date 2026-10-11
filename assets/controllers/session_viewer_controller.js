@@ -4,6 +4,7 @@ import { PathLayer } from '@deck.gl/layers';
 import { TASK_LAYERS, addTask, boundsOf, createMap, easeAt, formatClock, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
 import { chaseBearing, cloudLayers, gliderLayers, positionAt, readings, sessionThermalLayers, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
 import { distance } from '../flight/geo.js';
+import { bindFullscreen } from '../flight/fullscreen.js';
 import { readStored, writeStored } from '../flight/storage.js';
 
 /*
@@ -38,11 +39,13 @@ const LAYERS_KEY = 'session.layers-off';
 const LAYERS_OFF = 'followed';
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'align', 'layers', 'layer', 'status', 'clock', 'pilots', 'dot', 'play', 'rate', 'seek'];
+    static targets = ['map', 'view', 'basemap', 'align', 'layers', 'layer', 'status', 'clock', 'pilots', 'dot', 'play', 'rate', 'seek', 'viewer', 'fullscreen'];
 
     static values = { url: String };
 
     async connect() {
+        // The whole viewer full screen; the map takes its new size (the charts follow the viewer)
+        if (this.hasFullscreenTarget) this.unbindFullscreen = bindFullscreen(this.viewerTarget, this.fullscreenTarget, () => requestAnimationFrame(() => this.map?.resize()));
         this.time = 0;
         this.playing = false;
         this.is3d = false;
@@ -67,6 +70,7 @@ export default class extends Controller {
     }
 
     disconnect() {
+        this.unbindFullscreen?.();
         document.removeEventListener('click', this.closeLayersOutside);
         cancelAnimationFrame(this.frame);
         this.map?.remove();

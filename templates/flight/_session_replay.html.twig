@@ -20,7 +20,7 @@
     </div>
 {% endif %}
 
-<div class="p-flight__viewer p-session__viewer">
+<div class="p-flight__viewer p-session__viewer" data-session-viewer-target="viewer">
     <div class="p-flight__map-wrap">
         <div class="p-flight__map" data-session-viewer-target="map" role="region" aria-label="Carte de la session"></div>
         <div class="p-flight__map-tools">
@@ -28,6 +28,7 @@
                 <button type="button" class="p-flight__toggle" aria-pressed="true" data-session-viewer-target="view" data-view="2d" data-action="session-viewer#setView"><twig:ux:icon name="map" /> Carte</button>
                 <button type="button" class="p-flight__toggle" aria-pressed="false" data-session-viewer-target="view" data-view="3d" data-action="session-viewer#setView"><twig:ux:icon name="mountain" /> 3D</button>
             </div>
+            <button type="button" class="p-flight__toggle p-flight__follow p-flight__fullscreen" aria-pressed="false" data-session-viewer-target="fullscreen" title="Afficher le replay en plein écran"><twig:ux:icon name="maximize" class="p-flight__fullscreen-on" /><twig:ux:icon name="minimize" class="p-flight__fullscreen-off" /> <span class="p-flight__fullscreen-label">Plein écran</span></button>
             <label class="p-flight__select">
                 <span class="u-visually-hidden">Fond de carte</span>
                 <select data-session-viewer-target="basemap" data-action="session-viewer#setBasemap">
