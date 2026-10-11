@@ -59,9 +59,9 @@ final readonly class TaskSettings
     ];
 
     /**
-     * @param array<string, int>                                                                                                                                               $penalties keys of PENALTIES → points
-     * @param array<string, bool>                                                                                                                                              $options   keys of OPTIONS → allowed
-     * @param list<array{name: string, windDirection: float, windSpeed: float, thermalStrength: int, thermalActivity: int, cloudBase: ?int, inversion: ?int, highClouds: int}> $weather   zones, the base one first; wind in km/h, heights in metres
+     * @param array<string, int>                                                                                                                                                                                                  $penalties keys of PENALTIES → points
+     * @param array<string, bool>                                                                                                                                                                                                 $options   keys of OPTIONS → allowed
+     * @param list<array{name: string, windDirection: float, windSpeed: float, thermalStrength: int, thermalActivity: int, cloudBase: ?int, inversion: ?int, highClouds: int, polygon?: list<array{float, float}>, border?: int}> $weather   zones, the base one first; wind in km/h, heights in metres
      */
     public function __construct(
         public string $source,
@@ -116,6 +116,8 @@ final readonly class TaskSettings
                 isset($zone['ThermalsTemp'], $zone['ThermalsDew']) ? ((float) $zone['ThermalsTemp'] - (float) $zone['ThermalsDew']) * 125 : null,
                 isset($zone['ThermalsInversionheight']) ? (float) $zone['ThermalsInversionheight'] : null,
                 (int) ($zone['HighCloudsCoverage'] ?? 0),
+                array_map(static fn (int $n): array => [(float) ($zone['Polygon'.$n.'X'] ?? 0), (float) ($zone['Polygon'.$n.'Y'] ?? 0)], $k > 0 ? range(0, max(0, (int) ($zone['PointCount'] ?? 0) - 1)) : []),
+                (float) ($zone['BorderWidth'] ?? 0),
             );
         }
 
@@ -159,6 +161,8 @@ final readonly class TaskSettings
                 isset($thermals['heightCloudBase']) ? (float) $thermals['heightCloudBase'] : null,
                 isset($thermals['fInversionHeight']) ? (float) $thermals['fInversionHeight'] : null,
                 (int) ($zone['highClouds']['iCoverage'] ?? 0),
+                array_map(static fn (mixed $point): array => [(float) ($point[0] ?? 0), (float) ($point[1] ?? 0)], \array_slice(\is_array($zone['points'] ?? null) ? $zone['points'] : [], 0, (int) ($zone['pointCount'] ?? 0))),
+                (float) ($zone['borderWidth'] ?? 0),
             );
         }
 
@@ -303,8 +307,8 @@ final readonly class TaskSettings
     }
 
     /**
-     * @param array<string, mixed>                                                                                                                                             $options GameOptions of the .fpl (Condor Club keys capitalised)
-     * @param list<array{name: string, windDirection: float, windSpeed: float, thermalStrength: int, thermalActivity: int, cloudBase: ?int, inversion: ?int, highClouds: int}> $weather
+     * @param array<string, mixed>                                                                                                                                                                                                $options GameOptions of the .fpl (Condor Club keys capitalised)
+     * @param list<array{name: string, windDirection: float, windSpeed: float, thermalStrength: int, thermalActivity: int, cloudBase: ?int, inversion: ?int, highClouds: int, polygon?: list<array{float, float}>, border?: int}> $weather
      */
     private static function build(string $source, ?string $name, array $options, int $finishMinHeight, int $startMaxHeight, array $weather): self
     {
@@ -352,9 +356,12 @@ final readonly class TaskSettings
     }
 
     /**
-     * @return array{name: string, windDirection: float, windSpeed: float, thermalStrength: int, thermalActivity: int, cloudBase: ?int, inversion: ?int, highClouds: int}
+     * @param list<array{float, float}> $polygon corners in landscape metres (x east, y north), empty for the base zone
+     * @param float                     $border  metres over which the zone blends into the one around it
+     *
+     * @return array{name: string, windDirection: float, windSpeed: float, thermalStrength: int, thermalActivity: int, cloudBase: ?int, inversion: ?int, highClouds: int, polygon: list<array{float, float}>, border: int}
      */
-    private static function zone(string $name, float $windDirection, float $windSpeed, int $strength, int $activity, ?float $cloudBase, ?float $inversion, int $highClouds): array
+    private static function zone(string $name, float $windDirection, float $windSpeed, int $strength, int $activity, ?float $cloudBase, ?float $inversion, int $highClouds, array $polygon = [], float $border = 0.0): array
     {
         return [
             'name' => mb_substr($name, 0, 60),
@@ -365,6 +372,9 @@ final readonly class TaskSettings
             'cloudBase' => null !== $cloudBase ? (int) round($cloudBase) : null,
             'inversion' => null !== $inversion ? (int) round($inversion) : null,
             'highClouds' => $highClouds,
+            // A zone needs three corners; the base zone has none
+            'polygon' => \count($polygon) >= 3 ? $polygon : [],
+            'border' => (int) round($border),
         ];
     }
 }

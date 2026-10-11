@@ -116,7 +116,10 @@ is a Delphi date; `StartTime`, `StartTimeWindow` and `RaceStartDelay` are hours;
 an aerotow, 2 an airborne start (1, a winch, is assumed); the minimum finish altitude is the
 `TPWidth` of the finish, the maximum start height the `TPHeight` of the start; wind speeds are m/s
 in the `.fpl`, km/h on Condor Club; the cloud base is 125 m per degree between temperature and dew
-point; thermal strength 2 is "Faible", activity 3 "Faible" and 4 "Normale".
+point; thermal strength 2 is "Faible", activity 3 "Faible" and 4 "Normale". Each weather zone
+keeps its polygon (landscape metres, `PolygonNX/Y` of the `.fpl`, `points` of Condor Club; empty
+for the base zone) and its blending border, for the cumulus of the 3D replay (7k4); settings saved
+before 2026-10-11 have no polygon until they are taken again (the drawn zones are then left out).
 The gate opens `RaceStartDelay` after the server stops letting pilots join, which is a setting of
 the server ("stop join", `JoinTimeLimit` of `Host.ini`), in no file Condor writes (flight plan,
 results, IGC export): 15 minutes on the club's dedicated server (`TaskSettings::JOIN_TIME`, found on

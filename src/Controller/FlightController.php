@@ -12,6 +12,7 @@ use App\Flight\Advice\FlightAdvisor;
 use App\Flight\Advice\FlightDebrief;
 use App\Flight\Club\ClubLift;
 use App\Flight\Club\ClubRecords;
+use App\Flight\FlightClouds;
 use App\Flight\FlightComparison;
 use App\Flight\FlightImporter;
 use App\Flight\FlightMailer;
@@ -30,7 +31,6 @@ use App\Repository\GliderRepository;
 use App\Repository\StepProgressRepository;
 use App\Security\Voter\FlightVoter;
 use App\Session\Penalties;
-use App\Session\TaskSettings;
 use App\Training\TrainingPath;
 use App\Training\TrainingStep;
 use Doctrine\ORM\EntityManagerInterface;
@@ -258,15 +258,8 @@ final class FlightController extends AbstractController
 
         // Penalties against the settings of the task, with the official total of the results; without
         // a session, the settings of the flight plan Condor writes in its IGC export
-        $settings = $session?->getTaskSettings();
+        $settings = FlightClouds::settingsOf($flight);
         $condor = $flight->getAnalysis()['condor'] ?? null;
-        if (null === $settings && null !== ($condor['flightPlan'] ?? null)) {
-            try {
-                $settings = TaskSettings::fromFpl($condor['flightPlan'], 'igc');
-                $settings = $settings->withJoinTime(null !== $condor['taskStart'] ? $settings->joinTimeFrom($condor['taskStart']) : null);
-            } catch (\InvalidArgumentException) {
-            }
-        }
         $official = null;
         foreach ($session?->getResults() ?? [] as $row) {
             if (null !== $row['competitionId'] && null !== $flight->getCompetitionId() && 0 === strcasecmp($row['competitionId'], $flight->getCompetitionId())) {
@@ -315,9 +308,10 @@ final class FlightController extends AbstractController
     /** Replay data of the flights on the flight plan of this one (flights without a library code). */
     #[Route('/{id<\d+>}/session.json', name: 'session_data', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function sessionData(Flight $flight, FlightRepository $flights): JsonResponse
+    public function sessionData(Flight $flight, FlightRepository $flights, FlightClouds $clouds): JsonResponse
     {
-        $response = new JsonResponse(FlightSession::of($flights->findSession($flight))->replayData());
+        $members = $flights->findSession($flight);
+        $response = new JsonResponse($clouds->addTo(FlightSession::of($members)->replayData(), $members));
         $response->setPrivate();
         $response->setMaxAge(300);
 
@@ -361,9 +355,11 @@ final class FlightController extends AbstractController
      */
     #[Route('/{id<\d+>}/analyse.json', name: 'analysis', methods: ['GET'])]
     #[IsGranted(FlightVoter::VIEW, 'flight')]
-    public function analysis(Flight $flight, FlightRepository $flights, GlideReach $reach): JsonResponse
+    public function analysis(Flight $flight, FlightRepository $flights, GlideReach $reach, FlightClouds $clouds): JsonResponse
     {
         $analysis = $flight->getAnalysis();
+        // The cumulus over the thermals, at the cloud base of the weather of the task
+        $analysis['clouds'] = $clouds->of($flight);
         $sameAir = $flights->findSameAir($flight);
         $analysis['sessionLift'] = SessionLift::around($analysis, $sameAir);
         // The ghosts: the best of the race, the pilot's own best on this flight plan

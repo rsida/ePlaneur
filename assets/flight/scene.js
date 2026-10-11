@@ -55,6 +55,11 @@ const AVERAGE_CLIMB = 30;
 // Metres the cylinders of the turnpoints and the line of the task rise above the highest glider
 const TASK_ABOVE = 300;
 
+/** A cumulus in 3D: a wide body at the cloud base and two smaller puffs on it, metres. */
+const CLOUD_BODY = { radius: 450, height: 220 };
+const CLOUD_PUFF = { radius: 280, height: 260, rise: 120, apart: 260 };
+const CLOUD_COLOR = [250, 250, 252, 175];
+
 /** Thickness of the wall of a start or finish gate in 3D, metres. */
 const GATE_THICKNESS = 12;
 // Translucent volumes (cylinders, thermals) leave the depth buffer alone: otherwise the tracks drawn
@@ -408,6 +413,43 @@ export function taskLayers(id, task, { top }) {
             getWidth: 3,
             widthUnits: 'pixels',
             jointRounded: true,
+        }),
+    ];
+}
+
+/**
+ * The cumulus over the thermals (App\Flight\FlightClouds): one cloud at the cloud base of its
+ * weather zone over each thermal entered before `index`, so that they form as the replay goes.
+ * `clouds` may come from several flights, each with the index of its own replay.
+ */
+export function cloudLayers(id, clouds) {
+    const formed = clouds.filter((cloud) => cloud.at <= cloud.index);
+    const puffs = formed.flatMap((cloud) => [-1, 1].map((side) => ({
+        position: offset([cloud.longitude, cloud.latitude, cloud.base + CLOUD_PUFF.rise], side * CLOUD_PUFF.apart, side * CLOUD_PUFF.apart * 0.4, 0),
+    })));
+
+    return [
+        new ColumnLayer({
+            id: `${id}-clouds`,
+            data: formed,
+            getPosition: (cloud) => [cloud.longitude, cloud.latitude, cloud.base],
+            getElevation: CLOUD_BODY.height,
+            radius: CLOUD_BODY.radius,
+            diskResolution: 28,
+            extruded: true,
+            getFillColor: CLOUD_COLOR,
+            parameters: SEE_THROUGH,
+        }),
+        new ColumnLayer({
+            id: `${id}-cloud-puffs`,
+            data: puffs,
+            getPosition: (puff) => puff.position,
+            getElevation: CLOUD_PUFF.height,
+            radius: CLOUD_PUFF.radius,
+            diskResolution: 24,
+            extruded: true,
+            getFillColor: CLOUD_COLOR,
+            parameters: SEE_THROUGH,
         }),
     ];
 }

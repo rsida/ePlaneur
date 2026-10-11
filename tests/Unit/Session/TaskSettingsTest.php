@@ -59,6 +59,7 @@ final class TaskSettingsTest extends TestCase
         self::assertSame('Faible', TaskSettings::strengthLabel($base['thermalStrength']));
         self::assertSame('Normale', TaskSettings::activityLabel($base['thermalActivity']));
         self::assertSame(['Base', 'orage', 'Vercors'], array_column($settings->weather, 'name'));
+        self::assertSame([0, 5, 10], array_map(static fn (array $zone): int => \count($zone['polygon'] ?? []), $settings->weather), 'the corners of the drawn zones, in landscape metres');
         self::assertSame('Sud', TaskSettings::compass(180));
     }
 
@@ -80,6 +81,9 @@ final class TaskSettingsTest extends TestCase
         self::assertSame(200, $settings->penalties['CloudFlying']);
         self::assertTrue($settings->options['PDA']);
         self::assertSame(1525, $settings->weather[0]['cloudBase']);
+        self::assertSame([0, 7, 7], array_map(static fn (array $zone): int => \count($zone['polygon'] ?? []), $settings->weather));
+        self::assertSame([823614.75, 121713.93], $settings->weather[1]['polygon'][0] ?? null);
+        self::assertSame(4000, $settings->weather[1]['border'] ?? null);
         self::assertSame(17.0, $settings->weather[0]['windSpeed']);
         self::assertSame('Printemps', $settings->season());
 

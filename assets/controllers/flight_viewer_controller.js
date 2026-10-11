@@ -7,7 +7,7 @@ import { FORMATS, valueTip } from '../flight/chart.js';
 import { readStored, writeStored } from '../flight/storage.js';
 import { bearing, distance } from '../flight/geo.js';
 import { TASK_LAYERS, addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatClock, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
-import { SEE_THROUGH, angleDifference, attitude, chaseBearing, climbColor, crossingLayers, gliderLayers, trailLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
+import { SEE_THROUGH, angleDifference, attitude, chaseBearing, climbColor, cloudLayers, crossingLayers, gliderLayers, trailLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
 
 /*
  * Flight viewer (templates/flight/show.html.twig): the flight of FlightController::analysis() on a
@@ -380,6 +380,7 @@ export default class extends Controller {
                 ...(this.shows('crossings') ? crossingLayers('flight', this.series, this.crossings, this.index, { zoom }) : []),
                 ...(this.shows('sinks') ? sinkLayers('flight', this.series, this.sinks, this.index, { zoom }) : []),
                 ...(this.shows('wind') ? windLayers('flight', this.series, this.thermalPhases, this.index, { zoom }) : []),
+                ...(this.shows('clouds') ? cloudLayers('flight', (this.flight.clouds ?? []).map((cloud) => ({ ...cloud, index: this.index }))) : []),
             );
         }
         // In the pilot view the camera is in the glider
@@ -688,7 +689,7 @@ export default class extends Controller {
     /** The layers panel: the rows this flight has data for, each as the pilot left it. */
     buildLayers() {
         this.layersOff = new Set((readStored(LAYERS_KEY) ?? '').split(',').filter(Boolean));
-        const has = { air: Boolean(this.air?.thermals.length), reach: Boolean(this.reach), comments: this.commentsValue.length > 0 };
+        const has = { air: Boolean(this.air?.thermals.length), reach: Boolean(this.reach), comments: this.commentsValue.length > 0, clouds: Boolean(this.flight.clouds?.length) };
         this.layerTargets.forEach((input) => {
             const row = input.closest('[data-needs]');
             if (row) row.hidden = !has[row.dataset.needs];

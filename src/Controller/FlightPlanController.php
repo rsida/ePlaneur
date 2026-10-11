@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\FlightPlan;
+use App\Flight\FlightClouds;
 use App\Flight\FlightSession;
 use App\Repository\FlightPlanRepository;
 use App\Repository\FlightRepository;
@@ -52,10 +53,10 @@ final class FlightPlanController extends AbstractController
     /** Replay data of every track on the flight plan, whatever their day ("ghost race"). */
     #[Route('/{code}/traces.json', name: 'data', requirements: ['code' => 'C[23]-[a-z]\d{3}[a-z]?'], methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function data(#[MapEntity(mapping: ['code' => 'code'])] FlightPlan $plan, FlightRepository $flights): JsonResponse
+    public function data(#[MapEntity(mapping: ['code' => 'code'])] FlightPlan $plan, FlightRepository $flights, FlightClouds $clouds): JsonResponse
     {
         $tracks = $flights->findOnFlightPlan($plan->getCode());
-        $response = new JsonResponse([] !== $tracks ? FlightSession::of($tracks)->replayData() : ['task' => null, 'flights' => []]);
+        $response = new JsonResponse([] !== $tracks ? $clouds->addTo(FlightSession::of($tracks)->replayData(), $tracks) : ['task' => null, 'flights' => []]);
         $response->setPrivate();
         $response->setMaxAge(300);
 

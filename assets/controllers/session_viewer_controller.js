@@ -2,7 +2,8 @@
 import { Controller } from '@hotwired/stimulus';
 import { PathLayer } from '@deck.gl/layers';
 import { TASK_LAYERS, addTask, boundsOf, createMap, easeAt, formatClock, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
-import { chaseBearing, gliderLayers, positionAt, readings, sessionThermalLayers, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
+import { chaseBearing, cloudLayers, gliderLayers, positionAt, readings, sessionThermalLayers, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
+import { distance } from '../flight/geo.js';
 import { readStored, writeStored } from '../flight/storage.js';
 
 /*
@@ -31,6 +32,7 @@ const COLORS = [
     [0, 150, 160], [200, 160, 0], [220, 90, 160], [90, 90, 90], [120, 160, 40],
 ];
 const TRAIL = 300; // seconds of track drawn behind each glider
+const SAME_CLOUD = 600; // metres within which the clouds of several pilots are the same cumulus
 const LAYERS_KEY = 'session.layers-off';
 // Off until the viewer turns them on: drawn over the thermals of every pilot, they repeat them
 const LAYERS_OFF = 'followed';
@@ -202,6 +204,7 @@ export default class extends Controller {
             layers: [
                 ...(this.is3d && this.shows('task') ? taskLayers('session', this.session.task, { top: this.top }) : []),
                 ...this.thermalLayers(gliders, followed),
+                ...(this.is3d && this.shows('clouds') ? cloudLayers('session', this.cloudsOf(gliders)) : []),
                 ...(this.shows('tracks') ? [new PathLayer({
                     id: 'tracks',
                     data: this.paths(),
@@ -221,6 +224,18 @@ export default class extends Controller {
     }
 
     /** In 3D, the thermals of every pilot grouped, and those of the pilot followed. */
+    /** The cumulus formed so far over the thermals of every pilot, one per thermal shared by several. */
+    cloudsOf(gliders) {
+        const clouds = [];
+        gliders.forEach(({ track, index }) => (track.clouds ?? []).forEach((cloud) => {
+            if (cloud.at > index) return;
+            if (clouds.some((other) => distance(other.latitude, other.longitude, cloud.latitude, cloud.longitude) < SAME_CLOUD)) return;
+            clouds.push({ ...cloud, index });
+        }));
+
+        return clouds;
+    }
+
     thermalLayers(gliders, followed) {
         if (!this.is3d) return [];
         const zoom = this.map.getZoom();

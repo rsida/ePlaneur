@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\NetworkSession;
 use App\Entity\User;
+use App\Flight\FlightClouds;
 use App\Flight\FlightSession;
 use App\Flight\SessionComparison;
 use App\Form\SessionType;
@@ -98,10 +99,10 @@ final class SessionController extends AbstractController
     /** Replay data of the tracks of the session (FlightSession::replayData()). */
     #[Route('/{id<\d+>}/traces.json', name: 'data', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function data(NetworkSession $session): JsonResponse
+    public function data(NetworkSession $session, FlightClouds $clouds): JsonResponse
     {
         $flights = array_values($session->getFlights()->toArray());
-        $response = new JsonResponse([] !== $flights ? FlightSession::of($flights)->replayData() : ['task' => null, 'flights' => []]);
+        $response = new JsonResponse([] !== $flights ? $clouds->addTo(FlightSession::of($flights)->replayData(), $flights) : ['task' => null, 'flights' => []]);
         $response->setPrivate();
         $response->setMaxAge(300);
 

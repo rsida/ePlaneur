@@ -311,6 +311,16 @@ opens its tab):
   of the other pilots and the ones missed (when the race has other tracks), task and turnpoints,
   expected slopes, airfields and glide reach, comments. Rows without data for the flight are left
   out. The same panel (`templates/flight/_layers.html.twig`) is on the session replay.
+- Cumulus in 3D (roadmap 7k4, `App\Flight\FlightClouds`, layer "Cumulus"): one cloud over each
+  thermal of 150 m or more, formed when the replay reaches the thermal, at the cloud base of its
+  weather zone above the lowest ground under the climb; none when the inversion is under that base
+  (blue thermals, as the Condor manual describes them). The zone is the first drawn zone of the
+  flight plan around the centre of the thermal (its polygon, in landscape metres, converted with
+  the landscape of the flight), the base zone otherwise; the blending border is left out. The
+  weather comes from the session, or from the flight plan of Condor's IGC export. Taken above the
+  ground because, above sea level, the pilots of the dev races would have flown in cloud most of
+  the time, which their penalties do not show; still to check against what pilots saw in Condor.
+  On the session replay, the clouds of every pilot, one per thermal shared (600 m).
 - Clock (roadmap 7k3): the moments of the replay (time at the cursor, axis and values of the
   charts, marks and events of the timeline, copied link) are on the clock of the task in Condor
   ("Heure Condor", 15:06:00 for the start of C3-c060) or since the beginning of the track ("Temps
