@@ -206,8 +206,8 @@ and `taskstart.php`):
   runs. It is in no file Condor writes (10 flight plans, the results and the IGC exports checked).
   The club's dedicated server uses 15 minutes: `TaskSettings::JOIN_TIME`, the default of the
   "Stop join" field of a session, which an IGC export of a regatta fills by itself.
-- C3-c058 has a height recovery: Condor moves the glider at once, `TrackReader` keeps the longest
-  continuous part and the start of the task is lost. The analysis should keep the parts of a
-  flight with a recovery.
+- C3-c058 has a height recovery: Condor moves the glider at once, `TrackReader` kept the longest
+  continuous part and the start of the task was lost. Fixed in 7m1 (recoveries kept and left out of
+  the climbs); the two jumps at the finish were recoveries too, not an automatic lift.
 - `PlayerStatus` is `/` in these exports, `Finished` in the export of C3-c060 of 2026-06-21: not
   reliable, read as unknown.

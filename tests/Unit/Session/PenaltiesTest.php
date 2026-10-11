@@ -29,6 +29,17 @@ final class PenaltiesTest extends TestCase
         self::assertSame(100, array_column($penalties['rules'], 'at', 'key')['StartSpeed'], 'the moment of the start');
     }
 
+    public function testEachHeightRecoveryCostsItsPoints(): void
+    {
+        $analysis = $this->analysis(completed: true) + ['recoveries' => [['at' => 600, 'height' => 501.0]]];
+        $rules = array_column(Penalties::of($analysis, $this->settings())['rules'], null, 'key');
+
+        self::assertSame(200.0, $rules['HeightRecovery']['lost']);
+        self::assertSame(1.0, $rules['HeightRecovery']['measured']);
+        self::assertSame(600, $rules['HeightRecovery']['at']);
+        self::assertNull(array_column(Penalties::of($this->analysis(completed: true), $this->settings())['rules'], 'lost', 'key')['HeightRecovery'], 'an older analysis does not tell');
+    }
+
     public function testAFlightThatDidNotFinishHasNoFinishPenalty(): void
     {
         $penalties = Penalties::of($this->analysis(completed: false), $this->settings());
@@ -61,7 +72,7 @@ final class PenaltiesTest extends TestCase
             'startMaxHeight' => 1500,
             'finishMinHeight' => 330,
             'maxStartSpeed' => 170,
-            'penalties' => ['CloudFlying' => 200, 'WindowCollision' => 0, 'StartSpeed' => 2, 'HighStart' => 1, 'LowFinish' => 1],
+            'penalties' => ['CloudFlying' => 200, 'HeightRecovery' => 200, 'WindowCollision' => 0, 'StartSpeed' => 2, 'HighStart' => 1, 'LowFinish' => 1],
         ]);
     }
 

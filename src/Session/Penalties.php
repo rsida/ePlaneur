@@ -7,12 +7,13 @@ namespace App\Session;
 /**
  * The penalties of a flight against the penalty settings of its task, listed like Condor Club does:
  * every rule of the task with its points, and the points lost on those the track shows (start speed
- * above the limit, start too high, finish too low), measured where the flight crossed the line.
+ * above the limit, start too high, finish too low, measured where the flight crossed the line; height
+ * recoveries, counted from the track).
  *
- * Only an estimate: the dedicated server measures its own way (the ground speed of the track does
- * not give the airspeed, and the airspeed of the records is not readable), and counts what the track
- * does not show (cloud flying, thermal helpers, recoveries, airspace, windows). The official total
- * of the results, when known, comes with the gap between the two.
+ * Only an estimate: Condor measures the start ground speed at the exact crossing, which the 1 s
+ * series does not match within 1 or 2 km/h, and counts what the track does not show (cloud flying,
+ * thermal helpers, plane recoveries, airspace, windows). The official total of the results, when
+ * known, comes with the gap between the two.
  *
  * A track exported in IGC by Condor carries the points Condor counted for each rule (CondorReport):
  * the penalties are then exact, and so is the measure of a rule that cost points (its limit plus the
@@ -21,7 +22,7 @@ namespace App\Session;
 final class Penalties
 {
     /** Rules the track can measure. */
-    private const array MEASURED = ['StartSpeed', 'HighStart', 'LowFinish'];
+    private const array MEASURED = ['StartSpeed', 'HighStart', 'LowFinish', 'HeightRecovery'];
 
     /**
      * @param array<string, mixed> $analysis the analysis of the flight (FlightAnalysis::toArray())
@@ -50,6 +51,8 @@ final class Penalties
                 'StartSpeed' => self::over($settings->maxStartSpeed, $start['reachedSpeed'] ?? null, $start['reached'] ?? null),
                 'HighStart' => self::over($settings->startMaxHeight, $start['reachedAltitude'] ?? null, $start['reached'] ?? null),
                 'LowFinish' => self::under($settings->finishMinHeight, $finish['reachedAltitude'] ?? null, $finish['reached'] ?? null),
+                // Each one costs the points of the rule; analyses older than the recoveries do not tell
+                'HeightRecovery' => isset($analysis['recoveries']) ? [null, (float) \count($analysis['recoveries']), $analysis['recoveries'][0]['at'] ?? null, (float) \count($analysis['recoveries'])] : [null, null, null, null],
                 default => [null, null, null, null],
             };
             $lost = \in_array($key, self::MEASURED, true) && null !== $excess ? round($excess * $rate, 2) : null;

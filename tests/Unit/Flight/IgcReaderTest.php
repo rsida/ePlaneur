@@ -6,7 +6,6 @@ namespace App\Tests\Unit\Flight;
 
 use App\Flight\Condor\CondorReport;
 use App\Flight\Condor\LandscapeRegistry;
-use App\Flight\Fix;
 use App\Flight\Reader\FtrReader;
 use App\Flight\Reader\IgcReader;
 use App\Flight\Reader\InvalidTrackException;
@@ -15,8 +14,8 @@ use App\Session\TaskSettings;
 use PHPUnit\Framework\TestCase;
 
 /**
- * IGC files: headers, fixes with their time (across midnight), task, and the longest continuous
- * part kept by TrackReader.
+ * IGC files: headers, fixes with their time (across midnight), task and Condor's report
+ * (discontinuities: TrackReaderTest).
  */
 final class IgcReaderTest extends TestCase
 {
@@ -117,24 +116,6 @@ final class IgcReaderTest extends TestCase
         $track = (new IgcReader())->read(FlightSamples::igc(\array_slice(FlightSamples::glideThermalGlide(), 0, 20), start: 86390));
 
         self::assertSame(19.0, $track->fixes[19]->time);
-    }
-
-    public function testTheLongestContinuousPartIsKept(): void
-    {
-        $fixes = \array_slice(FlightSamples::glideThermalGlide(), 0, 120);
-        // Condor puts the glider 500 m higher after a crash or at the finish: the part before the jump
-        // is kept, ending with the position of the jump at the altitude before it
-        foreach ($fixes as $i => $fix) {
-            if ($i >= 100) {
-                $fixes[$i] = new Fix($fix->time, $fix->latitude, $fix->longitude, $fix->altitude + 500);
-            }
-        }
-        $reader = new TrackReader(new FtrReader(new LandscapeRegistry(\dirname(__DIR__, 3).'/config/condor/landscapes.yaml')), new IgcReader());
-
-        $kept = $reader->read(FlightSamples::igc($fixes))->fixes;
-        self::assertCount(101, $kept);
-        self::assertSame(100.0, $kept[100]->time);
-        self::assertSame($kept[99]->altitude, $kept[100]->altitude);
     }
 
     public function testOtherFilesAreRefused(): void

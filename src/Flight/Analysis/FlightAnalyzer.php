@@ -104,6 +104,9 @@ final class FlightAnalyzer
         $latitude = array_column($points, 1);
         $longitude = array_column($points, 2);
         $altitude = array_column($points, 3);
+        // Climbs, vario and phases on the altitude without the height recoveries of Condor (the
+        // glider put higher at once); the altitude itself (highest, band, finish, ground) stays real
+        $climb = [] !== $track->recoveries ? array_column(self::resample(self::withoutRecoveries($track)), 3) : $altitude;
 
         $speed = [];
         $vario = [];
@@ -114,15 +117,15 @@ final class FlightAnalyzer
             $b = min($count - 1, $i + self::MEASURE_HALF_WINDOW);
             $distance = Geo::distance($latitude[$a], $longitude[$a], $latitude[$b], $longitude[$b]);
             $speed[] = $b > $a ? $distance / ($b - $a) * 3.6 : 0.0;
-            $vario[] = $b > $a ? ($altitude[$b] - $altitude[$a]) / ($b - $a) : 0.0;
+            $vario[] = $b > $a ? ($climb[$b] - $climb[$a]) / ($b - $a) : 0.0;
             $heading[] = $distance > 1.0 ? Geo::bearing($latitude[$a], $longitude[$a], $latitude[$b], $longitude[$b]) : ($heading[$i - 1] ?? 0.0);
             $step[] = $i > 0 ? Geo::distance($latitude[$i - 1], $longitude[$i - 1], $latitude[$i], $longitude[$i]) : 0.0;
         }
 
         [$takeoff, $landing] = self::flyingRange($speed);
         $turnRate = self::turnRates($heading);
-        $phases = self::phases($turnRate, $takeoff, $landing, $altitude, $step, $latitude, $longitude);
-        $phases = self::describe(self::splitLift($phases, $altitude, $step, $latitude, $longitude), $turnRate, $speed, $vario, $latitude, $longitude);
+        $phases = self::phases($turnRate, $takeoff, $landing, $climb, $step, $latitude, $longitude);
+        $phases = self::describe(self::splitLift($phases, $climb, $step, $latitude, $longitude), $turnRate, $speed, $vario, $latitude, $longitude);
 
         $series = [
             'time' => array_column($points, 0),
@@ -132,25 +135,44 @@ final class FlightAnalyzer
             'speed' => $speed,
             'vario' => $vario,
         ];
+        $climbSeries = ['altitude' => $climb] + $series;
 
         $task = \count($track->turnpoints) >= 3 ? self::task($track->turnpoints, $latitude, $longitude) : null;
         $launch = self::launch($series, $track->turnpoints[0] ?? null);
-        $climbing = self::climbing($series, $takeoff, $landing, $launch);
+        $climbing = self::climbing($climbSeries, $takeoff, $landing, $launch);
         // Climbing straight behind the tug or on the cable is not slope or wave lift
         $phases = array_map(static fn (Phase $phase): Phase => Phase::LIFT === $phase->type && $phase->start < $climbing['release'] ? $phase->as(Phase::LAUNCH) : $phase, $phases);
         $statistics = self::statistics($series, $step, $phases, $takeoff, $landing)
             + $climbing
-            + self::spirals($turnRate, $altitude, $takeoff, $landing)
-            + self::taskFlying($series, $phases, $task)
-            + self::circling($series, $phases, $task);
-        $phases = self::coach($phases, $altitude, $statistics['climbAverage']);
+            + self::spirals($turnRate, $climb, $takeoff, $landing)
+            + self::taskFlying($climbSeries, $phases, $task, $altitude)
+            + self::circling($climbSeries, $phases, $task);
+        $phases = self::coach($phases, $climb, $statistics['climbAverage']);
 
         // Bank and pitch recorded by Condor 3 (.ftr), when every second has them
         $bank = array_column($points, 4);
         $pitch = array_column($points, 5);
         $attitude = !\in_array(null, $bank, true) && !\in_array(null, $pitch, true) ? ['bank' => $bank, 'pitch' => $pitch] : null;
 
-        return new FlightAnalysis($track, $series, $phases, $statistics, $task, $launch, self::crossings($series, $phases), attitude: $attitude);
+        return new FlightAnalysis($track, $series, $phases, $statistics, $task, $launch, self::crossings($climbSeries, $phases), attitude: $attitude, climb: [] !== $track->recoveries ? $climb : null);
+    }
+
+    /**
+     * The fixes with the height of the recoveries taken off from each one onwards: a continuous
+     * altitude, for the climbs.
+     *
+     * @return list<Fix>
+     */
+    private static function withoutRecoveries(Track $track): array
+    {
+        return array_map(static function (Fix $fix) use ($track): Fix {
+            $lift = 0.0;
+            foreach ($track->recoveries as $recovery) {
+                $lift += $fix->time >= $recovery['time'] ? $recovery['height'] : 0.0;
+            }
+
+            return new Fix($fix->time, $fix->latitude, $fix->longitude, $fix->altitude - $lift, $fix->bank, $fix->pitch);
+        }, $track->fixes);
     }
 
     /**
@@ -868,10 +890,11 @@ final class FlightAnalyzer
      *
      * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
      * @param list<Phase>                                                                                                                          $phases
+     * @param list<float>                                                                                                                          $altitude the real altitude, for the band ($series has the one without recoveries)
      *
      * @return array{bandBottom: ?float, bandTop: ?float, glideDetour: ?float}
      */
-    private static function taskFlying(array $series, array $phases, ?TaskResult $task): array
+    private static function taskFlying(array $series, array $phases, ?TaskResult $task, array $altitude): array
     {
         $reached = null !== $task ? array_filter($task->reached, static fn (?int $index): bool => null !== $index) : [];
         $thermals = [];
@@ -899,7 +922,7 @@ final class FlightAnalyzer
             }
         }
         $average = static fn (string $end): ?float => [] !== $thermals
-            ? round(array_sum(array_map(static fn (Phase $phase): float => $series['altitude']['start' === $end ? $phase->start : $phase->end], $thermals)) / \count($thermals))
+            ? round(array_sum(array_map(static fn (Phase $phase): float => $altitude['start' === $end ? $phase->start : $phase->end], $thermals)) / \count($thermals))
             : null;
 
         return [

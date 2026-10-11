@@ -81,15 +81,24 @@ plan when the flight has no session. See [condor-integration](condor-integration
 
 ### Discontinuities
 
-Condor moves the glider at once in some cases: 500 m higher after a crash, and at the very record
-where it reaches the finish (that position is kept, at the altitude before the jump, so the finish
-is still reached). Such a
-jump would read as a 5,000 m/s climb, so `TrackReader` cuts the track where the move between two
-fixes is beyond any glider (over 150 m/s horizontally or 80 m/s vertically, and over 30 m) and keeps
-the longest part. A hard pull-up climbs 4 m in the 0.1 s between two Condor records (40 to 50 m/s):
-it is not a jump. A flight with a height or glider recovery (penalised by the server) keeps only its
-longest part, so its task may read as not finished; the official result of its session says what
-the server counted.
+Condor moves the glider at once in some cases. A move between two fixes beyond any glider (over
+150 m/s horizontally or 80 m/s vertically, and over 30 m) is a jump; a hard pull-up climbs 4 m in
+the 0.1 s between two Condor records (40 to 50 m/s) and is not one.
+
+- **Height recovery** (roadmap 7m1): the pilot asks for height, Condor puts the glider about 500 m
+  higher at the same place (a jump upwards, not sideways), and the server counts the penalty of the
+  rule (200 points on the club's races). The track is kept whole and the recovery recorded
+  (`Track::$recoveries`, `recoveries` of the analysis: second and height). The analysis runs the
+  climbs (vario, phases, best gain, total climb, spirals, climb by altitude, lift crossed) on the
+  altitude without the recoveries, and keeps the real altitude for the rest (highest and lowest,
+  band of the thermals, start and finish, height above the ground). The flight page lists them
+  under "Le vol en détail", and "Score et pénalités" counts the points of each. Found on the IGC
+  exports of 2026-10-11: +501 m in the middle of C3-c058 (the track was cut there before and the
+  task lost), +495 m and +498 m as the glider crossed the finish of two races, which the reader took
+  for an automatic lift at the finish.
+- **Any other jump** (a glider recovery moves it to an airfield): `TrackReader` cuts the track there
+  and keeps the longest part, so the task may read as not finished; the official result of the
+  session says what the server counted.
 
 ## Landscapes and coordinates
 

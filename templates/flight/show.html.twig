@@ -482,6 +482,9 @@
                             <div><dt>Vitesse sol maximale</dt><dd>{{ stats.speedMax|number_format(0, ',', ' ') }} km/h</dd></div>
                             <div><dt>Meilleur gain d’altitude <span class="u-note">(après le largage)</span></dt><dd>{{ stats.bestGain|number_format(0, ',', ' ') }} m</dd></div>
                             <div><dt>Élévation cumulée <span class="u-note">(après le largage)</span></dt><dd>{{ stats.totalClimb|number_format(0, ',', ' ') }} m</dd></div>
+                            {% if analysis.recoveries is defined and analysis.recoveries is not empty %}
+                                <div><dt>Récupérations d’altitude <span class="u-note">(planeur remonté par Condor)</span></dt><dd>{% for recovery in analysis.recoveries %}<button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ recovery.at }}">+{{ recovery.height|number_format(0, ',', ' ') }} m</button>{% if not loop.last %} {% endif %}{% endfor %}</dd></div>
+                            {% endif %}
                             <div><dt>Posé en cours de vol</dt><dd>{{ stats.stops > 0 ? 'Oui' ~ (stats.stops > 1 ? ' (' ~ stats.stops ~ ' fois)' : '') : 'Non' }}</dd></div>
                             <div><dt>Spirales à droite <span class="u-note">(séries d’un tour ou plus)</span></dt><dd>{{ stats.rightSpirals }}{% if stats.rightClimb is not null %} <span class="u-note">({{ stats.rightClimb|number_format(1, ',', ' ') }} m/s)</span>{% endif %}</dd></div>
                             <div><dt>Spirales à gauche</dt><dd>{{ stats.leftSpirals }}{% if stats.leftClimb is not null %} <span class="u-note">({{ stats.leftClimb|number_format(1, ',', ' ') }} m/s)</span>{% endif %}</dd></div>
@@ -491,7 +494,7 @@
                     </div>
                 </section>
                 {% if penalties %}
-                    {% set units = {StartSpeed: 'km/h', HighStart: 'm', LowFinish: 'm'} %}
+                    {% set units = {StartSpeed: 'km/h', HighStart: 'm', LowFinish: 'm', HeightRecovery: 'fois'} %}
                     <section class="c-card c-card--outlined t-paper" aria-labelledby="penalties-title">
                         <div class="c-card__body l-stack l-stack--sm">
                             <twig:Ui:Heading level="2" size="h4" id="penalties-title">Score et pénalités</twig:Ui:Heading>
@@ -538,11 +541,11 @@
                             {% if penalties.exact %}
                                 <p class="u-note">Points calculés par Condor et lus dans l’IGC qu’il a exporté : ils font foi. Une mesure qui a coûté des points s’en déduit exactement (limite + points ÷ barème).</p>
                             {% elseif penalties.other is null %}
-                                <p class="u-note">Mesuré au passage des lignes de départ et d’arrivée (vitesse sol sur 4 s). Le total officiel vient des résultats du serveur, quand la session les a.</p>
+                                <p class="u-note">Mesuré au passage des lignes de départ et d’arrivée (vitesse sol sur 4 s) ; récupérations d’altitude comptées dans la trace. Le total officiel vient des résultats du serveur, quand la session les a.</p>
                             {% elseif penalties.other > 0.5 %}
-                                <p class="u-note">Le serveur a compté {{ penalties.other|number_format(penalties.other == penalties.other|round ? 0 : 2, ',', ' ') }} pts de plus : des pénalités que la trace ne montre pas (vol dans les nuages, aides thermiques, récupération, zones) ou une vitesse au départ mesurée autrement (la trace ne donne que la vitesse sol). Son total fait foi.</p>
+                                <p class="u-note">Le serveur a compté {{ penalties.other|number_format(penalties.other == penalties.other|round ? 0 : 2, ',', ' ') }} pts de plus : des pénalités que la trace ne montre pas (vol dans les nuages, aides thermiques, réparation du planeur, zones) ou une vitesse au départ mesurée au passage exact de la ligne. Son total fait foi.</p>
                             {% elseif penalties.other < -0.5 %}
-                                <p class="u-note">Le serveur a compté {{ (-penalties.other)|number_format(-penalties.other == (-penalties.other)|round ? 0 : 2, ',', ' ') }} pts de moins : il ne mesure pas la vitesse au départ comme nous (la trace ne donne que la vitesse sol). Son total fait foi.</p>
+                                <p class="u-note">Le serveur a compté {{ (-penalties.other)|number_format(-penalties.other == (-penalties.other)|round ? 0 : 2, ',', ' ') }} pts de moins : il mesure la vitesse au départ au passage exact de la ligne, que la trace seconde par seconde approche à 1 ou 2 km/h près. Son total fait foi.</p>
                             {% else %}
                                 <p class="u-note">L’estimation d’après la trace correspond au total officiel du serveur.</p>
                             {% endif %}

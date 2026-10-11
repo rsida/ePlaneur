@@ -12,11 +12,13 @@ use App\Flight\Condor\CondorReport;
 final readonly class Track
 {
     /**
-     * @param list<Fix>         $fixes      in time order
-     * @param list<Turnpoint>   $turnpoints the task, empty when the file has none
-     * @param bool              $exactTimes false when the times are estimated (Condor .ftr files)
-     * @param int|null          $water      litres of water ballast at take-off (Condor files)
-     * @param CondorReport|null $report     what Condor computed for the flight (IGC exported by Condor)
+     * @param list<Fix>                               $fixes      in time order
+     * @param list<Turnpoint>                         $turnpoints the task, empty when the file has none
+     * @param bool                                    $exactTimes false when the times are estimated (Condor .ftr files)
+     * @param int|null                                $water      litres of water ballast at take-off (Condor files)
+     * @param CondorReport|null                       $report     what Condor computed for the flight (IGC exported by Condor)
+     * @param list<array{time: float, height: float}> $recoveries height recoveries of Condor: the glider put
+     *                                                            higher at once, at the time of the fix after the jump
      */
     public function __construct(
         public string $format,
@@ -33,14 +35,16 @@ final readonly class Track
         public ?\DateTimeImmutable $date = null,
         public ?int $water = null,
         public ?CondorReport $report = null,
+        public array $recoveries = [],
     ) {
     }
 
     /**
-     * @param list<Fix> $fixes
+     * @param list<Fix>                               $fixes
+     * @param list<array{time: float, height: float}> $recoveries
      */
-    public function withFixes(array $fixes): self
+    public function withFixes(array $fixes, array $recoveries = []): self
     {
-        return new self($this->format, $this->simulator, $this->pilot, $this->competitionId, $this->glider, $this->landscape, $this->raceId, $this->flightPlan, $this->turnpoints, $fixes, $this->exactTimes, $this->date, $this->water, $this->report);
+        return new self($this->format, $this->simulator, $this->pilot, $this->competitionId, $this->glider, $this->landscape, $this->raceId, $this->flightPlan, $this->turnpoints, $fixes, $this->exactTimes, $this->date, $this->water, $this->report, $recoveries);
     }
 }

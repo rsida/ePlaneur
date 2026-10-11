@@ -29,6 +29,7 @@ final readonly class FlightAnalysis
      * @param array{cell?: int, cells?: list<array{float, float, float}>, wind?: array{from: float, speed: float}}                                 $slopes     slopes facing the wind of the flight, with the lift expected (FlightTerrain)
      * @param array{bank: list<float>, pitch: list<float>}|null                                                                                    $attitude   bank and pitch of each second, degrees (Condor 3 .ftr)
      * @param list<array{start: int, end: int, vario: float, gain: float}>                                                                         $crossings  lift crossed in straight flight during the glides
+     * @param list<float>|null                                                                                                                     $climb      altitude of each second without the height recoveries (null: none)
      */
     public function __construct(
         public Track $track,
@@ -41,6 +42,7 @@ final readonly class FlightAnalysis
         public ?array $ground = null,
         public array $slopes = [],
         public ?array $attitude = null,
+        public ?array $climb = null,
     ) {
     }
 
@@ -53,7 +55,7 @@ final readonly class FlightAnalysis
      */
     public function withTerrain(array $ground, array $slopes): self
     {
-        return new self($this->track, $this->series, $this->phases, $this->statistics, $this->task, $this->launch, $this->crossings, $ground, $slopes, $this->attitude);
+        return new self($this->track, $this->series, $this->phases, $this->statistics, $this->task, $this->launch, $this->crossings, $ground, $slopes, $this->attitude, $this->climb);
     }
 
     /**
@@ -106,6 +108,8 @@ final readonly class FlightAnalysis
             'crossings' => $this->crossings,
             'climbByAltitude' => $this->climbByAltitude(),
             'task' => null === $this->task ? null : $this->taskArray($this->task),
+            // Height recoveries of Condor: second of the series and metres
+            'recoveries' => array_map(fn (array $recovery): array => ['at' => (int) ceil($recovery['time'] - $this->track->fixes[0]->time), 'height' => round($recovery['height'])], $this->track->recoveries),
             // What Condor computed itself (IGC exported by Condor): the official figures
             'condor' => $this->track->report?->toArray(),
         ];
@@ -149,6 +153,7 @@ final readonly class FlightAnalysis
     private function climbByAltitude(): array
     {
         $bands = [];
+        $climb = $this->climb ?? $this->series['altitude'];
         foreach ($this->phases as $phase) {
             if (Phase::THERMAL !== $phase->type) {
                 continue;
@@ -156,7 +161,7 @@ final readonly class FlightAnalysis
             for ($i = $phase->start; $i < $phase->end; ++$i) {
                 $band = (int) floor($this->series['altitude'][$i] / self::CLIMB_BAND) * self::CLIMB_BAND;
                 $bands[$band] ??= [0.0, 0];
-                $bands[$band][0] += $this->series['altitude'][$i + 1] - $this->series['altitude'][$i];
+                $bands[$band][0] += $climb[$i + 1] - $climb[$i];
                 ++$bands[$band][1];
             }
         }

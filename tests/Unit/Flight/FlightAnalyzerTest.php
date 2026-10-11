@@ -194,6 +194,29 @@ final class FlightAnalyzerTest extends TestCase
         return $merged;
     }
 
+    public function testAHeightRecoveryIsNotAClimb(): void
+    {
+        // Condor puts the glider 500 m higher in the middle of the thermal, at 200 s
+        $plain = (new FlightAnalyzer())->analyze(self::track(FlightSamples::glideThermalGlide()));
+        $fixes = array_map(static fn (Fix $fix): Fix => new Fix($fix->time, $fix->latitude, $fix->longitude, $fix->altitude + ($fix->time >= 200 ? 500 : 0)), FlightSamples::glideThermalGlide());
+        $track = new Track('igc', 'Condor 3', 'Jeanne Pilote', null, null, null, null, null, [], $fixes, true, recoveries: [['time' => 200.0, 'height' => 500.0]]);
+        $analysis = (new FlightAnalyzer())->analyze($track);
+
+        self::assertSame(array_map(static fn (Phase $phase): string => $phase->type, $plain->phases), array_map(static fn (Phase $phase): string => $phase->type, $analysis->phases));
+        self::assertEqualsWithDelta($plain->phases[1]->vario(), $analysis->phases[1]->vario(), 0.01, 'the thermal climbs as without the recovery');
+        foreach (['totalClimb', 'bestGain', 'thermalGain', 'varioMax'] as $key) {
+            self::assertEqualsWithDelta($plain->statistics[$key], $analysis->statistics[$key], 0.5, $key);
+        }
+        self::assertEqualsWithDelta($plain->statistics['altitudeMax'] + 500, $analysis->statistics['altitudeMax'], 1.0, 'the altitude stays the real one');
+        self::assertSame([['at' => 200, 'height' => 500.0]], $analysis->toArray()['recoveries']);
+        self::assertEqualsWithDelta(
+            array_sum(array_column($plain->toArray()['climbByAltitude'], 'seconds')),
+            array_sum(array_column($analysis->toArray()['climbByAltitude'], 'seconds')),
+            40,
+        );
+        self::assertLessThan(3.0, max(array_column($analysis->toArray()['climbByAltitude'], 'climb')), 'no band climbs 500 m in a second');
+    }
+
     public function testFixesAreResampledToOnePerSecond(): void
     {
         // Ten fixes per second, as in Condor tracks

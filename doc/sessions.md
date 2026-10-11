@@ -151,6 +151,10 @@ every rule that cost points, and the measure of a rule that cost points follows 
 points over the rate: 0.2 point at 2 points per km/h above 170 km/h is 170.1 km/h on C3-c060).
 Condor's total is preferred to the one of the results file, which rounds it (0 for 0.2).
 
+Height recoveries are counted from the track since 7m1 (each one costs the points of the rule):
+the 200 points of flight 2 of the dev data (C3-s117), a recovery as it crossed the finish, now show
+in the estimate of its `.ftr` as well.
+
 ## History from eplaneur.fr
 
 `make console c="app:sessions:import"` reads the public pages of the eplaneur.fr tools: the session
