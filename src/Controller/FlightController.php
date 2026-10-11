@@ -29,6 +29,7 @@ use App\Repository\FlightRepository;
 use App\Repository\GliderRepository;
 use App\Repository\StepProgressRepository;
 use App\Security\Voter\FlightVoter;
+use App\Session\Penalties;
 use App\Training\TrainingPath;
 use App\Training\TrainingStep;
 use Doctrine\ORM\EntityManagerInterface;
@@ -254,6 +255,17 @@ final class FlightController extends AbstractController
             $race = $ranked->ranks($flight) + ['winner' => $ranked->flights[0]];
         }
 
+        // Penalties against the settings of the task, with the official total of the results
+        $settings = $session?->getTaskSettings();
+        $official = null;
+        foreach ($session?->getResults() ?? [] as $row) {
+            if (null !== $row['competitionId'] && null !== $flight->getCompetitionId() && 0 === strcasecmp($row['competitionId'], $flight->getCompetitionId())) {
+                $official = $row;
+                break;
+            }
+        }
+        $penalties = null !== $settings ? Penalties::of($flight->getAnalysis(), $settings, $official['penalty'] ?? null) : null;
+
         $advice = $advisor->advise($flight->getAnalysis(), $flight->getSession()?->getTaskSettings(), $performance, SessionLift::around($flight->getAnalysis(), $flights->findSameAir($flight)));
 
         return $this->render('flight/show.html.twig', [
@@ -263,6 +275,7 @@ final class FlightController extends AbstractController
             'advice' => $advice,
             'highlights' => FlightAdvisor::highlights($advice),
             'debrief' => FlightDebrief::chapters($flight->getAnalysis(), $advice),
+            'penalties' => $penalties,
             'performance' => $performance,
             'comment_form' => $form?->createView(),
         ], new Response(status: null !== $form && $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));

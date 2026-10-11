@@ -471,10 +471,6 @@
                             </p>
                         {% endif %}
                         <dl class="p-flight__facts">
-                            {% if start and start.reached is not null and settings %}
-                                {% if settings.maxStartSpeed %}<div><dt>Vitesse sol au départ <span class="u-note">(maximum {{ settings.maxStartSpeed }} km/h ; mesurée sur 4 s, le serveur fait foi)</span></dt><dd>{{ start.reachedSpeed|number_format(0, ',', ' ') }} km/h</dd></div>{% endif %}
-                                {% if settings.startMaxHeight %}<div><dt>Altitude au départ <span class="u-note">(maximum {{ settings.startMaxHeight|number_format(0, ',', ' ') }} m)</span></dt><dd{% if start.reachedAltitude > settings.startMaxHeight %} class="p-flight__alert"{% endif %}>{{ start.reachedAltitude|number_format(0, ',', ' ') }} m</dd></div>{% endif %}
-                            {% endif %}
                             {% if analysis.water is defined and analysis.water is not null %}<div><dt>Eau (ballast) au décollage</dt><dd>{{ analysis.water }} L</dd></div>{% endif %}
                             <div><dt>Temps de vol{{ approx }}</dt><dd>{{ stats.duration|flight_time }}</dd></div>
                             <div><dt>Vitesse sol maximale</dt><dd>{{ stats.speedMax|number_format(0, ',', ' ') }} km/h</dd></div>
@@ -488,6 +484,59 @@
                         </dl>
                     </div>
                 </section>
+                {% if penalties %}
+                    {% set units = {StartSpeed: 'km/h', HighStart: 'm', LowFinish: 'm'} %}
+                    <section class="c-card c-card--outlined t-paper" aria-labelledby="penalties-title">
+                        <div class="c-card__body l-stack l-stack--sm">
+                            <twig:Ui:Heading level="2" size="h4" id="penalties-title">Score et pénalités</twig:Ui:Heading>
+                            {% if official and official.score is not null %}
+                                <p class="p-flight__official"><strong>Score officiel : {{ official.score|number_format(1, ',', ' ') }} pts</strong></p>
+                            {% endif %}
+                            <figure class="c-data-table p-flight__penalties">
+                                <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Pénalités du circuit">
+                                    <table>
+                                        <thead><tr><th scope="col">Pénalité</th><th scope="col">Barème</th><th scope="col">Limite</th><th scope="col">Mesuré</th><th scope="col">Points perdus</th></tr></thead>
+                                        <tbody>
+                                            {% for rule in penalties.rules|filter(rule => units[rule.key] is defined) %}
+                                                {% set unit = units[rule.key] %}
+                                                <tr>
+                                                    <th scope="row">{{ rule.label }}</th>
+                                                    <td>{{ rule.points|number_format(0, ',', ' ') }} {{ rule.points > 1 ? 'pts' : 'pt' }}</td>
+                                                    <td>{{ rule.limit ? (rule.key == 'LowFinish' ? 'min. ' : 'max. ') ~ rule.limit|number_format(0, ',', ' ') ~ ' ' ~ unit : '—' }}</td>
+                                                    {% if rule.measured is null %}
+                                                        <td>—</td><td>—</td>
+                                                    {% else %}
+                                                        <td>
+                                                            {% if rule.at is not null %}<button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ rule.at }}">{{ rule.measured|number_format(0, ',', ' ') }} {{ unit }}</button>{% else %}{{ rule.measured|number_format(0, ',', ' ') }} {{ unit }}{% endif %}
+                                                        </td>
+                                                        <td{% if rule.lost > 0 %} class="p-flight__alert"{% endif %}>{{ rule.lost|number_format(rule.lost == rule.lost|round ? 0 : 2, ',', ' ') }}</td>
+                                                    {% endif %}
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr><th scope="row" colspan="4">Estimation d’après la trace</th><td>{{ penalties.estimated|number_format(penalties.estimated == penalties.estimated|round ? 0 : 2, ',', ' ') }} pts</td></tr>
+                                            {% if penalties.official is not null %}<tr><th scope="row" colspan="4">Total officiel du serveur</th><td>{{ penalties.official|number_format(penalties.official == penalties.official|round ? 0 : 2, ',', ' ') }} pts</td></tr>{% endif %}
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </figure>
+                            {% set hidden = penalties.rules|filter(rule => units[rule.key] is not defined) %}
+                            {% if hidden is not empty %}
+                                <p class="u-note">Ne se voient pas dans la trace : {{ hidden|map(rule => (rule.label|split(' (')|first|lower) ~ ' ' ~ rule.points|number_format(0, ',', ' ') ~ ' pts' ~ (' (' in rule.label ? ' ' ~ rule.label|split(' (')|last|trim(')') : ''))|join(' · ') }}.</p>
+                            {% endif %}
+                            {% if penalties.other is null %}
+                                <p class="u-note">Mesuré au passage des lignes de départ et d’arrivée (vitesse sol sur 4 s). Le total officiel vient des résultats du serveur, quand la session les a.</p>
+                            {% elseif penalties.other > 0.5 %}
+                                <p class="u-note">Le serveur a compté {{ penalties.other|number_format(penalties.other == penalties.other|round ? 0 : 2, ',', ' ') }} pts de plus : des pénalités que la trace ne montre pas (vol dans les nuages, aides thermiques, récupération, zones) ou une vitesse au départ mesurée autrement (la trace ne donne que la vitesse sol). Son total fait foi.</p>
+                            {% elseif penalties.other < -0.5 %}
+                                <p class="u-note">Le serveur a compté {{ (-penalties.other)|number_format(-penalties.other == (-penalties.other)|round ? 0 : 2, ',', ' ') }} pts de moins : il ne mesure pas la vitesse au départ comme nous (la trace ne donne que la vitesse sol). Son total fait foi.</p>
+                            {% else %}
+                                <p class="u-note">L’estimation d’après la trace correspond au total officiel du serveur.</p>
+                            {% endif %}
+                        </div>
+                    </section>
+                {% endif %}
                 {% if final %}
                     <section class="c-card c-card--outlined t-paper" aria-labelledby="final-title">
                         <div class="c-card__body l-stack l-stack--sm">
@@ -522,7 +571,7 @@
         {% endif %}
 
         {% if settings %}
-            <div>{{ include('session/_settings.html.twig') }}</div>
+            <div>{{ include('session/_settings.html.twig', {with_penalties: not penalties}) }}</div>
         {% endif %}
 
         {# Phase analysis and coaching (Condor Club parity, roadmap 7g2) #}

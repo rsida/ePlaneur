@@ -2323,3 +2323,8 @@
     color: var(--color-text-muted);
     font-size: var(--text-xs);
 }
+
+/* Score and penalties: limits and measures kept on one line */
+.p-flight__penalties td {
+    white-space: nowrap;
+}

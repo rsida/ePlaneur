@@ -1,7 +1,9 @@
 {#
     Settings of the task of a session (App\Session\TaskSettings): start, weather, penalties and
-    realism options, as Condor Club shows them. Variable: settings.
+    realism options, as Condor Club shows them. Variables: settings, with_penalties (false where the
+    page lists the penalties itself, as the flight page does; true by default).
 #}
+{% set with_penalties = with_penalties ?? true %}
 <div class="p-session-settings">
     <section class="c-card c-card--outlined t-paper" aria-labelledby="settings-task-title">
         <div class="c-card__body l-stack l-stack--sm">
@@ -50,13 +52,15 @@
     {% endif %}
 
     <details class="c-card c-card--outlined t-paper p-session-settings__more">
-        <summary class="c-card__body">Pénalités et options de réalisme</summary>
+        <summary class="c-card__body">{{ with_penalties ? 'Pénalités et options de réalisme' : 'Options de réalisme' }}</summary>
         <div class="c-card__body p-session-settings__columns">
-            <dl class="p-flight__facts">
-                {% for key, points in settings.penalties %}
-                    <div><dt>{{ constant('App\\Session\\TaskSettings::PENALTIES')[key] }}{% if key == 'StartSpeed' and settings.maxStartSpeed %} <span class="u-note">(au-delà de {{ settings.maxStartSpeed }} km/h)</span>{% endif %}</dt><dd>{{ points }} pts</dd></div>
-                {% endfor %}
-            </dl>
+            {% if with_penalties %}
+                <dl class="p-flight__facts">
+                    {% for key, points in settings.penalties %}
+                        <div><dt>{{ constant('App\\Session\\TaskSettings::PENALTIES')[key] }}{% if key == 'StartSpeed' and settings.maxStartSpeed %} <span class="u-note">(au-delà de {{ settings.maxStartSpeed }} km/h)</span>{% endif %}</dt><dd>{{ points }} pts</dd></div>
+                    {% endfor %}
+                </dl>
+            {% endif %}
             <dl class="p-flight__facts">
                 {% if settings.iconsRange is not null %}<div><dt>Icônes des planeurs visibles à</dt><dd>{{ settings.iconsRange }} km</dd></div>{% endif %}
                 {% if settings.thermalHelpersRange is not null %}<div><dt>Aides thermiques visibles à</dt><dd>{{ settings.thermalHelpersRange|number_format(1, ',', ' ') }} km</dd></div>{% endif %}

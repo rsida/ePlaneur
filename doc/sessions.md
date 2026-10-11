@@ -119,8 +119,19 @@ point; thermal strength 2 is "Faible", activity 3 "Faible" and 4 "Normale".
 
 The session page shows them ("Le circuit dans Condor", "Météo", "Pénalités et options de
 réalisme"), and so does the page of each flight of the session, with the official result of the
-pilot (row of the server results with the same CN), the start ground speed and height against
-their maximum, and the final glide against the minimum finish altitude.
+pilot (row of the server results with the same CN) and the final glide against the minimum finish
+altitude.
+
+"Score et pénalités" on the flight page (roadmap 7k1, `App\Session\Penalties`) lists, like
+Condor Club, the penalties the track shows: start ground speed and height against their maximum,
+finish altitude against its minimum, each with its points lost and a link to the moment; the other
+rules of the task (cloud flying, thermal helpers, recoveries, windows, zones) in one line, as the
+track does not show them. The estimate comes with the official total of the results and the gap
+between the two, the server's total being the one that counts. Measured on the races of the dev
+data (2026-10-11), the two often differ: the server penalised a start at 185 km/h of ground speed
+63 points instead of 29 and did not penalise one at 173 km/h, so it measures the start speed
+another way (airspeed, which the encrypted part of the records may hold); 200 points on another
+flight came from a rule the track does not show.
 
 ## History from eplaneur.fr
 
