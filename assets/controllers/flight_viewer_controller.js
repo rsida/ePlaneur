@@ -6,7 +6,7 @@ import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
 import { readStored, writeStored } from '../flight/storage.js';
 import { bearing, distance } from '../flight/geo.js';
-import { TASK_LAYERS, addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
+import { TASK_LAYERS, addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatClock, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
 import { SEE_THROUGH, angleDifference, attitude, chaseBearing, climbColor, crossingLayers, gliderLayers, trailLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
 
 /*
@@ -117,6 +117,8 @@ const CHARTS_KEY = 'flight.charts';
 // What the map draws: the layers turned off, and whether the instruments are shown (on by default)
 const LAYERS_KEY = 'flight.layers-off';
 const INSTRUMENTS_KEY = 'flight.instruments';
+// Moments on the clock of the task in Condor ('day', by default when known) or since the beginning of the track ('track')
+const CLOCK_KEY = 'flight.clock';
 const KEY_SEEN = 'flight.key-seen';
 // Pilot view: looking ahead and a little down (fewer far tiles than the horizon, which MapLibre
 // draws with stretched walls while they load)
@@ -125,7 +127,7 @@ const PILOT_PITCH = 75;
 const PILOT_GROUND_CLEARANCE = 30;
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'instrumentsToggle', 'layers', 'layer', 'nowField', 'display', 'stripAltitude', 'stripVario', 'stripHeight', 'currentLabel', 'currentTitle', 'chartPick', 'guide', 'guideToggle', 'guideNumber', 'chapter', 'guidePrevious', 'guideNext'];
+    static targets = ['map', 'view', 'basemap', 'follow', 'pilot', 'colors', 'legend', 'status', 'nowTime', 'nowAltitude', 'nowSpeed', 'nowVario', 'nowPhase', 'phases', 'play', 'rate', 'seek', 'chart', 'commentAt', 'commentTime', 'momentStatus', 'thermals', 'thermalTable', 'thermalChart', 'thermalHint', 'marks', 'events', 'radar', 'radarTitle', 'radarCanvas', 'radarValue', 'radarAdvice', 'radarTiming', 'nowHeight', 'nowRequired', 'ghost', 'ghostChoice', 'nowGhost', 'nowGhostLabel', 'camera', 'fastThermals', 'instruments', 'instrumentsCanvas', 'instrumentsToggle', 'layers', 'layer', 'nowField', 'display', 'stripAltitude', 'stripVario', 'stripHeight', 'currentLabel', 'currentTitle', 'chartPick', 'guide', 'guideToggle', 'guideNumber', 'chapter', 'guidePrevious', 'guideNext', 'clockToggle'];
 
     static values = { url: String, label: String, comments: Array, advice: Array };
 
@@ -149,6 +151,9 @@ export default class extends Controller {
         }
         this.series = this.flight.series;
         this.count = this.series.time.length;
+        this.clockMode = readStored(CLOCK_KEY) ?? 'day';
+        if (this.hasClockToggleTarget) this.clockToggleTarget.hidden = this.flight.clock === null || this.flight.clock === undefined;
+        this.showClock();
         this.seekTarget.max = String(this.count - 1);
         this.phaseAt = this.phaseIndex();
         this.thermalPhases = this.flight.phases.filter((phase) => phase.type === 'thermal');
@@ -640,6 +645,33 @@ export default class extends Controller {
         this.cameraTime = null;
     }
 
+    /* ---------- Clock ---------- */
+
+    /** A moment of the flight (seconds of the series): the clock time in Condor, or the time since the beginning of the track. */
+    moment(seconds) {
+        return this.onClock() ? formatClock(this.flight.clock + seconds) : formatTime(seconds);
+    }
+
+    onClock() {
+        return this.flight?.clock !== null && this.flight?.clock !== undefined && this.clockMode !== 'track';
+    }
+
+    toggleClock() {
+        this.clockMode = this.onClock() ? 'track' : 'day';
+        writeStored(CLOCK_KEY, this.clockMode);
+        this.showClock();
+        this.buildMarks();
+        this.buildEvents();
+        this.charts?.forEach((chart) => chart.redraw(false, true));
+        this.moveTo(this.index, { keepFraction: true });
+    }
+
+    showClock() {
+        if (!this.hasClockToggleTarget) return;
+        this.clockToggleTarget.textContent = this.onClock() ? 'Heure Condor' : 'Temps de vol';
+        this.clockToggleTarget.setAttribute('aria-pressed', String(this.onClock()));
+    }
+
     toggleInstruments() {
         this.showInstruments(this.instrumentsTarget.hidden);
         writeStored(INSTRUMENTS_KEY, this.instrumentsTarget.hidden ? 'off' : 'on');
@@ -938,7 +970,7 @@ export default class extends Controller {
         window.history.replaceState(null, '', `#t=${i}`);
         try {
             await navigator.clipboard.writeText(url);
-            this.momentStatusTarget.textContent = `Lien vers ${formatTime(this.series.time[i])} copié`;
+            this.momentStatusTarget.textContent = `Lien vers ${this.moment(this.series.time[i])} copié`;
         } catch {
             this.momentStatusTarget.textContent = url;
         }
@@ -996,12 +1028,12 @@ export default class extends Controller {
                 legend: { show: false },
                 scales: { x: { time: false } },
                 axes: [
-                    { values: (u, ticks) => ticks.map((t) => formatTime(t)), size: 28, font: '11px Inter, sans-serif' },
+                    { values: (u, ticks) => ticks.map((t) => this.moment(t)), size: 28, font: '11px Inter, sans-serif' },
                     { size: 46, font: '11px Inter, sans-serif' },
                 ],
                 series: [{}, { ...settings[name], width: 1.5, points: { show: false } }, ...(netto ? [{ stroke: '#a85b2a', width: 1.5, dash: [4, 3], points: { show: false } }] : [])],
                 plugins: [valueTip((u, i) => [
-                    u.data[1][i] == null ? formatTime(u.data[0][i]) : `${FORMATS[name](u.data[1][i])}${name === 'required' && u.data[1][i] >= REQUIRED_MAX ? ' ou plus' : ''} · ${formatTime(u.data[0][i])}`,
+                    u.data[1][i] == null ? this.moment(u.data[0][i]) : `${FORMATS[name](u.data[1][i])}${name === 'required' && u.data[1][i] >= REQUIRED_MAX ? ' ou plus' : ''} · ${this.moment(u.data[0][i])}`,
                     ...(netto && u.data[2][i] != null ? [{ text: `Netto ${FORMATS.vario(u.data[2][i])}`, color: '#a85b2a' }] : []),
                 ])],
                 hooks: {
@@ -1376,7 +1408,7 @@ export default class extends Controller {
             mark.className = 'p-flight__mark';
             mark.style.left = `${(point.reached / Math.max(1, this.count - 1)) * 100}%`;
             const name = n === 0 ? 'Départ' : n === points.length - 1 ? 'Arrivée' : `Point ${n}`;
-            mark.title = `${name} · ${point.name} · ${formatTime(this.series.time[point.reached])}`;
+            mark.title = `${name} · ${point.name} · ${this.moment(this.series.time[point.reached])}`;
             mark.setAttribute('aria-label', mark.title);
             mark.addEventListener('click', () => this.goToMoment({ detail: { at: point.reached } }));
 
@@ -1405,7 +1437,7 @@ export default class extends Controller {
             item.style.left = at(from);
             if (to !== null) item.style.width = `calc(${at(to)} - ${at(from)})`;
             if (color) item.style.setProperty('--event-color', rgb(color));
-            item.title = `${title} · ${formatTime(time[from])}`;
+            item.title = `${title} · ${this.moment(time[from])}`;
             item.addEventListener('click', () => this.goToMoment({ detail: { at: from } }));
 
             return item;
@@ -1725,14 +1757,14 @@ export default class extends Controller {
         const i = Math.round(this.index);
         const { time, altitude, speed, vario } = this.series;
         this.seekTarget.value = String(i);
-        this.nowTimeTarget.textContent = formatTime(time[i]);
+        this.nowTimeTarget.textContent = this.moment(time[i]);
         if (this.guiding) {
             const { from, to } = this.chapterBounds(this.chapter);
             if (i < from || i > to) this.showChapter(this.chapterAt(i));
         }
         // The comment form takes the moment shown
         if (this.hasCommentAtTarget) this.commentAtTarget.value = String(i);
-        if (this.hasCommentTimeTarget) this.commentTimeTarget.textContent = formatTime(time[i]);
+        if (this.hasCommentTimeTarget) this.commentTimeTarget.textContent = this.moment(time[i]);
         this.nowAltitudeTarget.textContent = FORMATS.altitude(altitude[i]);
         this.nowSpeedTarget.textContent = FORMATS.speed(speed[i]);
         this.nowVarioTarget.textContent = FORMATS.vario(vario[i]);

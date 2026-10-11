@@ -1,7 +1,7 @@
 /* stimulusFetch: 'lazy' */
 import { Controller } from '@hotwired/stimulus';
 import { PathLayer } from '@deck.gl/layers';
-import { TASK_LAYERS, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
+import { TASK_LAYERS, addTask, boundsOf, createMap, easeAt, formatClock, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
 import { chaseBearing, gliderLayers, positionAt, readings, sessionThermalLayers, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
 import { readStored, writeStored } from '../flight/storage.js';
 
@@ -10,7 +10,9 @@ import { readStored, writeStored } from '../flight/storage.js';
  * on one map, one color per pilot, replayed together.
  *
  * Two ways to put the flights on one clock:
- * - "race": each recording from its beginning (in a network race every pilot starts at once);
+ * - "race": as it was flown, on the clock of the task in Condor when every flight knows it (the
+ *   pilots join the server at different times), the clock time shown; otherwise each recording
+ *   from its beginning;
  * - "task": every pilot crosses the start line at the same moment, to compare the tasks flown on
  *   different days or with different start times like a ghost race.
  *
@@ -123,11 +125,14 @@ export default class extends Controller {
         const byTask = this.alignTarget.value === 'task';
         const lead = Math.max(0, ...this.flights.map((f) => (f.taskStart ?? f.start) - f.start));
         const firstStart = Math.min(...this.flights.map((f) => f.start));
+        // On the clock of the task in Condor when every flight knows it
+        this.onClock = !byTask && this.flights.every((f) => f.clock !== null && f.clock !== undefined);
+        const firstClock = this.onClock ? Math.min(...this.flights.map((f) => f.clock)) : 0;
         this.flights.forEach((f) => {
-            f.offset = byTask ? (f.taskStart ?? f.start) - f.start - lead : firstStart - f.start;
+            f.offset = byTask ? (f.taskStart ?? f.start) - f.start - lead : this.onClock ? firstClock - f.clock : firstStart - f.start;
         });
-        // Clock shown: race time, or time since the start line (negative before)
-        this.clockOrigin = byTask ? -lead : firstStart;
+        // Clock shown: time of day in Condor, race time, or time since the start line (negative before)
+        this.clockOrigin = byTask ? -lead : this.onClock ? firstClock : firstStart;
         this.duration = Math.max(...this.flights.map((f) => f.count - 1 - f.offset));
         this.seekTarget.max = String(Math.ceil(this.duration));
     }
@@ -332,7 +337,7 @@ export default class extends Controller {
         this.time = time;
         this.seekTarget.value = String(Math.round(time));
         const clock = time + this.clockOrigin;
-        this.clockTarget.textContent = `${clock < 0 ? '−' : ''}${formatTime(Math.abs(clock))}`;
+        this.clockTarget.textContent = this.onClock ? formatClock(clock) : `${clock < 0 ? '−' : ''}${formatTime(Math.abs(clock))}`;
         this.updatePilots();
         if (this.selected !== null && this.playing) this.follow(this.flights.find((f) => f.id === this.selected));
         this.render();

@@ -39,6 +39,7 @@ final class FtrReaderTest extends TestCase
         self::assertSame(146, $track->water, 'Litres of water ballast');
         self::assertStringStartsWith('C3-c060_Laragne-Ventoux-Fayence', (string) $track->flightPlan);
         self::assertTrue($track->exactTimes, 'Times decoded from the records');
+        self::assertEqualsWithDelta(14 * 3600 + 53 * 60 + 20, $track->clock, 1.0, 'the 14:53:20 of the first fix of the IGC export of this flight');
 
         self::assertSame(['NewTP', 'Laragne Chp', 'Ventoux', 'Le Laser', 'Lachens Mont Ant', 'Fayence'], array_map(static fn ($point): string => $point->name, $track->turnpoints));
         $ventoux = $track->turnpoints[2];

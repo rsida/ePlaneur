@@ -124,6 +124,8 @@ final readonly class IgcReader
             date: $date,
             water: isset($plan['Plane']['Water']) ? (int) $plan['Plane']['Water'] : null,
             report: $report,
+            // B records are on the clock of the task in Condor's export, UTC for a real logger
+            clock: null !== $firstTime ? (float) ($firstTime % 86400) : null,
         );
     }
 

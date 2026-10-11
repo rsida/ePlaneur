@@ -17,6 +17,8 @@ final readonly class Track
      * @param bool                                    $exactTimes false when the times are estimated (Condor .ftr files)
      * @param int|null                                $water      litres of water ballast at take-off (Condor files)
      * @param CondorReport|null                       $report     what Condor computed for the flight (IGC exported by Condor)
+     * @param float|null                              $clock      seconds of the day at time 0 of the fixes, on the clock of the
+     *                                                            simulator (the clock time of the task in Condor), null when not known
      * @param list<array{time: float, height: float}> $recoveries height recoveries of Condor: the glider put
      *                                                            higher at once, at the time of the fix after the jump
      */
@@ -36,6 +38,7 @@ final readonly class Track
         public ?int $water = null,
         public ?CondorReport $report = null,
         public array $recoveries = [],
+        public ?float $clock = null,
     ) {
     }
 
@@ -45,6 +48,6 @@ final readonly class Track
      */
     public function withFixes(array $fixes, array $recoveries = []): self
     {
-        return new self($this->format, $this->simulator, $this->pilot, $this->competitionId, $this->glider, $this->landscape, $this->raceId, $this->flightPlan, $this->turnpoints, $fixes, $this->exactTimes, $this->date, $this->water, $this->report, $recoveries);
+        return new self($this->format, $this->simulator, $this->pilot, $this->competitionId, $this->glider, $this->landscape, $this->raceId, $this->flightPlan, $this->turnpoints, $fixes, $this->exactTimes, $this->date, $this->water, $this->report, $recoveries, $this->clock);
     }
 }

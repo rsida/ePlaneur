@@ -32,13 +32,19 @@ use App\Flight\Turnpoint;
  * The time is a float in units of 32 hours (115,200 s), stored with 0x500000 subtracted from its
  * bits: adding it back gives a value growing linearly with the time (found on 2026-10-08 against
  * the IGC export of the same flight: 5,911 s, every IGC fix within 1.5 m of the record of its
- * time). Records come every 0.06 to 1.2 s, about 0.1 s. Should a file not decode to growing times,
+ * time). Records come every 0.06 to 1.2 s, about 0.1 s. The value itself, plus 8 hours, is the clock
+ * time of the task in Condor (CLOCK_OFFSET): the first record of C3-c060 reads 06:53:20 for the
+ * 14:53:20 of its IGC export, C3-s117 04:10:19 for 12:10:19, and the pilots of four other races
+ * appear 1 to 16 minutes after the start time of their flight plan (found on 2026-10-11). Should a file not decode to growing times,
  * an even interval (RECORD_INTERVAL) is used and the times are flagged as estimates.
  */
 final readonly class FtrReader
 {
     /** Average seconds between records, for files whose times do not decode (0.1013 to 0.1062 s on a 1 h 38 flight). */
     public const float RECORD_INTERVAL = 0.104;
+
+    /** Seconds to add to the time of the records, modulo a day, for the clock time of the task. */
+    private const float CLOCK_OFFSET = 8 * 3600.0;
 
     /** Seconds in one unit of the time of the records. */
     private const float TIME_UNIT = 115200.0;
@@ -112,6 +118,7 @@ final readonly class FtrReader
             fixes: $fixes,
             exactTimes: null !== $times,
             water: self::water($content),
+            clock: null !== $times ? self::clock($content) : null,
         );
     }
 
@@ -145,6 +152,15 @@ final readonly class FtrReader
 
         // Banked right, the right wing goes down
         return [-$angle($wingUp), $angle($noseUp)];
+    }
+
+    /** Seconds of the day, on the clock of the task in Condor, of the first record. */
+    private static function clock(string $content): ?float
+    {
+        $bits = (int) (unpack('V', $content, self::RECORDS)[1] ?? 0);
+        $value = (float) (unpack('g', pack('V', ($bits + self::TIME_BITS_OFFSET) & 0xFFFFFFFF))[1] ?? \NAN);
+
+        return is_finite($value) ? fmod($value * self::TIME_UNIT + self::CLOCK_OFFSET, 86400.0) : null;
     }
 
     /**

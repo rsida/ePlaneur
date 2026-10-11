@@ -217,6 +217,16 @@ final class FlightAnalyzerTest extends TestCase
         self::assertLessThan(3.0, max(array_column($analysis->toArray()['climbByAltitude'], 'climb')), 'no band climbs 500 m in a second');
     }
 
+    public function testTheClockOfTheTaskFollowsTheFirstFixKept(): void
+    {
+        // The track begins at 14:53:20 in Condor; its first 10 s were cut off
+        $fixes = \array_slice(FlightSamples::glideThermalGlide(), 10);
+        $track = new Track('ftr', 'Condor 3', 'Jeanne Pilote', null, null, null, null, null, [], $fixes, true, clock: 53600.0);
+
+        self::assertSame(53610, (new FlightAnalyzer())->analyze($track)->toArray()['clock']);
+        self::assertNull((new FlightAnalyzer())->analyze(self::track($fixes))->toArray()['clock']);
+    }
+
     public function testFixesAreResampledToOnePerSecond(): void
     {
         // Ten fixes per second, as in Condor tracks

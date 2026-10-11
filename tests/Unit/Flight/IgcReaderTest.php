@@ -32,6 +32,7 @@ final class IgcReaderTest extends TestCase
         self::assertSame('JP1', $track->competitionId);
         self::assertSame('2026-02-19', $track->date?->format('Y-m-d'));
         self::assertTrue($track->exactTimes);
+        self::assertSame(36000.0, $track->clock, 'the time of the first B record');
         self::assertCount(30, $track->fixes);
         self::assertSame(29.0, $track->fixes[29]->time);
         self::assertEqualsWithDelta($fixes[29]->latitude, $track->fixes[29]->latitude, 0.00002);

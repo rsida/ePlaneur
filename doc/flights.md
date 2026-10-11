@@ -311,6 +311,14 @@ opens its tab):
   of the other pilots and the ones missed (when the race has other tracks), task and turnpoints,
   expected slopes, airfields and glide reach, comments. Rows without data for the flight are left
   out. The same panel (`templates/flight/_layers.html.twig`) is on the session replay.
+- Clock (roadmap 7k3): the moments of the replay (time at the cursor, axis and values of the
+  charts, marks and events of the timeline, copied link) are on the clock of the task in Condor
+  ("Heure Condor", 15:06:00 for the start of C3-c060) or since the beginning of the track ("Temps
+  de vol"); the label of the time switches between the two, the choice kept in the browser
+  (`flight.clock`). The analysis gives the clock time of its first second (`clock`): the first B
+  record of an IGC (the clock of the task in Condor's export, UTC for a real logger), the time of the
+  first record of a `.ftr` plus 8 hours (`FtrReader::CLOCK_OFFSET`, found against the IGC exports of
+  the same flights); durations stay durations.
 - Beside the map, the phase at the cursor ("Phase en cours · Thermique n° 4") with the advice it
   illustrates as a title, then the values (vario in green or red, height in orange under 300 m,
   red under 150 m), the legs, the centring radar and the list of phases.
@@ -466,8 +474,10 @@ Flights whose task is not a flight plan of the library are still grouped by task
   least time circling (share of the flight).
 - **Replay** (`FlightSession::replayData()`, partial `flight/_session_replay.html.twig`): every
   pilot in a color, the whole track faded, their glider with its flag and trail (see the viewer
-  above); from above or in 3D. Two clocks: "Heure de course", each recording from
-  its beginning (in a network race everybody starts at once), or "Départ du circuit ensemble", the
+  above); from above or in 3D. Two clocks: "Heure de course", the race as it was flown, on the
+  clock of the task in Condor when every track knows it (roadmap 7k3: the pilots join the server at
+  different times, a glider waits at its first point until it appears; the clock time shown), each
+  recording from its beginning otherwise; or "Départ du circuit ensemble", the
   start lines crossed at the same moment (ghost race between flights of different days). The side
   list gives the altitude, vario and ground speed of each pilot at the current time; clicking a
   pilot follows them (in 3D from behind their glider) and highlights their track.

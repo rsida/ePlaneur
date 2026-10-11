@@ -84,6 +84,8 @@ final readonly class FlightSession
                 'pilot' => $member->getPilot(),
                 'competitionId' => $member->getCompetitionId(),
                 'start' => $time[0] ?? 0,
+                // Clock time of the task in Condor at the first point, to replay the race as it was flown
+                'clock' => $analysis['clock'] ?? null,
                 'taskStart' => null !== $started ? $time[$started] : null,
                 'latitude' => $analysis['series']['latitude'],
                 'longitude' => $analysis['series']['longitude'],

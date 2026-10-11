@@ -67,6 +67,8 @@ final readonly class FlightAnalysis
 
         return [
             'exactTimes' => $this->track->exactTimes,
+            // Clock time of the task in Condor at the first second of the series, seconds of the day
+            'clock' => null !== $this->track->clock ? (int) round(fmod($this->track->clock + $this->track->fixes[0]->time, 86400.0)) : null,
             'launch' => $this->launch?->value,
             'water' => $this->track->water,
             'statistics' => $this->statistics,

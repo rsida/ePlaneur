@@ -340,7 +340,14 @@
                     <p class="p-flight__phase" data-flight-viewer-target="nowPhase"></p>
                 </section>
                 <dl class="p-flight__now">
-                    <div><dt>Temps{{ approx }}</dt><dd data-flight-viewer-target="nowTime">—</dd></div>
+                    <div>
+                        <dt>
+                            {# The clock time of the task in Condor, or the time since the beginning of the track (roadmap 7k3) #}
+                            <button type="button" class="p-flight__clock" aria-pressed="true" title="Basculer entre l’heure dans Condor et le temps depuis le début de la trace" data-flight-viewer-target="clockToggle" data-action="flight-viewer#toggleClock" hidden>Heure Condor</button>
+                            <span class="p-flight__clock-label">Temps{{ approx }}</span>
+                        </dt>
+                        <dd data-flight-viewer-target="nowTime">—</dd>
+                    </div>
                     <div><dt>Altitude</dt><dd data-flight-viewer-target="nowAltitude">—</dd></div>
                     <div><dt>Vitesse sol</dt><dd data-flight-viewer-target="nowSpeed">—</dd></div>
                     <div><dt>Vario (4 s)</dt><dd data-flight-viewer-target="nowVario">—</dd></div>

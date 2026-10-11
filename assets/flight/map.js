@@ -183,6 +183,14 @@ export function easeAt(map, options, elevation) {
 }
 
 /** Seconds as "1:21:49" (or "21:49"). */
+/** A time of day in seconds as "14:53:20", wrapping at midnight. */
+export function formatClock(seconds) {
+    const s = ((Math.round(seconds) % 86400) + 86400) % 86400;
+    const pad = (value) => String(value).padStart(2, '0');
+
+    return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+}
+
 export function formatTime(seconds) {
     const s = Math.max(0, Math.round(seconds));
     const h = Math.floor(s / 3600);

@@ -191,6 +191,22 @@
     font-size: var(--text-sm);
 }
 
+/* The label of the time is a switch between the clock in Condor and the time of the track (7k3) */
+.p-flight__clock {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font: inherit;
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.p-flight__clock:not([hidden]) + .p-flight__clock-label {
+    display: none;
+}
+
 .p-flight__now dd {
     margin: 0;
     font-weight: 600;
