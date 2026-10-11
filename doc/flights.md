@@ -289,7 +289,7 @@ opens its tab):
   lift crossed, strong sink, windsocks, curtain and shadow of the track (these in 3D only), thermals
   of the other pilots and the ones missed (when the race has other tracks), task and turnpoints,
   expected slopes, airfields and glide reach, comments. Rows without data for the flight are left
-  out.
+  out. The same panel (`templates/flight/_layers.html.twig`) is on the session replay.
 - Beside the map, the phase at the cursor ("Phase en cours · Thermique n° 4") with the advice it
   illustrates as a title, then the values (vario in green or red, height in orange under 300 m,
   red under 150 m), the legs, the centring radar and the list of phases.

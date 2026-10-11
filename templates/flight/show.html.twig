@@ -290,18 +290,7 @@
                     {name: 'shadow', label: 'Ombre de la trace', note: '3D'},
                     {name: 'comments', label: 'Commentaires', needs: 'comments'},
                 ] %}
-                <details class="p-flight__layers" data-flight-viewer-target="layers">
-                    <summary class="p-flight__layers-button" title="Ce que la carte affiche"><twig:ux:icon name="layers" /><span class="u-visually-hidden">Calques de la carte</span></summary>
-                    <fieldset class="p-flight__layers-panel">
-                        <legend class="p-flight__layers-title">Sur la carte</legend>
-                        {% for row in layer_rows|filter(row => row.needs is not defined or row.needs != 'never') %}
-                            <label class="p-flight__layer"{% if row.needs is defined and row.needs %} data-needs="{{ row.needs }}" hidden{% endif %}>
-                                <input type="checkbox" class="p-flight__layer-input" value="{{ row.name }}" checked data-flight-viewer-target="layer" data-action="flight-viewer#toggleLayer">
-                                <span>{{ row.label }}{% if row.note is defined %} <span class="p-flight__layer-note">{{ row.note }}</span>{% endif %}</span>
-                            </label>
-                        {% endfor %}
-                    </fieldset>
-                </details>
+                {{ include('flight/_layers.html.twig', {controller: 'flight-viewer', rows: layer_rows}) }}
                 {# On a phone the values at the cursor stay on the map during the replay #}
                 <dl class="p-flight__strip" aria-hidden="true">
                     <div><dt>Alt.</dt><dd data-flight-viewer-target="stripAltitude">—</dd></div>

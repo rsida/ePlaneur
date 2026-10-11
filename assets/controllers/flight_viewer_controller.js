@@ -4,6 +4,7 @@ import { LineLayer, PathLayer, ScatterplotLayer, TextLayer } from '@deck.gl/laye
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { FORMATS, valueTip } from '../flight/chart.js';
+import { readStored, writeStored } from '../flight/storage.js';
 import { bearing, distance } from '../flight/geo.js';
 import { addShadow, addSlopes, addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain, showShadow, showSlopes } from '../flight/map.js';
 import { SEE_THROUGH, angleDifference, attitude, chaseBearing, climbColor, crossingLayers, gliderLayers, trailLayers, liftLayers, positionAt, readings, sessionAirLayers, sinkLayers, taskLayers, thermalLayers, windLayers } from '../flight/scene.js';
@@ -1779,23 +1780,6 @@ export default class extends Controller {
 function setState(element, state) {
     element.classList.remove('is-up', 'is-down', 'is-warning', 'is-danger');
     if (state) element.classList.add(state);
-}
-
-/** A choice kept in the browser; storage can be refused (private window), nothing breaks then. */
-function readStored(key) {
-    try {
-        return window.localStorage.getItem(key);
-    } catch {
-        return null;
-    }
-}
-
-function writeStored(key, value) {
-    try {
-        window.localStorage.setItem(key, value);
-    } catch {
-        // Not kept, that is all
-    }
 }
 
 /** One line describing a thermal, a glide, straight lift (slope, wave) or the launch climb. */

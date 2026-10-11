@@ -1,0 +1,18 @@
+{#
+    The layers button of a replay map: what the map draws, each on or off (kept in the browser).
+    Variables: controller (Stimulus identifier: targets "layers" and "layer", action toggleLayer),
+    rows (list of {name, label, note?: '3D', needs?}: a row with `needs` stays hidden until the
+    controller knows there is data for it; 'never' leaves it out).
+#}
+<details class="p-flight__layers" data-{{ controller }}-target="layers">
+    <summary class="p-flight__layers-button" title="Ce que la carte affiche"><twig:ux:icon name="layers" /><span class="u-visually-hidden">Calques de la carte</span></summary>
+    <fieldset class="p-flight__layers-panel">
+        <legend class="p-flight__layers-title">Sur la carte</legend>
+        {% for row in rows|filter(row => row.needs is not defined or row.needs != 'never') %}
+            <label class="p-flight__layer"{% if row.needs is defined and row.needs %} data-needs="{{ row.needs }}" hidden{% endif %}>
+                <input type="checkbox" class="p-flight__layer-input" value="{{ row.name }}" checked data-{{ controller }}-target="layer" data-action="{{ controller }}#toggleLayer">
+                <span>{{ row.label }}{% if row.note is defined %} <span class="p-flight__layer-note">{{ row.note }}</span>{% endif %}</span>
+            </label>
+        {% endfor %}
+    </fieldset>
+</details>

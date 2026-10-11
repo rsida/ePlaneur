@@ -43,14 +43,15 @@
                     <option value="task"{% if align == 'task' %} selected{% endif %}>Départ du circuit ensemble</option>
                 </select>
             </label>
-            <label class="p-flight__select">
-                <span class="u-visually-hidden">Thermiques en 3D</span>
-                <select data-session-viewer-target="thermals" data-action="session-viewer#render">
-                    <option value="all">Thermiques : tous les pilotes</option>
-                    <option value="followed">Thermiques : pilote suivi</option>
-                </select>
-            </label>
         </div>
+        {{ include('flight/_layers.html.twig', {controller: 'session-viewer', rows: [
+            {name: 'thermals', label: 'Thermiques de tous les pilotes', note: '3D'},
+            {name: 'followed', label: 'Thermiques du pilote suivi', note: '3D'},
+            {name: 'task', label: 'Circuit et points de virage'},
+            {name: 'tracks', label: 'Traces complètes'},
+            {name: 'trails', label: 'Traînées derrière les planeurs'},
+            {name: 'curtain', label: 'Rideau sous le pilote suivi', note: '3D'},
+        ]}) }}
         <p class="p-flight__loading" data-session-viewer-target="status" role="status">Chargement des vols…</p>
     </div>
 

@@ -3,6 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 import { PathLayer } from '@deck.gl/layers';
 import { addTask, boundsOf, createMap, easeAt, formatTime, newBounds, setBasemap, setTerrain } from '../flight/map.js';
 import { chaseBearing, gliderLayers, positionAt, readings, sessionThermalLayers, taskLayers, thermalLayers, trailLayers } from '../flight/scene.js';
+import { readStored, writeStored } from '../flight/storage.js';
 
 /*
  * Session replay (templates/flight/session.html.twig): every flight of FlightController::sessionData()
@@ -18,7 +19,8 @@ import { chaseBearing, gliderLayers, positionAt, readings, sessionThermalLayers,
  * vario, average climb, height above the relief), and in 3D the camera flies behind their glider,
  * a curtain under their trail shows their height. In 3D the cylinders of the task stand up to the
  * sky, and the thermals rise as arrows: those of every pilot, one arrow per thermal with how many
- * pilots used it (sessionThermalLayers()), or those of the pilot followed in their colour.
+ * pilots used it (sessionThermalLayers()), and those of the pilot followed in their colour. The
+ * layers button of the map turns each of them on or off, kept in the browser.
  */
 
 /* One color per pilot, in ranking order */
@@ -27,9 +29,12 @@ const COLORS = [
     [0, 150, 160], [200, 160, 0], [220, 90, 160], [90, 90, 90], [120, 160, 40],
 ];
 const TRAIL = 300; // seconds of track drawn behind each glider
+const LAYERS_KEY = 'session.layers-off';
+// Off until the viewer turns them on: drawn over the thermals of every pilot, they repeat them
+const LAYERS_OFF = 'followed';
 
 export default class extends Controller {
-    static targets = ['map', 'view', 'basemap', 'align', 'thermals', 'status', 'clock', 'pilots', 'dot', 'play', 'rate', 'seek'];
+    static targets = ['map', 'view', 'basemap', 'align', 'layers', 'layer', 'status', 'clock', 'pilots', 'dot', 'play', 'rate', 'seek'];
 
     static values = { url: String };
 
@@ -51,12 +56,14 @@ export default class extends Controller {
         this.flights = this.session.flights.map((flight, k) => ({ ...flight, color: COLORS[k % COLORS.length], count: flight.altitude.length }));
         this.top = Math.max(0, ...this.flights.map((f) => f.altitude.reduce((top, altitude) => Math.max(top, altitude), 0)));
         this.colorDots();
+        this.buildLayers();
         this.buildPilots();
         this.align();
         this.buildMap();
     }
 
     disconnect() {
+        document.removeEventListener('click', this.closeLayersOutside);
         cancelAnimationFrame(this.frame);
         this.map?.remove();
     }
@@ -66,6 +73,46 @@ export default class extends Controller {
         this.dotTargets.forEach((dot) => {
             const color = colors.get(dot.dataset.flight);
             if (color) dot.style.setProperty('--pilot-color', `rgb(${color.join(' ')})`);
+        });
+    }
+
+    /* ---------- What the map draws ---------- */
+
+    buildLayers() {
+        this.layersOff = new Set((readStored(LAYERS_KEY) ?? LAYERS_OFF).split(',').filter(Boolean));
+        this.layerTargets.forEach((input) => {
+            input.checked = !this.layersOff.has(input.value);
+        });
+        if (!this.hasLayersTarget) return;
+        // The panel closes outside it and with Escape
+        const panel = this.layersTarget;
+        this.closeLayersOutside = (event) => {
+            if (panel.open && !panel.contains(event.target)) panel.open = false;
+        };
+        document.addEventListener('click', this.closeLayersOutside);
+        panel.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            panel.open = false;
+            panel.querySelector('summary').focus();
+        });
+    }
+
+    shows(name) {
+        return !this.layersOff.has(name);
+    }
+
+    toggleLayer({ currentTarget }) {
+        if (currentTarget.checked) this.layersOff.delete(currentTarget.value);
+        else this.layersOff.add(currentTarget.value);
+        writeStored(LAYERS_KEY, [...this.layersOff].join(','));
+        this.showTask();
+        this.render();
+    }
+
+    /** The task is drawn by the map itself, under the tracks. */
+    showTask() {
+        ['task', 'turnpoints'].forEach((id) => {
+            if (this.map?.getLayer(id)) this.map.setLayoutProperty(id, 'visibility', this.shows('task') ? 'visible' : 'none');
         });
     }
 
@@ -106,6 +153,7 @@ export default class extends Controller {
         ({ map: this.map, overlay: this.overlay } = createMap(this.mapTarget, bounds));
         this.map.on('load', () => {
             addTask(this.map, this.session.task);
+            this.showTask();
             this.statusTarget.hidden = true;
             this.moveTo(0);
         });
@@ -147,9 +195,9 @@ export default class extends Controller {
         if (followed) followed.details = readings(followed.track, followed.index, this.groundUnder(followed));
         this.overlay.setProps({
             layers: [
-                ...(this.is3d ? taskLayers('session', this.session.task, { top: this.top }) : []),
+                ...(this.is3d && this.shows('task') ? taskLayers('session', this.session.task, { top: this.top }) : []),
                 ...this.thermalLayers(gliders, followed),
-                new PathLayer({
+                ...(this.shows('tracks') ? [new PathLayer({
                     id: 'tracks',
                     data: this.paths(),
                     getPath: (f) => f.path,
@@ -159,22 +207,23 @@ export default class extends Controller {
                     jointRounded: true,
                     parameters,
                     updateTriggers: { getPath: this.is3d, getColor: this.selected },
-                }),
-                ...trailLayers('session', gliders, { is3d: this.is3d, seconds: TRAIL }),
+                })] : []),
+                ...trailLayers('session', gliders, { is3d: this.is3d, seconds: TRAIL })
+                    .filter((layer) => (layer.id.endsWith('-curtain') ? this.shows('curtain') : this.shows('trails'))),
                 ...gliderLayers('session', gliders, { is3d: this.is3d, zoom: this.map.getZoom() }),
             ],
         });
     }
 
-    /** In 3D, the thermals of every pilot grouped, or those of the pilot followed. */
+    /** In 3D, the thermals of every pilot grouped, and those of the pilot followed. */
     thermalLayers(gliders, followed) {
         if (!this.is3d) return [];
         const zoom = this.map.getZoom();
-        if (!this.hasThermalsTarget || this.thermalsTarget.value === 'all') {
-            return sessionThermalLayers('session', gliders.map((glider) => ({ track: glider.track, index: glider.index, thermals: glider.track.thermals })), { zoom });
-        }
 
-        return followed ? thermalLayers('session', followed.track, followed.track.thermals ?? [], followed.index, { color: followed.color, zoom }) : [];
+        return [
+            ...(this.shows('thermals') ? sessionThermalLayers('session', gliders.map((glider) => ({ track: glider.track, index: glider.index, thermals: glider.track.thermals })), { zoom }) : []),
+            ...(followed && this.shows('followed') ? thermalLayers('session-followed', followed.track, followed.track.thermals ?? [], followed.index, { color: followed.color, zoom }) : []),
+        ];
     }
 
     /** Height of the relief under a glider, known in 3D only. */

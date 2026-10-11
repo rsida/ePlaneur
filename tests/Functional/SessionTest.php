@@ -179,6 +179,9 @@ final class SessionTest extends WebTestCase
         self::assertSelectorTextContains('.p-session-settings', 'Remorquage');
         self::assertSelectorTextContains('.p-session-settings', '1 982 m sol');
         self::assertSelectorExists('[data-controller="session-viewer"][data-session-viewer-url-value="/sessions/'.$session->getId().'/traces.json"]');
+        // What the replay map draws, each on or off
+        self::assertSelectorExists('[data-controller="session-viewer"] .p-flight__layer-input[value="followed"][data-action="session-viewer#toggleLayer"]');
+        self::assertSelectorTextContains('[data-controller="session-viewer"] .p-flight__layers-panel', 'Thermiques de tous les pilotes');
         $this->client->request('GET', '/sessions/'.$session->getId().'/traces.json');
         self::assertCount(1, json_decode((string) $this->client->getResponse()->getContent(), true)['flights']);
 
