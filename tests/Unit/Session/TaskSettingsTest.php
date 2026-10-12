@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Session;
 
 use App\Flight\Analysis\Launch;
 use App\Session\TaskSettings;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -88,6 +89,25 @@ final class TaskSettingsTest extends TestCase
         self::assertSame('Printemps', $settings->season());
 
         self::assertEquals($settings, TaskSettings::fromArray($settings->toArray()), 'Stored and read back');
+    }
+
+    /**
+     * @return iterable<string, array{int, Launch}>
+     */
+    public static function launches(): iterable
+    {
+        // Flight plans of the club saved with each launch (2026-10-12): C3-d010a, C3-s121, C3-c034
+        yield 'aerotow' => [0, Launch::Aerotow];
+        yield 'winch' => [1, Launch::Winch];
+        yield 'airborne' => [2, Launch::Airborne];
+    }
+
+    #[DataProvider('launches')]
+    public function testTheLaunchOfTheFlightPlan(int $startType, Launch $expected): void
+    {
+        $settings = TaskSettings::fromFpl("[Task]\r\nLandscape=AA3\r\nCount=0\r\n[GameOptions]\r\nStartType={$startType}\r\nStartHeight=1500\r\n");
+
+        self::assertSame($expected, $settings->launch);
     }
 
     public function testAnotherFileIsRefused(): void

@@ -13,7 +13,8 @@ use App\Flight\Analysis\Launch;
  *
  * Read on the C3-s117 race of 2026-03-05 against its Condor Club page: TaskDate is a Delphi date
  * (days since 1899-12-30); StartTime is in hours, StartTimeWindow and RaceStartDelay in hours too
- * (a window of 0 is a regatta start); StartType 0 is an aerotow, 2 an airborne start; the finish
+ * (a window of 0 is a regatta start); StartType 0 is an aerotow, 1 a winch, 2 an airborne start
+ * (checked on flight plans saved with each, 2026-10-12); the finish
  * minimum height is the TPWidth of the finish (an altitude), the start maximum height the TPHeight
  * of the start; wind speeds are in m/s in the .fpl (km/h on Condor Club); the cloud base above the
  * ground is 125 m per degree between temperature and dew point.

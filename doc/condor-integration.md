@@ -93,7 +93,9 @@ plan), `#` for a number:
 - `[Version]` `Condor`
 - `[Task]` `Landscape`, `Count`, `TPName#`, `TPPosX#`, `TPPosY#`, `TPPosZ#`, `TPAirport#`,
   `TPSectorType#`, `TPSectorDirection#`, `TPRadius#`, `TPAngle#`, `TPAltitude#`, `TPWidth#`,
-  `TPHeight#`, `TPAzimuth#`, `PZCount` (penalty zones), `DisabledAirspaces`
+  `TPHeight#`, `TPAzimuth#`, `PZCount` (penalty zones), `DisabledAirspaces`; in flight plans
+  downloaded from Condor Club, also `TaskID` (the Condor Club id of the task:
+  `TaskID=25216` is `condor.club/api/task/25216`, C3-d010a), `TaskName` and `TaskVersion`
 - `[Weather]` `WZCount`, `RandomizeWeatherOnEachFlight`
 - `[WeatherZone#]` `Name`, `PointCount`, `Polygon#X`, `Polygon#Y`, `BorderWidth`, `WindDir`,
   `WindSpeed`, `WindUpperSpeed`, `WindDirVariation`, `WindSpeedVariation`, `WindTurbulence`,
@@ -112,8 +114,10 @@ plan), `#` for a number:
 With `RandomizeWeatherOnEachFlight=0` (the planner's "Randomize weather on each flight" left
 unchecked), a flight plan gives the same air on each flight, thermals in the same places (confirmed
 by the user, 2026-10-12): repeatable exercises are possible. The launch is also chosen in the flight
-plan: winch (where the airfield has one), aerotow or airborne (`StartType` 2), the latter with the
-height (`StartHeight`) and the direction set by its author.
+plan: `StartType` 0 aerotow, 1 winch (where the airfield has one), 2 airborne (checked on three
+flight plans of the club saved with each, 2026-10-12), with `StartHeight` (the aerotow release
+height, or the height of the airborne start); `BreakProb` and `RopeLength` for the tow and the
+winch.
 
 ## What it allows
 
@@ -130,7 +134,16 @@ the race results.
 
 Generate `.fpl` files from the site: a landscape and its airfields (`.apt`, already read for the
 glide cone), a task, a weather zone, a start type and height, a briefing in `[Description]`, then
-download (or start, see 3). Examples:
+download (or start, see 3).
+
+eplaneur.fr already publishes such flight plans (pages "Exercices ePlaneur" and "Fichiers FPL
+ePlaneur" under https://eplaneur.fr/menu-condor/menu-plan-vol/, read on 2026-10-12, written for
+Condor 2): a library by level (`d` beginners, `s` standard, `c` competition, exercises), the
+exercises e001 to e009 (spiral climbs near Le Versoud and Barcelonnette, MacCready, Condor circuits,
+the challenges and badges of Condor Club), 159 landing flight plans for the airfields of the FrSW
+landscape (wind along the runway) and 53 for the outlanding fields (airborne start over the field).
+They are made for Condor 2 and, for the user (2026-10-12), not convincing enough: they are to be
+made again for Condor 3, which ones being the user's choice. Examples:
 
 | Exercise | Flight plan | Judged by |
 |---|---|---|
@@ -141,8 +154,10 @@ download (or start, see 3). Examples:
 | Ridge run | Strong wind against a ridge, few thermals | Height kept, speed along the ridge |
 
 Condor itself judges nothing: the site analyses the track afterwards (or live, see 4). The fixed
-weather and the airborne start are confirmed (E2, E3); the key that holds the direction of an
-airborne start is not among the keys above and is to find in a flight plan saved that way.
+weather and the airborne start are confirmed (E2, E3). An airborne start has no direction key: the
+manual (Setting a remote airstart point) puts the glider at the takeoff point, which the author may
+move anywhere, pointed towards the start point, at `StartHeight` above the ground. The test flight of
+2026-10-12 agrees: first UDP heading 245°, bearing from the takeoff point to the start 243°.
 
 ### 3. Start Condor from the site (medium)
 
@@ -175,7 +190,7 @@ The same program could save the flight plans of the site into Condor's folder, s
 |---|---|---|---|
 | E1 | Set `Enabled=1` in `C:\Condor3\Settings\UDP.ini`, fly a few minutes, send the log Condor writes (`LogToFile=1`) | User | Done (2026-10-12), see below |
 | E2 | Fly the same flight plan twice, `RandomizeWeatherOnEachFlight=0` and a fixed `RandSeed`, upload both tracks | User | Done (2026-10-12): the same thermals when the weather is not randomized |
-| E3 | Airborne start: save a flight plan with `StartType` 2 and a given height, fly it | User | Done (2026-10-12): height and direction set in the flight plan; the key of the direction to find |
+| E3 | Airborne start: save a flight plan with `StartType` 2 and a given height, fly it | User | Done (2026-10-12): at the takeoff point (movable), `StartHeight` above the ground, pointed towards the start point (manual and test flight) |
 | E4 | Copy the "Join" code of the club server from the server list while it runs, with its address | User | The encoding of `cndr3:` codes |
 | E5 | During a club race, watch `Logs\Spectate.json` (how often it changes, whether it needs spectator mode) | User | Whether a live race view is possible |
 | E6 | Export the IGC of a few races of the dev data (Condor > flight analysis > IGC export) | User | Done (2026-10-11), see below |
@@ -250,3 +265,42 @@ What it allows: the live instruments of section 4 (netto, speed to fly with `air
 `water`, centring radar from the heading, the vario and the speed vector, height above the ground),
 the moment of the start and cloud entries as they happen. A live map of the race still depends on
 E5.
+
+## Landscape files (2026-10-12)
+
+The Condor Landscape Guide (rev. 2, November 2019, French translation:
+https://www.condorsoaring.com/wp-content/downloads/clt/Condor%20Landscape%20Guide%20FRENCH%20rev2.pdf,
+written for Condor 2) explains how landscapes are made:
+
+- UTM projection on WGS 84, one zone for the whole landscape (the projection of `Landscape`);
+  coordinates from the south-east corner, x towards the west (hence `vx` west in the UDP output).
+- Patches of 5.76 km grouped in tiles of 23.04 km; no flying within 5 km of the edge.
+- A thermal map per landscape: a grey image at 90 m a pixel, the probability and strength of
+  thermals by surface (water 0, deciduous trees 64, forests and grass 102, fields 178 out of 255).
+  Condor 2 and later combine it with the terrain profile and the sun; the `ThermalsFlatsActivity`
+  of the flight plan sets its weight (none: terrain and sun only).
+
+Two files of the installed AA3 landscape are not encrypted and were read for the study (copies in
+`var/condor-study/landscape/`, not in git; scripts `grid.php`, `check.php`, `cloud.php`,
+`thermals.php`, `channels.php`). They belong to the author of the landscape: reading them on the
+member's computer is fine, publishing them or data drawn from them would need the author's agreement.
+
+- **`AA3.trn`, the terrain of Condor**: a 36-byte header (width 10,240 and height 6,400 cells, 90,
+  −90 and 90 m, easting 1,059,840 and northing 4,786,560 of the origin, UTM zone 32, `N`), then
+  int16 heights in metres column by column (each column holds the 6,400 cells from south to north,
+  columns from east to west). Interpolated between cells, it gives the ground of the UDP output
+  (altitude − height) within 0.2 m (median of 329 points of the test flight; 90 % within 5 m).
+- **`AA3.tm3`, the thermal map**: 3 bytes a cell, on the same grid, row by row (each row holds the
+  10,240 cells from east to west, rows from south to north):
+  - byte 0: the thermal map of the guide, by surface: 18 values, water 0, forests 112-113, grass
+    148-149, fields 170-171 and 181-182, built-up 235-236, rock and snow 255;
+  - byte 1: the steepness of the relief: it follows the slope (correlation 0.75) and the height
+    (0.68), 45 on average below 200 m and 255 (saturated) above 1,000 m;
+  - byte 2: the convexity of the terrain around 900 m, 127 on flat ground, above on ridges and
+    tops, below in valleys (correlation 0.97 with the height of a cell minus the mean of the cells
+    10 away). Where the club pilots circled, byte 2 is higher (median 158) than where they glided
+    (133), over 126 thermals of 15 tracks; bytes 0 and 1 hardly differ.
+
+How Condor combines them into thermals is not documented. The cloud of the test flight is consistent
+with a base 1,881 m above the mean of Condor's ground within about 10 km (952 m; 954 m needed).
+

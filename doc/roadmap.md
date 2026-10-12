@@ -181,7 +181,8 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
   of cloud flying (200 a minute, so 0.3 s in cloud) and its UDP log the cloud entered at 2,835 m,
   at the top of a thermal above the inversion (2,794 m), where the model puts a blue thermal
   (lowest ground under it 1,195 m, base 3,076 m). A base of 2,835 m is 1,881 m above 954 m, about
-  the mean ground within 8 to 10 km of the thermal (971 and 949 m):
+  the mean ground within 8 to 10 km of the thermal (971 and 949 m; 952 m within 10 km with the
+  terrain of Condor itself, read from the landscape file, see condor-integration):
   Condor may take the base above a smoothed ground, and let clouds form a little above the
   inversion. One point only: more thermals topped in cloud are needed before changing the model.
 - Sessions (9f): results and pilot names are public on eplaneur.fr; on the club site they need an
