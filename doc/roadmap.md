@@ -94,7 +94,7 @@ treasurer's agreement before any code.
 | 7k1 | Score and penalties | The official score and the penalties of the flight as Condor Club lists them: the ones the track shows (start speed and height, finish altitude) measured against the settings of the task with their points and moment, the others named; the estimate against the official total of the results, the gap explained (`App\Session\Penalties`). Checked on the dev races: the server measures the start ground speed at the exact crossing, so the estimate and the official total often differ; exact with an IGC exported by Condor (7l1) | Done |
 | 7k2 | Task settings on the flight page | Already there since 7g4 ("Le circuit dans Condor", weather, penalties and realism under the details of the flight), missed in the comparison of 2026-10-11 | Done (7g4) |
 | 7k3 | Clock time in the replay | The time of day of the task (start time of the flight plan) in the replays, with a switch between the time of day and the race time | Done: clock time of the first fix read from the IGC and the `.ftr`; "Heure Condor / Temps de vol" switch on the flight page; the session replay on the clock of the task, as flown |
-| 7k4 | Clouds in 3D | The cloud base and inversion of the weather zones of the flight plan drawn in the 3D replay | Done: a cumulus over each thermal at the cloud base of its zone above the ground, none under the inversion (blue thermals), on the flight and session replays; the reference of the base (ground or sea level) to confirm with what pilots saw |
+| 7k4 | Clouds in 3D | The cloud base and inversion of the weather zones of the flight plan drawn in the 3D replay | Done: a cumulus over each thermal at the cloud base of its zone above the ground, none under the inversion (blue thermals), on the flight and session replays; base above the ground confirmed by the Flight Planner, blue thermals over high ground to confirm in flight (open questions) |
 | 7k5 | Full screen | A full screen button on the replay maps | Done: the whole viewer (map, values, replay bar) on the flight page and the session replays |
 | 7l | Condor 3 integration study (2026-10-11) | What Condor 3 documents and writes, for generated training flight plans, starting Condor from the site, a live helper and exact official figures ([condor-integration](condor-integration.md)); no disassembly, no decryption | In progress: documented sources studied, experiments E1 to E6 to run with the user |
 | 7l1 | Official figures from Condor's IGC | The `LCON` lines of an IGC exported by Condor (`CondorReport`): race id (joins the session), flight plan (settings of the task without a session), official result and points of each penalty, shown on the flight page | Done |
@@ -166,6 +166,13 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
   1 h 21 min 49 s on the server): its `.fpl` gives a regatta start (window 0), so the official time
   counts from the opening of the gate; the flight page shows the official time of the results. And a flight with a crash in the middle
   (C3-c058: 500 m higher, then a fast fall) keeps only one of its parts: how should it be shown?
+- Clouds in 3D (7k4), to check on a test flight with the `.fpl` of C3-c060 or C3-s117 (in
+  `Documents\Condor3\RaceResults`): the Flight Planner gives the cloud base above the ground ("1900m
+  agl", "2000m agl"), and the thermal tops of the stored flights stay under the inversion taken
+  above sea level (C3-s117: tops 2,467 m at most for an inversion at 2,625 m, 600 to 900 m above
+  the ground). The model therefore expects blue thermals over the Alps on C3-s117 (ground near
+  1,400 m, base near 3,400 m) and cumulus over the low ground on C3-c060. The planner sketch draws
+  the ground at 0 m and always shows a cloud: look at the sky in flight to confirm.
 - Sessions (9f): results and pilot names are public on eplaneur.fr; on the club site they need an
   account. Should they be public? Should the session menu items (Afficher sessions, Résultats session)
   point to `/sessions` now?
