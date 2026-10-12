@@ -136,6 +136,11 @@ Generate `.fpl` files from the site: a landscape and its airfields (`.apt`, alre
 glide cone), a task, a weather zone, a start type and height, a briefing in `[Description]`, then
 download (or start, see 3).
 
+First step done (2026-10-12, roadmap 7n4): the flight plan workshop of the site
+(`/plans-de-vol/atelier`, [sessions](sessions.md#flight-plan-workshop)) gathers these settings and
+composes the instructions with which Claude writes the file (`var/condor-study/generated/`, not in
+git); the first file written this way was flown, see "A flight plan written by a script" below.
+
 eplaneur.fr already publishes such flight plans (pages "Exercices ePlaneur" and "Fichiers FPL
 ePlaneur" under https://eplaneur.fr/menu-condor/menu-plan-vol/, read on 2026-10-12, written for
 Condor 2): a library by level (`d` beginners, `s` standard, `c` competition, exercises), the
@@ -253,7 +258,9 @@ are in `var/condor-study/test/` and `var/condor-study/udp/` (not in git).
   landscape X axis), `vz` up, m/s. The course is `atan2(-vx, vy)`; it differs from `compass` (the
   heading, `yaw` in degrees) by the wind drift.
 - `hudmessages` is sent only with an event, with the pilot's short name:
-  `R.SIDA started task;`, `R.SIDA entered cloud;`, `R.SIDA left cloud;`.
+  `R.SIDA started task;`, `R.SIDA entered cloud;`, `R.SIDA left cloud;`, and on the second test
+  flight `R.SIDA entered airspace;`, `R.SIDA left airspace;`, `R.SIDA turned Morgon;` (the name of
+  the turnpoint) and `R.SIDA completed task;` (a solo finish has its message).
 - The task started at 505.0 s after the first fix (14:53:25), as the analysis found; the ground
   speed of the vector then was 232.4 to 232.7 km/h, the speed Condor's penalty gives (125.3 points
   at 2 a km/h over 170). The analysis reads 227.3 km/h from the IGC and 231.4 km/h from the
@@ -265,6 +272,32 @@ What it allows: the live instruments of section 4 (netto, speed to fly with `air
 `water`, centring radar from the heading, the vario and the speed vector, height above the ground),
 the moment of the start and cloud entries as they happen. A live map of the race still depends on
 E5.
+
+## A flight plan written by a script (2026-10-12)
+
+A first `.fpl` written from scratch for AA3 (`var/condor-study/generated/generate.php`, not in git):
+airborne start from a point off the airfields 4.5 km south-east of Barcelonnette, 800 m above the
+ground read in `AA3.trn`, start line, Morgon (500 m cylinder), finish on Barcelonnette (1 km
+cylinder), fixed weather with cumulus. The user loaded and flew it in Condor 3 (`test2.ftr`,
+`test2.igc` and the UDP log in `var/condor-study/test2/`).
+
+- Condor opened it without complaint. It saved it again as `Condor version=3100`, added an empty
+  `DisabledAirspaces=` and cut the turnpoint names to 16 characters (`Airstart Barcelo`); the
+  coordinates, heights and zones were kept as written.
+- The airborne start is exact: first UDP packet at 3,067.3 m, 800.7 m above the ground (the ground
+  read in `AA3.trn` was 1.3 m higher than Condor's), course 18.5°, the bearing from the takeoff point
+  to the start point.
+- The whole task lies under the airspace `R196A1 Est GAP (Notam)` of `AA3.air` (OpenAir text,
+  `AL 3300FT AGL`, up to FL195): 14 entries, each at 1,003 to 1,018 m above the ground by the UDP
+  `height`, so Condor's floor in feet above the ground uses the same ground as `height`. With
+  `PenaltyAirspaceEnterance=0` it cost nothing, but it kept the flight under 3,160 m, so no cloud was
+  met. A flight plan that does not want it must list it in `DisabledAirspaces`, or keep away from it.
+- Task time: 984 s for the site as for Condor. Start speed: Condor's penalty of 9.9 points (1 a
+  km/h over 170) gives 179.9 km/h; the analysis reads 180.0 from the `.ftr`, 184.1 from the IGC.
+- Distance: Condor 37.05 km, the site 37.98 km. Between the centres in Condor's coordinates the task
+  is 38.05 km; Condor's figure is that less the 1 km radius of the finish cylinder. The site measures
+  between the centres (`TaskResult`), so it is 0.9 km over on a cylinder finish, and its speed is
+  2.5 % over.
 
 ## Landscape files (2026-10-12)
 

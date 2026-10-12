@@ -137,3 +137,11 @@ file, one command per landscape (the landscape is the name of the file):
 cp /mnt/c/Condor3/Landscapes/AA3/AA3.apt var/condor/
 make console c="app:condor:airfields var/condor/AA3.apt"
 ```
+
+Their airspaces, for the flight plan workshop, from the `.air` file (replaced at each run; a
+landscape whose file is empty, like BigPyrenees2, has none):
+
+```bash
+cp /mnt/c/Condor3/Landscapes/AA3/AA3.air var/condor/
+make console c="app:condor:airspaces var/condor/AA3.air"
+```

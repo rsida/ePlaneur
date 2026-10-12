@@ -49,7 +49,8 @@ mist `#ced8df`, line `#d8ddd9`.
 Fonts, served by the site (`assets/fonts/`, `@font-face` in `styles/fonts.css`, Latin and Latin
 Extended subsets, main files preloaded by `_fonts.html.twig`): **Oswald** 500/600 for display titles
 and big numbers, **Barlow** 700/800 for headings, **Inter** 400–800 for text and UI. No request to
-Google Fonts, so no consent is needed for them.
+Google Fonts, so no consent is needed for them. `--font-mono` is the system monospace font, for text
+meant to be copied as is (the instructions of the flight plan workshop).
 
 Line heights follow Figma: where a Figma text layer uses the "Auto" line height, the CSS uses
 `line-height: normal` (the font's own metrics, about 1.48 for Oswald and 1.2 for Barlow), not a fixed

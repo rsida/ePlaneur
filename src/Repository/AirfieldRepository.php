@@ -19,6 +19,19 @@ class AirfieldRepository extends ServiceEntityRepository
     }
 
     /**
+     * The landscapes whose airfields were read.
+     *
+     * @return list<string>
+     */
+    public function landscapes(): array
+    {
+        return array_column($this->createQueryBuilder('airfield')
+            ->select('DISTINCT airfield.landscape')
+            ->orderBy('airfield.landscape')
+            ->getQuery()->getScalarResult(), 'landscape');
+    }
+
+    /**
      * The airfields of a landscape within a box (degrees).
      *
      * @return list<Airfield>

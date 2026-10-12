@@ -1,0 +1,364 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Atelier plans de vol{% endblock %}
+
+{% macro number(id, label, unit, attrs, help = null) %}
+    <div class="c-field">
+        <label class="c-field__label" for="{{ id }}">{{ label }}</label>
+        <div class="p-workshop__unit">
+            <input class="c-input" type="number" id="{{ id }}" name="{{ id }}" {{ attrs|raw }}>
+            <span>{{ unit }}</span>
+        </div>
+        {% if help %}<span class="c-field__help">{{ help }}</span>{% endif %}
+    </div>
+{% endmacro %}
+
+{% macro select(id, label, options, help = null, selected = null) %}
+    <div class="c-field">
+        <label class="c-field__label" for="{{ id }}">{{ label }}</label>
+        <select class="c-input" id="{{ id }}" name="{{ id }}">
+            {% for value, text in options %}<option value="{{ value }}"{{ value ~ '' == selected ~ '' ? ' selected' }}>{{ text }}</option>{% endfor %}
+        </select>
+        {% if help %}<span class="c-field__help">{{ help }}</span>{% endif %}
+    </div>
+{% endmacro %}
+
+{#
+    Weather settings of a zone. The base zone has a value for each; an extra zone inherits by default
+    ("" = as the base zone). Values are read by data-k, ids are prefixed by the zone.
+#}
+{% macro weather(prefix, inherit) %}
+    {% set same = inherit ? {'': 'Comme la zone de base'} : {} %}
+    {% set rows = [
+        ['base', 'Plafond des cumulus', 'm sol', 'min="500" max="4500" step="50"', '2000'],
+        ['inversion', 'Plafond des thermiques', 'm alt.', 'min="500" max="7000" step="50"', null],
+        ['windDir', 'Vent du', '°', 'min="0" max="359" step="5"', '270'],
+        ['windSpeed', 'Vitesse du vent', 'm/s', 'min="0" max="30" step="1"', '3'],
+    ] %}
+    {% set selects = [
+        ['clouds', 'Nuages', {cu: 'Cumulus', blue: 'Thermiques bleus (sans nuage)', over: 'Surdéveloppements possibles'}, 'cu'],
+        ['strength', 'Force des thermiques', {0: 'Très faibles', 1: 'Faibles', 2: 'Moyens', 3: 'Forts', 4: 'Très forts'}, 2],
+        ['activity', 'Nombre de thermiques', {0: 'Faible', 1: 'Moyen', 2: 'Élevé', 3: 'Très élevé'}, 2],
+        ['width', 'Largeur des thermiques', {0: 'Étroits', 1: 'Moyens', 2: 'Larges'}, 1],
+        ['turbulence', 'Turbulence', {0: 'Aucune', 1: 'Faible', 2: 'Moyenne', 3: 'Forte'}, 1],
+        ['streets', 'Rues de nuages', {0: 'Non', 1: 'Oui, dans l’axe du vent'}, 0],
+    ] %}
+    {% for row in rows %}
+        <div class="c-field">
+            <label class="c-field__label" for="{{ prefix ~ row[0] }}">{{ row[1] }}</label>
+            <div class="p-workshop__unit">
+                <input class="c-input" type="number" id="{{ prefix ~ row[0] }}" data-k="{{ row[0] }}" {{ row[3]|raw }}
+                    {%- if inherit %} placeholder="comme la base"{% elseif row[4] is not null %} value="{{ row[4] }}"{% else %} placeholder="auto"{% endif %}>
+                <span>{{ row[2] }}</span>
+            </div>
+        </div>
+    {% endfor %}
+    {% for row in selects %}
+        <div class="c-field">
+            <label class="c-field__label" for="{{ prefix ~ row[0] }}">{{ row[1] }}</label>
+            <select class="c-input" id="{{ prefix ~ row[0] }}" data-k="{{ row[0] }}">
+                {% for value, text in same|merge(row[2]) %}<option value="{{ value }}"{{ not inherit and value ~ '' == row[3] ~ '' ? ' selected' }}>{{ text }}</option>{% endfor %}
+            </select>
+        </div>
+    {% endfor %}
+    {% if not inherit %}
+        <div class="c-field">
+            <label class="c-field__label" for="{{ prefix }}highClouds">Voile d’altitude</label>
+            <select class="c-input" id="{{ prefix }}highClouds" data-k="highClouds"><option value="0">Aucun</option><option value="1">Léger</option><option value="2">Moyen</option><option value="3">Épais</option></select>
+        </div>
+        <div class="c-field">
+            <label class="c-field__label" for="{{ prefix }}waves">Ondes</label>
+            <select class="c-input" id="{{ prefix }}waves" data-k="waves"><option value="0">Non</option><option value="1">Oui</option></select>
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{% macro choices(name, options, checked) %}
+    <div class="p-workshop__choices">
+        {% for value, text in options %}
+            <label class="p-workshop__choice"><input type="radio" name="{{ name }}" id="{{ name ~ '-' ~ value }}" value="{{ value }}"{{ value == checked ? ' checked' }}><span>{{ text }}</span></label>
+        {% endfor %}
+    </div>
+{% endmacro %}
+
+{% block body %}
+    {% import _self as f %}
+    <section class="p-workshop t-light" data-controller="flight-plan-workshop"
+        data-flight-plan-workshop-landscapes-value="{{ landscapes|json_encode }}"
+        data-flight-plan-workshop-gliders-value="{{ gliders|json_encode }}"
+        data-flight-plan-workshop-data-url-value="{{ path('app_flight_plan_workshop_data', {landscape: '__L__'}) }}">
+        <div class="l-container p-workshop__head l-stack l-stack--sm">
+            <twig:Ui:Link href="{{ path('app_session_index') }}">Toutes les sessions</twig:Ui:Link>
+            <twig:Ui:Eyebrow>Vols en réseau · Condor 3</twig:Ui:Eyebrow>
+            <twig:Ui:Heading level="1" size="h2">Atelier plans de vol</twig:Ui:Heading>
+            <p class="u-lead">Choisissez la scène, le circuit, la météo et les règles. La consigne se met à jour à chaque changement : copiez-la et donnez-la à Claude, qui écrira le fichier .fpl à ouvrir dans le planificateur de Condor.</p>
+        </div>
+
+        <div class="l-container p-workshop__layout">
+            <form class="p-workshop__form" data-flight-plan-workshop-target="form" data-action="input->flight-plan-workshop#update change->flight-plan-workshop#update submit->flight-plan-workshop#ignore" autocomplete="off">
+                {% if landscapes is empty %}
+                    <p class="c-alert c-alert--error">Aucune scène n’a encore ses aérodromes : un administrateur doit lancer <code>app:condor:airfields</code> (voir la documentation des sessions).</p>
+                {% endif %}
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Scène et circuit</legend>
+                    <div class="p-workshop__grid">
+                        <div class="c-field">
+                            <label class="c-field__label" for="landscape">Scène</label>
+                            <select class="c-input" id="landscape" name="landscape" data-action="flight-plan-workshop#changeLandscape">
+                                {% for landscape in landscapes %}<option{{ landscape == 'AA3' ? ' selected' }}>{{ landscape }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="c-field">
+                            <label class="c-field__label" for="region">Région</label>
+                            <select class="c-input" id="region" name="region" data-action="flight-plan-workshop#changeRegion"></select>
+                        </div>
+                        <div class="c-field">
+                            <label class="c-field__label" for="departure">Aérodrome de départ</label>
+                            <select class="c-input" id="departure" name="departure"></select>
+                        </div>
+                        <div class="c-field">
+                            <label class="c-field__label" for="arrival">Arrivée</label>
+                            <select class="c-input" id="arrival" name="arrival"></select>
+                        </div>
+                    </div>
+                    <div class="p-workshop__grid">
+                        <div class="c-field">
+                            <label class="c-field__label" for="length">Longueur approximative</label>
+                            <div class="p-workshop__range"><input type="range" id="length" name="length" min="20" max="750" step="10" value="100"><output for="length" data-out="length">100 km</output></div>
+                        </div>
+                        <div class="c-field">
+                            <label class="c-field__label" for="turnpoints">Points de virage</label>
+                            <div class="p-workshop__range"><input type="range" id="turnpoints" name="turnpoints" min="1" max="8" step="1" value="3"><output for="turnpoints" data-out="turnpoints">3</output></div>
+                            <span class="c-field__help">Sans compter le départ et l’arrivée.</span>
+                        </div>
+                        {{ f.select('shape', 'Forme', {auto: 'Au choix de Claude', 'out-return': 'Aller-retour', triangle: 'Triangle', polygon: 'Polygone', line: 'Ligne (arrivée sur un autre terrain)'}) }}
+                        {{ f.select('tpSource', 'Choix des points', {any: 'Repères visibles : sommets, villages, lacs, aérodromes', airfields: 'Aérodromes seulement', imposed: 'Points imposés'}) }}
+                    </div>
+                    <div class="c-field" data-show="tpSource:imposed">
+                        <label class="c-field__label" for="imposed">Points imposés</label>
+                        <textarea class="c-input" id="imposed" name="imposed" rows="3" placeholder="Un point par ligne, dans l’ordre : Morgon, Gap-Tallard, Pic de Bure…"></textarea>
+                    </div>
+                    <div class="c-field">
+                        <span class="c-field__label">Type d’épreuve</span>
+                        {{ f.choices('taskType', {racing: 'Circuit imposé', aat: 'AAT (épreuve de durée)'}, 'racing') }}
+                    </div>
+                    <div class="p-workshop__grid" data-show="taskType:aat">
+                        {{ f.number('aatTime', 'Durée minimale', 'min', 'min="30" max="480" step="15" value="120"') }}
+                        {{ f.number('aatRadius', 'Rayon des zones', 'km', 'min="1" max="60" step="1" value="15"') }}
+                    </div>
+                </fieldset>
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Niveau</legend>
+                    <div class="c-field">
+                        {{ f.choices('level', {discovery: 'Découverte', intermediate: 'Intermédiaire', advanced: 'Confirmé', competition: 'Compétition'}, 'intermediate') }}
+                        <span class="c-field__help" data-out="levelHint"></span>
+                    </div>
+                    <div class="p-workshop__grid">
+                        {{ f.select('step', 'Étape du parcours ePlaneur', {'': 'Aucune en particulier', 1: '1 · Découvrir Condor et le pilotage', 2: '2 · Autonomie solo, circuits courts', 3: '3 · Vol en réseau, circuits faciles', 4: '4 · Volets et insigne d’argent', 5: '5 · Vitesse de MacCready', 6: '6 · Calculateur externe (XCSoar)', 7: '7 · Passage à Condor 3', 8: '8 · Brevet ePlaneur (théorie)'}) }}
+                        <div class="c-field">
+                            <label class="c-field__label" for="skill">Compétence travaillée</label>
+                            <input class="c-input" type="text" id="skill" name="skill" placeholder="Enrouler, choisir ses thermiques, vol de pente…">
+                        </div>
+                    </div>
+                    <div class="l-cluster">
+                        <twig:Ui:Button variant="outline" size="sm" icon="" data-action="flight-plan-workshop#applyLevel">Appliquer les réglages conseillés pour ce niveau</twig:Ui:Button>
+                        <span class="u-note">Longueur, points, portes, météo et aides.</span>
+                    </div>
+                </fieldset>
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Portes et points</legend>
+                    <h3 class="p-workshop__sub">Départ</h3>
+                    <div class="p-workshop__grid">
+                        {{ f.select('startType', 'Type', {window: 'Fenêtre', line: 'Ligne', cylinder: 'Cylindre'}, null, 'window') }}
+                        <div data-show="startType:window,line">{{ f.number('startWidth', 'Largeur', 'm', 'min="200" max="20000" step="100" value="2000"') }}</div>
+                        <div data-show="startType:window">{{ f.number('startHeight', 'Hauteur de la fenêtre', 'm', 'min="100" max="5000" step="50" value="1000"') }}</div>
+                        <div data-show="startType:window">{{ f.number('startCenter', 'Altitude du centre', 'm', 'min="0" max="6000" step="50" placeholder="auto"', 'Vide : choisie d’après le relief.') }}</div>
+                        <div data-show="startType:cylinder">{{ f.number('startRadius', 'Rayon', 'm', 'min="200" max="20000" step="100" value="3000"') }}</div>
+                        <div data-show="startType:line,cylinder">{{ f.number('startMax', 'Altitude maximale', 'm', 'min="0" max="6000" step="50" placeholder="aucune"') }}</div>
+                        {{ f.number('startDistance', 'Position', 'km de l’aérodrome', 'min="0" max="30" step="0.5" value="5"') }}
+                        {{ f.number('startSpeed', 'Vitesse sol max. au départ', 'km/h', 'min="0" max="300" step="5" placeholder="aucune"') }}
+                    </div>
+                    <h3 class="p-workshop__sub">Points de virage</h3>
+                    <div class="p-workshop__grid">
+                        {{ f.select('tpType', 'Type', {cylinder: 'Cylindre', sector: 'Secteur FAI (90°)', window: 'Fenêtre'}) }}
+                        <div data-show="tpType:cylinder,sector">{{ f.number('tpRadius', 'Rayon', 'm', 'min="100" max="20000" step="100" value="500"') }}</div>
+                        <div data-show="tpType:window">{{ f.number('tpWidth', 'Largeur', 'm', 'min="200" max="20000" step="100" value="1500"') }}</div>
+                        <div data-show="tpType:window">{{ f.number('tpHeight', 'Hauteur', 'm', 'min="100" max="5000" step="50" value="800"') }}</div>
+                    </div>
+                    <h3 class="p-workshop__sub">Arrivée</h3>
+                    <div class="p-workshop__grid">
+                        {{ f.select('finishType', 'Type', {window: 'Fenêtre', line: 'Ligne', cylinder: 'Cylindre'}, null, 'window') }}
+                        <div data-show="finishType:window,line">{{ f.number('finishWidth', 'Largeur', 'm', 'min="200" max="20000" step="100" value="2000"') }}</div>
+                        <div data-show="finishType:window">{{ f.number('finishHeight', 'Hauteur de la fenêtre', 'm', 'min="100" max="5000" step="50" value="600"') }}</div>
+                        <div data-show="finishType:window">{{ f.number('finishCenter', 'Altitude du centre', 'm', 'min="0" max="6000" step="50" placeholder="auto"', 'Vide : environ 300 m au-dessus du terrain.') }}</div>
+                        <div data-show="finishType:cylinder">{{ f.number('finishRadius', 'Rayon', 'm', 'min="200" max="20000" step="100" value="1000"') }}</div>
+                        <div data-show="finishType:line,cylinder">{{ f.number('finishMin', 'Altitude minimale', 'm', 'min="0" max="6000" step="50" placeholder="aucune"') }}</div>
+                    </div>
+                    <p class="c-alert" data-out="windowNote">Le manuel de Condor prévient qu’une fenêtre est difficile à franchir sans les aides de circuit 3D : gardez une portée d’aide des points de virage.</p>
+                </fieldset>
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Lancement et horaire</legend>
+                    <div class="c-field">
+                        <span class="c-field__label">Lancement</span>
+                        {{ f.choices('launch', {aerotow: 'Remorqué', winch: 'Treuil', airborne: 'En vol'}, 'aerotow') }}
+                    </div>
+                    <div class="p-workshop__grid">
+                        <div data-show="launch:aerotow,airborne">
+                            <div class="c-field">
+                                <label class="c-field__label" for="launchHeight" data-out="launchHeightLabel">Hauteur de largage</label>
+                                <div class="p-workshop__unit"><input class="c-input" type="number" id="launchHeight" name="launchHeight" min="100" max="3000" step="50" value="600"><span>m sol</span></div>
+                            </div>
+                        </div>
+                        <div data-show="launch:aerotow,winch">{{ f.number('ropeLength', 'Longueur du câble', 'm', 'min="20" max="1500" step="10" value="60"') }}</div>
+                        <div data-show="launch:aerotow,winch">{{ f.number('breakProb', 'Probabilité de rupture', '%', 'min="0" max="100" step="1" value="0"') }}</div>
+                        <div data-show="launch:airborne">{{ f.select('airstartAt', 'Point de départ en vol', {beforeStart: 'Quelques km avant la porte de départ', overAirfield: 'Verticale de l’aérodrome de départ', free: 'Ailleurs (préciser dans les consignes)'}, 'Condor oriente le planeur vers la porte de départ.') }}</div>
+                    </div>
+                    <p class="c-alert" data-show="launch:winch">Les fichiers de Condor ne disent pas quels terrains ont un treuil : à vérifier dans le planificateur.</p>
+                    <div class="p-workshop__grid">
+                        <div class="c-field">
+                            <label class="c-field__label" for="date">Date</label>
+                            <input class="c-input" type="date" id="date" name="date" value="2026-06-21">
+                            <span class="c-field__help">La saison fixe la hauteur du soleil.</span>
+                        </div>
+                        <div class="c-field">
+                            <label class="c-field__label" for="startTime">Heure de départ</label>
+                            <input class="c-input" type="time" id="startTime" name="startTime" value="13:00" step="300">
+                        </div>
+                        {{ f.number('window', 'Fenêtre de départ', 'min (0 = régate)', 'min="0" max="240" step="5" value="15"') }}
+                        {{ f.number('raceDelay', 'Délai avant la course', 'min', 'min="0" max="120" step="5" value="0"') }}
+                    </div>
+                </fieldset>
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Planeur</legend>
+                    <div class="p-workshop__grid">
+                        <div class="c-field">
+                            <label class="c-field__label" for="gliderClass">Classe</label>
+                            <select class="c-input" id="gliderClass" name="gliderClass" data-action="flight-plan-workshop#changeClass"></select>
+                        </div>
+                        <div class="c-field">
+                            <label class="c-field__label" for="glider">Modèle</label>
+                            <select class="c-input" id="glider" name="glider"></select>
+                            <span class="c-field__help" data-out="gliderHint"></span>
+                        </div>
+                        {{ f.select('waterMode', 'Eau', {none: 'Interdite', limit: 'Limitée', free: 'Libre (jusqu’au maximum du planeur)'}) }}
+                        <div data-show="waterMode:limit">{{ f.number('waterLimit', 'Limite d’eau', 'kg', 'min="0" max="300" step="10" value="100"') }}</div>
+                        {{ f.number('wingLoading', 'Charge alaire max.', 'kg/m²', 'min="20" max="65" step="1" placeholder="sans limite"') }}
+                    </div>
+                    <label class="c-check"><input type="checkbox" id="bugwipers" name="bugwipers"><span>Essuie-moucherons autorisés</span></label>
+                </fieldset>
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Météo</legend>
+                    {{ f.choices('weatherMode', {fixed: 'Fixe (même air à chaque vol)', random: 'Aléatoire à chaque vol'}, 'fixed') }}
+                    <h3 class="p-workshop__sub">Zone de base (toute la scène)</h3>
+                    <div class="p-workshop__grid" data-flight-plan-workshop-target="baseZone">{{ f.weather('w_', false) }}</div>
+                    <div class="l-cluster l-cluster--spread">
+                        <h3 class="p-workshop__sub">Zones météo différentes</h3>
+                        <twig:Ui:Button variant="outline" size="sm" icon="" data-action="flight-plan-workshop#addZone">Ajouter une zone</twig:Ui:Button>
+                    </div>
+                    <div class="p-workshop__cards" data-flight-plan-workshop-target="zones"></div>
+                    <p class="u-note" data-out="zonesEmpty">Aucune zone : la même météo partout. Par exemple une vallée plus faible, un plateau sans cumulus, des rues de nuages sur une crête.</p>
+                </fieldset>
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Zones réglementaires</legend>
+                    {{ f.select('airspaceMode', 'Espaces aériens de la scène', {avoid: 'Désactiver ceux qui couvrent le circuit', keep: 'Tous actifs (le circuit doit les contourner)', pick: 'Choisir ceux à désactiver'}, 'Un espace aérien actif peut recouvrir tout un circuit : la R196A1 Est GAP (plancher 3300 ft sol) couvre la vallée de Barcelonnette.') }}
+                    <div class="c-field" data-show="airspaceMode:pick">
+                        <label class="c-field__label" for="airspaceSearch">Espaces de la région à désactiver</label>
+                        <input class="c-input" type="search" id="airspaceSearch" placeholder="Filtrer : GAP, R196, TMA…" data-action="input->flight-plan-workshop#renderAirspaces">
+                        <div class="p-workshop__airspaces" data-flight-plan-workshop-target="airspaces" data-action="change->flight-plan-workshop#pickAirspace"></div>
+                        <span class="c-field__help" data-out="airspaceCount"></span>
+                    </div>
+                    <div class="p-workshop__grid">
+                        {{ f.number('airspacePenalty', 'Pénalité d’entrée en espace aérien', 'points', 'min="0" max="1000" step="10" value="0"') }}
+                        {{ f.number('pzPenalty', 'Pénalité d’entrée en zone de pénalité', 'points', 'min="0" max="1000" step="10" value="200"') }}
+                    </div>
+                    <div class="l-cluster l-cluster--spread">
+                        <h3 class="p-workshop__sub">Zones de pénalité ajoutées</h3>
+                        <twig:Ui:Button variant="outline" size="sm" icon="" data-action="flight-plan-workshop#addPz">Ajouter une zone</twig:Ui:Button>
+                    </div>
+                    <div class="p-workshop__cards" data-flight-plan-workshop-target="pzs"></div>
+                    <p class="u-note" data-out="pzsEmpty">Aucune zone ajoutée. Par exemple : interdire de couper par une vallée, protéger un parc national, imposer de rester au-dessus d’un relief.</p>
+                </fieldset>
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Aides et pénalités</legend>
+                    <div class="p-workshop__grid">
+                        {{ f.number('thermalHelpers', 'Aides thermiques', 'km (0 = aucune)', 'min="0" max="20" step="1" value="0"') }}
+                        {{ f.number('tpHelpers', 'Aides des points de virage', 'km', 'min="0" max="50" step="1" value="5"') }}
+                        {{ f.number('iconsRange', 'Portée des icônes', 'km', 'min="0" max="50" step="1" value="20"') }}
+                        {{ f.number('cloudPenalty', 'Vol en nuage', 'points', 'min="0" max="1000" step="10" value="200"') }}
+                    </div>
+                    <div class="p-workshop__grid">
+                        {% for id, text in {allowPda: 'PDA autorisé', allowExternal: 'Vue extérieure', allowPadlock: 'Vue padlock', allowSmoke: 'Fumigènes', allowRecovery: 'Récupération du planeur (100 pts)', allowHeight: 'Récupération d’altitude (200 pts)', allowScoring: 'Classement en temps réel'} %}
+                            <label class="c-check"><input type="checkbox" id="{{ id }}" name="{{ id }}"{{ id != 'allowSmoke' ? ' checked' }}><span>{{ text }}</span></label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <fieldset class="p-workshop__panel">
+                    <legend>Briefing et fichier</legend>
+                    <div class="c-field">
+                        <label class="c-field__label" for="briefing">Briefing affiché dans Condor</label>
+                        <textarea class="c-input" id="briefing" name="briefing" rows="3" placeholder="Vide : Claude rédige un briefing court (objectif, circuit, météo, pièges)."></textarea>
+                    </div>
+                    <div class="p-workshop__grid">
+                        <div class="c-field">
+                            <label class="c-field__label" for="fileName">Nom du fichier</label>
+                            <div class="p-workshop__unit"><input class="c-input" type="text" id="fileName" name="fileName" placeholder="auto"><span>.fpl</span></div>
+                        </div>
+                        {{ f.number('seed', 'Graine météo', '', 'min="0" max="2147483647" placeholder="auto"', 'La même graine donne les mêmes thermiques.') }}
+                    </div>
+                    <div class="c-field">
+                        <label class="c-field__label" for="extra">Autres consignes</label>
+                        <textarea class="c-input" id="extra" name="extra" rows="3" placeholder="Passer au-dessus du lac de Serre-Ponçon, éviter la vallée de l’Ubaye, prévoir un terrain posable par branche…"></textarea>
+                    </div>
+                </fieldset>
+            </form>
+
+            <aside class="p-workshop__output" aria-labelledby="workshop-output-title">
+                <div class="p-workshop__output-head">
+                    <h2 id="workshop-output-title">Consigne pour Claude</h2>
+                    <twig:Ui:Button size="sm" icon="" data-action="flight-plan-workshop#copy">Copier</twig:Ui:Button>
+                </div>
+                <pre class="p-workshop__prompt" tabindex="0" data-flight-plan-workshop-target="prompt"></pre>
+                <div class="p-workshop__output-foot">
+                    <p class="u-note" aria-live="polite" data-flight-plan-workshop-target="status"></p>
+                    <button type="button" class="p-workshop__text-button" data-action="flight-plan-workshop#reset">Revenir aux valeurs de départ</button>
+                </div>
+            </aside>
+        </div>
+
+        <template data-flight-plan-workshop-target="zoneTemplate">
+            <div class="p-workshop__card" data-zone>
+                <div class="l-cluster l-cluster--spread"><strong data-title>Zone</strong><button type="button" class="p-workshop__text-button" data-remove>Retirer</button></div>
+                <div class="p-workshop__grid">
+                    <div class="c-field"><label class="c-field__label" data-l="name">Nom</label><input class="c-input" type="text" data-k="name" placeholder="Vallée de la Durance"></div>
+                    <div class="c-field"><label class="c-field__label" data-l="where">Emplacement</label><input class="c-input" type="text" data-k="where" placeholder="Autour de Sisteron, sur le 2e point…"></div>
+                    <div class="c-field"><label class="c-field__label" data-l="radius">Rayon</label><div class="p-workshop__unit"><input class="c-input" type="number" data-k="radius" min="2" max="150" step="1" value="15"><span>km</span></div></div>
+                    <div class="c-field"><label class="c-field__label" data-l="border">Transition</label><div class="p-workshop__unit"><input class="c-input" type="number" data-k="border" min="0" max="30" step="1" value="3"><span>km</span></div></div>
+                    {{ f.weather('__P__', true) }}
+                </div>
+            </div>
+        </template>
+
+        <template data-flight-plan-workshop-target="pzTemplate">
+            <div class="p-workshop__card" data-pz>
+                <div class="l-cluster l-cluster--spread"><strong data-title>Zone de pénalité</strong><button type="button" class="p-workshop__text-button" data-remove>Retirer</button></div>
+                <div class="p-workshop__grid">
+                    <div class="c-field"><label class="c-field__label" data-l="name">Nom</label><input class="c-input" type="text" data-k="name" placeholder="Parc des Écrins"></div>
+                    <div class="c-field"><label class="c-field__label" data-l="where">Emplacement</label><input class="c-input" type="text" data-k="where" placeholder="Entre le 1er et le 2e point, sur la crête…"></div>
+                    <div class="c-field"><label class="c-field__label" data-l="shape">Forme</label><select class="c-input" data-k="shape"><option value="circle">Cercle</option><option value="corridor">Couloir le long d’une branche</option><option value="polygon">Polygone (décrit à Claude)</option></select></div>
+                    <div class="c-field"><label class="c-field__label" data-l="size">Rayon ou largeur</label><div class="p-workshop__unit"><input class="c-input" type="number" data-k="size" min="0.5" max="50" step="0.5" value="3"><span>km</span></div></div>
+                    <div class="c-field"><label class="c-field__label" data-l="floor">Plancher</label><div class="p-workshop__unit"><input class="c-input" type="number" data-k="floor" min="0" max="9000" step="50" placeholder="sol"><span>m</span></div></div>
+                    <div class="c-field"><label class="c-field__label" data-l="ceiling">Plafond</label><div class="p-workshop__unit"><input class="c-input" type="number" data-k="ceiling" min="0" max="9000" step="50" placeholder="illimité"><span>m</span></div></div>
+                </div>
+            </div>
+        </template>
+    </section>
+{% endblock %}

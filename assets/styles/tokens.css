@@ -44,6 +44,7 @@
     --font-display: 'Oswald', 'Arial Narrow', sans-serif;
     --font-heading: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
     --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace; /* text to copy (flight plan workshop) */
 
     /* ---------- 2. Semantic: brand ---------- */
     --color-primary: var(--palette-navy);

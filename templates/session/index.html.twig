@@ -11,7 +11,10 @@
                 <twig:Ui:Heading level="1" size="h1">Sessions en réseau</twig:Ui:Heading>
                 <p class="u-lead">Chaque semaine, les pilotes du club volent le même circuit, dans la même météo, chacun depuis chez soi. Retrouvez les prochaines sessions et les résultats de toutes les autres.</p>
                 {% if is_granted('SESSION_ORGANISE') %}
-                    <div><twig:Ui:Button href="{{ path('app_session_new') }}" icon="">Proposer une session</twig:Ui:Button></div>
+                    <div class="l-cluster">
+                        <twig:Ui:Button href="{{ path('app_session_new') }}" icon="">Proposer une session</twig:Ui:Button>
+                        <twig:Ui:Button href="{{ path('app_flight_plan_workshop') }}" variant="outline" icon="">Préparer un plan de vol</twig:Ui:Button>
+                    </div>
                 {% endif %}
             </div>
 

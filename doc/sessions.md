@@ -44,6 +44,8 @@ A `.ftr` track takes the date of its session (`Flight::getDate()`).
 | `/sessions/{id}/modifier`, `/supprimer` | `app_session_edit`, `app_session_delete` | its organiser, or `SESSION_MANAGE` (`SessionVoter`) | Edit, add the results file of the server, delete (the tracks stay) |
 | `/plans-de-vol/{code}` | `app_flight_plan_show` | everyone; tracks for logged-in users | Link to the sheet on eplaneur.fr, the club's sessions on it with their winner, and every track on it, replayed from their start line (ghost race) |
 | `/plans-de-vol/recherche?q=` | `app_flight_plan_search` | `SESSION_ORGANISE` | JSON suggestions of the session form |
+| `/plans-de-vol/atelier` | `app_flight_plan_workshop` | `SESSION_ORGANISE` | Flight plan workshop: the settings of a Condor 3 flight plan to write, turned into instructions for Claude (see below) |
+| `/plans-de-vol/atelier/{landscape}.json` | `app_flight_plan_workshop_data` | `SESSION_ORGANISE` | Regions, airfields and airspaces of a landscape, for the workshop |
 
 `/vols/{id}/session` now redirects to the session of the flight, or to its flight plan page; flights
 whose task is not a flight plan of the library keep the former page (every flight on the same task).
@@ -60,6 +62,33 @@ by `/plans-de-vol/recherche`): picking a recorded flight plan fills in the addre
 a new code the address of its eplaneur.fr page is suggested and can be changed. The text must hold a
 code of the library. The results file is the CSV written by the dedicated server, uploaded with its
 original name (the race id is read from it); comma, semicolon or tab separated, units allowed.
+
+### Flight plan workshop
+
+`/plans-de-vol/atelier` (linked from the session list and the session form) composes, at each change,
+the instructions to give Claude so that it writes a Condor 3 `.fpl` (roadmap 7n4); the site writes no
+flight plan itself yet. The settings:
+
+- landscape (those whose airfields were read), region, departure and arrival airfields (altitude and
+  runway from the `.apt` file), approximate length, number and kind of turnpoints, shape, racing or
+  AAT task;
+- level (Découverte, Intermédiaire, Confirmé, Compétition, with a button applying suggested values),
+  step of the training path and skill;
+- gates: start and finish are **windows by default** (width, height, centre altitude), or a line or a
+  cylinder; turnpoints as cylinders, FAI sectors or windows; maximum start speed;
+- launch (aerotow, winch, airborne with its point), date, time, start window, race delay;
+- glider class and model (`FlightPlanWorkshop::CLASSES`, the club's grouping), water ballast (none,
+  limited, free) and maximum wing loading;
+- weather fixed or random, a base zone and extra zones (cloud base above the ground, blue thermals,
+  strength, number and width of the thermals, inversion, wind, turbulence, streets);
+- airspaces of the landscape to disable (all those over the task, none, or picked in a list), penalty
+  zones to add, penalties, helpers and realism options, briefing, file name and weather seed.
+
+The settings stay in the browser (`localStorage`). Regions are boxes of latitude and longitude
+(`FlightPlanWorkshop::REGIONS`); an airfield or airspace outside them is in "Autres". Airspaces come
+from the `.air` file of the landscape (`app:condor:airspaces`, `CondorAirspaces`): name, class, limits
+as written and centre only. Stimulus `flight-plan-workshop`, `templates/flight_plan/workshop.html.twig`,
+`assets/styles/pages/flight-plan-workshop.css`.
 
 ## Race view
 

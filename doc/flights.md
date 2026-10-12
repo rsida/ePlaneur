@@ -15,6 +15,7 @@ the latest public flights.
 | Analysis | `App\Flight\Analysis\FlightAnalyzer` → `FlightAnalysis` (stored as JSON in `Flight::analysis`) |
 | Storage | `Flight` entity (columns, statistics and task distance for the lists), its full analysis in `FlightData` (own table, loaded only when read: `Flight::getAnalysis()`); files in `app.flights_dir` (`var/flights`, Docker volume `flights` in production) through `FlightImporter` |
 | Airfields | `Airfield` entity, `app:condor:airfields` (`CondorAirfields` reads the `.apt` file of a landscape), `GlideReach` (glide cone) |
+| Airspaces | `Airspace` entity, `app:condor:airspaces` (`CondorAirspaces` reads the OpenAir `.air` file of a landscape), for the flight plan workshop ([sessions](sessions.md#flight-plan-workshop)) |
 | Relief | `App\Flight\Terrain\Terrain` (AWS Terrain Tiles kept in `app.terrain_dir`, `var/terrain`), `FlightTerrain` (height of the ground, slopes, wave) |
 | Viewer | `assets/flight/map.js` (map shared by the viewers), `assets/flight/chart.js` (value label of every chart, formats), `assets/controllers/flight_viewer_controller.js` and `session_viewer_controller.js` (lazy), `templates/flight/`, `assets/styles/pages/flight.css` |
 | Session | `App\Flight\FlightSession` (ranking, podium), `FlightRepository::findSession()` |

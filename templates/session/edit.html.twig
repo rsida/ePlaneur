@@ -24,6 +24,7 @@
                 {{ form_row(form.dedicatedTo) }}
                 {{ form_row(form.condorClubUrl) }}
                 {{ form_row(form.flightPlanFile) }}
+                <p class="u-note">Pas encore de plan de vol ? <a href="{{ path('app_flight_plan_workshop') }}">L’atelier plans de vol</a> prépare la consigne pour en faire écrire un.</p>
                 {{ form_row(form.joinTime) }}
                 {{ form_row(form.notes) }}
                 {% if form.results is defined %}{{ form_row(form.results) }}{% endif %}
