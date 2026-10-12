@@ -177,8 +177,10 @@ final class FlightAnalyzer
 
     /**
      * Airborne when the track does not begin on the ground: still for a few seconds, or at the
-     * height of the departure airfield (the first point of a Condor task). From the ground, winch or
-     * aerotow from the height gained in the 30 s after lift-off; null when the glider never lifts off.
+     * height of the departure airfield (the first point of a Condor task). Condor 3 also holds an
+     * airborne start still for a few seconds: high above the departure airfield, still is not on
+     * the ground. From the ground, winch or aerotow from the height gained in the 30 s after
+     * lift-off; null when the glider never lifts off.
      *
      * @param array{time: list<int>, latitude: list<float>, longitude: list<float>, altitude: list<float>, speed: list<float>, vario: list<float>} $series
      */
@@ -193,7 +195,8 @@ final class FlightAnalyzer
         $atAirfield = null !== $departure
             && abs($altitude[0] - $departure->altitude) < self::GROUND_HEIGHT
             && Geo::distance($series['latitude'][0], $series['longitude'][0], $departure->latitude, $departure->longitude) < 2000.0;
-        if (!$still && !$atAirfield) {
+        $aboveAirfield = null !== $departure && $departure->altitude > 0.0 && $altitude[0] > $departure->altitude + self::GROUND_HEIGHT;
+        if ($aboveAirfield || (!$still && !$atAirfield)) {
             return Launch::Airborne;
         }
 

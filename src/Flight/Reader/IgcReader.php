@@ -89,16 +89,20 @@ final readonly class IgcReader
         $report = CondorReport::fromIgcLines($lines);
         $plan = null !== $report?->flightPlan ? @parse_ini_string($report->flightPlan, true, \INI_SCANNER_RAW) : false;
         $plan = \is_array($plan) ? $plan : [];
+        $task = $plan['Task'] ?? [];
         foreach ($turnpoints as $k => $point) {
+            // C records have no altitude: the one of the flight plan of Condor's export (TPPosZ)
+            $altitude = isset($task['TPPosZ'.$k]) ? (float) $task['TPPosZ'.$k] : $point->altitude;
             if (isset($zones[$k - 2])) {
                 [$radius, $angle, $maxAltitude] = $zones[$k - 2];
-                // Minimum and maximum altitude: from the flight plan of Condor's export (TPWidth and
-                // TPHeight of a classic sector), the maximum from the zone otherwise
-                $task = $plan['Task'] ?? [];
+                // Minimum and maximum altitude: from the flight plan (TPWidth and TPHeight of a
+                // classic sector), the maximum from the zone otherwise
                 $classic = 0 === (int) ($task['TPSectorType'.$k] ?? 0);
                 $min = $classic ? (float) ($task['TPWidth'.$k] ?? 0) : 0.0;
                 $max = $classic && isset($task['TPHeight'.$k]) ? (float) $task['TPHeight'.$k] : ($maxAltitude ?? 0.0);
-                $turnpoints[$k] = new Turnpoint($point->name, $point->latitude, $point->longitude, $point->altitude, $radius, $angle, $min > 0 ? $min : null, $max > 0 ? $max : null);
+                $turnpoints[$k] = new Turnpoint($point->name, $point->latitude, $point->longitude, $altitude, $radius, $angle, $min > 0 ? $min : null, $max > 0 ? $max : null);
+            } elseif ($altitude !== $point->altitude) {
+                $turnpoints[$k] = new Turnpoint($point->name, $point->latitude, $point->longitude, $altitude, $point->radius, $point->angle);
             }
         }
         $taskName ??= ($plan['Description']['Text'] ?? '') ?: null;

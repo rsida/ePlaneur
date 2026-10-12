@@ -83,7 +83,7 @@ Text packets `name=value`, one per line. Always: `time` (decimal hours of the ga
 list `airspeed`: to check on a capture. `LogToFile=1` writes the packets to a file.
 
 The install of the user has `SendIntervalMs=100`, `ExtendedData=1`, `ExtendedData1=1`,
-`LogToFile=1` and `Enabled=0`.
+`LogToFile=1` and `Enabled=0` (set to 1 for E1, see its findings below).
 
 ### Flight plan keys
 
@@ -173,7 +173,7 @@ The same program could save the flight plans of the site into Condor's folder, s
 
 | # | Experiment | Who | Answers |
 |---|---|---|---|
-| E1 | Set `Enabled=1` in `C:\Condor3\Settings\UDP.ini`, fly a few minutes, send the log Condor writes (`LogToFile=1`) | User | The real fields and their rate, `airspeed` or not, the frame of `vx/vy/vz`, `hudmessages` |
+| E1 | Set `Enabled=1` in `C:\Condor3\Settings\UDP.ini`, fly a few minutes, send the log Condor writes (`LogToFile=1`) | User | Done (2026-10-12), see below |
 | E2 | Fly the same flight plan twice, `RandomizeWeatherOnEachFlight=0` and a fixed `RandSeed`, upload both tracks | User | Done (2026-10-12): the same thermals when the weather is not randomized |
 | E3 | Airborne start: save a flight plan with `StartType` 2 and a given height, fly it | User | Done (2026-10-12): height and direction set in the flight plan; the key of the direction to find |
 | E4 | Copy the "Join" code of the club server from the server list while it runs, with its address | User | The encoding of `cndr3:` codes |
@@ -215,3 +215,38 @@ and `taskstart.php`):
   the climbs); the two jumps at the finish were recoveries too, not an automatic lift.
 - `PlayerStatus` is `/` in these exports, `Finished` in the export of C3-c060 of 2026-06-21: not
   reliable, read as unknown.
+
+## Findings of E1 (2026-10-12)
+
+A solo test flight of 28 min on the flight plan of C3-c060 (airborne start), with `Enabled=1`,
+`SendIntervalMs=100`, `ExtendedData=1`, `ExtendedData1=1` and `LogToFile=1`. The track and the log
+are in `var/condor-study/test/` and `var/condor-study/udp/` (not in git).
+
+- The log is `C:\Condor3\Logs\UDPlog.txt`, in the install folder (not in `Documents\Condor3`):
+  the packets as sent, `name=value` lines, a blank line between packets.
+- 16,439 packets in 27.7 min: 101 ms apart on average (409 ms at most), so 10 a second.
+- Fields of every packet: `time`, `airspeed` (m/s, true airspeed: present in Condor 3),
+  `altitude`, `vario`, `evario`, `nettovario`, `integrator`, `compass` (°), `yawstringangle`,
+  `radiofrequency`, `yaw`, `pitch`, `bank` (rad), `quaternionx/y/z/w`, `ax/ay/az`, `vx/vy/vz`,
+  `rollrate`, `pitchrate`, `yawrate`, `gforce`, `height` (above the ground: 1,100 m at the
+  airborne start), `wheelheight`, `turbulencestrength`, `surfaceroughness`, `flaps`, `MC`,
+  `water`. `slipball` and `turnrate` of the manual are not sent.
+- **No position**: neither latitude and longitude nor landscape coordinates. A live map needs
+  another source (`Spectate.json`, E5); the speed vector gives the path over a short time (the
+  circles of a thermal for the centring radar), not over a flight.
+- `vx/vy/vz` are in the frame of the landscape, not of the glider: `vy` north, `vx` west (the
+  landscape X axis), `vz` up, m/s. The course is `atan2(-vx, vy)`; it differs from `compass` (the
+  heading, `yaw` in degrees) by the wind drift.
+- `hudmessages` is sent only with an event, with the pilot's short name:
+  `R.SIDA started task;`, `R.SIDA entered cloud;`, `R.SIDA left cloud;`.
+- The task started at 505.0 s after the first fix (14:53:25), as the analysis found; the ground
+  speed of the vector then was 232.4 to 232.7 km/h, the speed Condor's penalty gives (125.3 points
+  at 2 a km/h over 170). The analysis reads 227.3 km/h from the IGC and 231.4 km/h from the
+  `.ftr`: its speed is averaged over a few seconds and the IGC positions are rounded to about 2 m.
+- The glider entered a cloud at 2,835 m and left it 0.3 s later at 2,839 m, at the top of a thermal
+  whose lowest ground was 1,195 m (open question on the clouds of 7k4 in the roadmap).
+
+What it allows: the live instruments of section 4 (netto, speed to fly with `airspeed`, `MC` and
+`water`, centring radar from the heading, the vario and the speed vector, height above the ground),
+the moment of the start and cloud entries as they happen. A live map of the race still depends on
+E5.

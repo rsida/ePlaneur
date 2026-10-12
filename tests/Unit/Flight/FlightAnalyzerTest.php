@@ -300,6 +300,20 @@ final class FlightAnalyzerTest extends TestCase
         self::assertSame('airborne', $analysis->toArray()['launch']);
     }
 
+    public function testAnAirborneStartHeldStillByCondorIsNotOnTheGround(): void
+    {
+        // Condor 3 holds an airborne start still for about 10 s, 1,100 m above the departure
+        // airfield, then the glider accelerates and glides
+        $fixes = [];
+        for ($t = 0; $t < 160; ++$t) {
+            $x = $t < 10 ? 0.0 : 30.0 * ($t - 10);
+            $fixes[] = new Fix((float) $t, ...FlightSamples::toLatLon($x, 0), altitude: 1300.0 - max(0, $t - 10));
+        }
+        $airfield = new Turnpoint('Terrain', ...FlightSamples::toLatLon(-5000, 0), altitude: 200.0, radius: 3000.0);
+
+        self::assertSame(Launch::Airborne, (new FlightAnalyzer())->analyze(self::track($fixes, [$airfield]))->launch);
+    }
+
     /**
      * @return iterable<string, array{float, Launch}>
      */

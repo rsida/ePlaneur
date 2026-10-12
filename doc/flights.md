@@ -186,7 +186,10 @@ administrator to add it.
    On the race of 2026-02-19 the task distance is 182.4 km (Condor: 182.8 km).
 6. **Launch** ("Départ en vol", "Remorquage", "Treuil", shown as a tag on the flight and in the
    lists): airborne when the track does not begin on the ground, that is still for 5 s or within
-   50 m of the height of the departure airfield (the first task point). From the ground, a winch
+   50 m of the height of the departure airfield (the first task point), unless the glider is more
+   than 50 m above that airfield: Condor 3 holds an airborne start still for about 10 s (test
+   flight of 2026-10-12). The IGC reader takes the altitude of the task points from the flight
+   plan of Condor's export (`TPPosZ`), its C records having none. From the ground, a winch
    when the glider gains 150 m or more in the 30 s after lift-off (10 m above the ground), an aerotow
    otherwise (2 to 5 m/s behind the tug). Read from the track so that IGC files get it too. On the
    six sample tracks it matches the int at 0x73 of the `.ftr` header (2 airborne, 0 aerotow; the

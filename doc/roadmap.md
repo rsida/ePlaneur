@@ -96,7 +96,7 @@ treasurer's agreement before any code.
 | 7k3 | Clock time in the replay | The time of day of the task (start time of the flight plan) in the replays, with a switch between the time of day and the race time | Done: clock time of the first fix read from the IGC and the `.ftr`; "Heure Condor / Temps de vol" switch on the flight page; the session replay on the clock of the task, as flown |
 | 7k4 | Clouds in 3D | The cloud base and inversion of the weather zones of the flight plan drawn in the 3D replay | Done: a cumulus over each thermal at the cloud base of its zone above the ground, none under the inversion (blue thermals), on the flight and session replays; base above the ground confirmed by the Flight Planner, blue thermals over high ground to confirm in flight (open questions) |
 | 7k5 | Full screen | A full screen button on the replay maps | Done: the whole viewer (map, values, replay bar) on the flight page and the session replays |
-| 7l | Condor 3 integration study (2026-10-11) | What Condor 3 documents and writes, for generated training flight plans, starting Condor from the site, a live helper and exact official figures ([condor-integration](condor-integration.md)); no disassembly, no decryption | In progress: documented sources studied, experiments E2, E3 and E6 done, E1, E4 and E5 to run with the user |
+| 7l | Condor 3 integration study (2026-10-11) | What Condor 3 documents and writes, for generated training flight plans, starting Condor from the site, a live helper and exact official figures ([condor-integration](condor-integration.md)); no disassembly, no decryption | In progress: documented sources studied, experiments E1, E2, E3 and E6 done (UDP gives no position), E4 and E5 to run with the user |
 | 7l1 | Official figures from Condor's IGC | The `LCON` lines of an IGC exported by Condor (`CondorReport`): race id (joins the session), flight plan (settings of the task without a session), official result and points of each penalty, shown on the flight page | Done |
 | 7m | Analysis fixes from Condor's IGC exports (2026-10-11) | Defects found by comparing the analysis with the figures Condor wrote in its IGC exports (E6 of [condor-integration](condor-integration.md)) | Done |
 | 7m1 | Height recovery | A recovery moves the glider at once; the analysis kept only the longest continuous part, so C3-c058 lost its start and its whole task | Done: the track is kept whole and the recovery recorded, the climbs leave it out, the flight page lists it and counts its penalty |
@@ -176,7 +176,14 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
   above sea level (C3-s117: tops 2,467 m at most for an inversion at 2,625 m, 600 to 900 m above
   the ground). The model therefore expects blue thermals over the Alps on C3-s117 (ground near
   1,400 m, base near 3,400 m) and cumulus over the low ground on C3-c060. The planner sketch draws
-  the ground at 0 m and always shows a cloud: look at the sky in flight to confirm.
+  the ground at 0 m and always shows a cloud: look at the sky in flight to confirm. The test flight
+  of 2026-10-12 on C3-c060 (`var/condor-study/test/`) contradicts the model: Condor counted 1 point
+  of cloud flying (200 a minute, so 0.3 s in cloud) and its UDP log the cloud entered at 2,835 m,
+  at the top of a thermal above the inversion (2,794 m), where the model puts a blue thermal
+  (lowest ground under it 1,195 m, base 3,076 m). A base of 2,835 m is 1,881 m above 954 m, about
+  the mean ground within 8 to 10 km of the thermal (971 and 949 m):
+  Condor may take the base above a smoothed ground, and let clouds form a little above the
+  inversion. One point only: more thermals topped in cloud are needed before changing the model.
 - Sessions (9f): results and pilot names are public on eplaneur.fr; on the club site they need an
   account. Should they be public? Should the session menu items (Afficher sessions, Résultats session)
   point to `/sessions` now?

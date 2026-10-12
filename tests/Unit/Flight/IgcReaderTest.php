@@ -71,7 +71,7 @@ final class IgcReaderTest extends TestCase
             'LSEEYOU OZ=-1,Style=2,R1=2500m,A1=90,MaxAlt=1400.0m',
             'LSEEYOU OZ=0,Style=1,R1=500m,A1=180,MaxAlt=3000.0m',
             'LSEEYOU OZ=1,Style=3,R1=250m,A1=90,MaxAlt=5000.0m',
-            'LCONFPL[Task]', 'LCONFPLLandscape=AA3', 'LCONFPLCount=4',
+            'LCONFPL[Task]', 'LCONFPLLandscape=AA3', 'LCONFPLCount=4', 'LCONFPLTPPosZ0=634',
             'LCONFPLTPSectorType1=0', 'LCONFPLTPWidth1=0', 'LCONFPLTPHeight1=1400',
             'LCONFPLTPSectorType3=0', 'LCONFPLTPWidth3=260', 'LCONFPLTPHeight3=5000',
             'LCONFPL[Plane]', 'LCONFPLWater=146',
@@ -92,6 +92,7 @@ final class IgcReaderTest extends TestCase
 
         self::assertSame(1930306707, $track->raceId, 'the race id joins the track to its session');
         self::assertSame([260.0, 5000.0], [$track->turnpoints[3]->minAltitude, $track->turnpoints[3]->maxAltitude], 'the minimum finish altitude from the flight plan');
+        self::assertSame(634.0, $track->turnpoints[0]->altitude, 'the altitude of the departure airfield from the flight plan');
         self::assertSame('AA3', $track->landscape);
         self::assertSame(146, $track->water);
         self::assertSame('C3-c060_Laragne-Ventoux-Fayence_D2_AA3 ePlaneur', $track->flightPlan, 'the description of the flight plan');
