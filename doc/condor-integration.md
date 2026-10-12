@@ -109,8 +109,11 @@ plan), `#` for a number:
   `TurnpointHelpersRange`, `Allow…` (realism options), `Penalty…` (penalty points)
 - `[Description]` `Text` (the briefing shown in Condor)
 
-`RandSeed` with `RandomizeWeatherOnEachFlight=0` suggests that a flight plan gives the same air
-(same thermals) on each flight: to check, it would make repeatable exercises possible.
+With `RandomizeWeatherOnEachFlight=0` (the planner's "Randomize weather on each flight" left
+unchecked), a flight plan gives the same air on each flight, thermals in the same places (confirmed
+by the user, 2026-10-12): repeatable exercises are possible. The launch is also chosen in the flight
+plan: winch (where the airfield has one), aerotow or airborne (`StartType` 2), the latter with the
+height (`StartHeight`) and the direction set by its author.
 
 ## What it allows
 
@@ -137,9 +140,9 @@ download (or start, see 3). Examples:
 | Final glide | Airborne start at a given distance and height of the finish, `LowFinish` penalty | Arrival height, the waste of 7g1 |
 | Ridge run | Strong wind against a ridge, few thermals | Height kept, speed along the ridge |
 
-Condor itself judges nothing: the site analyses the track afterwards (or live, see 4). To check:
-where an airborne start puts the glider (the first point of the task?), and whether `RandSeed`
-fixes the thermals.
+Condor itself judges nothing: the site analyses the track afterwards (or live, see 4). The fixed
+weather and the airborne start are confirmed (E2, E3); the key that holds the direction of an
+airborne start is not among the keys above and is to find in a flight plan saved that way.
 
 ### 3. Start Condor from the site (medium)
 
@@ -171,8 +174,8 @@ The same program could save the flight plans of the site into Condor's folder, s
 | # | Experiment | Who | Answers |
 |---|---|---|---|
 | E1 | Set `Enabled=1` in `C:\Condor3\Settings\UDP.ini`, fly a few minutes, send the log Condor writes (`LogToFile=1`) | User | The real fields and their rate, `airspeed` or not, the frame of `vx/vy/vz`, `hudmessages` |
-| E2 | Fly the same flight plan twice, `RandomizeWeatherOnEachFlight=0` and a fixed `RandSeed`, upload both tracks | User, then analysis | Whether the thermals are the same |
-| E3 | Airborne start: save a flight plan with `StartType` 2 and a given height, fly it | User | Where and how high the glider starts |
+| E2 | Fly the same flight plan twice, `RandomizeWeatherOnEachFlight=0` and a fixed `RandSeed`, upload both tracks | User | Done (2026-10-12): the same thermals when the weather is not randomized |
+| E3 | Airborne start: save a flight plan with `StartType` 2 and a given height, fly it | User | Done (2026-10-12): height and direction set in the flight plan; the key of the direction to find |
 | E4 | Copy the "Join" code of the club server from the server list while it runs, with its address | User | The encoding of `cndr3:` codes |
 | E5 | During a club race, watch `Logs\Spectate.json` (how often it changes, whether it needs spectator mode) | User | Whether a live race view is possible |
 | E6 | Export the IGC of a few races of the dev data (Condor > flight analysis > IGC export) | User | Done (2026-10-11), see below |
