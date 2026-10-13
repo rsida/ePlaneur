@@ -29,16 +29,22 @@
 
 {% set next = upcoming_sessions(1)|first %}
 {% if next %}
-    <section class="p-next-flight t-primary" aria-label="Prochain vol en réseau">
+    <section class="p-next-flight t-primary" aria-label="Prochain vol en réseau"
+        data-controller="session-time" data-session-time-at-value="{{ next.startsAt|date('c') }}" data-session-time-timed-value="{{ next.startTime ? 'true' : 'false' }}">
         <div class="l-container p-next-flight__inner">
             <twig:Ui:Date day="{{ next.date|date('d') }}" :meta="[next.date|format_date(pattern: 'MMM y', locale: 'fr')|capitalize]">
                 <span class="p-next-flight__time">{{ next.date|format_date(pattern: 'EEEE', locale: 'fr')|capitalize }}{{ next.startTime ? ' · ' ~ next.startTime|date('H\\hi') ~ ' · Paris' : '' }}</span>
+                <span class="p-next-flight__time" data-session-time-target="local" hidden></span>
             </twig:Ui:Date>
             <div class="p-next-flight__session">
+                <p class="c-badge c-badge--small p-next-flight__countdown" data-session-time-target="countdown" hidden></p>
                 <p class="p-next-flight__title">{{ next.flightPlan.title ?? next.flightPlan.code }}</p>
                 <p class="u-note">Condor {{ next.flightPlan.condorVersion }} · {{ next.flightPlan.category }} · {{ next.flightPlan.code }}</p>
             </div>
-            <div class="p-next-flight__link"><twig:Ui:Link href="{{ path('app_session_show', {id: next.id}) }}">Préparer la session</twig:Ui:Link></div>
+            <div class="p-next-flight__link l-stack l-stack--xs">
+                <twig:Ui:Link href="{{ path('app_session_show', {id: next.id}) }}">Préparer la session</twig:Ui:Link>
+                <twig:Ui:Link href="{{ path('app_session_ics', {id: next.id}) }}" icon="calendar">Ajouter à mon agenda</twig:Ui:Link>
+            </div>
         </div>
     </section>
 {% endif %}

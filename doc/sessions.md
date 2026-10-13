@@ -40,6 +40,8 @@ A `.ftr` track takes the date of its session (`Flight::getDate()`).
 |---|---|---|---|
 | `/sessions` | `app_session_index` | everyone | The coming sessions (cards), then the past ones: filters by year, Condor version, category, open or dedicated; 20 per page |
 | `/sessions/{id}` | `app_session_show` | everyone; results and tracks for logged-in users | Flight plan, date, organiser, links to the FPL sheet and the Condor Club circuit, practical notes; once flown, the results of the server (with a link to the analysis of each pilot whose CN matches an uploaded track), then the replay, podium and ranking of the uploaded tracks |
+| `/sessions/{id}/agenda.ics` | `app_session_ics` | everyone | The session as an iCalendar event ("Ajouter à mon agenda", see [calendar](#calendar)) |
+| `/sessions/agenda.ics` | `app_session_calendar` | everyone | Every session of the last month and every coming one, to subscribe to (`webcal://` link on `/sessions`) |
 | `/sessions/nouvelle` | `app_session_new` | `SESSION_ORGANISE` (members) | Propose a session; the proposer becomes its organiser |
 | `/sessions/{id}/modifier`, `/supprimer` | `app_session_edit`, `app_session_delete` | its organiser, or `SESSION_MANAGE` (`SessionVoter`) | Edit, add the results file of the server, delete (the tracks stay) |
 | `/plans-de-vol/{code}` | `app_flight_plan_show` | everyone; tracks for logged-in users | Link to the sheet on eplaneur.fr, the club's sessions on it with their winner, and every track on it, replayed from their start line (ghost race) |
@@ -54,6 +56,20 @@ The dashboard of the member space shows the next two sessions ("On se retrouve e
 page shows the next one in its banner and the next six in "02 / Les prochains vols" (the latest
 three with their results when none is announced; `upcoming_sessions()` and `recent_sessions()` of
 `SessionExtension`).
+
+### Calendar
+
+`App\Session\SessionCalendar` writes the sessions as iCalendar events (RFC 5545): the start in UTC,
+so that every calendar shows it in its own time zone (La Réunion), and a duration of 2 h 30
+(`SessionCalendar::DURATION`: briefing, stop join and task); a session without time is a whole-day
+event. The description gives the Condor version, category, gliders, landscape, briefing time, notes
+and the address of the session. Subscribed calendars refresh every 6 hours at most
+(`REFRESH-INTERVAL`), as the calendar application allows.
+
+The next session on the home page and a coming session on its page carry the `session-time`
+Stimulus controller: a countdown ("Dans 2 j 6 h", "En cours" during 2 h 30) and, when the reader is
+not in the time zone of Paris, the time at home ("soit 18h30 chez vous"). Without JavaScript, the
+time of Paris stays.
 
 ### Session form
 

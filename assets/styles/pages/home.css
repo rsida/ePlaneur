@@ -122,6 +122,13 @@
     gap: 0.3125rem;
 }
 
+/* Countdown before the session (session-time controller) */
+.p-next-flight__countdown {
+    --badge-bg: var(--color-accent);
+    --badge-fg: var(--color-on-accent);
+    align-self: flex-start;
+}
+
 .p-next-flight__time {
     font-size: var(--text-body);
     font-weight: 400;

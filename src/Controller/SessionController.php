@@ -14,6 +14,7 @@ use App\Repository\NetworkSessionRepository;
 use App\Security\Permission;
 use App\Security\Voter\SessionVoter;
 use App\Session\InvalidSessionException;
+use App\Session\SessionCalendar;
 use App\Session\SessionData;
 use App\Session\SessionManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -34,6 +35,9 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class SessionController extends AbstractController
 {
     private const int PER_PAGE = 20;
+
+    /** The calendar of the sessions keeps those of the last month, then every coming one. */
+    private const int CALENDAR_DAYS_BACK = 31;
 
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(Request $request, NetworkSessionRepository $sessions, ClockInterface $clock): Response
@@ -58,6 +62,25 @@ final class SessionController extends AbstractController
             'years' => $sessions->years(),
             'dedicated' => $sessions->dedicatedLabels(),
         ]);
+    }
+
+    /** Every session, to subscribe to in a calendar (webcal://). */
+    #[Route('/agenda.ics', name: 'calendar', methods: ['GET'])]
+    public function calendar(NetworkSessionRepository $sessions, SessionCalendar $calendar, ClockInterface $clock): Response
+    {
+        $now = $clock->now();
+        $list = $sessions->findFrom($now->modify(\sprintf('-%d days', self::CALENDAR_DAYS_BACK)), 200);
+
+        return $this->ics($calendar->calendar($list, 'Vols en réseau · Club ePlaneur', $now), 'sessions-eplaneur.ics', 3600);
+    }
+
+    /** One session, for "Ajouter à mon agenda". */
+    #[Route('/{id<\d+>}/agenda.ics', name: 'ics', methods: ['GET'])]
+    public function sessionIcs(NetworkSession $session, SessionCalendar $calendar, ClockInterface $clock): Response
+    {
+        $name = 'Vol en réseau · '.$session->getFlightPlan()->getCode();
+
+        return $this->ics($calendar->calendar([$session], $name, $clock->now()), 'session-'.$session->getId().'.ics', 600);
     }
 
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
@@ -203,5 +226,15 @@ final class SessionController extends AbstractController
         }
 
         return $this->render('session/edit.html.twig', ['form' => $form, 'session' => $session], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    }
+
+    private function ics(string $content, string $filename, int $maxAge): Response
+    {
+        $response = new Response($content, Response::HTTP_OK, [
+            'Content-Type' => 'text/calendar; charset=UTF-8',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ]);
+
+        return $response->setPublic()->setMaxAge($maxAge);
     }
 }

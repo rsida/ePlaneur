@@ -42,6 +42,24 @@ class NetworkSessionRepository extends ServiceEntityRepository
     }
 
     /**
+     * Sessions from a day on, the nearest first: the calendar of the sessions.
+     *
+     * @return list<NetworkSession>
+     */
+    public function findFrom(\DateTimeImmutable $day, int $limit): array
+    {
+        /* @var list<NetworkSession> */
+        return $this->withPlan()
+            ->where('s.date >= :day')
+            ->setParameter('day', $day->setTime(0, 0))
+            ->orderBy('s.date', 'ASC')
+            ->addOrderBy('s.startTime', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Past sessions, the latest first, filtered by year (`annee`), Condor version (`condor`: 2 or 3),
      * category (`categorie`, a key of CATEGORIES), dedicated or open (`type`: `ouverte` or a label).
      *

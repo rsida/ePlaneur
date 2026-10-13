@@ -16,12 +16,15 @@
                 <twig:Ui:Link href="{{ path('app_session_index') }}">Toutes les sessions</twig:Ui:Link>
                 <twig:Ui:Eyebrow>Session · Condor {{ plan.condorVersion }} · {{ plan.category }}{{ session.dedicatedTo ? ' · Dédiée ' ~ session.dedicatedTo : '' }}</twig:Ui:Eyebrow>
                 <twig:Ui:Heading level="1" size="h2">{{ plan.label }}</twig:Ui:Heading>
-                <p class="p-flight__meta">
-                    <time datetime="{{ session.startsAt|date('c') }}">{{ day|capitalize }}{% if session.startTime %} · briefing à {{ session.startTime|date('H\\hi') }}{% endif %}</time>
+                <p class="p-flight__meta"{% if not past %} data-controller="session-time" data-session-time-at-value="{{ session.startsAt|date('c') }}" data-session-time-timed-value="{{ session.startTime ? 'true' : 'false' }}"{% endif %}>
+                    {% if not past %}<span class="c-badge c-badge--small" data-session-time-target="countdown" hidden></span> {% endif %}
+                    <time datetime="{{ session.startsAt|date('c') }}">{{ day|capitalize }}{% if session.startTime %} · briefing à {{ session.startTime|date('H\\hi') }} (heure de Paris){% endif %}</time>
+                    {%- if not past and session.startTime %} <span data-session-time-target="local" hidden></span>{% endif %}
                     {%- if plan.gliders or plan.landscape %} · {{ [plan.gliders, plan.landscape]|filter(v => v)|join(' · ') }}{% endif %}
                     {%- if session.organiser %} · organisée par {{ session.organiser.displayName }}{% endif %}
                 </p>
                 <div class="l-cluster">
+                    {% if not past %}<twig:Ui:Button href="{{ path('app_session_ics', {id: session.id}) }}" size="sm" icon="calendar">Ajouter à mon agenda</twig:Ui:Button>{% endif %}
                     {% if plan.sheetUrl %}<twig:Ui:Button href="{{ plan.sheetUrl }}" variant="outline" size="sm" icon="arrow-up-right" target="_blank" rel="noopener">Fiche du plan de vol</twig:Ui:Button>{% endif %}
                     {% if session.condorClubUrl %}<twig:Ui:Button href="{{ session.condorClubUrl }}" variant="outline" size="sm" icon="arrow-up-right" target="_blank" rel="noopener">Circuit Condor Club</twig:Ui:Button>{% endif %}
                     <twig:Ui:Link href="{{ path('app_flight_plan_show', {code: plan.code}) }}">Ce plan de vol au club</twig:Ui:Link>

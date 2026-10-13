@@ -80,6 +80,40 @@ final class SessionTest extends WebTestCase
         self::assertSelectorTextNotContains('#vols', 'C3-c046a');
         self::assertSelectorTextContains('.p-next-flight', '21h00');
         self::assertSelectorExists('.p-next-flight a[href="/sessions/'.$next->getId().'"]');
+        self::assertSelectorExists('.p-next-flight a[href="/sessions/'.$next->getId().'/agenda.ics"]');
+        self::assertSelectorExists('.p-next-flight[data-controller="session-time"][data-session-time-timed-value="true"]', 'Countdown and time of the reader');
+    }
+
+    public function testSessionsGoInTheCalendarOfThePilots(): void
+    {
+        $this->session('C3-c046a', '2026-02-19');
+        $timed = $this->session('C3-s118', '2030-01-16')->setStartTime(new \DateTimeImmutable('21:00'))->setNotes('Serveur ePlaneur; mot de passe donné sur Discord, au briefing');
+        $whole = $this->session('C2-d009', '2030-01-20');
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/sessions/'.$timed->getId());
+        self::assertSelectorExists('a[href="/sessions/'.$timed->getId().'/agenda.ics"]');
+        $this->client->request('GET', '/sessions/'.$timed->getId().'/agenda.ics');
+        self::assertResponseHeaderSame('Content-Type', 'text/calendar; charset=UTF-8');
+        $ics = (string) $this->client->getResponse()->getContent();
+        self::assertStringStartsWith("BEGIN:VCALENDAR\r\nVERSION:2.0\r\n", $ics);
+        self::assertStringContainsString("DTSTART:20300116T200000Z\r\nDURATION:PT2H30M\r\n", $ics, 'In UTC: 21:00 in Paris in winter');
+        self::assertStringContainsString('SUMMARY:Vol en réseau ePlaneur · C3-s118', $ics);
+        $unfolded = str_replace("\r\n ", '', $ics);
+        self::assertStringContainsString('Serveur ePlaneur\; mot de passe donné sur Discord\, au briefing', $unfolded, 'Text values are escaped');
+        self::assertStringContainsString('URL:http://localhost/sessions/'.$timed->getId(), $unfolded);
+        foreach (explode("\r\n", $ics) as $line) {
+            self::assertLessThanOrEqual(75, \strlen($line), 'Long lines are folded');
+        }
+
+        $this->client->request('GET', '/sessions');
+        self::assertSelectorExists('a[href="webcal://localhost/sessions/agenda.ics"]');
+        $this->client->request('GET', '/sessions/agenda.ics');
+        $feed = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('UID:session-'.$timed->getId().'@club.eplaneur.fr', $feed);
+        self::assertStringContainsString("UID:session-{$whole->getId()}@club.eplaneur.fr\r\nDTSTAMP:", $feed);
+        self::assertStringContainsString("DTSTART;VALUE=DATE:20300120\r\nDTEND;VALUE=DATE:20300121\r\n", $feed, 'A session without time lasts the whole day');
+        self::assertStringNotContainsString('C3-c046a', $feed, 'Sessions older than a month are left out');
     }
 
     public function testAMemberProposesASessionOnANewFlightPlan(): void
