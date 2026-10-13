@@ -29,6 +29,24 @@ class PostRepository extends ServiceEntityRepository
     }
 
     /**
+     * Published public posts not kept out of search engines, newest first: those search engines may index (sitemap.xml).
+     *
+     * @return list<Post>
+     */
+    public function findIndexable(): array
+    {
+        /* @var list<Post> */
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.publishedAt IS NOT NULL AND p.publishedAt <= :now')
+            ->andWhere('p.visibility = :public')
+            ->andWhere('p.noIndex = false')
+            ->setParameter('now', $this->clock->now())
+            ->setParameter('public', Visibility::Public->value)
+            ->orderBy('p.publishedAt', 'DESC')
+            ->getQuery()->getResult();
+    }
+
+    /**
      * Latest published posts, most relevant first (same category), excluding the given post.
      * Visibility is not checked here: filter the result with CONTENT_VIEW.
      *

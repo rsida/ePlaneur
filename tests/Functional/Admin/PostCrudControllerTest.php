@@ -72,6 +72,9 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
         $values['post_editor']['title'] = 'Premier essai';
         $values['post_editor']['slug'] = 'premier-essai';
         $values['post_editor']['excerpt'] = 'Un essai.';
+        $values['post_editor']['seoTitle'] = '  Premier essai en planeur  ';
+        $values['post_editor']['seoDescription'] = '';
+        $values['post_editor']['noIndex'] = '1';
         // The editor sends its block ids: they are not stored
         $values['post_editor']['body'] = json_encode([
             ['id' => 'b1', 'type' => 'callout', 'data' => ['title' => 'À retenir', 'html' => '<p>Texte</p>', 'variant' => 'tip', 'showIcon' => true]],
@@ -89,6 +92,9 @@ final class PostCrudControllerTest extends AbstractCrudTestCase
         ], $post->getBody());
         self::assertSame($user->getId(), $post->getAuthor()?->getId(), 'The writer is the default author');
         self::assertNull($post->getPublishedAt());
+        self::assertSame('Premier essai en planeur', $post->getSeoTitle());
+        self::assertNull($post->getSeoDescription(), 'Empty: the lead is used');
+        self::assertTrue($post->isNoIndex());
     }
 
     public function testAnInvalidBlockIsRefused(): void

@@ -32,6 +32,7 @@ final class WordPressImportTest extends WebTestCase
         $pages = [
             self::item(10, 'le-club', $site.'/le-club/', 'Le Club ePlaneur', '<p>Bienvenue.</p>'),
             self::item(11, 'documents-officiels', $site.'/le-club/documents-officiels/', 'Documents officiels', '<h2>Statuts</h2><p>Voir les <a href="'.$site.'/le-club/documents-officiels/statuts/">statuts</a>.</p>', parent: 10),
+            self::item(13, 'formation', $site.'/formation/', 'Formation', '<p>Apprendre.</p>'),
             self::item(12, 'login', $site.'/login/', 'Connexion', '<p>Formulaire</p>'),
         ];
         $posts = [
@@ -60,13 +61,14 @@ final class WordPressImportTest extends WebTestCase
     {
         $report = static::getContainer()->get(WordPressImporter::class)->import();
 
-        self::assertSame(2, $report->counts()['Pages créées'] ?? 0);
+        self::assertSame(3, $report->counts()['Pages créées'] ?? 0);
         self::assertSame(2, $report->counts()['Articles créés'] ?? 0);
         $pages = static::getContainer()->get(PageRepository::class);
         $officiels = $pages->findOneByPath('le-club/textes-officiels');
         self::assertNotNull($officiels, 'Pages go to their place in the new tree');
         self::assertSame('Documents officiels', $officiels->getTitle());
         self::assertStringContainsString('/le-club/textes-officiels/statuts', json_encode($officiels->getBody(), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES), 'Links lead to the new addresses');
+        self::assertStringStartsWith('Un parcours en huit étapes', (string) $pages->findOneByPath('formation')?->getExcerpt(), 'A page without excerpt takes the lead of the configuration');
 
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $post = $entityManager->getRepository(Post::class)->findOneBy(['slug' => 'trouver-un-thermique']);
@@ -99,7 +101,7 @@ final class WordPressImportTest extends WebTestCase
         $importer->import();
         $report = $importer->import();
 
-        self::assertSame(['Pages mises à jour' => 2, 'Articles mis à jour' => 2], $report->counts());
+        self::assertSame(['Pages mises à jour' => 3, 'Articles mis à jour' => 2], $report->counts());
     }
 
     public function testADryRunSavesNothing(): void

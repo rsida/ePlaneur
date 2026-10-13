@@ -29,16 +29,21 @@ final class FlightPlanWorkshopTest extends WebTestCase
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
     }
 
-    public function testOnlyThoseWhoOrganiseSessionsOpenIt(): void
+    public function testOnlyAdministratorsOpenItForNow(): void
     {
         $this->client->request('GET', '/plans-de-vol/atelier');
         self::assertResponseRedirects();
 
-        $this->client->loginUser($this->user('ines@example.org'));
+        $this->client->loginUser($this->user('max@example.org', 'committee'));
         $this->client->request('GET', '/plans-de-vol/atelier');
         self::assertResponseStatusCodeSame(403);
         $this->client->request('GET', '/plans-de-vol/atelier/AA3.json');
         self::assertResponseStatusCodeSame(403);
+        $this->client->request('GET', '/sessions');
+        self::assertSelectorExists('a[href="/sessions/nouvelle"]');
+        self::assertSelectorNotExists('a[href="/plans-de-vol/atelier"]');
+        $this->client->request('GET', '/admin');
+        self::assertSelectorNotExists('a[href="/plans-de-vol/atelier"]');
     }
 
     public function testTheWorkshopOffersTheLandscapesWithAirfieldsAndTheGliders(): void
@@ -47,7 +52,7 @@ final class FlightPlanWorkshopTest extends WebTestCase
         $this->entityManager->persist(new Airfield('Unknown', 'Somewhere', 45.0, 6.0, 500.0, 600));
         $this->entityManager->persist(GliderSamples::glider('Diana2'));
         $this->entityManager->flush();
-        $this->client->loginUser($this->user('max@example.org', 'member'));
+        $this->client->loginUser($this->user('max@example.org', 'admin'));
 
         $this->client->request('GET', '/plans-de-vol/atelier');
 
@@ -61,6 +66,8 @@ final class FlightPlanWorkshopTest extends WebTestCase
 
         $this->client->request('GET', '/sessions');
         self::assertSelectorExists('a[href="/plans-de-vol/atelier"]');
+        $this->client->request('GET', '/admin');
+        self::assertSelectorCount(2, 'a[href="/plans-de-vol/atelier"]', 'In the menu and on the dashboard');
     }
 
     public function testTheDataOfALandscapeGivesItsRegionsAirfieldsAndAirspaces(): void
@@ -69,7 +76,7 @@ final class FlightPlanWorkshopTest extends WebTestCase
         $this->entityManager->persist(new Airfield('AA3', 'Dole', 47.04, 5.43, 196.0, 2200));
         $this->entityManager->persist(new Airspace('AA3', 'R196A1 Est GAP (Notam)', 'UNCLASSIFIED', '3300FT AGL', 'FL195', 44.642, 6.691));
         $this->entityManager->flush();
-        $this->client->loginUser($this->user('max@example.org', 'member'));
+        $this->client->loginUser($this->user('max@example.org', 'admin'));
 
         $this->client->request('GET', '/plans-de-vol/atelier/AA3.json');
 

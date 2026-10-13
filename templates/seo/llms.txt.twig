@@ -1,0 +1,30 @@
+{#- Summary for language models (https://llmstxt.org), in Markdown: .txt templates are not HTML-escaped -#}
+{%- macro line(text) %}{{ text|striptags|replace({"\n": ' ', "\r": ''})|trim }}{% endmacro -%}
+# Club ePlaneur
+
+> Association française (loi 1901) qui forme au vol à voile sur le simulateur Condor : un parcours de formation en 8 étapes, des vols en réseau chaque semaine, un carnet de vol et l’analyse des vols.
+
+Le site est en français. Les horaires sont en heure de France métropolitaine.
+
+## Le club
+
+- [Accueil]({{ url('app_home') }})
+- [Adhérer au club]({{ url('app_membership') }}): tarifs de la saison et demande d’adhésion en ligne
+- [Contacter le club]({{ url('app_contact') }})
+- [Les planeurs de Condor]({{ url('app_glider_index') }}): fiche et polaire de chaque planeur
+
+## Pages
+
+{% for node in pages %}
+{{ '  '|u.repeat(node.depth) }}- [{{ _self.line(node.page.title) }}]({{ url('app_page_show', {path: node.page.path}) }}){% if node.page.excerpt %}: {{ _self.line(node.page.excerpt) }}{% endif %}
+
+{% endfor %}
+{% if posts is not empty %}
+
+## Actualités
+
+{% for post in posts %}
+- [{{ _self.line(post.title) }}]({{ url('app_post_show', {slug: post.slug}) }}){% if post.excerpt %}: {{ _self.line(post.excerpt) }}{% endif %}
+
+{% endfor %}
+{% endif %}

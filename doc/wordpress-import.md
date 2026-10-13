@@ -40,6 +40,7 @@ Without them, reserved content is left out (listed in the report) and the rest i
 |---|---|
 | `pages` | Every WordPress page (by its path) → its path in the new tree, `{ redirect: /path }` (not imported, the old address redirects there: account pages, news lists), or `skip`. The import stops on a page that is not listed, so a page created later in WordPress is never lost silently |
 | `categories` | Every WordPress category → name and slug of the new category. Posts without category (committee minutes) go to `uncategorized` |
+| `leads` | Lead (chapô) of the pages WordPress gives none, by path of the new site: their description for search engines and their line in `llms.txt` (see [SEO](seo.md)). An excerpt written in WordPress, or a lead already in the database (back-office), wins |
 | `restricted_groups` | Groups that may read content the anonymous API hides (default: `committee`) |
 
 The new tree follows the menus of the new site ("Le Club" with `textes-officiels`,
@@ -50,7 +51,7 @@ The new tree follows the menus of the new site ("Le Club" with `textes-officiels
 
 | WordPress | New site |
 |---|---|
-| Page | Page at its new path. A page that already exists there keeps its title (menus and breadcrumbs) and its excerpt when WordPress has none; its body is replaced |
+| Page | Page at its new path. A page that already exists there keeps its title (menus and breadcrumbs) and its excerpt when WordPress has none (then the lead of `leads`); its body is replaced |
 | Post | Post `/actualites/{slug}` (a slug already taken gets the WordPress id appended), category, "À la une" for sticky posts, cover from the featured image |
 | Dates | Publication and update dates (WordPress and the site share the Europe/Paris time zone) |
 | Excerpt | The excerpt written in WordPress; the one WordPress makes from the start of the content is left out (posts then take their first paragraph) |

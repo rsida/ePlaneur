@@ -8,9 +8,18 @@
 {% set page = view.page %}
 {% set highlight = page.highlightSource %}
 {% set section = page.parent is null %}
+{% set crumbs = [{label: 'Accueil', href: path('app_home')}] %}
+{% for ancestor in page.lineage %}
+    {% set crumbs = crumbs|merge([{label: ancestor.title, href: path('app_page_show', {path: ancestor.path})}]) %}
+{% endfor %}
 
-{% block title %}{{ page.title }}{% endblock %}
-{% block description %}{{ (page.excerpt ?: page.title)|u.truncate(160, '…', false) }}{% endblock %}
+{# Search settings (Référencement) first, then the content: doc/seo.md #}
+{% block title %}{{ page.seoTitle ?: page.title }}{% endblock %}
+{% block description %}{{ page.seoDescription ?: (page.excerpt ?: page.title)|u.truncate(160, '…', false) }}{% endblock %}
+{% block og_image %}{{ page.seoImage ? absolute_url(image_url(page.seoImage, 'wide')) : parent() }}{% endblock %}
+{# Indexed when online and public, as are the pages above it #}
+{% block robots %}{{ not preview and not page.noIndex and page.lineage|filter(p => p.visibility.value != 'public')|length == 0 ? parent() : 'noindex, follow' }}{% endblock %}
+{% block structured_data %}{{ json_ld([seo_breadcrumb(crumbs), ...seo_blocks(url('app_page_show', {path: page.path}), view.body, view.aside)]) }}{% endblock %}
 
 {% block body %}
     {% if preview %}
@@ -25,11 +34,6 @@
             {%- endif -%}
         </p>
     {% endif %}
-
-    {% set crumbs = [{label: 'Accueil', href: path('app_home')}] %}
-    {% for ancestor in page.lineage %}
-        {% set crumbs = crumbs|merge([{label: ancestor.title, href: path('app_page_show', {path: ancestor.path})}]) %}
-    {% endfor %}
 
     <article class="p-page">
         <twig:Content:PageHeader

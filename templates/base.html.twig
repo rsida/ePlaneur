@@ -5,6 +5,25 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}ePlaneur{% endblock %} · Club ePlaneur</title>
         <meta name="description" content="{% block description %}Le club du planeur virtuel : apprendre, pratiquer et partager le vol en planeur sur Condor 2 et Condor 3.{% endblock %}">
+        {# Search engines and link previews (doc/seo.md): only the public showcase is indexed #}
+        {%- set canonical = seo_canonical() %}
+        <meta name="robots" content="{% block robots %}{{ seo_indexable() ? 'index, follow, max-image-preview:large' : 'noindex, follow' }}{% endblock %}">
+        {% if canonical %}
+        <link rel="canonical" href="{{ canonical }}">
+        {% endif %}
+        <meta property="og:site_name" content="Club ePlaneur">
+        <meta property="og:locale" content="fr_FR">
+        <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+        <meta property="og:title" content="{{ block('title') }}">
+        <meta property="og:description" content="{{ block('description') }}">
+        {% if canonical %}
+        <meta property="og:url" content="{{ canonical }}">
+        {% endif %}
+        <meta property="og:image" content="{% block og_image %}{{ absolute_url(asset('images/home/hero.jpg')) }}{% endblock %}">
+        <meta name="twitter:card" content="summary_large_image">
+        {% block head_meta %}{% endblock %}
+        {% block structured_data %}{% endblock %}
+
         <meta name="theme-color" content="#192630">
         <link rel="icon" href="{{ asset('icons/glider.svg') }}" type="image/svg+xml">
 

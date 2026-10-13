@@ -66,6 +66,7 @@ final class PageEditorType extends AbstractType
             ]);
 
         AccessFields::add($builder);
+        SearchFields::add($builder, 'l’image du site');
     }
 
     public function configureOptions(OptionsResolver $resolver): void

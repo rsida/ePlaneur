@@ -6,6 +6,7 @@
 | [Project (functional reference)](project/README.md) | Purpose of the site, the club, training, network flights, ecosystem, current site, glossary |
 | [Accounts and permissions](accounts.md) | Registration, login, groups, permissions, content visibility, console commands, dev accounts |
 | [Content: posts, blocks, media](content.md) | Post model, block types and how to add one, media storage and access, post permissions |
+| [SEO and GEO](seo.md) | What search and AI answer engines see: robots, canonical, Open Graph, JSON-LD, `robots.txt`, `sitemap.xml`, `llms.txt`, search settings of posts and pages |
 | [WordPress import](wordpress-import.md) | `app:import-wordpress`: pages, posts and files of the current site, page tree mapping, redirects of the old addresses |
 | [Flight viewer](flights.md) | `/vols`: Condor `.ftr` and IGC tracks, landscape projections, analysis, 2D/3D viewer |
 | [Condor 3 integration study](condor-integration.md) | What Condor 3 writes and outputs (IGC export, race results, UDP, `cndr3:` links) and what the site could do with it |

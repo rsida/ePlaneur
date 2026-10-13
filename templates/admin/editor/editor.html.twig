@@ -210,6 +210,14 @@
                     {{ form_row(form.announced) }}
                 </fieldset>
                 <details class="ep-editor__fieldset">
+                    <summary>Référencement</summary>
+                    <p class="form-text">Facultatif : sans réglage, le titre, le chapô et {{ is_post ? 'la couverture' : 'l’image du site' }} sont utilisés.</p>
+                    {{ form_row(form.seoTitle) }}
+                    {{ form_row(form.seoDescription) }}
+                    {{ form_row(form.seoImage) }}
+                    {{ form_row(form.noIndex) }}
+                </details>
+                <details class="ep-editor__fieldset">
                     <summary>Textes de l’en-tête</summary>
                     <p class="form-text">Ils se modifient aussi directement dans la page.</p>
                     {{ form_row(form.title) }}

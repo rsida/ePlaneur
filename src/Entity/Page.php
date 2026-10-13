@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Content\EditableContentInterface;
+use App\Content\SearchSettings;
 use App\Repository\PageRepository;
 use App\Security\Visibility;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -25,6 +26,8 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 #[UniqueEntity(fields: ['parent', 'slug'], message: 'Une page porte déjà cette adresse à cet endroit.', ignoreNull: false)]
 class Page implements EditableContentInterface
 {
+    use SearchSettings;
+
     /** Maximum depth of the tree (the current site uses 3 levels, 4 for committee pages). */
     public const int MAX_DEPTH = 4;
 

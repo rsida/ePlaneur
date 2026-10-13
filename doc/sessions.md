@@ -44,8 +44,8 @@ A `.ftr` track takes the date of its session (`Flight::getDate()`).
 | `/sessions/{id}/modifier`, `/supprimer` | `app_session_edit`, `app_session_delete` | its organiser, or `SESSION_MANAGE` (`SessionVoter`) | Edit, add the results file of the server, delete (the tracks stay) |
 | `/plans-de-vol/{code}` | `app_flight_plan_show` | everyone; tracks for logged-in users | Link to the sheet on eplaneur.fr, the club's sessions on it with their winner, and every track on it, replayed from their start line (ghost race) |
 | `/plans-de-vol/recherche?q=` | `app_flight_plan_search` | `SESSION_ORGANISE` | JSON suggestions of the session form |
-| `/plans-de-vol/atelier` | `app_flight_plan_workshop` | `SESSION_ORGANISE` | Flight plan workshop: the settings of a Condor 3 flight plan to write, turned into instructions for Claude (see below) |
-| `/plans-de-vol/atelier/{landscape}.json` | `app_flight_plan_workshop_data` | `SESSION_ORGANISE` | Regions, airfields and airspaces of a landscape, for the workshop |
+| `/plans-de-vol/atelier` | `app_flight_plan_workshop` | `FLIGHT_PLAN_PREPARE` (administrators only for now) | Flight plan workshop: the settings of a Condor 3 flight plan to write, turned into instructions for Claude (see below) |
+| `/plans-de-vol/atelier/{landscape}.json` | `app_flight_plan_workshop_data` | `FLIGHT_PLAN_PREPARE` | Regions, airfields and airspaces of a landscape, for the workshop |
 
 `/vols/{id}/session` now redirects to the session of the flight, or to its flight plan page; flights
 whose task is not a flight plan of the library keep the former page (every flight on the same task).
@@ -65,7 +65,8 @@ original name (the race id is read from it); comma, semicolon or tab separated, 
 
 ### Flight plan workshop
 
-`/plans-de-vol/atelier` (linked from the session list and the session form) composes, at each change,
+`/plans-de-vol/atelier` (linked from the back-office menu and dashboard, the session list and the session
+form, for `FLIGHT_PLAN_PREPARE` only: no group has it by default, so only administrators open it) composes, at each change,
 the instructions to give Claude so that it writes a Condor 3 `.fpl` (roadmap 7n4); the site writes no
 flight plan itself yet. The settings:
 

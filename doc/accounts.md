@@ -24,6 +24,8 @@ Default groups, created by the first migration and by the dev fixtures (`App\Sec
 `FLIGHT_REVIEW` (trainers: comment the flights of every pilot and see their logbook, see
 [flights](flights.md#progression)) is held by no default group: create a "Formateur" group with it
 (`make console c="app:group:permissions formateur --grant=FLIGHT_REVIEW"` once the group exists).
+`FLIGHT_PLAN_PREPARE` (the flight plan workshop, see [sessions](sessions.md#flight-plan-workshop)) is
+held by no default group either: only administrators open the workshop for now.
 
 Administrators can create other groups (Rédacteur, Bienfaiteur, Bénévole...) and change which
 permissions each group holds. A registered user without any group is a free account ("inscrit").

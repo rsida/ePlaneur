@@ -6,8 +6,24 @@
 #}
 {% set post = article.post %}
 
-{% block title %}{{ post.title }}{% endblock %}
-{% block description %}{{ post.excerpt|u.truncate(160, '…', false) }}{% endblock %}
+{# Search settings (Référencement) first, then the content: doc/seo.md #}
+{% block title %}{{ post.seoTitle ?: post.title }}{% endblock %}
+{% block description %}{{ post.seoDescription ?: (post.excerpt ?: post.title)|u.truncate(160, '…', false) }}{% endblock %}
+{% block robots %}{{ not preview and not post.noIndex and post.visibility.value == 'public' ? parent() : 'noindex, follow' }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% set picture = post.seoImage ?? post.cover %}{{ picture ? absolute_url(image_url(picture, 'wide')) : parent() }}{% endblock %}
+{% block head_meta %}
+    {% if post.publishedAt %}<meta property="article:published_time" content="{{ post.publishedAt|date('c', 'Europe/Paris') }}">{% endif %}
+    <meta property="article:modified_time" content="{{ post.updatedAt|date('c', 'Europe/Paris') }}">
+    {% if post.category %}<meta property="article:section" content="{{ post.category.name }}">{% endif %}
+{% endblock %}
+{% block structured_data %}
+    {{ json_ld([
+        seo_article(post, post.seoTitle ?: post.title, post.seoDescription ?: (post.excerpt ?: post.title)|u.truncate(160, '…', false)),
+        seo_breadcrumb([{label: 'Accueil', href: path('app_home')}, {label: 'Actualités', href: path('app_post_index')}, {label: post.title, href: path('app_post_show', {slug: post.slug})}]),
+        ...seo_blocks(url('app_post_show', {slug: post.slug}), article.body, article.aside, article.outro),
+    ]) }}
+{% endblock %}
 
 {% block body %}
     {% if preview %}

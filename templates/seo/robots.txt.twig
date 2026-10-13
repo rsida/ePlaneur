@@ -1,0 +1,12 @@
+{# Every crawler, AI ones included, may read the public site (decision of 2026-10-13, doc/seo.md) #}
+User-agent: *
+Disallow: /admin
+Disallow: /mon-compte
+Disallow: /connexion
+Disallow: /deconnexion
+Disallow: /inscription
+Disallow: /mot-de-passe-oublie
+Disallow: /adhesion/
+Disallow: /_toolkit
+
+Sitemap: {{ url('app_sitemap') }}

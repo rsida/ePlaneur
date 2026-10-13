@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Content\EditableContentInterface;
+use App\Content\SearchSettings;
 use App\Repository\PostRepository;
 use App\Security\Visibility;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -26,6 +27,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['slug'], message: 'Cette adresse est déjà utilisée par un autre article.')]
 class Post implements EditableContentInterface
 {
+    use SearchSettings;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

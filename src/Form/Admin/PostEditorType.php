@@ -56,6 +56,7 @@ final class PostEditorType extends AbstractType
         ));
 
         AccessFields::add($builder);
+        SearchFields::add($builder, 'la couverture, sinon l’image du site');
 
         // Other writers' posts are only reassigned by those who edit every post
         if ($options['can_choose_author']) {

@@ -20,6 +20,9 @@ section, "Statuts", "Autres documents", "Contenu réservé"), reproduced by the 
 | `MenuItem` | Navigation link, one tree per location (`main` header, `footer` columns): target page, internal path (`/actualites`, `/#vols`), external URL or nothing (heading grouping its children); description (note under the link, or the mega-menu kicker of a first-level link); position, visibility |
 | `Document`, `DocumentCategory` | Official document (statutes, internal rules, decisions...): file (Media), category, version, details (dated mentions: "Adoptés le 15/12/2025"), position, visibility |
 
+Posts and pages also have optional search settings ("Référencement": title, description, picture
+of link previews, "Ne pas référencer"), see [SEO and GEO](seo.md).
+
 A post is **published** when `publishedAt` is set and in the past. Drafts and scheduled posts are
 only visible to users holding `POST_EDIT` (preview banner). `Post` and `Media` implement
 `RestrictedContentInterface`: visibility `public`, `authenticated` or `groups` (see

@@ -42,7 +42,7 @@ final class FlightPlanController extends AbstractController
 
     /** Settings of a flight plan to write, turned into instructions for Claude (doc/sessions.md). */
     #[Route('/atelier', name: 'workshop', methods: ['GET'])]
-    #[IsGranted(Permission::SessionOrganise->value)]
+    #[IsGranted(Permission::FlightPlanPrepare->value)]
     public function workshop(FlightPlanWorkshop $workshop): Response
     {
         return $this->render('flight_plan/workshop.html.twig', [
@@ -53,7 +53,7 @@ final class FlightPlanController extends AbstractController
 
     /** Regions, airfields and airspaces of a landscape, for the workshop. */
     #[Route('/atelier/{landscape}.json', name: 'workshop_data', requirements: ['landscape' => '[A-Za-z0-9_-]+'], methods: ['GET'])]
-    #[IsGranted(Permission::SessionOrganise->value)]
+    #[IsGranted(Permission::FlightPlanPrepare->value)]
     public function workshopData(string $landscape, FlightPlanWorkshop $workshop): JsonResponse
     {
         if (!$workshop->offers($landscape)) {

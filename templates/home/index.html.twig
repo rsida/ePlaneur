@@ -1,6 +1,7 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Accueil{% endblock %}
+{% block title %}Apprendre le vol à voile sur simulateur{% endblock %}
+{% block structured_data %}{{ json_ld(seo_site()) }}{% endblock %}
 
 {#
     Home page (Figma "Grand air adouci · Version 6"). Content is placeholder: every section will

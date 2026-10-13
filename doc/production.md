@@ -140,4 +140,5 @@ The `worker` restarts every hour (`--time-limit=3600`) to release memory; Docker
 - MariaDB and Mailpit are not exposed; there is no Mailpit.
 - Messenger is asynchronous (Doctrine transport), handled by the `worker` service.
 - `TRUSTED_PROXIES=PRIVATE_SUBNETS`: Symfony trusts the `X-Forwarded-*` headers set by Traefik
-  (client IP, HTTPS scheme).
+  (client IP, HTTPS scheme). Canonical addresses, `sitemap.xml` and `llms.txt` need it to give
+  `https://` addresses ([SEO](seo.md)).

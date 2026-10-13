@@ -13,7 +13,9 @@
                 {% if is_granted('SESSION_ORGANISE') %}
                     <div class="l-cluster">
                         <twig:Ui:Button href="{{ path('app_session_new') }}" icon="">Proposer une session</twig:Ui:Button>
-                        <twig:Ui:Button href="{{ path('app_flight_plan_workshop') }}" variant="outline" icon="">Préparer un plan de vol</twig:Ui:Button>
+                        {% if is_granted('FLIGHT_PLAN_PREPARE') %}
+                            <twig:Ui:Button href="{{ path('app_flight_plan_workshop') }}" variant="outline" icon="">Préparer un plan de vol</twig:Ui:Button>
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>

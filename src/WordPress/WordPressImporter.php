@@ -39,7 +39,7 @@ final class WordPressImporter
 {
     private const string RESTRICTED_TITLE = 'Contenu restreint';
 
-    /** @var array{pages: array<string, string|array{redirect: string}|'skip'>, categories: array<string, array{name: string, slug: string}>, restricted_groups: list<string>} */
+    /** @var array{pages: array<string, string|array{redirect: string}|'skip'>, categories: array<string, array{name: string, slug: string}>, restricted_groups: list<string>, leads?: array<string, string>} */
     private array $config;
 
     /** @var array<string, string> old path → new path or URL, for links and redirects */
@@ -210,7 +210,7 @@ final class WordPressImporter
                 ->setSlug($slug)
                 ->setParent($parent)
                 ->setPosition(intdiv((int) $item['menu_order'], 10))
-                ->setExcerpt(self::excerpt($item) ?: $page->getExcerpt())
+                ->setExcerpt(self::excerpt($item) ?: $page->getExcerpt() ?? $this->config['leads'][$path] ?? null)
                 ->setBody($this->blockFactory->serializeAll($this->converter->convert((string) $item['content']['rendered'], $context)))
                 ->setPublishedAt(self::date((string) $item['date']))
                 ->setUpdatedAt(self::date((string) $item['modified']));
