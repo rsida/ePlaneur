@@ -250,6 +250,18 @@ final class FlightAnalyzerTest extends TestCase
         self::assertSame(1, $analysis->statistics['thermals']);
     }
 
+    public function testALineFinishIsMeasuredToItsCentre(): void
+    {
+        $point = static fn (string $name, float $x, float $radius, float $angle = 360.0): Turnpoint => new Turnpoint($name, ...FlightSamples::toLatLon($x, 0), altitude: 0.0, radius: $radius, angle: $angle);
+        $task = [$point('Terrain', 0, 3000), $point('Départ', 0, 1000), $point('Turnpoint', 3000, 500), $point('Arrivée', 7000, 500, 180.0)];
+        $analysis = (new FlightAnalyzer())->analyze(self::track(FlightSamples::glideThermalGlide(), $task));
+
+        self::assertNotNull($analysis->task);
+        self::assertEqualsWithDelta(3000, $analysis->task->leg(2), 1, 'A turnpoint is measured to its centre');
+        self::assertEqualsWithDelta(4000, $analysis->task->leg(3), 1, 'A line finish is not shortened');
+        self::assertEqualsWithDelta(7000, $analysis->task->distance, 1);
+    }
+
     public function testTheTaskIsFollowed(): void
     {
         $point = static fn (string $name, float $x, float $radius): Turnpoint => new Turnpoint($name, ...FlightSamples::toLatLon($x, 0), altitude: 0.0, radius: $radius);
@@ -260,12 +272,13 @@ final class FlightAnalyzerTest extends TestCase
         // Out of the start cylinder at x = 1,000 m (first point out: 34 s), enters the finish one at
         // x = 6,500 m (398 s)
         self::assertSame([null, 34, 398], $analysis->task->reached);
-        self::assertEqualsWithDelta(7000, $analysis->task->distance, 1);
+        self::assertEqualsWithDelta(6500, $analysis->task->distance, 1, 'To the edge of the finish cylinder, as Condor counts it');
 
         $task = $analysis->toArray()['task'];
         self::assertTrue($task['completed']);
         self::assertSame(364, $task['duration']);
-        self::assertEqualsWithDelta(69.2, $task['speed'], 0.1, '7 km in 364 s');
+        self::assertEqualsWithDelta(64.3, $task['speed'], 0.1, '6.5 km in 364 s');
+        self::assertEqualsWithDelta(6500, $task['legs'][0]['distance'], 1);
 
         // Passage of each point, and the final glide from the end of the thermal to the finish
         self::assertEqualsWithDelta(1466.0, $task['turnpoints'][1]['reachedAltitude'], 1.0, '1,500 m - 34 s at 1 m/s');

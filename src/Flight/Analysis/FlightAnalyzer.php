@@ -981,9 +981,10 @@ final class FlightAnalyzer
         }
         $reached[1] = $s >= 0 ? min($s + 1, $count - 1) : null;
 
+        $result = new TaskResult($turnpoints, array_values($reached), 0.0);
         $distance = 0.0;
-        for ($k = 1; $k < \count($turnpoints) - 1; ++$k) {
-            $distance += Geo::distance($turnpoints[$k]->latitude, $turnpoints[$k]->longitude, $turnpoints[$k + 1]->latitude, $turnpoints[$k + 1]->longitude);
+        for ($k = 2; $k < \count($turnpoints); ++$k) {
+            $distance += $result->leg($k);
         }
 
         return new TaskResult($turnpoints, array_values($reached), $distance);

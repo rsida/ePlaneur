@@ -227,7 +227,7 @@ final readonly class FlightAnalysis
         for ($i = 1; $i < \count($points) - 1; ++$i) {
             $from = $task->reached[$i];
             $to = $task->reached[$i + 1] ?? null;
-            $distance = Geo::distance($points[$i]->latitude, $points[$i]->longitude, $points[$i + 1]->latitude, $points[$i + 1]->longitude);
+            $distance = $task->leg($i + 1);
             $duration = null !== $from && null !== $to ? $to - $from : null;
             $legs[] = [
                 'from' => $points[$i]->name,

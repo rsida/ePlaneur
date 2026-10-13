@@ -38,4 +38,13 @@ final readonly class Turnpoint
     {
         return abs($this->angle - 180.0) < 1.0;
     }
+
+    /**
+     * Metres Condor takes off the last leg when this point is the finish: the radius of a cylinder
+     * (measured on the second test flight, 2026-10-12), nothing for a line.
+     */
+    public function finishCut(): float
+    {
+        return $this->isLine() ? 0.0 : $this->radius;
+    }
 }

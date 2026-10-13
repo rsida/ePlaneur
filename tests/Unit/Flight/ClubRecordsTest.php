@@ -52,7 +52,7 @@ final class ClubRecordsTest extends TestCase
         $ranking = ClubRecords::season($flights, 2026);
         self::assertSame(['Alice', 'Bob'], array_map(static fn (array $row): string => $row['pilot']->getDisplayName(), $ranking));
         self::assertSame(2, $ranking[0]['tasks']);
-        self::assertEqualsWithDelta(14.0, $ranking[0]['kilometres'], 0.1);
+        self::assertEqualsWithDelta(13.0, $ranking[0]['kilometres'], 0.1);
         self::assertSame(2, $ranking[1]['flights'], 'The 2025 flight is in another season');
         self::assertSame([2026, 2025], ClubRecords::seasons($flights));
     }

@@ -252,7 +252,7 @@ final readonly class FlightComparison
                 ++$next;
             }
             $progress = $next < \count($points)
-                ? $done + max(0.0, self::leg($points, $next) - Geo::distance($series['latitude'][$i], $series['longitude'][$i], $points[$next]['latitude'], $points[$next]['longitude']))
+                ? $done + max(0.0, self::leg($points, $next) - max(0.0, Geo::distance($series['latitude'][$i], $series['longitude'][$i], $points[$next]['latitude'], $points[$next]['longitude']) - self::cut($points, $next)))
                 : $done;
             while (\count($times) * self::STEP <= $progress) {
                 $times[] = $i;
@@ -263,11 +263,23 @@ final readonly class FlightComparison
     }
 
     /**
-     * @param list<array{latitude: float, longitude: float}> $points
+     * @param list<array{latitude: float, longitude: float, radius?: float, angle?: float}> $points
      */
     private static function leg(array $points, int $to): float
     {
-        return Geo::distance($points[$to - 1]['latitude'], $points[$to - 1]['longitude'], $points[$to]['latitude'], $points[$to]['longitude']);
+        return max(0.0, Geo::distance($points[$to - 1]['latitude'], $points[$to - 1]['longitude'], $points[$to]['latitude'], $points[$to]['longitude']) - self::cut($points, $to));
+    }
+
+    /**
+     * Metres taken off the leg to the point $to: the radius of a cylinder finish (TaskResult::leg()).
+     *
+     * @param list<array{latitude: float, longitude: float, radius?: float, angle?: float}> $points
+     */
+    private static function cut(array $points, int $to): float
+    {
+        $point = $points[$to];
+
+        return $to === \count($points) - 1 && abs((float) ($point['angle'] ?? 360) - 180.0) >= 1.0 ? (float) ($point['radius'] ?? 0) : 0.0;
     }
 
     /**

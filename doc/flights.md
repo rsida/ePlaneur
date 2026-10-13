@@ -182,8 +182,9 @@ administrator to add it.
    start and finish within 1 or 2 s of Condor's, task times within 1 s (the series is per second);
    with the finish half disc on the near side, as before, the finish came 2 to 5 s early. Other
    angles (FAI sectors) are approximated by cylinders. The start is the first point out of the start
-   zone, after the last time it was in it
-   before the first turnpoint. Legs give their distance (between the centres), time and speed.
+   zone, after the last time it was in it before the first turnpoint. Legs give their distance
+   (between the centres, the last one to the edge of a cylinder finish as Condor counts it), time
+   and speed.
    On the race of 2026-02-19 the task distance is 182.4 km (Condor: 182.8 km).
 6. **Launch** ("Départ en vol", "Remorquage", "Treuil", shown as a tag on the flight and in the
    lists): airborne when the track does not begin on the ground, that is still for 5 s or within

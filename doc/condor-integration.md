@@ -93,7 +93,9 @@ plan), `#` for a number:
 - `[Version]` `Condor`
 - `[Task]` `Landscape`, `Count`, `TPName#`, `TPPosX#`, `TPPosY#`, `TPPosZ#`, `TPAirport#`,
   `TPSectorType#`, `TPSectorDirection#`, `TPRadius#`, `TPAngle#`, `TPAltitude#`, `TPWidth#`,
-  `TPHeight#`, `TPAzimuth#`, `PZCount` (penalty zones), `DisabledAirspaces`; in flight plans
+  `TPHeight#`, `TPAzimuth#`, `PZCount` (penalty zones), `DisabledAirspaces` (the airspaces
+  turned off: their indexes in the `.air` file of the landscape, from 0 in the order of its `AC`
+  records, comma separated; 0 to 1317 on AA3, read in flight plans of the user, 2026-10-12); in flight plans
   downloaded from Condor Club, also `TaskID` (the Condor Club id of the task:
   `TaskID=25216` is `condor.club/api/task/25216`, C3-d010a), `TaskName` and `TaskVersion`
 - `[Weather]` `WZCount`, `RandomizeWeatherOnEachFlight`
@@ -295,9 +297,9 @@ cylinder), fixed weather with cumulus. The user loaded and flew it in Condor 3 (
 - Task time: 984 s for the site as for Condor. Start speed: Condor's penalty of 9.9 points (1 a
   km/h over 170) gives 179.9 km/h; the analysis reads 180.0 from the `.ftr`, 184.1 from the IGC.
 - Distance: Condor 37.05 km, the site 37.98 km. Between the centres in Condor's coordinates the task
-  is 38.05 km; Condor's figure is that less the 1 km radius of the finish cylinder. The site measures
-  between the centres (`TaskResult`), so it is 0.9 km over on a cylinder finish, and its speed is
-  2.5 % over.
+  is 38.05 km; Condor's figure is that less the 1 km radius of the finish cylinder. The site measured
+  between the centres, 0.9 km and 2.5 % of speed over; it now ends the last leg at the edge of a
+  cylinder finish (`TaskResult::leg()`), as Condor does: 135.3 km/h for Condor's 135.6.
 
 ## Landscape files (2026-10-12)
 
