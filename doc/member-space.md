@@ -19,7 +19,7 @@ header. Styles: `assets/styles/pages/member-space.css`.
 | `/mon-compte/adhesion` | `app_account_membership` | Membership request and its follow-up (see [membership](membership.md)) |
 | `/mon-compte/profil` | `app_account_profile` | One form per panel (`App\Form\Account\ProfileForms`): display name; e-mail (change confirmed by a signed link sent to the new address, `app_account_email_confirm`, throttled); password (current one required); Condor (CN, pilot name, versions); e-mail preferences (`UserNotification`) |
 | `/mon-compte/confidentialite` | `app_account_privacy` | New flights public by default or not, appear in the season ranking or not; export of the data; link to the deletion |
-| `/mon-compte/donnees` | `app_account_export` | POST: ZIP of the account's data (`App\Account\DataExporter`): account, memberships, flights and their track files, comments, messages to the club, messages to members, training path, a read-me |
+| `/mon-compte/donnees` | `app_account_export` | POST: ZIP of the account's data (`App\Account\DataExporter`): account, memberships, flights and their track files, comments, messages to the club, messages to members, training path, what was done in "Mon parcours", a read-me |
 | `/mon-compte/suppression`, `.../confirmer` | `app_account_delete`, `app_account_delete_confirm` | Deletion in two steps (below) |
 | `/compte-supprime` | `app_account_deleted` | Page shown after the deletion |
 | `/contact`, `/mon-compte/contact` | `app_contact`, `app_account_contact` | Contact form (below); a logged-in user is sent to the second one |

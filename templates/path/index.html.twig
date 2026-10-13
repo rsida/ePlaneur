@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% set mine = app.user is not null %}
+{% set done = steps|filter(s => s.state.value == 'done')|length %}
+{% set qualification = null %}
+{% for s in steps|filter(s => s.state.value == 'done' and s.step.step.qualification) %}{% set qualification = s.step.step.qualification %}{% endfor %}
+
+{% block title %}{{ mine ? 'Mon parcours' : 'Le parcours de formation' }}{% endblock %}
+{% block description %}Huit étapes pour apprendre le vol en planeur sur le simulateur Condor : lectures, exercices en vol, quiz et validations par les formateurs du Club ePlaneur.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-path">
+        <div class="l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Eyebrow>Formation ePlaneur</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h1">{{ mine ? 'Mon parcours' : 'Le parcours de formation' }}</twig:Ui:Heading>
+                {% if mine %}
+                    <p class="u-lead">
+                        {{ done }} étape{{ done > 1 ? 's' : '' }} terminée{{ done > 1 ? 's' : '' }} sur 8
+                        {%- if qualification %} · <strong>{{ qualification }}</strong>{% endif %}.
+                        {% if current %}Prochaine étape : {{ current.step.title }}.{% endif %}
+                    </p>
+                {% else %}
+                    <p class="u-lead">Du premier virage au vol en réseau : huit étapes, chacune faite de lectures, d’exercices en vol, de quiz et de validations par les formateurs du club. Terminez une étape pour débloquer la suivante.</p>
+                    <div class="l-cluster">
+                        <twig:Ui:Button href="{{ path('app_register') }}">Créer mon compte gratuit</twig:Ui:Button>
+                        <twig:Ui:Button href="{{ path('app_login', {_target_path: path('app_path')}) }}" variant="outline" icon="">Me connecter</twig:Ui:Button>
+                    </div>
+                {% endif %}
+            </div>
+
+            <ol class="p-path__map" role="list">
+                {% for view in steps %}
+                    {% set state = view.state.value %}
+                    <li class="p-path__stop p-path__stop--{{ state }}">
+                        <span class="p-path__node" aria-hidden="true">
+                            {% if state == 'done' %}<twig:ux:icon name="check" />{% elseif state in ['locked', 'closed'] %}<twig:ux:icon name="lock-keyhole" />{% else %}{{ view.step.number }}{% endif %}
+                        </span>
+                        <a class="p-path__card c-card t-paper" href="{{ path('app_path_step', {number: view.step.number}) }}">
+                            <span class="c-card__body l-stack l-stack--xs">
+                                <span class="p-path__card-head">
+                                    <span class="u-note">Étape {{ view.step.number }}</span>
+                                    {% if mine or state == 'closed' %}<twig:Ui:Tag variant="{{ state == 'done' ? 'soft' : (state == 'current' ? 'default' : 'muted') }}">{{ view.state.label }}</twig:Ui:Tag>{% endif %}
+                                </span>
+                                <strong class="p-path__title">{{ view.step.title }}</strong>
+                                {% if view.step.step.qualification %}<span class="u-note">Qualification du club : {{ view.step.step.qualification }}</span>{% endif %}
+                                {% if state != 'closed' %}
+                                    {% if mine and view.items is not empty %}
+                                        <twig:Ui:Meter label="{{ view.doneCount }} sur {{ view.items|length }}" :percent="view.percent" :highlight="state == 'done'" />
+                                    {% elseif view.items is not empty %}
+                                        <span class="u-note">{{ view.items|length }} élément{{ view.items|length > 1 ? 's' : '' }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

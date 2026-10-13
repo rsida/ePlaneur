@@ -49,6 +49,22 @@
         {% endif %}
     </section>
 
+    {# Mon parcours: the step to work on #}
+    {% set step = path_current_step(app.user) %}
+    <section class="p-account__panel p-account__panel--tint" aria-labelledby="path-title">
+        <div class="p-account__panel-head">
+            <twig:Ui:Heading level="2" size="h4" id="path-title">Mon parcours</twig:Ui:Heading>
+            <twig:Ui:Link href="{{ path('app_path') }}">Voir tout le parcours</twig:Ui:Link>
+        </div>
+        {% if step %}
+            <p><strong>{{ step.step.step.title }}</strong></p>
+            {% if step.items is not empty %}<twig:Ui:Meter label="{{ step.doneCount }} élément{{ step.doneCount > 1 ? 's' : '' }} fait{{ step.doneCount > 1 ? 's' : '' }} sur {{ step.items|length }}" :percent="step.percent" />{% endif %}
+            <div><twig:Ui:Button href="{{ path('app_path_step', {number: step.step.number}) }}" size="sm">{{ step.doneCount > 0 ? 'Continuer l’étape' : 'Commencer l’étape' }}</twig:Ui:Button></div>
+        {% else %}
+            <p>Toutes les étapes ouvertes sont terminées : refaites les exercices pour battre vos records, les suivantes arrivent bientôt.</p>
+        {% endif %}
+    </section>
+
     {# Coming network sessions #}
     {% set sessions = upcoming_sessions(2) %}
     {% if sessions is not empty %}

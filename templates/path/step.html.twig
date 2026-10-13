@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% set mine = app.user is not null %}
+{% set step = view.step %}
+{% set number = step.number %}
+
+{% block title %}Étape {{ number }} · {{ step.title }}{% endblock %}
+{% block description %}{{ step.intro ? step.intro|u.truncate(160, '…', false) : 'Étape ' ~ number ~ ' du parcours de formation ePlaneur : ' ~ step.title ~ '.' }}{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-path">
+        <div class="l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Breadcrumb :items="[{label: mine ? 'Mon parcours' : 'Le parcours', href: path('app_path')}, {label: 'Étape ' ~ number}]" />
+                <twig:Ui:Eyebrow>Étape {{ number }} sur 8{{ step.step.qualification ? ' · ' ~ step.step.qualification : '' }}</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ step.title }}</twig:Ui:Heading>
+                {% if mine or view.state.value == 'closed' %}
+                    <p><twig:Ui:Tag variant="{{ view.state.value == 'done' ? 'soft' : 'default' }}">{{ view.state.label }}</twig:Ui:Tag>
+                        {% if mine and view.items is not empty %}<span class="u-note">{{ view.doneCount }} élément{{ view.doneCount > 1 ? 's' : '' }} fait{{ view.doneCount > 1 ? 's' : '' }} sur {{ view.items|length }}</span>{% endif %}
+                    </p>
+                {% endif %}
+                {% if step.intro %}<p class="u-lead">{{ step.intro|nl2br }}</p>{% endif %}
+                {% if view.state.value == 'locked' and mine %}
+                    <div class="c-alert">Terminez d’abord les étapes précédentes : vous pouvez déjà découvrir ce qui vous attend.</div>
+                {% elseif view.state.value == 'closed' %}
+                    <div class="c-alert">Cette étape est en préparation par les formateurs du club.</div>
+                {% elseif view.state.value == 'done' and mine %}
+                    <div class="c-alert c-alert--success">Étape terminée. Vous pouvez refaire ses exercices et ses quiz pour vous améliorer.</div>
+                {% endif %}
+                {% if view.progress and view.progress.note %}
+                    <p class="p-training__note">Note du formateur : {{ view.progress.note|nl2br }}</p>
+                {% endif %}
+            </div>
+
+            {% if view.state.value != 'closed' %}
+                {% if view.items is empty %}
+                    <p class="u-note">Les éléments de cette étape arrivent bientôt.</p>
+                {% else %}
+                    <ol class="p-path__items l-stack" role="list">
+                        {% for item in view.items %}
+                            {{ include('path/_item.html.twig', {view: item, step: view, mine: mine}) }}
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+            {% endif %}
+
+            <nav class="p-path__pager" aria-label="Étapes">
+                {% if number > 1 %}<twig:Ui:Link href="{{ path('app_path_step', {number: number - 1}) }}" icon="arrow-left">Étape {{ number - 1 }}</twig:Ui:Link>{% else %}<span></span>{% endif %}
+                {% if number < 8 %}<twig:Ui:Link href="{{ path('app_path_step', {number: number + 1}) }}">Étape {{ number + 1 }}</twig:Ui:Link>{% endif %}
+            </nav>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

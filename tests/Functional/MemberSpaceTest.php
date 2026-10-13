@@ -185,6 +185,7 @@ final class MemberSpaceTest extends WebTestCase
         self::assertCount(1, $flights);
         self::assertNotFalse($zip->locateName($flights[0]['fichier']), 'The track is in the archive');
         self::assertNotFalse($zip->locateName('parcours_de_formation.json'));
+        self::assertNotFalse($zip->locateName('mon_parcours.json'));
         $zip->close();
     }
 

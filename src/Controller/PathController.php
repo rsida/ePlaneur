@@ -1,0 +1,183 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controller;
+
+use App\Entity\PathCompletion;
+use App\Entity\PathItem;
+use App\Entity\User;
+use App\Repository\PathCompletionRepository;
+use App\Training\ItemView;
+use App\Training\PathItemType;
+use App\Training\PilotPath;
+use App\Training\StepState;
+use App\Training\StepView;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Validator\Constraints\NotNull;
+
+/**
+ * "Mon parcours" (roadmap 11, doc/training-path.md): the training path as a path of progression.
+ * Visitors see the steps and their items; a logged-in pilot sees what they did, does the readings,
+ * quizzes and exercises of the steps they reached, and compares with the best on each exercise.
+ */
+#[Route('/parcours', name: 'app_path')]
+final class PathController extends AbstractController
+{
+    /** Pilots listed in the ranking of an exercise. */
+    private const int RANKING_SIZE = 10;
+
+    public function __construct(
+        private readonly PilotPath $path,
+    ) {
+    }
+
+    #[Route('', name: '', methods: ['GET'])]
+    public function index(): Response
+    {
+        $steps = $this->path->of($this->pilot());
+
+        return $this->render('path/index.html.twig', [
+            'steps' => $steps,
+            'current' => array_find($steps, static fn (StepView $step): bool => StepState::Current === $step->state),
+        ]);
+    }
+
+    #[Route('/etape/{number<[1-8]>}', name: '_step', methods: ['GET'])]
+    public function step(int $number): Response
+    {
+        $steps = $this->path->of($this->pilot());
+
+        return $this->render('path/step.html.twig', [
+            'view' => $steps[$number - 1] ?? throw $this->createNotFoundException(),
+            'steps' => $steps,
+        ]);
+    }
+
+    /** A reading, or an exercise without flight plan, that the pilot says done. */
+    #[Route('/element/{id<\d+>}/fait', name: '_done', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function done(PathItem $item, Request $request, PathCompletionRepository $completions, EntityManagerInterface $entityManager, ClockInterface $clock): Response
+    {
+        [$step] = $this->reach($item);
+        if (!$item->isDeclared() || !$this->isCsrfTokenValid('path-done-'.$item->getId(), $request->getPayload()->getString('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+        $pilot = $this->user();
+        $completion = $completions->findOneBy(['pilot' => $pilot, 'item' => $item]) ?? new PathCompletion($pilot, $item, $clock->now());
+        $entityManager->persist($completion);
+        $entityManager->flush();
+
+        return $this->redirectToRoute('app_path_step', ['number' => $step->step->getNumber(), '_fragment' => 'element-'.$item->getId()]);
+    }
+
+    /** A quiz: answer every question, see the right answers and their explanation, try again. */
+    #[Route('/quiz/{id<\d+>}', name: '_quiz', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function quiz(PathItem $item, Request $request, PathCompletionRepository $completions, EntityManagerInterface $entityManager, ClockInterface $clock): Response
+    {
+        [$step, $view] = $this->reach($item);
+        $quiz = $item->getQuiz();
+        if (PathItemType::Quiz !== $item->getType() || null === $quiz) {
+            throw $this->createNotFoundException();
+        }
+
+        $builder = $this->createFormBuilder();
+        foreach ($quiz->getQuestions() as $i => $question) {
+            $builder->add('q'.$i, ChoiceType::class, [
+                'label' => ($i + 1).'. '.$question['question'],
+                'choices' => array_flip($question['choices']),
+                'expanded' => true,
+                'placeholder' => false,
+                'constraints' => [new NotNull(message: 'Choisissez une réponse.')],
+            ]);
+        }
+        $form = $builder->getForm()->handleRequest($request);
+
+        $score = null;
+        $answers = [];
+        if ($form->isSubmitted() && $form->isValid()) {
+            foreach ($quiz->getQuestions() as $i => $question) {
+                $answers[$i] = $form->get('q'.$i)->getData();
+            }
+            $score = $quiz->score($answers);
+            $completion = $completions->findOneBy(['pilot' => $this->user(), 'item' => $item]) ?? new PathCompletion($this->user(), $item, $clock->now());
+            $completion->attempt($score, $clock->now());
+            $entityManager->persist($completion);
+            $entityManager->flush();
+            $view = new ItemView($item, $completion->isDone(), $completion);
+        }
+
+        return $this->render('path/quiz.html.twig', [
+            'step' => $step,
+            'view' => $view,
+            'quiz' => $quiz,
+            'form' => $form,
+            'score' => $score,
+            'answers' => $answers,
+        ], new Response(status: $form->isSubmitted() && !$form->isValid() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+    }
+
+    /** An exercise on a flight plan: the pilot's flights on it, their personal best and the ranking. */
+    #[Route('/exercice/{id<\d+>}', name: '_exercise', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function exercise(PathItem $item): Response
+    {
+        [$step, $view] = $this->reach($item, reachable: false);
+        if (PathItemType::Exercise !== $item->getType() || null === $item->getFlightPlan()) {
+            throw $this->createNotFoundException();
+        }
+        $ranking = $this->path->ranking($item);
+        $pilot = $this->user();
+        $rank = array_find_key($ranking, static fn ($flight): bool => $flight->getOwner() === $pilot);
+
+        return $this->render('path/exercise.html.twig', [
+            'step' => $step,
+            'view' => $view,
+            'ranking' => \count($ranking) >= $item->getRankingFrom() ? \array_slice($ranking, 0, self::RANKING_SIZE) : [],
+            'pilots' => \count($ranking),
+            'rank' => null !== $rank ? $rank + 1 : null,
+            'leader' => $ranking[0] ?? null,
+        ]);
+    }
+
+    /**
+     * The step of an item and the item as the pilot sees it; the item must be in a step they reached.
+     *
+     * @return array{StepView, ItemView}
+     */
+    private function reach(PathItem $item, bool $reachable = true): array
+    {
+        foreach ($this->path->of($this->user()) as $step) {
+            foreach ($step->items as $view) {
+                if ($view->item === $item) {
+                    if ($reachable && !$step->isReachable()) {
+                        throw $this->createAccessDeniedException('Cette étape n’est pas encore débloquée.');
+                    }
+
+                    return [$step, $view];
+                }
+            }
+        }
+        throw $this->createNotFoundException();
+    }
+
+    private function pilot(): ?User
+    {
+        $user = $this->getUser();
+
+        return $user instanceof User ? $user : null;
+    }
+
+    private function user(): User
+    {
+        return $this->pilot() ?? throw $this->createAccessDeniedException();
+    }
+}

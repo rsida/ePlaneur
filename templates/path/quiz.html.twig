@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% set number = step.step.number %}
+{% set passed = score is not null and quiz.passedWith(score) %}
+
+{% block title %}{{ quiz.title }} · Étape {{ number }}{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-path">
+        <div class="l-stack l-stack--lg p-path__narrow">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Breadcrumb :items="[{label: 'Mon parcours', href: path('app_path')}, {label: 'Étape ' ~ number, href: path('app_path_step', {number: number})}, {label: 'Quiz'}]" />
+                <twig:Ui:Eyebrow>Quiz · étape {{ number }}</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h2">{{ quiz.title }}</twig:Ui:Heading>
+                {% if quiz.intro %}<p class="u-lead">{{ quiz.intro|nl2br }}</p>{% endif %}
+                <p class="u-note">{{ quiz.questions|length }} question{{ quiz.questions|length > 1 ? 's' : '' }} · réussi à {{ quiz.passMark }} % de bonnes réponses
+                    {%- if view.completion %} · votre meilleur score : {{ view.completion.score }} %{% endif %}</p>
+            </div>
+
+            {% if score is not null %}
+                <div class="c-alert c-alert--{{ passed ? 'success' : 'error' }}" role="status">
+                    <strong>{{ score }} % de bonnes réponses.</strong>
+                    {{ passed ? 'Quiz réussi, bravo ! Relisez les explications, puis passez à la suite.' : 'Pas encore : relisez les explications ci-dessous et réessayez.' }}
+                </div>
+                <ol class="l-stack p-quiz__review" role="list">
+                    {% for i, question in quiz.questions %}
+                        {% set right = answers[i] is same as(question.answer) %}
+                        <li class="c-card t-paper p-quiz__question p-quiz__question--{{ right ? 'right' : 'wrong' }}">
+                            <div class="c-card__body l-stack l-stack--xs">
+                                <strong>{{ i + 1 }}. {{ question.question }}</strong>
+                                <p>{{ right ? 'Bonne réponse' : 'Votre réponse : ' ~ question.choices[answers[i]] }}</p>
+                                {% if not right %}<p>Bonne réponse : <strong>{{ question.choices[question.answer] }}</strong></p>{% endif %}
+                                {% if question.explanation %}<p class="u-note">{{ question.explanation|nl2br }}</p>{% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ol>
+                <div class="l-cluster">
+                    <twig:Ui:Button href="{{ path('app_path_quiz', {id: view.item.id}) }}" variant="{{ passed ? 'outline' : 'primary' }}" icon="">Refaire le quiz</twig:Ui:Button>
+                    <twig:Ui:Link href="{{ path('app_path_step', {number: number}) }}">Retour à l’étape {{ number }}</twig:Ui:Link>
+                </div>
+            {% else %}
+                {{ form_start(form, {attr: {class: 'l-stack p-quiz'}}) }}
+                    {% for field in form %}
+                        {% if field.vars.name != '_token' %}
+                            <fieldset class="c-card t-paper p-quiz__question">
+                                <div class="c-card__body l-stack l-stack--xs">
+                                    <legend><strong>{{ field.vars.label }}</strong></legend>
+                                    {{ form_errors(field) }}
+                                    {{ form_widget(field) }}
+                                </div>
+                            </fieldset>
+                        {% endif %}
+                    {% endfor %}
+                    <div><twig:Ui:Button type="submit" icon="check">Valider mes réponses</twig:Ui:Button></div>
+                {{ form_end(form) }}
+            {% endif %}
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

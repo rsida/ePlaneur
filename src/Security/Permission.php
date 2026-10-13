@@ -34,6 +34,7 @@ enum Permission: string implements TranslatableInterface
     case SessionOrganise = 'SESSION_ORGANISE';
     case SessionManage = 'SESSION_MANAGE';
     case FlightPlanPrepare = 'FLIGHT_PLAN_PREPARE';
+    case TrainingManage = 'TRAINING_MANAGE';
     case MessageSend = 'MESSAGE_SEND';
 
     public function label(): string
@@ -57,6 +58,7 @@ enum Permission: string implements TranslatableInterface
             self::SessionOrganise => 'Proposer des sessions de vol en réseau et modifier les siennes',
             self::SessionManage => 'Gérer toutes les sessions de vol en réseau et les plans de vol',
             self::FlightPlanPrepare => 'Préparer des plans de vol avec l’atelier (consigne pour Claude)',
+            self::TrainingManage => 'Configurer « Mon parcours » : étapes, exercices et quiz',
             self::MessageSend => 'Écrire aux membres, au comité et aux administrateurs (messagerie)',
         };
     }

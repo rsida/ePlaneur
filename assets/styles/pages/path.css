@@ -1,0 +1,204 @@
+/* "Mon parcours": the eight steps as a path, a step and its items, quiz, exercise */
+
+.p-path__narrow {
+    max-width: 48rem;
+}
+
+/* ---------- The path: a line joining the stops, cards on one side (mobile) or alternating ---------- */
+.p-path__map {
+    --_node: 2.75rem;
+    position: relative;
+    display: grid;
+    gap: var(--space-6);
+    padding: 0;
+    list-style: none;
+}
+
+.p-path__map::before {
+    content: '';
+    position: absolute;
+    inset-block: calc(var(--_node) / 2);
+    inset-inline-start: calc(var(--_node) / 2 - 2px);
+    border-inline-start: 4px dashed var(--color-line-strong);
+}
+
+.p-path__stop {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--_node) minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.p-path__node {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--_node);
+    height: var(--_node);
+    border: 3px solid var(--color-line-strong);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-paper);
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-lead);
+}
+
+.p-path__stop--done .p-path__node {
+    border-color: var(--color-success);
+    background-color: var(--color-success);
+    color: var(--color-paper);
+}
+
+.p-path__stop--current .p-path__node {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    box-shadow: 0 0 0 6px var(--color-tint-cool);
+}
+
+.p-path__card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    transition: border-color 0.15s;
+}
+
+.p-path__card:hover,
+.p-path__card:focus-visible {
+    border-color: var(--color-primary);
+}
+
+.p-path__stop--current .p-path__card {
+    border-color: var(--color-primary);
+    border-width: 2px;
+}
+
+.p-path__stop--locked .p-path__card,
+.p-path__stop--closed .p-path__card {
+    opacity: 0.7;
+}
+
+.p-path__card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.p-path__title {
+    font-family: var(--font-heading);
+    font-size: var(--text-lead);
+}
+
+/* From tablets, the line runs in the middle and the cards alternate */
+@media (width >= 48em) {
+    .p-path__map {
+        width: 100%;
+        max-width: 60rem;
+        margin-inline: auto;
+    }
+
+    .p-path__map::before {
+        inset-inline-start: calc(50% - 2px);
+    }
+
+    .p-path__stop {
+        grid-template-columns: minmax(0, 1fr) var(--_node) minmax(0, 1fr);
+    }
+
+    .p-path__node {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .p-path__stop:nth-child(odd) .p-path__card {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .p-path__stop:nth-child(even) .p-path__card {
+        grid-column: 3;
+        grid-row: 1;
+    }
+}
+
+/* ---------- A step and its items ---------- */
+.p-path__items {
+    padding: 0;
+    list-style: none;
+}
+
+.p-path-item {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+}
+
+.p-path-item--done {
+    border-inline-start: 4px solid var(--color-success);
+}
+
+.p-path-item__body {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.p-path-item__icon {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-tint-cool);
+    color: var(--color-primary);
+}
+
+.p-path-item--done .p-path-item__icon {
+    background-color: var(--color-success-soft);
+    color: var(--color-success);
+}
+
+.p-path__pager {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+/* ---------- Quiz ---------- */
+.p-quiz__review {
+    padding: 0;
+    list-style: none;
+}
+
+.p-quiz__question {
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+}
+
+.p-quiz__question legend {
+    padding: 0;
+}
+
+.p-quiz__question--right {
+    border-inline-start: 4px solid var(--color-success);
+}
+
+.p-quiz__question--wrong {
+    border-inline-start: 4px solid var(--color-danger);
+}
+
+/* ---------- Exercise ---------- */
+.p-path__records {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: var(--space-4);
+}

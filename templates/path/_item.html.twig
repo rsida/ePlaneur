@@ -1,0 +1,42 @@
+{#
+    An item of a step of "Mon parcours". Variables: view (App\Training\ItemView), step (StepView),
+    mine (logged in).
+#}
+{% set item = view.item %}
+{% set type = item.type.value %}
+{% set can = mine and step.reachable %}
+<li class="p-path-item c-card t-paper{{ view.done ? ' p-path-item--done' : '' }}" id="element-{{ item.id }}">
+    <div class="c-card__body p-path-item__body">
+        <span class="p-path-item__icon" aria-hidden="true"><twig:ux:icon name="{{ view.done ? 'check' : item.type.icon }}" /></span>
+        <div class="l-stack l-stack--xs">
+            <span class="u-note">{{ item.type.label }}{% if view.done %} · fait{% endif %}</span>
+            <strong>{{ item.title }}</strong>
+            {% if item.text %}<p>{{ item.text|nl2br }}</p>{% endif %}
+
+            {% if type == 'quiz' and view.completion %}
+                <p class="u-note">Meilleur score : {{ view.completion.score }} % (réussi à {{ item.quiz.passMark }} %) · {{ view.completion.attempts }} essai{{ view.completion.attempts > 1 ? 's' : '' }}</p>
+            {% elseif type == 'exercise' and view.best %}
+                <p class="u-note">Record personnel : {{ view.best.taskSpeed|number_format(1, ',', ' ') }} km/h · {{ view.flights|length }} circuit{{ view.flights|length > 1 ? 's' : '' }} terminé{{ view.flights|length > 1 ? 's' : '' }}</p>
+            {% elseif type == 'validation' %}
+                <p class="u-note">{{ view.done ? 'Étape validée par un formateur.' : 'Un formateur valide l’étape quand les autres éléments sont faits : il regarde vos vols dans votre carnet.' }}</p>
+            {% endif %}
+
+            <div class="l-cluster">
+                {% if item.url %}<twig:Ui:Link href="{{ item.url }}" icon="{{ item.url starts with '/' ? 'arrow-right' : 'arrow-up-right' }}">{{ type == 'reading' ? 'Lire ou regarder' : 'Voir la ressource' }}</twig:Ui:Link>{% endif %}
+                {% if type == 'exercise' and item.flightPlan %}
+                    {% if mine %}<twig:Ui:Link href="{{ path('app_path_exercise', {id: item.id}) }}">{{ view.done ? 'Mes vols et le classement' : 'Voir l’exercice' }}</twig:Ui:Link>{% endif %}
+                    <twig:Ui:Link href="{{ path('app_flight_plan_show', {code: item.flightPlan}) }}">Plan de vol {{ item.flightPlan }}</twig:Ui:Link>
+                {% endif %}
+                {% if type == 'quiz' and can %}
+                    <twig:Ui:Button href="{{ path('app_path_quiz', {id: item.id}) }}" size="sm" variant="{{ view.done ? 'outline' : 'primary' }}">{{ view.completion ? 'Refaire le quiz' : 'Faire le quiz' }}</twig:Ui:Button>
+                {% endif %}
+                {% if item.declared and can and not view.done %}
+                    <form method="post" action="{{ path('app_path_done', {id: item.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('path-done-' ~ item.id) }}">
+                        <twig:Ui:Button type="submit" size="sm" icon="check">C’est fait</twig:Ui:Button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</li>

@@ -42,6 +42,7 @@
             </li>
         {% endfor %}
     </ol>
+    {% if own %}<twig:Ui:Link href="{{ path('app_path') }}">Mon parcours : lectures, exercices et quiz de chaque étape</twig:Ui:Link>{% endif %}
     {% if training_forms is empty %}
         <p class="u-note">Les formateurs du club marquent les étapes en cours et validées, avec une note et un vol de référence.</p>
     {% endif %}

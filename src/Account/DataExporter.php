@@ -7,6 +7,7 @@ namespace App\Account;
 use App\Entity\ContactRequest;
 use App\Entity\FlightComment;
 use App\Entity\Message;
+use App\Entity\PathCompletion;
 use App\Entity\StepProgress;
 use App\Entity\User;
 use App\Flight\FlightImporter;
@@ -127,6 +128,15 @@ final readonly class DataExporter
             'validee_le' => null !== $progress->getValidatedOn() ? $progress->getValidatedOn()->format('Y-m-d') : null,
             'par' => $progress->getUpdatedBy()?->getDisplayName(),
         ], $this->entityManager->getRepository(StepProgress::class)->findBy(['pilot' => $user], ['step' => 'ASC']))));
+
+        $zip->addFromString('mon_parcours.json', $json(array_map(static fn (PathCompletion $completion): array => [
+            'etape' => $completion->getItem()->getStep()?->getStep()->title(),
+            'element' => $completion->getItem()->getTitle(),
+            'type' => $completion->getItem()->getType()?->label(),
+            'meilleur_score' => $completion->getScore(),
+            'essais' => $completion->getAttempts(),
+            'le' => $date($completion->getDoneAt()),
+        ], $this->entityManager->getRepository(PathCompletion::class)->findBy(['pilot' => $user], ['doneAt' => 'ASC']))));
 
         $zip->addFromString('LISEZ-MOI.txt', 'Données de votre compte sur le site du Club ePlaneur, exportées le '.$this->clock->now()->format('d/m/Y à H:i').".\nFichiers JSON lisibles avec un éditeur de texte ; vos traces de vol sont dans le dossier « traces ».\nVotre mot de passe n'y figure pas.\n");
         $zip->close();

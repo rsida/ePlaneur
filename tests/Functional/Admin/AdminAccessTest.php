@@ -69,6 +69,7 @@ final class AdminAccessTest extends WebTestCase
         self::assertContains('Membres', $shortcuts, 'MEMBERSHIP_MANAGE: the committee reads the records of the members');
         self::assertNotContains('Comptes', $shortcuts, 'USER_MANAGE is not granted to the committee');
         self::assertNotContains('Menus', $shortcuts, 'MENU_MANAGE is not granted to the committee');
+        self::assertNotContains('Mon parcours', $shortcuts, 'TRAINING_MANAGE is not granted to the committee');
 
         $this->client->request('GET', '/admin/media');
         self::assertResponseIsSuccessful();
@@ -76,13 +77,15 @@ final class AdminAccessTest extends WebTestCase
         self::assertResponseStatusCodeSame(403, 'A hidden screen is refused by URL too');
         $this->client->request('GET', '/admin/group');
         self::assertResponseStatusCodeSame(403);
+        $this->client->request('GET', '/admin/quiz');
+        self::assertResponseStatusCodeSame(403);
     }
 
     public function testAdministratorsSeeEveryScreen(): void
     {
         $this->client->loginUser($this->userIn($this->entityManager, 'admin@example.org', 'admin'));
 
-        foreach (['/admin', '/admin/post', '/admin/post/new', '/admin/page', '/admin/page/new', '/admin/user', '/admin/group', '/admin/category', '/admin/media', '/admin/media/upload', '/admin/document', '/admin/document/new', '/admin/document-category', '/admin/menu-item', '/admin/menu-item/new'] as $url) {
+        foreach (['/admin', '/admin/post', '/admin/post/new', '/admin/page', '/admin/page/new', '/admin/user', '/admin/group', '/admin/category', '/admin/media', '/admin/media/upload', '/admin/document', '/admin/document/new', '/admin/document-category', '/admin/menu-item', '/admin/menu-item/new', '/admin/path-step', '/admin/quiz', '/admin/quiz/new'] as $url) {
             $this->client->request('GET', $url);
             self::assertResponseIsSuccessful($url);
         }
