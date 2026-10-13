@@ -119,12 +119,36 @@ treasurer's agreement before any code.
 | 9e | Whole-session comparison | Compare every flight of a session together (not two by two): gaps along the task of each pilot against the best, charts of all pilots, key moments per pilot | Done (2026-10-09): "Comparer toute la session", see [sessions](sessions.md#race-view) |
 | 9f | Sessions and results | Network sessions as records of the club site: date, flight plan, dedicated or open, organiser, results of the dedicated server, tracks of the race; flight plan typed with suggestions and recorded with the address of its sheet on eplaneur.fr; a page per session and per flight plan; history of eplaneur.fr | Done (2026-10-09), see [sessions](sessions.md): `/sessions`, `/plans-de-vol/{code}`, members propose sessions (`SESSION_ORGANISE`), committee manages them (`SESSION_MANAGE`); tracks join their session by race id; `app:sessions:import` brought the 635 sessions of eplaneur.fr since 2020 from its public pages (organisers unknown); the export asked to the owner of eplaneur.fr is no longer needed for the history |
 | 9g | Training path follow-up | The 8 steps of the training path in each pilot's logbook: a trainer marks a step in progress or validated (date, note, reference flight), the pilot sees where they stand; replaces the Excel workbooks on Google Drive (see [training](project/training.md#progression-tracking)) | Done as a proposal (2026-10-09), see [flights](flights.md#training-path): to show the committee, which has not validated the follow-up yet |
-| 10 | SEO and GEO (asked on 2026-10-13) | Search engines and AI answer engines: robots directive and canonical address on every page, Open Graph, `robots.txt`, `sitemap.xml`, `llms.txt`, JSON-LD (club, site, articles, breadcrumbs, FAQ, glossaries), optional "Référencement" settings of posts and pages; the WordPress redirects already exist (step 4) | Done (2026-10-13), see [SEO and GEO](seo.md); still to do: leads on the pages without one, a PNG logo, Search Console and Bing Webmaster Tools once online |
+| 10 | SEO and GEO (asked on 2026-10-13) | Search engines and AI answer engines: robots directive and canonical address on every page, Open Graph, `robots.txt`, `sitemap.xml`, `llms.txt`, JSON-LD (club, site, articles, breadcrumbs, FAQ, glossaries), optional "Référencement" settings of posts and pages; the WordPress redirects already exist (step 4) | Done (2026-10-13), see [SEO and GEO](seo.md); leads of the pages (`leads` of the import configuration), PNG logo and profiles added the same day; still to do: Search Console and Bing Webmaster Tools once online |
 
 Why this order: restricted content (committee minutes, 4th-level pages) and the back-office both need
 accounts and roles first; EasyAdmin gives a usable back-office quickly, a custom admin is only worth it
 later for business screens (network flights, progression tracking); the import avoids retyping the
 existing content.
+
+## Next: ideas of 2026-10-13 (to do, order to choose)
+
+Proposed on 2026-10-13 to make the site more attractive and more useful for training; the user asked
+to keep them all. Step 11 ("Mon parcours") was asked by the user to attract young people and to
+stir up the competition that drives progression: a game at first can become a vocation. It accepts
+a more game-like presentation than 7f, as long as each step stays tied to the training path and to
+the trainers.
+
+| # | Step | Content | Status |
+|---|---|---|---|
+| 11 | "Mon parcours" | The training path drawn as a real path of progression: the 8 steps one after the other, each made of items (exercises, quizzes, flights, reading); completing every item of a step opens the next one, some items need a trainer's validation (9g). The pilot can go back to any step to see what they did (flights, scores, trainers' comments) and redo its exercises to improve. A ranking of the best pilots for each exercise, and badges (step completed, best of an exercise, regularity...). Safeguards: the score of an exercise rewards the behaviour of a good pilot first (regular circles, circuit pattern, landing in the field, rules of the network flights) and speed second, and badges reward good practice too ("10 landings in the field", "no penalty on 5 flights"), so that competition does not push the "gaming" the training warns against; rankings by level, cohort or class and by season, with the personal best put forward, so that beginners are not discouraged; minors shown by pseudonym or first name, rankings visible to logged-in members only, consent of a parent (to decide with the committee, GDPR); most exercises validated automatically by the analysis, a trainer only at the key steps (before the first network flight...), so that nobody waits a week; the exercise imposes its flight plan and the site checks the settings read from the track (weather, difficulty, glider) | To do; builds on 9g, 11b and 11c |
+| 11a | "Mon premier vol" | A guided page for newcomers with a checklist kept in the account: install Condor, create an account, fly step 1 alone, join an initiation flight (Wednesday 16:30); gathers what is spread over a dozen pages today | To do; may become the first step of 11 |
+| 11b | Exercises checked by the analysis | A flight plan per exercise of each step and criteria read from the track (take-off, thermal circles, landing in the field, speed, height...); a flight that meets them proposes the step or item to a trainer with the proof (moment of the flight) | To do; uses the flight analysis (7) and the follow-up (9g) |
+| 11c | Theory quizzes | Questions per step in the manner of the BIA, marked automatically, tied to the validation of the step; useful to teachers too | To do; questions to write with the trainers |
+| 11d | Next session on the home page | Date, flight plan, level and countdown of the next session, in the time zone of the visitor (La Réunion); "Ajouter à mon agenda" (.ics file and a subscription to every session) | To do |
+| 11e | Replay on the home page | A recent public flight replayed in 3D in a loop on the home page, taken from the flights pilots made public (7e) | To do |
+| 11f | Teacher space | A teacher creates a class group, gives a registration link to the pupils and follows the progression of the class (8 steps, flights); follows the letter to teachers | To do; access rules to decide (minors, GDPR) |
+| 11g | Session reminders and results | E-mail the day before a session to those who want it, then the results, podium and a link to the replay the day after | To do; overlaps the WhatsApp groups of the flights: the user decides |
+| 11h | Monthly digest | Optional e-mail: next sessions, new posts, records broken, steps validated in the club | To do |
+| 11i | Activity dashboard | Members, flights, flight hours, sessions and validated steps per month, exportable for the general meeting: to show the committee what the site brings | To do |
+| 11j | Flight plan written by the workshop | The workshop (7n4) writes the `.fpl` itself instead of the instructions for Claude | Waiting for a flight plan with windows saved by Condor |
+| 11k | Live session | Positions of the pilots during a session, from the UDP output of Condor | Waiting for the UDP tests (E4, E5) |
+| 11l | Installable site | Progressive web app on mobile, with notifications | To do |
 
 ## Audit follow-ups (2026-10-07)
 
@@ -165,6 +189,7 @@ keys handled twice in the block menu, a low-contrast focus ring. Left for later,
 | 2026-10-10 | Messages (9c): members write to each other, to the committee or to the administrators |
 | 2026-10-10 | The full analysis of a flight (about 250 KB of JSON) lives in its own table (`FlightData`), loaded only when a flight is shown, compared or replayed; the flight keeps its statistics and task distance for the lists, records and rankings (which no longer read any analysis) |
 | 2026-10-13 | SEO and GEO (step 10): every crawler is allowed, AI ones included, for the widest reach; flights, logbooks, sessions and flight plans are `noindex` (names of pilots); search settings of posts and pages are optional, the content gives the defaults |
+| 2026-10-13 | Ideas of 2026-10-13 kept as steps 11 to 11l; "Mon parcours" (11) may look more like a game (path, rankings per exercise, badges) than 7f, as long as it follows the training path and the trainers' validations |
 | 2026-10-04 | Comments and "was this article useful?" feedback come later (moderation rules to define); step 2 split into 2a (posts, blocks) and 2b (pages, menus, documents) |
 
 ## Open questions
