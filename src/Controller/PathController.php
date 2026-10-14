@@ -13,6 +13,7 @@ use App\Training\ItemView;
 use App\Training\PathBadges;
 use App\Training\PathItemType;
 use App\Training\PilotPath;
+use App\Training\RankingLevel;
 use App\Training\StepState;
 use App\Training\StepView;
 use Doctrine\ORM\EntityManagerInterface;
@@ -35,6 +36,9 @@ final class PathController extends AbstractController
 {
     /** Pilots listed in the ranking of an exercise. */
     private const int RANKING_SIZE = 10;
+
+    /** `?saison=` value of the ranking of every season. */
+    private const string ALL_SEASONS = 'tout';
 
     public function __construct(
         private readonly PilotPath $path,
@@ -81,7 +85,12 @@ final class PathController extends AbstractController
         return $this->redirectToRoute('app_path_step', ['number' => $step->step->getNumber(), '_fragment' => 'element-'.$item->getId()]);
     }
 
-    /** A quiz: answer every question, see the right answers and their explanation, try again. */
+    /**
+     * A quiz: answer every question, then see the result (`?resultat=1`): each answer right or
+     * wrong, the right answer and its explanation, and try again. The answers are kept in the
+     * session for the result page: a submission redirects there, as Turbo drops a page answered to
+     * a form without a redirect.
+     */
     #[Route('/quiz/{id<\d+>}', name: '_quiz', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_USER')]
     public function quiz(PathItem $item, Request $request, PathCompletionRepository $completions, EntityManagerInterface $entityManager, ClockInterface $clock): Response
@@ -90,6 +99,19 @@ final class PathController extends AbstractController
         $quiz = $item->getQuiz();
         if (PathItemType::Quiz !== $item->getType() || null === $quiz) {
             throw $this->createNotFoundException();
+        }
+        $session = $request->getSession();
+        $key = 'path-quiz-'.$item->getId();
+
+        $answers = $request->query->getBoolean('resultat') ? $session->get($key) : null;
+        if (\is_array($answers) && \count($answers) === $quiz->getQuestionCount()) {
+            return $this->render('path/quiz.html.twig', [
+                'step' => $step,
+                'view' => $view,
+                'quiz' => $quiz,
+                'score' => $quiz->score($answers),
+                'answers' => $answers,
+            ]);
         }
 
         $builder = $this->createFormBuilder();
@@ -104,18 +126,18 @@ final class PathController extends AbstractController
         }
         $form = $builder->getForm()->handleRequest($request);
 
-        $score = null;
-        $answers = [];
         if ($form->isSubmitted() && $form->isValid()) {
+            $answers = [];
             foreach ($quiz->getQuestions() as $i => $question) {
                 $answers[$i] = $form->get('q'.$i)->getData();
             }
-            $score = $quiz->score($answers);
             $completion = $completions->findOneBy(['pilot' => $this->user(), 'item' => $item]) ?? new PathCompletion($this->user(), $item, $clock->now());
-            $completion->attempt($score, $clock->now());
+            $completion->attempt($quiz->score($answers), $clock->now());
             $entityManager->persist($completion);
             $entityManager->flush();
-            $view = new ItemView($item, $completion->isDone(), $completion);
+            $session->set($key, $answers);
+
+            return $this->redirectToRoute('app_path_quiz', ['id' => $item->getId(), 'resultat' => 1], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('path/quiz.html.twig', [
@@ -123,24 +145,36 @@ final class PathController extends AbstractController
             'view' => $view,
             'quiz' => $quiz,
             'form' => $form,
-            'score' => $score,
-            'answers' => $answers,
-        ], new Response(status: $form->isSubmitted() && !$form->isValid() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
+            'score' => null,
+            'answers' => [],
+        ], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
     /**
      * An exercise on a flight plan: the pilot's flights on it checked against its criteria, their
-     * personal best and the ranking of the flights that passed it.
+     * personal best and the ranking of the flights that passed it, of a season (`?saison=`, the
+     * current one by default, `tout` for every season) and of a level (`?niveau=`, RankingLevel).
      */
     #[Route('/exercice/{id<\d+>}', name: '_exercise', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function exercise(PathItem $item): Response
+    public function exercise(PathItem $item, Request $request, ClockInterface $clock): Response
     {
         [$step, $view] = $this->reach($item, reachable: false);
         if (PathItemType::Exercise !== $item->getType() || null === $item->getFlightPlan()) {
             throw $this->createNotFoundException();
         }
-        $ranking = $this->path->ranking($item);
+        $current = (int) $clock->now()->format('Y');
+        $seasons = array_values(array_unique([$current, ...$this->path->seasons($item)]));
+        rsort($seasons);
+        $asked = $request->query->getString('saison');
+        $season = match (true) {
+            self::ALL_SEASONS === $asked => null,
+            \in_array((int) $asked, $seasons, true) => (int) $asked,
+            default => $current,
+        };
+        $level = RankingLevel::tryFrom($request->query->getString('niveau')) ?? RankingLevel::All;
+
+        $ranking = $this->path->ranking($item, $season, $level);
         $pilot = $this->user();
         $rank = array_find_key($ranking, static fn (ExerciseResult $result): bool => $result->flight->getOwner() === $pilot);
 
@@ -151,6 +185,10 @@ final class PathController extends AbstractController
             'pilots' => \count($ranking),
             'rank' => null !== $rank ? $rank + 1 : null,
             'leader' => $ranking[0]->flight ?? null,
+            'season' => $season,
+            'seasons' => $seasons,
+            'level' => $level,
+            'levels' => RankingLevel::cases(),
         ]);
     }
 

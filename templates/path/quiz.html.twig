@@ -18,26 +18,53 @@
             </div>
 
             {% if score is not null %}
-                <div class="c-alert c-alert--{{ passed ? 'success' : 'error' }}" role="status">
-                    <strong>{{ score }} % de bonnes réponses.</strong>
-                    {{ passed ? 'Quiz réussi, bravo ! Relisez les explications, puis passez à la suite.' : 'Pas encore : relisez les explications ci-dessous et réessayez.' }}
+                {% set total = quiz.questions|length %}
+                {% set right = 0 %}
+                {% for i, question in quiz.questions %}{% if answers[i] is same as(question.answer) %}{% set right = right + 1 %}{% endif %}{% endfor %}
+                <div class="c-alert c-alert--{{ passed ? 'success' : 'error' }} p-quiz__result" role="status" tabindex="-1" autofocus>
+                    <strong>Réponses envoyées : {{ right }} bonne{{ right > 1 ? 's' : '' }} réponse{{ right > 1 ? 's' : '' }} sur {{ total }} ({{ score }} %).</strong>
+                    <span>
+                        {%- if passed %}Quiz réussi, bravo ! Il est compté dans votre parcours.
+                        {%- else %}Il faut {{ quiz.passMark }} % pour réussir : lisez les explications de vos erreurs, puis réessayez.{% endif %}
+                    </span>
                 </div>
                 <ol class="l-stack p-quiz__review" role="list">
                     {% for i, question in quiz.questions %}
-                        {% set right = answers[i] is same as(question.answer) %}
-                        <li class="c-card t-paper p-quiz__question p-quiz__question--{{ right ? 'right' : 'wrong' }}">
-                            <div class="c-card__body l-stack l-stack--xs">
+                        {% set ok = answers[i] is same as(question.answer) %}
+                        <li class="c-card t-paper p-quiz__question p-quiz__question--{{ ok ? 'right' : 'wrong' }}">
+                            <div class="c-card__body l-stack l-stack--sm">
+                                <p class="p-quiz__verdict">
+                                    <twig:ux:icon name="{{ ok ? 'check' : 'x' }}" aria-hidden="true" />
+                                    {{ ok ? 'Bonne réponse' : 'Erreur' }}
+                                </p>
                                 <strong>{{ i + 1 }}. {{ question.question }}</strong>
-                                <p>{{ right ? 'Bonne réponse' : 'Votre réponse : ' ~ question.choices[answers[i]] }}</p>
-                                {% if not right %}<p>Bonne réponse : <strong>{{ question.choices[question.answer] }}</strong></p>{% endif %}
-                                {% if question.explanation %}<p class="u-note">{{ question.explanation|nl2br }}</p>{% endif %}
+                                <ul class="p-quiz__choices" role="list">
+                                    {% for c, choice in question.choices %}
+                                        {% set mine = answers[i] is same as(c) %}
+                                        {% set good = question.answer is same as(c) %}
+                                        <li class="p-quiz__choice{{ good ? ' p-quiz__choice--right' }}{{ mine and not good ? ' p-quiz__choice--wrong' }}">
+                                            {% if good %}<twig:ux:icon name="check" aria-hidden="true" />{% elseif mine %}<twig:ux:icon name="x" aria-hidden="true" />{% else %}<span class="p-quiz__choice-mark" aria-hidden="true"></span>{% endif %}
+                                            <span>{{ choice }}
+                                                {%- if mine %} <em class="p-quiz__tag">votre réponse</em>{% endif %}
+                                                {%- if good and not mine %} <em class="p-quiz__tag">bonne réponse</em>{% endif %}
+                                            </span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                {% if question.explanation %}
+                                    <div class="p-quiz__explanation">
+                                        <strong>Explication</strong>
+                                        <p>{{ question.explanation|nl2br }}</p>
+                                    </div>
+                                {% endif %}
                             </div>
                         </li>
                     {% endfor %}
                 </ol>
                 <div class="l-cluster">
                     <twig:Ui:Button href="{{ path('app_path_quiz', {id: view.item.id}) }}" variant="{{ passed ? 'outline' : 'primary' }}" icon="">Refaire le quiz</twig:Ui:Button>
-                    <twig:Ui:Link href="{{ path('app_path_step', {number: number}) }}">Retour à l’étape {{ number }}</twig:Ui:Link>
+                    {% if passed %}<twig:Ui:Button href="{{ path('app_path_step', {number: number}) }}">Retour à l’étape {{ number }}</twig:Ui:Button>
+                    {% else %}<twig:Ui:Link href="{{ path('app_path_step', {number: number}) }}">Retour à l’étape {{ number }}</twig:Ui:Link>{% endif %}
                 </div>
             {% else %}
                 {{ form_start(form, {attr: {class: 'l-stack p-quiz'}}) }}

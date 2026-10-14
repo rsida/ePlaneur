@@ -25,6 +25,7 @@ use App\Training\TrainingStep;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 /**
  * "Mon parcours": the steps as a path, items done by reading, quizzes and exercises, steps opened
@@ -32,6 +33,8 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class PathTest extends WebTestCase
 {
+    use ClockSensitiveTrait;
+
     private KernelBrowser $client;
     private EntityManagerInterface $entityManager;
 
@@ -86,12 +89,22 @@ final class PathTest extends WebTestCase
 
         // Quiz: a wrong answer, then the right one; the best score is kept
         $this->client->request('GET', '/parcours/quiz/'.$quiz->getId());
+        $this->client->submitForm('Valider mes réponses');
+        self::assertResponseStatusCodeSame(422, 'Every question needs an answer');
         $this->client->submitForm('Valider mes réponses', ['form[q0]' => '0']);
-        self::assertSelectorTextContains('.c-alert--error', '0 % de bonnes réponses');
-        self::assertSelectorTextContains('.p-quiz__review', 'Bonne réponse : Le lacet inverse');
+        self::assertResponseRedirects('/parcours/quiz/'.$quiz->getId().'?resultat=1', 303, 'Turbo shows the result of a submission only after a redirect');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.c-alert--error', 'Réponses envoyées : 0 bonne réponse sur 1 (0 %).');
+        self::assertSelectorTextContains('.p-quiz__question--wrong .p-quiz__verdict', 'Erreur');
+        self::assertSelectorTextContains('.p-quiz__choice--wrong', 'Rien votre réponse');
+        self::assertSelectorTextContains('.p-quiz__choice--right', 'Le lacet inverse bonne réponse');
+        self::assertSelectorTextContains('.p-quiz__explanation', 'L’aile haute traîne plus.');
         $this->client->request('GET', '/parcours/quiz/'.$quiz->getId());
+        self::assertSelectorExists('form input[name="form[q0]"]', 'Without ?resultat, the quiz again');
         $this->client->submitForm('Valider mes réponses', ['form[q0]' => '1']);
+        $this->client->followRedirect();
         self::assertSelectorTextContains('.c-alert--success', 'Quiz réussi');
+        self::assertSelectorTextContains('.p-quiz__choice--right', 'Le lacet inverse votre réponse');
         $completion = $this->entityManager->getRepository(PathCompletion::class)->findOneBy(['pilot' => $pilot->getId(), 'item' => $quiz->getId()]);
         self::assertSame([100, 2], [$completion?->getScore(), $completion?->getAttempts()]);
 
@@ -101,7 +114,7 @@ final class PathTest extends WebTestCase
         $this->flight($pilot, 'C2-d015_Issoire-Brioude_ASK21_FrSW ePlaneur');
         $this->client->request('GET', '/parcours/exercice/'.$exercise->getId());
         self::assertSelectorTextContains('.p-path__records', 'Record personnel');
-        self::assertSelectorTextContains('main', '1 pilote a réussi cet exercice. Le classement s’affiche à partir de 2 pilotes.');
+        self::assertSelectorTextContains('main', 'Le classement s’affiche à partir de 2 pilotes.');
 
         // The trainer's validation completes the step and opens the next one
         $this->client->request('GET', '/parcours');
@@ -130,6 +143,39 @@ final class PathTest extends WebTestCase
         self::assertSelectorTextContains('tbody tr[aria-current]', 'Test lea@example.org');
         self::assertSelectorTextContains('.p-path__records', '2e sur 2');
         self::assertSelectorExists('a[href^="/vols/"][href*="/comparer/"]', 'Compare one’s best with the best flight');
+    }
+
+    public function testTheRankingIsBySeasonAndLevel(): void
+    {
+        static::mockTime('2026-10-14 12:00');
+        [, , $exercise] = $this->configure();
+        $lea = $this->user('lea@example.org');
+        $max = $this->user('max@example.org');
+        $zoe = $this->user('zoe@example.org');
+        $this->flight($lea, 'C2-d015 ePlaneur', slower: 1.2, on: '2026-03-01');
+        $this->flight($max, 'C2-d015 ePlaneur', on: '2026-04-01');
+        $this->flight($zoe, 'C2-d015 ePlaneur', slower: 1.1, on: '2025-06-01');
+        $this->entityManager->persist(new StepProgress($this->entityManager->getReference(User::class, $max->getId()), TrainingStep::Network, ProgressStatus::Validated, new \DateTimeImmutable('2026-01-01')));
+        $this->entityManager->flush();
+        $this->client->loginUser($lea);
+
+        $this->client->request('GET', '/parcours/exercice/'.$exercise->getId());
+        self::assertSelectorExists('#ranking-season option[value="2026"][selected]', 'The current season by default');
+        self::assertSelectorExists('#ranking-season option[value="2025"]');
+        self::assertSelectorCount(2, '.c-data-table tbody tr', 'Zoé flew in 2025');
+
+        $this->client->request('GET', '/parcours/exercice/'.$exercise->getId().'?saison=tout');
+        self::assertSelectorCount(3, '.c-data-table tbody tr');
+        self::assertSelectorTextContains('.p-path__records', '3e sur 3');
+
+        $this->client->request('GET', '/parcours/exercice/'.$exercise->getId().'?saison=tout&niveau=eleves');
+        self::assertSelectorCount(2, '.c-data-table tbody tr', 'Max has the network step validated');
+        self::assertSelectorTextContains('tbody tr:first-child', 'Test zoe@example.org');
+
+        $this->client->request('GET', '/parcours/exercice/'.$exercise->getId().'?niveau=epilotes');
+        self::assertSelectorNotExists('.c-data-table');
+        self::assertSelectorTextContains('.p-path__ranking-head + p', '1 pilote a réussi cet exercice en 2026 à ce niveau');
+        self::assertSelectorExists('a[href$="saison=tout&niveau=epilotes"]');
     }
 
     public function testExercisesAreCheckedByTheAnalysisOfTheFlight(): void
@@ -229,7 +275,7 @@ final class PathTest extends WebTestCase
         return [$reading, $quizItem, $exercise];
     }
 
-    private function flight(User $owner, string $plan, float $slower = 1.0, ?string $glider = null, bool $landed = false): Flight
+    private function flight(User $owner, string $plan, float $slower = 1.0, ?string $glider = null, bool $landed = false, string $on = '2026-03-01'): Flight
     {
         $fixes = array_map(static fn (Fix $fix): Fix => new Fix($fix->time * $slower, $fix->latitude, $fix->longitude, $fix->altitude), FlightSamples::glideThermalGlide());
         if ($landed) {
@@ -241,9 +287,9 @@ final class PathTest extends WebTestCase
             }
         }
         $point = static fn (string $name, float $x, float $radius): Turnpoint => new Turnpoint($name, ...FlightSamples::toLatLon($x, 0), altitude: 0.0, radius: $radius);
-        $track = new Track('igc', 'Condor 2', 'Pilote', null, $glider, 'AA2', null, $plan, [$point('Terrain', 0, 3000), $point('Départ', 0, 500), $point('Arrivée', 7000, 500)], $fixes, true, new \DateTimeImmutable('2026-03-01'));
+        $track = new Track('igc', 'Condor 2', 'Pilote', null, $glider, 'AA2', null, $plan, [$point('Terrain', 0, 3000), $point('Départ', 0, 500), $point('Arrivée', 7000, 500)], $fixes, true, new \DateTimeImmutable($on));
         $owner = $this->entityManager->getReference(User::class, $owner->getId());
-        $flight = new Flight((new FlightAnalyzer())->analyze($track), 'file.igc', 'file.igc', $owner, new \DateTimeImmutable('2026-03-01'));
+        $flight = new Flight((new FlightAnalyzer())->analyze($track), 'file.igc', 'file.igc', $owner, new \DateTimeImmutable($on));
         $this->entityManager->persist($flight);
         $this->entityManager->flush();
 

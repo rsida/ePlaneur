@@ -68,19 +68,23 @@ final readonly class PilotPath
 
     /**
      * The best pilots of an exercise on a flight plan: the best flight that passed it of each pilot
-     * who accepts to appear in rankings, by the ranking measure of the exercise.
+     * who accepts to appear in rankings, by the ranking measure of the exercise; limited to the
+     * flights of a season (calendar year) and to the pilots of a level when asked.
      *
      * @return list<ExerciseResult>
      */
-    public function ranking(PathItem $item): array
+    public function ranking(PathItem $item, ?int $season = null, RankingLevel $level = RankingLevel::All): array
     {
         if (null === $item->getFlightPlan()) {
             return [];
         }
+        $pilots = RankingLevel::All === $level ? [] : array_flip($this->progress->findPilotsWithValidated(TrainingStep::Network));
         $byPilot = [];
         foreach ($this->flights->findOnFlightPlan($item->getFlightPlan()) as $flight) {
             $owner = $flight->getOwner();
-            if (null !== $owner && $owner->isInRanking()) {
+            if (null !== $owner && $owner->isInRanking()
+                && (null === $season || (int) $flight->getDate()->format('Y') === $season)
+                && $level->accepts(isset($pilots[(int) $owner->getId()]))) {
                 $result = $this->check->check($item, $flight);
                 if ($result->passed()) {
                     $byPilot[(int) $owner->getId()][] = $result;
@@ -89,6 +93,19 @@ final readonly class PilotPath
         }
 
         return ExerciseRanking::sort(array_map(static fn (array $results): ExerciseResult => ExerciseRanking::best($results, $item->getRankBy()) ?? $results[0], $byPilot), $item->getRankBy());
+    }
+
+    /**
+     * Seasons (calendar years) with flights on the flight plan of an exercise, the latest first.
+     *
+     * @return list<int>
+     */
+    public function seasons(PathItem $item): array
+    {
+        $years = null === $item->getFlightPlan() ? [] : array_unique(array_map(static fn (Flight $flight): int => (int) $flight->getDate()->format('Y'), $this->flights->findOnFlightPlan($item->getFlightPlan())));
+        rsort($years);
+
+        return $years;
     }
 
     /**

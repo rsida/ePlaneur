@@ -6,6 +6,8 @@ namespace App\Repository;
 
 use App\Entity\StepProgress;
 use App\Entity\User;
+use App\Training\ProgressStatus;
+use App\Training\TrainingStep;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -32,5 +34,19 @@ class StepProgressRepository extends ServiceEntityRepository
         }
 
         return $byStep;
+    }
+
+    /**
+     * Ids of the pilots whose trainers validated a step.
+     *
+     * @return list<int>
+     */
+    public function findPilotsWithValidated(TrainingStep $step): array
+    {
+        return array_map(intval(...), $this->createQueryBuilder('p')
+            ->select('IDENTITY(p.pilot)')
+            ->andWhere('p.step = :step')->setParameter('step', $step)
+            ->andWhere('p.status = :status')->setParameter('status', ProgressStatus::Validated)
+            ->getQuery()->getSingleColumnResult());
     }
 }

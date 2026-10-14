@@ -13,7 +13,7 @@ pilots and to stir up the competition that drives progression, while rewarding g
 | `/parcours` | `app_path` | everyone | The eight steps as a path (a line, the cards alternate from tablets on): state of each step for a logged-in pilot (done, current, to unlock, coming soon), items done, qualification of the club; visitors get a registration call |
 | `/parcours/etape/{1-8}` | `app_path_step` | everyone; actions for logged-in users | Introduction, trainer's note, the items with their state and actions, previous and next step |
 | `/parcours/element/{id}/fait` | `app_path_done` | logged-in, step reached | POST: a reading, or an exercise without flight plan, said done by the pilot (CSRF `path-done-{id}`) |
-| `/parcours/quiz/{id}` | `app_path_quiz` | logged-in, step reached | The questions, then the score, the right answers and their explanation; the pilot can try again, the best score is kept |
+| `/parcours/quiz/{id}` | `app_path_quiz` | logged-in, step reached | The questions; once sent, the result (`?resultat=1`, reached by a redirect, as Turbo ignores a form answered without one; the answers wait in the session): the score, each question right or wrong with every choice marked (the pilot's answer, the right one) and its explanation; the pilot can try again, the best score is kept |
 | `/parcours/exercice/{id}` | `app_path_exercise` | logged-in | An exercise on a flight plan: the pilot's finished tasks on it (personal best, rank), the comparison of their best with the best flight, the ranking of the best pilots |
 
 The member dashboard (`/mon-compte`) shows the current step with its progress, and the training path
@@ -79,6 +79,17 @@ speed), the 10 best, with the place of the pilot. Quality comes first, since onl
 ranked. The ranking shows once as many pilots as the "Classement à partir de" of the item (5 by
 default) passed the exercise; before, the page says how many did.
 
+The ranking is limited to a **season** and a **level**, chosen above it (`?saison=`, `?niveau=`):
+
+- season: a calendar year, as the [season ranking of the club](flights.md#club-life), the current
+  one by default (`tout` for every season): a new season gives newcomers a chance to be on top;
+- level (`RankingLevel`): every pilot by default, the pupils (step 3 "Voler en réseau" not
+  validated by a trainer) or the ePilotes (step 3 validated), so that a pupil does not race the
+  best pilots of the club. Groups rather than classes: young pilots arrive one by one.
+
+The threshold applies to each ranking shown; the podium badge counts the ranking of every season
+and every level.
+
 Every check is computed when a page is shown. The measures that load the analysis of a flight
 (altitude gain, recoveries, penalties, landed on an airfield) are cached for a day
 (`ExerciseCheck::cached()`), by flight, statistics, session and flight plan: a new analysis or a
@@ -105,8 +116,8 @@ single flight (100 km, 5 h...) stay in the logbook ([flights](flights.md#club-li
 Shown on `/parcours` (`#badges`): to visitors with their tiers, to pilots with their count and the
 way to the next tier; the dashboard of the member space lists the badges earned (`path_badges()`).
 
-Not built yet (roadmap 11): rankings by level and season, pseudonyms for minors, the moment of the
-flight that misses a criterion.
+Not built yet (roadmap 11): pseudonyms for minors (a decision of the committee: GDPR, consent of a
+parent), the moment of the flight that misses a criterion.
 
 ## Back-office
 

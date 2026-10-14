@@ -40,7 +40,7 @@
                     <div class="p-path__records">
                         <twig:Ui:Stat label="Record personnel · {{ measure.label|lower }}" value="{{ best.measure is not null ? best.measure|number_format(measure.unit == 'm/s' ? 1 : (measure.unit in ['km/h', 'km'] ? 1 : 0), ',', ' ') ~ ' ' ~ measure.unit : '—' }}" />
                         <twig:Ui:Stat label="Vols réussis" value="{{ view.passed|length }} sur {{ view.results|length }}" />
-                        {% if rank %}<twig:Ui:Stat label="Classement" value="{{ rank }}{{ rank == 1 ? 'er' : 'e' }} sur {{ pilots }}" />{% endif %}
+                        {% if rank %}<twig:Ui:Stat label="Classement {{ season ?? 'toutes saisons' }}" value="{{ rank }}{{ rank == 1 ? 'er' : 'e' }} sur {{ pilots }}" />{% endif %}
                     </div>
                     {% if leader and leader.id != best.flight.id %}
                         <twig:Ui:Link href="{{ path('app_flight_compare', {id: best.flight.id, other: leader.id}) }}">Comparer mon record au meilleur vol, tronçon par tronçon</twig:Ui:Link>
@@ -74,9 +74,26 @@
             </section>
 
             <section class="l-stack l-stack--sm" aria-labelledby="ranking-title">
-                <twig:Ui:Heading level="2" size="h4" id="ranking-title">Les meilleurs</twig:Ui:Heading>
+                <div class="p-path__ranking-head">
+                    <twig:Ui:Heading level="2" size="h4" id="ranking-title">Les meilleurs</twig:Ui:Heading>
+                    <form method="get" data-controller="autosubmit" class="p-path__ranking-filters">
+                        <label class="u-visually-hidden" for="ranking-season">Saison</label>
+                        <select id="ranking-season" name="saison" data-action="autosubmit#submit">
+                            {% for year in seasons %}<option value="{{ year }}"{% if year == season %} selected{% endif %}>Saison {{ year }}</option>{% endfor %}
+                            <option value="tout"{% if season is null %} selected{% endif %}>Toutes les saisons</option>
+                        </select>
+                        <label class="u-visually-hidden" for="ranking-level">Niveau</label>
+                        <select id="ranking-level" name="niveau" data-action="autosubmit#submit">
+                            {% for choice in levels %}<option value="{{ choice.value }}"{% if choice == level %} selected{% endif %}>{{ choice.label }}</option>{% endfor %}
+                        </select>
+                        <noscript><twig:Ui:Button type="submit" size="sm" variant="outline">Afficher</twig:Ui:Button></noscript>
+                    </form>
+                </div>
                 {% if ranking is empty %}
-                    <p class="u-note">{{ pilots }} pilote{{ pilots > 1 ? 's ont' : ' a' }} réussi cet exercice. Le classement s’affiche à partir de {{ item.rankingFrom }} pilotes.</p>
+                    <p class="u-note">
+                        {{ pilots }} pilote{{ pilots > 1 ? 's ont' : ' a' }} réussi cet exercice {{ season ? 'en ' ~ season : 'depuis le début' }}{{ level.value != 'tous' ? ' à ce niveau' }}. Le classement s’affiche à partir de {{ item.rankingFrom }} pilotes.
+                        {% if season %}<a href="{{ path('app_path_exercise', {id: item.id, saison: 'tout', niveau: level.value}) }}">Voir toutes les saisons</a>{% endif %}
+                    </p>
                 {% else %}
                     <figure class="c-data-table">
                         <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Classement de l’exercice">
