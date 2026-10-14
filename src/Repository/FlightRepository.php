@@ -139,6 +139,22 @@ class FlightRepository extends ServiceEntityRepository
     }
 
     /**
+     * The flight replayed on the home page: the latest public flight that finished its task, else
+     * the latest public flight.
+     */
+    public function findShowcase(): ?Flight
+    {
+        return $this->createQueryBuilder('f')
+            ->andWhere('f.public = true')
+            ->orderBy('CASE WHEN f.taskSpeed IS NULL THEN 1 ELSE 0 END', 'ASC')
+            ->addOrderBy('f.uploadedAt', 'DESC')
+            ->addOrderBy('f.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * Flights of others without any comment yet, the latest first (trainers' dashboard).
      *
      * @return list<Flight>

@@ -144,19 +144,86 @@ export function attitude(track, index) {
 }
 
 /**
- * Bearing of a camera flying behind a glider: along its track of the last `seconds` (the course,
- * not each circle of a thermal), moved a little from `previous` at each frame.
+ * Bearing of a camera flying behind a glider, moved a little from `previous` at each frame. In a
+ * glide, along its track of the last `seconds`; while it circles in a thermal (circlingSpans()), the
+ * course it leaves the thermal on, held still until it leaves: the map does not spin with each
+ * circle, and the camera is already behind the glider when it glides away. It never turns faster than
+ * CAMERA_TURN a frame, even replayed fast.
  */
 export function chaseBearing(track, index, previous, seconds = 60) {
-    const [lon, lat] = positionAt(track, index);
-    const back = Math.max(0, Math.floor(index) - seconds);
-    if (back >= Math.floor(index)) return previous ?? 0;
-    const course = bearing(track.latitude[back], track.longitude[back], lat, lon);
+    const i = Math.floor(index);
+    const spans = circlingSpans(track, seconds);
+    const span = spans.find(([start, end]) => i >= start && i <= end);
+    let course;
+    if (span) {
+        course = courseBetween(track, span[1], span[1] + seconds) ?? courseBetween(track, span[0] - seconds, span[0]);
+    } else {
+        // After a thermal, the course from its exit only: the circles would turn the camera again
+        const exit = spans.filter(([, end]) => end < i).at(-1)?.[1] ?? 0;
+        const back = Math.max(0, i - seconds, exit);
+        course = i - back >= seconds / 4 ? courseBetween(track, back, index) : courseBetween(track, exit, exit + seconds);
+    }
+    if (course === null) return previous ?? 0;
+    if (previous === null || previous === undefined) return course;
+    const turn = Math.max(-CAMERA_TURN, Math.min(CAMERA_TURN, angleDifference(previous, course) * 0.05));
 
-    return previous === null || previous === undefined ? course : (previous + angleDifference(previous, course) * 0.05 + 360) % 360;
+    return (previous + turn + 360) % 360;
 }
 
-/** Position of a glider between two seconds of its track: [longitude, latitude, altitude]. */
+/** Most the chase camera turns in a frame, in degrees: 30°/s at 60 frames a second, whatever the speed of the replay. */
+const CAMERA_TURN = 0.5;
+
+/** Turn, in degrees one way, over a window around a point, from which the glider circles. */
+const CIRCLING_TURN = 360;
+
+const circling = new WeakMap();
+
+/**
+ * The spans of a track where the glider circles, as [first index, last index]: it turns at least
+ * CIRCLING_TURN degrees one way over the `window` indexes around each point (a thermal circle takes
+ * 20 to 30 s, a change of course in a glide less than a turn). Spans closer than half a window are
+ * joined (a few straight seconds to recentre). Kept for each track and window.
+ */
+export function circlingSpans(track, window = 60) {
+    const byWindow = circling.get(track) ?? new Map();
+    circling.set(track, byWindow);
+    if (byWindow.has(window)) return byWindow.get(window);
+
+    const { latitude, longitude } = track;
+    const count = latitude.length;
+    // Turn between one index and the next, summed from the start
+    const sums = new Float64Array(count);
+    let heading = null;
+    for (let k = 1; k < count; k += 1) {
+        const moved = latitude[k] !== latitude[k - 1] || longitude[k] !== longitude[k - 1];
+        const next = moved ? bearing(latitude[k - 1], longitude[k - 1], latitude[k], longitude[k]) : heading;
+        sums[k] = sums[k - 1] + (heading !== null && next !== null ? angleDifference(heading, next) : 0);
+        heading = next;
+    }
+    const half = Math.max(1, Math.round(window / 2));
+    const spans = [];
+    for (let k = 0; k < count; k += 1) {
+        const turn = sums[Math.min(count - 1, k + half)] - sums[Math.max(0, k - half)];
+        if (Math.abs(turn) < CIRCLING_TURN) continue;
+        const previous = spans.at(-1);
+        if (previous && k - previous[1] <= half) previous[1] = k;
+        else spans.push([k, k]);
+    }
+    byWindow.set(window, spans);
+
+    return spans;
+}
+
+/** Course from one index of a track to another (clamped to the track), null when it did not move. */
+function courseBetween(track, from, to) {
+    const last = track.latitude.length - 1;
+    const a = Math.max(0, Math.min(last, Math.floor(from)));
+    const b = Math.max(0, Math.min(last, Math.floor(to)));
+    if (b - a < 2 || (track.latitude[a] === track.latitude[b] && track.longitude[a] === track.longitude[b])) return null;
+
+    return bearing(track.latitude[a], track.longitude[a], track.latitude[b], track.longitude[b]);
+}
+
 export function positionAt(track, index) {
     const last = track.latitude.length - 1;
     const a = Math.max(0, Math.min(last, Math.floor(index)));

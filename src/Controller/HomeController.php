@@ -30,6 +30,7 @@ final class HomeController extends AbstractController
             'featured' => $featured,
             'latest' => $posts->findLatest($reader, self::NEWS_COUNT - (null !== $featured ? 1 : 0), $featured),
             'public_flights' => $flights->findPublic(self::PUBLIC_FLIGHT_COUNT),
+            'replay' => $flights->findShowcase(),
         ]);
     }
 }

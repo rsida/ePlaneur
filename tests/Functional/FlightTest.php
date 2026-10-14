@@ -349,6 +349,9 @@ final class FlightTest extends WebTestCase
         self::assertResponseRedirects('/connexion');
         $this->client->request('GET', '/');
         self::assertSelectorNotExists('.p-home-flights');
+        self::assertSelectorNotExists('[data-controller="home-replay"]');
+        $this->client->request('GET', '/vols/'.$id.'/apercu.json');
+        self::assertResponseRedirects('/connexion');
 
         $this->client->loginUser($pilot);
         $crawler = $this->client->request('GET', '/vols/'.$id);
@@ -359,6 +362,14 @@ final class FlightTest extends WebTestCase
         $this->client->restart();
         $this->client->request('GET', '/');
         self::assertSelectorTextContains('.p-home-flights', 'Jeanne Pilote');
+        self::assertSelectorExists('[data-controller="home-replay"][data-home-replay-url-value="/vols/'.$id.'/apercu.json"]', 'Replayed on the home page');
+        $this->client->request('GET', '/vols/'.$id.'/apercu.json');
+        self::assertResponseIsSuccessful();
+        $replay = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame(2, $replay['step']);
+        self::assertNotEmpty($replay['track']['latitude']);
+        self::assertSame(array_keys($replay['track']), ['latitude', 'longitude', 'altitude', 'speed'], 'Only what the replay draws');
+        self::assertCount(\count($replay['track']['latitude']), $replay['track']['altitude']);
         $this->client->request('GET', '/vols/'.$id);
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.p-flight__links', 'Public');

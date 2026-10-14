@@ -460,7 +460,12 @@ opens its tab):
 - Replay ×1 to ×300, "Suivre" keeps the glider in the centre; in 3D the camera comes close and
   flies behind it (on the glider between two seconds, as it is drawn: on whole seconds the camera
   jumped every second), turned along its track of the last minute (`chaseBearing()`: the course, not
-  each circle of a thermal).
+  each circle of a thermal). While the glider circles (`circlingSpans()`: at least a full turn one way
+  over the minute around the moment, spans closer than 30 s joined), the camera turns once to the
+  course the glider leaves the thermal on and holds still until it leaves, so the map does not spin
+  with the circles; after the thermal it follows the course from the exit only. It never turns faster
+  than 30°/s (0.5° a frame), even replayed fast. The same camera
+  serves the comparison, the session and the replay of the home page.
 - "Vue pilote" (3D): the camera sits in the glider (`calculateCameraOptionsFromCameraLngLatAltRotation`
   of MapLibre 5), looks along its track, 15° below the horizon (fewer far tiles to load), at least
   30 m above the relief of the map (the real one, not Condor's: low over a ridge the glider can be
@@ -476,7 +481,14 @@ opens its tab):
   compared between flights (comparison page), not within a flight.
 - Public flights (`Flight::$public`, "Rendre public" for the pilot, `FLIGHT_PUBLISH`): their page
   and its data are open to visitors (`FLIGHT_VIEW`); comments, sessions, comparisons and logbooks
-  still need an account. The home page lists the latest three (`FlightRepository::findPublic()`). New flights are private unless the pilot
+  still need an account. The home page lists the latest three (`FlightRepository::findPublic()`) and
+  replays one in 3D in a loop (roadmap 11e): the latest public flight that finished its task
+  (`FlightRepository::findShowcase()`), from `/vols/{id}/apercu.json` (`app_flight_replay`: the track
+  from take-off to landing every 2 s and the task, nothing else), drawn by
+  `assets/controllers/home_replay_controller.js` with the map and the glider of the viewer, the camera
+  behind the glider, 60 times faster. The map loads only when the section comes into view, the replay
+  pauses out of view and in a hidden tab, a "Pause" button stops it, and it does not start by itself
+  when the reader asked for reduced motion. New flights are private unless the pilot
   chose "public by default" in their privacy settings.
 
 ## Session

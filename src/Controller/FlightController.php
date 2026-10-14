@@ -66,6 +66,9 @@ final class FlightController extends AbstractController
 
     private const string UPLOAD_TOKEN = 'flight_upload';
 
+    /** Seconds between two points of the replay of the home page. */
+    private const int REPLAY_STEP = 2;
+
     /**
      * Version of what analysis() adds to the stored analysis, in the address of the data next to
      * the version of the analysis: raise it when that changes, or browsers keep the old data an hour.
@@ -380,6 +383,33 @@ final class FlightController extends AbstractController
         }
         $response = new JsonResponse($analysis);
         $response->setPrivate();
+        $response->setMaxAge(3600);
+
+        return $response;
+    }
+
+    /**
+     * The replay of the home page (roadmap 11e): the track from take-off to landing, one point every
+     * REPLAY_STEP seconds, and the task; light enough for a page every visitor opens.
+     */
+    #[Route('/{id<\d+>}/apercu.json', name: 'replay', methods: ['GET'])]
+    #[IsGranted(FlightVoter::VIEW, 'flight')]
+    public function replay(Flight $flight): JsonResponse
+    {
+        $analysis = $flight->getAnalysis();
+        $series = $analysis['series'];
+        $last = \count($series['time']) - 1;
+        $from = max(0, (int) ($analysis['statistics']['takeoff'] ?? 0));
+        $to = min($last, (int) ($analysis['statistics']['landing'] ?? $last));
+        $track = ['latitude' => [], 'longitude' => [], 'altitude' => [], 'speed' => []];
+        for ($i = $from; $i <= $to; $i += self::REPLAY_STEP) {
+            $track['latitude'][] = round((float) $series['latitude'][$i], 5);
+            $track['longitude'][] = round((float) $series['longitude'][$i], 5);
+            $track['altitude'][] = (int) round((float) $series['altitude'][$i]);
+            $track['speed'][] = (int) round((float) $series['speed'][$i]);
+        }
+        $response = new JsonResponse(['step' => self::REPLAY_STEP, 'track' => $track, 'task' => $analysis['task'] ?? null]);
+        $flight->isPublic() ? $response->setPublic() : $response->setPrivate();
         $response->setMaxAge(3600);
 
         return $response;
