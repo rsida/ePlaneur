@@ -21,7 +21,7 @@ enum UserNotification: string
             self::FlightComment => 'Un commentaire sur l’un de mes vols',
             self::Message => 'Un nouveau message',
             self::Renewal => 'Un rappel de renouvellement de mon adhésion',
-            self::News => 'Les actualités du club',
+            self::News => 'La lettre mensuelle du club : vols, records, prochaines sessions et actualités',
         };
     }
 }

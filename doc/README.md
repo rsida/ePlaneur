@@ -2,15 +2,17 @@
 
 | Document | Content |
 |---|---|
+| [What the site does](features.md) | The features by audience (visitors, pilots, members, trainers, committee, administrators), with their pages and documents |
 | [Roadmap](roadmap.md) | Planned order of work, status, decisions and open questions |
 | [Project (functional reference)](project/README.md) | Purpose of the site, the club, training, network flights, ecosystem, current site, glossary |
 | [Accounts and permissions](accounts.md) | Registration, login, groups, permissions, content visibility, console commands, dev accounts |
 | [Content: posts, blocks, media](content.md) | Post model, block types and how to add one, media storage and access, post permissions |
 | [SEO and GEO](seo.md) | What search and AI answer engines see: robots, canonical, Open Graph, JSON-LD, `robots.txt`, `sitemap.xml`, `llms.txt`, search settings of posts and pages |
 | [WordPress import](wordpress-import.md) | `app:import-wordpress`: pages, posts and files of the current site, page tree mapping, redirects of the old addresses |
-| [Flight viewer](flights.md) | `/vols`: Condor `.ftr` and IGC tracks, landscape projections, analysis, 2D/3D viewer |
+| [Flight viewer](flights.md) | `/vols`: Condor `.ftr` and IGC tracks, landscape projections, analysis, 2D/3D viewer and its chase camera, replay of the home page |
 | [Condor 3 integration study](condor-integration.md) | What Condor 3 writes and outputs (IGC export, race results, UDP, `cndr3:` links) and what the site could do with it |
-| [Mon parcours](training-path.md) | `/parcours`: the training path as a path of progression, steps and items, quizzes, exercises and their rankings, back-office |
+| [Mon parcours](training-path.md) | `/parcours`: the training path as a path of progression, steps and items, quizzes, exercises checked by the analysis, rankings by season and level, badges; `/premier-vol`; back-office |
+| [Monthly digest](monthly-digest.md) | The e-mail of the month for the accounts that asked for it, and its command |
 | [Installable site](installable-site.md) | Manifest, icons, service worker, offline page and install button |
 | [Activity of the club](activity.md) | `/activite`: the activity month by month for the committee, its charts and CSV export |
 | [Network sessions](sessions.md) | `/sessions`: coming sessions, history and results, flight plans, tracks joined by race id, import from eplaneur.fr |
@@ -22,6 +24,7 @@
 | [Installation (development)](installation.md) | Prerequisites and first setup of the local environment |
 | [Configuration](configuration.md) | `.env` files, load order, every variable |
 | [Daily development](development.md) | Makefile commands, database, assets, mails, Xdebug |
+| [Console commands](commands.md) | Every `app:*` command: accounts, scheduled tasks, imports |
 | [Tests and quality](tests.md) | PHPUnit, Behat, test database, PHP-CS-Fixer, PHPStan |
 | [Production](production.md) | Server prerequisites, deployment by tag, rollback, backups |
 | [Troubleshooting](troubleshooting.md) | Known issues and fixes |

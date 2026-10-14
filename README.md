@@ -5,7 +5,8 @@ Website of the **Club ePlaneur**, a French association that teaches and organise
 "network flights", membership and association life, all run online. This project rebuilds the
 current WordPress site https://club.eplaneur.fr with Symfony.
 
-What the site does and for whom: [doc/project/](doc/project/README.md).
+What the site does and for whom: [doc/project/](doc/project/README.md); its features, by audience:
+[doc/features.md](doc/features.md).
 
 ## Stack
 

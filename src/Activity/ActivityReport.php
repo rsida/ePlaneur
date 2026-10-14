@@ -44,6 +44,22 @@ final readonly class ActivityReport
         $from = null === $year ? $current->modify(\sprintf('-%d months', self::MONTHS - 1)) : new \DateTimeImmutable(\sprintf('%d-01-01', $year), $now->getTimezone());
         $to = null === $year ? $current : min($current, new \DateTimeImmutable(\sprintf('%d-12-01', $year), $now->getTimezone()));
 
+        return $this->between($from, $to);
+    }
+
+    /** The activity of one month (the monthly digest). */
+    public function month(\DateTimeImmutable $month): ActivityMonth
+    {
+        $first = $month->modify('first day of this month')->setTime(0, 0);
+
+        return $this->between($first, $first)['total'];
+    }
+
+    /**
+     * @return array{months: list<ActivityMonth>, total: ActivityMonth, from: \DateTimeImmutable, to: \DateTimeImmutable}
+     */
+    private function between(\DateTimeImmutable $from, \DateTimeImmutable $to): array
+    {
         /** @var array<string, array<string, mixed>> $counts */
         $counts = [];
         for ($month = $from; $month <= $to; $month = $month->modify('+1 month')) {

@@ -59,8 +59,9 @@ message (open question).
 
 `User::$notifications` holds the `UserNotification` values the member wants: a comment on one of
 their flights (`FlightMailer`), a new message (`MessageMailer`), the renewal reminder
-(`app:membership:remind` skips the others) and club news (not sent yet). Security and confirmation
-e-mails are always sent. New accounts get everything but the news.
+(`app:membership:remind` skips the others) and "La lettre mensuelle du club" (`News`, the
+[monthly digest](monthly-digest.md)). Security and confirmation e-mails are always sent. New accounts
+get everything but the monthly digest.
 
 ## Account deletion (GDPR)
 

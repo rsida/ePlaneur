@@ -1,0 +1,50 @@
+{% extends 'email/_layout.html.twig' %}
+
+{# The monthly digest (App\Digest\MonthlyDigest): the month of the club, for one reader. #}
+{% block content %}
+    {% set h2 = 'margin:28px 0 8px;font-size:17px;' %}
+    {% set button = 'display:inline-block;padding:12px 18px;border-radius:4px;background:#3e5d83;color:#ffffff;font-weight:700;text-decoration:none;' %}
+    <p>Bonjour {{ reader.displayName }},</p>
+    <p>Voici le club en {{ label }}.</p>
+
+    <h2 style="{{ h2 }}">Le mois en chiffres</h2>
+    <p style="margin:0;">
+        {{ activity.sessions }} session{{ activity.sessions > 1 ? 's' : '' }} en réseau
+        · {{ activity.flights }} vol{{ activity.flights > 1 ? 's' : '' }} déposé{{ activity.flights > 1 ? 's' : '' }} ({{ activity.hours|number_format(1, ',', ' ') }} h)
+        · {{ activity.pilots }} pilote{{ activity.pilots > 1 ? 's' : '' }} actif{{ activity.pilots > 1 ? 's' : '' }}
+        {%- if activity.steps > 0 %} · {{ activity.steps }} étape{{ activity.steps > 1 ? 's' : '' }} du parcours validée{{ activity.steps > 1 ? 's' : '' }}{% endif %}
+        {%- if activity.accounts > 0 %} · {{ activity.accounts }} nouveau{{ activity.accounts > 1 ? 'x' : '' }} compte{{ activity.accounts > 1 ? 's' : '' }}{% endif %}.
+    </p>
+
+    {% if records is not empty %}
+        <h2 style="{{ h2 }}">Records du club</h2>
+        <ul style="margin:0;padding-left:20px;">
+            {% for record in records %}
+                {% set flight = record.flight %}
+                <li>{% if record.code %}<a href="{{ url('app_flight_plan_show', {code: record.code}) }}" style="color:#3e5d83;">{{ record.code }}</a>{% else %}{{ record.plan }}{% endif %} : {{ flight.owner.displayName }}, {{ flight.taskSpeed|number_format(1, ',', ' ') }} km/h</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if sessions is not empty %}
+        <h2 style="{{ h2 }}">Prochains vols en réseau</h2>
+        <ul style="margin:0;padding-left:20px;">
+            {% for session in sessions %}
+                <li><a href="{{ url('app_session_show', {id: session.id}) }}" style="color:#3e5d83;">{{ session.date|format_date('full', locale: 'fr')|capitalize }}{% if session.startTime %} à {{ session.startTime|date('H\\hi') }}{% endif %}</a> · {{ session.flightPlan.title ?? session.flightPlan.code }} ({{ session.flightPlan.category }}, Condor {{ session.flightPlan.condorVersion }})</li>
+            {% endfor %}
+        </ul>
+        <p style="margin:8px 0 0;font-size:13px;color:#586772;">Heures de Paris.</p>
+    {% endif %}
+
+    {% if posts is not empty %}
+        <h2 style="{{ h2 }}">Actualités</h2>
+        <ul style="margin:0;padding-left:20px;">
+            {% for post in posts %}
+                <li><a href="{{ url('app_post_show', {slug: post.slug}) }}" style="color:#3e5d83;">{{ post.title }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <p style="margin:28px 0;"><a href="{{ url('app_path') }}" style="{{ button }}">Continuer mon parcours</a></p>
+    <p style="font-size:13px;color:#586772;">Vous recevez cette lettre parce que vous avez choisi « La lettre mensuelle du club » dans <a href="{{ url('app_account_profile') }}#notifications" style="color:#586772;">Mon profil</a>. Vous pouvez la désactiver à tout moment.</p>
+{% endblock %}
