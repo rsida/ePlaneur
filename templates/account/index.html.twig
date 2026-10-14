@@ -63,6 +63,10 @@
         {% else %}
             <p>Toutes les étapes ouvertes sont terminées : refaites les exercices pour battre vos records, les suivantes arrivent bientôt.</p>
         {% endif %}
+        {% set earned = path_badges(app.user)|filter(b => b.tier) %}
+        {% if earned is not empty %}
+            <p class="u-note"><a href="{{ path('app_path') }}#badges">{{ earned|length }} badge{{ earned|length > 1 ? 's' : '' }} sur 8</a> : {{ earned|map(b => b.badge.label ~ ' (' ~ b.tier.label|lower ~ ')')|join(', ') }}.</p>
+        {% endif %}
     </section>
 
     {# Coming network sessions #}

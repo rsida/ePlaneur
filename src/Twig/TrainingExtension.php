@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Twig;
 
 use App\Entity\User;
+use App\Training\BadgeView;
+use App\Training\PathBadges;
 use App\Training\PilotPath;
 use App\Training\StepState;
 use App\Training\StepView;
@@ -14,13 +16,15 @@ use Twig\Attribute\AsTwigFunction;
 
 /**
  * The training path of a pilot in templates (dashboard of the member space): the trainers' marks
- * (`training_path()`) and the step of "Mon parcours" to work on (`path_current_step()`).
+ * (`training_path()`), the step of "Mon parcours" to work on (`path_current_step()`) and its badges
+ * (`path_badges()`).
  */
 final readonly class TrainingExtension
 {
     public function __construct(
         private TrainingPath $path,
         private PilotPath $pilotPath,
+        private PathBadges $badges,
     ) {
     }
 
@@ -54,5 +58,16 @@ final readonly class TrainingExtension
     public function currentStep(User $pilot): ?StepView
     {
         return array_find($this->pilotPath->of($pilot), static fn (StepView $step): bool => StepState::Current === $step->state);
+    }
+
+    /**
+     * The badges of "Mon parcours" of a pilot.
+     *
+     * @return list<BadgeView>
+     */
+    #[AsTwigFunction('path_badges')]
+    public function badges(User $pilot): array
+    {
+        return $this->badges->of($pilot);
     }
 }

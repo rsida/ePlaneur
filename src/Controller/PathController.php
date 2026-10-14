@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Repository\PathCompletionRepository;
 use App\Training\ExerciseResult;
 use App\Training\ItemView;
+use App\Training\PathBadges;
 use App\Training\PathItemType;
 use App\Training\PilotPath;
 use App\Training\StepState;
@@ -41,12 +42,13 @@ final class PathController extends AbstractController
     }
 
     #[Route('', name: '', methods: ['GET'])]
-    public function index(): Response
+    public function index(PathBadges $badges): Response
     {
         $steps = $this->path->of($this->pilot());
 
         return $this->render('path/index.html.twig', [
             'steps' => $steps,
+            'badges' => $badges->of($this->pilot(), $steps),
             'current' => array_find($steps, static fn (StepView $step): bool => StepState::Current === $step->state),
         ]);
     }

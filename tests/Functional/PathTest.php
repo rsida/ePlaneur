@@ -176,6 +176,36 @@ final class PathTest extends WebTestCase
         self::assertSelectorTextContains('.p-training', 'exercices réussis : Circuit propre', 'Trainers see the passed exercises with the logbook');
     }
 
+    public function testBadgesRewardWhatThePilotDoesAgainAndAgain(): void
+    {
+        [, , $exercise] = $this->configure();
+        [$latitude, $longitude] = array_values(FlightSamples::toLatLon(7000, 0));
+        $this->entityManager->persist(new Airfield('AA2', 'Brioude', $latitude, $longitude, 430.0, 800));
+        $lea = $this->user('lea@example.org');
+        $this->flight($lea, 'C2-d015 ePlaneur', slower: 1.2, landed: true);
+        $this->flight($lea, 'C2-d015 ePlaneur', landed: true);
+        $this->flight($this->user('max@example.org'), 'C2-d015 ePlaneur', slower: 1.1);
+
+        $this->client->request('GET', '/parcours');
+        self::assertSelectorTextContains('#badges-title', 'Des badges à gagner');
+        self::assertSelectorCount(8, '.p-path-badge');
+        self::assertSelectorNotExists('.p-path-badge--bronze');
+        self::assertSelectorTextContains('.p-path-badge:nth-child(4)', 'Bronze à 1, argent à 10, or à 50.');
+
+        $this->client->loginUser($lea);
+        $this->client->request('GET', '/parcours');
+        self::assertSelectorTextContains('#badges-title', 'Mes badges');
+        self::assertSelectorCount(3, '.p-path-badge--bronze', 'An exercise passed, landings, a podium');
+        self::assertSelectorTextContains('.p-path-badge--bronze:nth-child(2)', 'Appliqué');
+        self::assertSelectorTextContains('.p-path-badge:nth-child(4) .c-meter', '2 atterrissages sur un terrain');
+        self::assertSelectorTextContains('.p-path-badge:nth-child(4) .c-meter', 'Argent à 10');
+        self::assertSelectorTextContains('.p-path-badge:nth-child(7) .c-meter', '1 semaine de vol');
+        self::assertSelectorExists('.p-path-badge--bronze:nth-child(8)', 'First of the ranking of '.$exercise->getTitle());
+
+        $this->client->request('GET', '/mon-compte');
+        self::assertSelectorTextContains('section[aria-labelledby="path-title"]', '3 badges sur 8 : Appliqué (bronze), Retour au terrain (bronze), Podium (bronze).');
+    }
+
     /**
      * Steps 1 and 2 open; step 1 with a reading, a quiz, an exercise and the trainer's validation.
      *

@@ -244,3 +244,75 @@
 .p-path-attempt__line--missed svg {
     color: var(--color-danger);
 }
+
+/* ---------- Badges: a medal per badge, coloured by the tier reached ---------- */
+.p-path__badges {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-path-badge {
+    --_tier: var(--color-line-strong);
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: start;
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--color-text-muted);
+}
+
+.p-path-badge--bronze {
+    --_tier: var(--color-tier-bronze);
+}
+
+.p-path-badge--silver {
+    --_tier: var(--color-tier-silver);
+}
+
+.p-path-badge--gold {
+    --_tier: var(--color-tier-gold);
+}
+
+.p-path-badge[class*='p-path-badge--'] {
+    color: var(--color-text);
+}
+
+.p-path-badge__medal {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid var(--_tier);
+    border-radius: var(--radius-pill);
+    color: var(--_tier);
+}
+
+.p-path-badge[class*='p-path-badge--'] .p-path-badge__medal {
+    background-color: var(--_tier);
+    color: var(--color-paper);
+}
+
+.p-path-badge__medal svg {
+    width: var(--icon-md);
+    height: var(--icon-md);
+}
+
+.p-path-badge__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.p-path-badge__tier {
+    color: var(--color-text-muted);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+}

@@ -56,6 +56,36 @@
                     </li>
                 {% endfor %}
             </ol>
+
+            <section class="l-stack" id="badges" aria-labelledby="badges-title">
+                <div class="l-stack l-stack--xs">
+                    <twig:Ui:Heading level="2" size="h3" id="badges-title">{{ mine ? 'Mes badges' : 'Des badges à gagner' }}</twig:Ui:Heading>
+                    <p class="u-note">Chaque badge a trois niveaux : bronze, argent et or. Ils récompensent surtout les bonnes habitudes du pilote : se poser sur un terrain, voler sans pénalité, voler avec le club, régulièrement.</p>
+                </div>
+                <ul class="p-path__badges" role="list">
+                    {% for view in badges %}
+                        {% set tier = view.tier %}
+                        <li class="p-path-badge{{ tier ? ' p-path-badge--' ~ tier.value }}">
+                            <span class="p-path-badge__medal" aria-hidden="true"><twig:ux:icon name="{{ view.badge.icon }}" /></span>
+                            <span class="l-stack l-stack--xs">
+                                <span class="p-path-badge__head">
+                                    <strong>{{ view.badge.label }}</strong>
+                                    {% if tier %}<span class="p-path-badge__tier">{{ tier.label }}</span>{% endif %}
+                                </span>
+                                <span class="u-note">{{ view.badge.description }}</span>
+                                {% if not mine %}
+                                    {% set thresholds = view.badge.thresholds %}
+                                    <span class="u-note">Bronze à {{ thresholds[0] }}, argent à {{ thresholds[1] }}, or à {{ thresholds[2] }}.</span>
+                                {% elseif view.nextTier %}
+                                    <twig:Ui:Meter label="{{ view.badge.count(view.count) }}" value="{{ view.nextTier.label }} à {{ view.nextThreshold }}" :percent="view.percent" />
+                                {% else %}
+                                    <span class="u-note">{{ view.badge.count(view.count) }}</span>
+                                {% endif %}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
         </div>
     </twig:Layout:Section>
 {% endblock %}

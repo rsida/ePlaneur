@@ -79,11 +79,34 @@ speed), the 10 best, with the place of the pilot. Quality comes first, since onl
 ranked. The ranking shows once as many pilots as the "Classement à partir de" of the item (5 by
 default) passed the exercise; before, the page says how many did.
 
-Every check is computed when a page is shown (the analysis of a flight is loaded for the criteria
-that need it): enough for the club today; store the results if pages get slow.
+Every check is computed when a page is shown. The measures that load the analysis of a flight
+(altitude gain, recoveries, penalties, landed on an airfield) are cached for a day
+(`ExerciseCheck::cached()`), by flight, statistics, session and flight plan: a new analysis or a
+flight linked to a session is checked again at once, new airfields or task settings within a day.
 
-Not built yet (roadmap 11, 11c): badges of the path, rankings by level and season, pseudonyms for
-minors, the moment of the flight that misses a criterion.
+## Badges
+
+`App\Training\PathBadge`, counted by `PathBadges` from the pilot's path and logbook, nothing stored.
+Each badge counts something done again and again and has three tiers (`BadgeTier`: bronze, silver,
+gold). Most reward good practice rather than speed, which the rankings already reward. The badges of a
+single flight (100 km, 5 h...) stay in the logbook ([flights](flights.md#club-life)).
+
+| Badge | Counts | Bronze, silver, gold |
+|---|---|---|
+| Explorateur | Steps done | 1, 4, 8 |
+| Appliqué | Exercises passed | 1, 5, 15 |
+| Théoricien | Quizzes passed | 1, 5, 15 |
+| Retour au terrain | Flights ended stopped on an airfield (criterion "Posé sur un terrain") | 1, 10, 50 |
+| Vol propre | Flights without penalty points, among those whose penalties are known (session or club flight plan) | 1, 5, 20 |
+| Pilote du club | Flights of a network session | 1, 10, 30 |
+| Régulier | Weeks with at least one flight (not a streak: a week missed loses nothing) | 4, 12, 26 |
+| Podium | Exercises of the open steps whose ranking is shown, with the pilot in the first three | 1, 3, 10 |
+
+Shown on `/parcours` (`#badges`): to visitors with their tiers, to pilots with their count and the
+way to the next tier; the dashboard of the member space lists the badges earned (`path_badges()`).
+
+Not built yet (roadmap 11): rankings by level and season, pseudonyms for minors, the moment of the
+flight that misses a criterion.
 
 ## Back-office
 

@@ -12,11 +12,14 @@ use App\Flight\FlightClouds;
 use App\Flight\Geo\Geo;
 use App\Repository\AirfieldRepository;
 use App\Session\Penalties;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * Checks a flight against the criteria of an exercise of "Mon parcours", from its analysis: the
  * glider imposed, then each criterion (ExerciseCriterion). An exercise without criteria asks for a
- * finished task. Values read from the stored statistics are cheap; the others load the analysis.
+ * finished task. Values read from the stored statistics are cheap; the others load the analysis and
+ * are cached for a day (badges and rankings check every flight of the pilots).
  */
 final class ExerciseCheck
 {
@@ -26,11 +29,15 @@ final class ExerciseCheck
     /** Ground speed under which the glider has stopped at the end of the track. */
     private const float STOPPED = 10.0;
 
+    /** Lifetime of the measures read from the analysis: airfields or task settings may change. */
+    private const int CACHE_TTL = 86400;
+
     /** @var array<string, list<Airfield>> */
     private array $airfields = [];
 
     public function __construct(
         private readonly AirfieldRepository $airfieldRepository,
+        private readonly CacheInterface $cache,
     ) {
     }
 
@@ -83,11 +90,31 @@ final class ExerciseCheck
             ExerciseCriterion::TurnBalance => isset($statistics['leftShare']) ? round(100 * min((float) $statistics['leftShare'], 1 - (float) $statistics['leftShare']), 1) : null,
             ExerciseCriterion::SpeedMax => $number('speedMax'),
             ExerciseCriterion::AltitudeMin => $number('altitudeMin'),
-            ExerciseCriterion::AltitudeGain => round(FlightMarks::of($flight->getAnalysis())->gain),
-            ExerciseCriterion::Recoveries => (float) \count($flight->getAnalysis()['recoveries'] ?? []),
-            ExerciseCriterion::Penalties => $this->penalties($flight),
-            ExerciseCriterion::LandedOnAirfield => $this->landedOnAirfield($flight),
+            ExerciseCriterion::AltitudeGain => $this->cached($criterion, $flight, static fn (): float => round(FlightMarks::of($flight->getAnalysis())->gain)),
+            ExerciseCriterion::Recoveries => $this->cached($criterion, $flight, static fn (): float => (float) \count($flight->getAnalysis()['recoveries'] ?? [])),
+            ExerciseCriterion::Penalties => $this->cached($criterion, $flight, fn (): ?float => $this->penalties($flight)),
+            ExerciseCriterion::LandedOnAirfield => $this->cached($criterion, $flight, fn (): ?bool => $this->landedOnAirfield($flight)),
         };
+    }
+
+    /**
+     * A measure read from the analysis, cached by flight, its statistics (a new analysis changes them;
+     * getAnalysisVersion() would load the analysis) and what the task settings come from.
+     *
+     * @param callable(): (float|bool|null) $measure
+     */
+    private function cached(ExerciseCriterion $criterion, Flight $flight, callable $measure): float|bool|null
+    {
+        if (null === $flight->getId()) {
+            return $measure();
+        }
+        $key = 'exercise-check.'.md5(implode('|', [$criterion->value, $flight->getId(), serialize($flight->getStatistics()), $flight->getSession()?->getId(), $flight->getFlightPlan()]));
+
+        return $this->cache->get($key, static function (ItemInterface $item) use ($measure): float|bool|null {
+            $item->expiresAfter(self::CACHE_TTL);
+
+            return $measure();
+        });
     }
 
     /** Points of penalty of the flight: Condor's when it counted them, the estimate otherwise. */
