@@ -145,7 +145,7 @@ the trainers.
 | 11f | Teacher space | A teacher creates a class group, gives a registration link to the pupils and follows the progression of the class (8 steps, flights); follows the letter to teachers | To do, low priority: no class yet (24 members, young pilots arrive one by one); access rules to decide (minors, GDPR) |
 | 11g | Session reminders and results | E-mail the day before a session to those who want it, then the results, podium and a link to the replay the day after | To do; overlaps the WhatsApp groups of the flights: the user decides |
 | 11h | Monthly digest | Optional e-mail: next sessions, new posts, records broken, steps validated in the club | To do |
-| 11i | Activity dashboard | Members, flights, flight hours, sessions and validated steps per month, exportable for the general meeting: to show the committee what the site brings | To do |
+| 11i | Activity dashboard | Members, flights, flight hours, sessions and validated steps per month, exportable for the general meeting: to show the committee what the site brings | Done (2026-10-14), see [activity](activity.md): `/activite` for the committee (`ACTIVITY_VIEW`), last twelve months or a year, key figures, charts, table by month and CSV export; read from the dates already stored |
 | 11j | Flight plan written by the workshop | The workshop (7n4) writes the `.fpl` itself instead of the instructions for Claude | Waiting for a flight plan with windows saved by Condor |
 | 11k | Live session | Positions of the pilots during a session, from the UDP output of Condor | Waiting for the UDP tests (E4, E5) |
 | 11l | Installable site | Progressive web app on mobile, with notifications | To do |

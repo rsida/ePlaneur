@@ -121,6 +121,8 @@ final class DashboardController extends AbstractDashboardController
             ->setPermission(Permission::TrainingManage->value);
 
         yield MenuItem::section('Comptes');
+        yield MenuItem::linkToUrl('Activité du club', 'chart-line', $this->generateUrl('app_activity'))
+            ->setPermission(Permission::ActivityView->value);
         $unread = $this->isGranted(Permission::ContactManage->value) ? $this->contactRequests->countUnprocessed() : 0;
         yield MenuItem::linkTo(ContactRequestCrudController::class, 'Messages de contact', 'inbox')
             ->setPermission(Permission::ContactManage->value)
@@ -154,6 +156,7 @@ final class DashboardController extends AbstractDashboardController
             ['label' => 'Atelier plans de vol', 'text' => 'Composer la consigne pour faire écrire un plan de vol Condor 3 à Claude.', 'icon' => 'notebook-pen', 'route' => 'app_flight_plan_workshop', 'permission' => Permission::FlightPlanPrepare->value],
             ['label' => 'Mon parcours', 'text' => 'Ouvrir les étapes, y placer lectures, exercices, quiz et validations.', 'icon' => 'route', 'route' => 'admin_path_step_index', 'permission' => Permission::TrainingManage->value],
             ['label' => 'Quiz', 'text' => 'Écrire les questions de théorie des étapes.', 'icon' => 'list-checks', 'route' => 'admin_quiz_index', 'permission' => Permission::TrainingManage->value],
+            ['label' => 'Activité du club', 'text' => 'Comptes, adhésions, vols, sessions et formation mois par mois, à exporter pour l’assemblée générale.', 'icon' => 'chart-line', 'route' => 'app_activity', 'permission' => Permission::ActivityView->value],
             ['label' => 'Messages de contact', 'text' => 'Lire les messages envoyés au club et noter la suite donnée.', 'icon' => 'inbox', 'route' => 'admin_contact_request_index', 'permission' => Permission::ContactManage->value],
             ['label' => 'Comptes', 'text' => 'Les comptes du site et leurs groupes.', 'icon' => 'users', 'route' => 'admin_user_index', 'permission' => Permission::UserManage->value],
             ['label' => 'Groupes et droits', 'text' => 'Choisir ce que chaque groupe peut faire.', 'icon' => 'shield-check', 'route' => 'admin_group_index', 'permission' => Permission::GroupManage->value],

@@ -36,6 +36,7 @@ enum Permission: string implements TranslatableInterface
     case FlightPlanPrepare = 'FLIGHT_PLAN_PREPARE';
     case TrainingManage = 'TRAINING_MANAGE';
     case MessageSend = 'MESSAGE_SEND';
+    case ActivityView = 'ACTIVITY_VIEW';
 
     public function label(): string
     {
@@ -60,6 +61,7 @@ enum Permission: string implements TranslatableInterface
             self::FlightPlanPrepare => 'Préparer des plans de vol avec l’atelier (consigne pour Claude)',
             self::TrainingManage => 'Configurer « Mon parcours » : étapes, exercices et quiz',
             self::MessageSend => 'Écrire aux membres, au comité et aux administrateurs (messagerie)',
+            self::ActivityView => 'Voir l’activité du club mois par mois et l’exporter (assemblée générale)',
         };
     }
 

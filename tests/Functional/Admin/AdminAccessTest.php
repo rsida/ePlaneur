@@ -67,6 +67,7 @@ final class AdminAccessTest extends WebTestCase
         self::assertContains('Messages de contact', $shortcuts, 'CONTACT_MANAGE: the committee answers the contact form');
         self::assertContains('Sessions en réseau', $shortcuts, 'SESSION_MANAGE: the committee manages the sessions');
         self::assertContains('Membres', $shortcuts, 'MEMBERSHIP_MANAGE: the committee reads the records of the members');
+        self::assertContains('Activité du club', $shortcuts, 'ACTIVITY_VIEW: the committee follows the activity of the club');
         self::assertNotContains('Comptes', $shortcuts, 'USER_MANAGE is not granted to the committee');
         self::assertNotContains('Menus', $shortcuts, 'MENU_MANAGE is not granted to the committee');
         self::assertNotContains('Mon parcours', $shortcuts, 'TRAINING_MANAGE is not granted to the committee');

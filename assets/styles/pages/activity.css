@@ -1,0 +1,83 @@
+/* Activity of the club (roadmap 11i): period and export, key figures, charts, the table by month */
+
+.p-activity__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.p-activity__period {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.p-activity__period select {
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-paper);
+    color: var(--color-text);
+    font: inherit;
+    box-shadow: var(--shadow-raised);
+}
+
+.p-activity__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+    gap: var(--space-3);
+    width: 100%;
+}
+
+.p-activity__charts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    width: 100%;
+}
+
+/* The canvas of a chart has a width in pixels: it must not hold its column open when the page narrows */
+.p-activity__charts [data-activity-chart-target] {
+    min-width: 0;
+    overflow: hidden;
+}
+
+@media (width >= 64em) {
+    .p-activity__charts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.p-activity tbody th,
+.p-activity tfoot th {
+    white-space: nowrap;
+}
+
+.p-activity tfoot th,
+.p-activity tfoot td {
+    font-weight: 700;
+}
+
+.p-activity__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin: 0 0 var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.p-activity__legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.p-activity__legend-key {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: var(--radius-pill);
+}

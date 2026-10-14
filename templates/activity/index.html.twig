@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% set period = year ? 'Année ' ~ year : 'Les 12 derniers mois' %}
+
+{% block title %}Activité du club{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-activity">
+        <div class="l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Eyebrow>Comité · assemblée générale</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h1">Activité du club</twig:Ui:Heading>
+                <p class="u-lead">Ce que les membres font sur le site, mois par mois : comptes, adhésions, vols, sessions en réseau et formation. {{ period }}, de {{ from|format_date(pattern: 'MMMM yyyy', locale: 'fr') }} à {{ to|format_date(pattern: 'MMMM yyyy', locale: 'fr') }}.</p>
+                <div class="p-activity__tools">
+                    <form method="get" data-controller="autosubmit" class="p-activity__period">
+                        <label for="activity-year">Période</label>
+                        <select id="activity-year" name="annee" data-action="autosubmit#submit">
+                            <option value="">Les 12 derniers mois</option>
+                            {% for y in years %}<option value="{{ y }}"{% if y == year %} selected{% endif %}>Année {{ y }}</option>{% endfor %}
+                        </select>
+                        <noscript><twig:Ui:Button type="submit" size="sm" variant="outline">Afficher</twig:Ui:Button></noscript>
+                    </form>
+                    <twig:Ui:Button href="{{ path('app_activity_csv', year ? {annee: year} : {}) }}" size="sm" variant="outline" icon="download">Exporter pour un tableur (CSV)</twig:Ui:Button>
+                </div>
+            </div>
+
+            <div class="p-activity__stats">
+                <twig:Ui:Stat label="Vols déposés" value="{{ total.flights }}" unit="traces déposées sur le site" />
+                <twig:Ui:Stat label="Heures de vol" value="{{ total.hours|number_format(1, ',', ' ') }}" />
+                <twig:Ui:Stat label="Pilotes actifs" value="{{ total.pilots }}" unit="au moins un vol déposé" />
+                <twig:Ui:Stat label="Sessions organisées" value="{{ total.sessions }}" />
+                <twig:Ui:Stat label="Participations aux sessions" value="{{ total.participations }}" unit="traces déposées" />
+                <twig:Ui:Stat label="Comptes créés" value="{{ total.accounts }}" />
+                <twig:Ui:Stat label="Adhésions validées" value="{{ total.memberships }}" />
+                <twig:Ui:Stat label="Étapes validées" value="{{ total.steps }}" unit="par les formateurs" />
+                <twig:Ui:Stat label="Commentaires des formateurs" value="{{ total.comments }}" />
+            </div>
+
+            <div class="p-activity__charts" data-controller="activity-chart" data-activity-chart-months-value="{{ months|map(m => {label: m.month|format_date(pattern: 'MMM yyyy', locale: 'fr')}|merge(m.values))|json_encode }}">
+                <figure class="p-flight__chart"><figcaption>Vols déposés et pilotes actifs</figcaption><div data-activity-chart-target="chart" data-series="flights pilots"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Heures de vol</figcaption><div data-activity-chart-target="chart" data-series="hours"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Sessions organisées et participations (traces déposées)</figcaption><div data-activity-chart-target="chart" data-series="sessions participations"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Formation : étapes validées, éléments de Mon parcours, commentaires</figcaption><div data-activity-chart-target="chart" data-series="steps items comments"></div></figure>
+            </div>
+
+            <figure class="c-data-table u-full">
+                <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Activité mois par mois">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">Mois</th>{% for label in labels %}<th scope="col">{{ label }}</th>{% endfor %}</tr>
+                        </thead>
+                        <tbody>
+                            {% for m in months|reverse %}
+                                <tr><th scope="row">{{ m.month|format_date(pattern: 'MMM yyyy', locale: 'fr') }}</th>{% for name, value in m.values %}<td>{{ name == 'hours' ? value|number_format(1, ',', ' ') : value }}</td>{% endfor %}</tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr><th scope="row">Total</th>{% for name, value in total.values %}<td>{{ name == 'hours' ? value|number_format(1, ',', ' ') : value }}</td>{% endfor %}</tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </figure>
+
+            <p class="u-note">Lu dans ce que le site enregistre déjà : la date d’un vol est celle de la trace (sinon celle de sa session, sinon le jour du dépôt) ; un pilote actif a déposé au moins un vol avec son compte ; une adhésion compte le mois de sa validation. Une participation à une session est une trace déposée et rattachée à cette session. Les vols faits sans déposer la trace n’apparaissent pas.</p>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}
