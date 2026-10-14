@@ -36,23 +36,54 @@ of the logbook links to `/parcours`. The pages are `noindex` like every page out
 | Type | Done when | Stored |
 |---|---|---|
 | Lecture ou vidéo | The pilot says so ("C'est fait") | `PathCompletion` |
-| Exercice en vol, with a flight plan | The pilot has a finished task on the flight plan (task name with its code, as in [sessions](sessions.md)) | Read from the flights |
+| Exercice en vol, with a flight plan | A flight of the pilot on the flight plan (task name with its code, as in [sessions](sessions.md)) meets every criterion of the exercise (below) | Read from the flights |
 | Exercice en vol, without flight plan | The pilot says so | `PathCompletion` |
 | Quiz | The best score reaches the pass mark of the quiz | `PathCompletion` (best score, attempts) |
 | Validation par un formateur | The step is validated in the training path | `StepProgress` |
 
 A done step can be done again: exercises and quizzes keep the best result.
 
+## Exercises checked by the analysis
+
+Roadmap 11b. An exercise in flight sets, in the back-office, a glider (as Condor names it, case
+ignored) and **criteria** that `App\Training\ExerciseCheck` measures on each flight of the pilot on
+its flight plan (`ExerciseCriterion`):
+
+| Criterion | Kind | Measured from |
+|---|---|---|
+| Circuit terminé | fact | A task speed (task completed) |
+| Posé sur un terrain | fact | The track ends stopped (under 10 km/h) within half the runway plus 200 m of an airfield of the landscape (`Airfield`, from the landscape files of Condor) |
+| Points de pénalité | at most | Condor's points (IGC exported by Condor), otherwise the estimate of `Penalties` against the settings of the session or of the flight plan; not measured without settings |
+| Récupérations d'altitude | at most | Height recoveries of the track |
+| Vitesse circuit, vitesse maximale, durée de vol, distance parcourue | at least / at most | Flight |
+| Gain d'altitude depuis un point bas | at least | `FlightMarks` |
+| Thermiques exploités, vario moyen en thermique, temps passé à spiraler | at least / at most | Statistics of the analysis |
+| Spirales du côté le moins pratiqué | at least (%) | Share of circling time in the direction turned the least |
+| Altitude la plus basse | at least | Statistics of the analysis |
+
+Without criteria, a finished task passes the exercise. A criterion that cannot be measured is not
+met. The exercise page lists every flight of the pilot on the flight plan with each criterion met
+or missed and the value flown, so that the pilot knows what to work on. The settings Condor does not
+write in the track (weather, realism) are not checked: the flight plan of the exercise sets them.
+
+In the trainer's view of a logbook (training path), each step says how many items of "Mon parcours"
+the pilot did and links to the best flight of each exercise passed: the proof to validate the step.
+
 ## Rankings
 
-The ranking of an exercise lists the fastest finished task of each pilot on its flight plan (pilots
-who left the rankings in their privacy settings are left out), the 10 best, with the place of the
-pilot. It shows once as many pilots as the "Classement à partir de" of the item (5 by default)
-finished the exercise; before, the page says how many did.
+The ranking of an exercise lists the best flight **that passed it** (every criterion met) of each
+pilot (pilots who left the rankings in their privacy settings are left out), ordered by the
+measure chosen for the exercise ("Classement par": task speed by default, or duration, penalties,
+climb rate...; the highest first, the lowest for penalties, recoveries, circling time and maximum
+speed), the 10 best, with the place of the pilot. Quality comes first, since only clean flights are
+ranked. The ranking shows once as many pilots as the "Classement à partir de" of the item (5 by
+default) passed the exercise; before, the page says how many did.
 
-Not built yet (roadmap 11, 11b, 11c): scores rewarding the quality of the flight rather than speed
-alone, criteria read from the track (11b), badges of the path, rankings by level and season,
-pseudonyms for minors.
+Every check is computed when a page is shown (the analysis of a flight is loaded for the criteria
+that need it): enough for the club today; store the results if pages get slow.
+
+Not built yet (roadmap 11, 11c): badges of the path, rankings by level and season, pseudonyms for
+minors, the moment of the flight that misses a criterion.
 
 ## Back-office
 
@@ -60,7 +91,8 @@ pseudonyms for minors.
 
 - **Mon parcours** (`/admin/path-step`): the eight steps (no creation or deletion), "Ouverte" as a
   switch on the list; the form gives the introduction and the items (order, type, title,
-  instructions, address of a resource, flight plan of an exercise, quiz, ranking threshold).
+  instructions, address of a resource, flight plan, glider and criteria of an exercise, ranking
+  measure, quiz, ranking threshold).
 - **Quiz** (`/admin/quiz`): title, introduction, pass mark (80 % by default) and the questions: the
   answers one per line, the number of the right one (from 1) and the explanation shown after the
   answer. A quiz is placed in a step from the step form.

@@ -33,6 +33,22 @@ final readonly class TrainingExtension
         return $this->path->of($pilot);
     }
 
+    /**
+     * "Mon parcours" of a pilot by step number: what they did in each step, shown to trainers.
+     *
+     * @return array<int, StepView>
+     */
+    #[AsTwigFunction('pilot_path')]
+    public function pilotPath(User $pilot): array
+    {
+        $byNumber = [];
+        foreach ($this->pilotPath->of($pilot) as $view) {
+            $byNumber[$view->step->getNumber()] = $view;
+        }
+
+        return $byNumber;
+    }
+
     /** The step of "Mon parcours" the pilot works on, null when the open steps are all done. */
     #[AsTwigFunction('path_current_step')]
     public function currentStep(User $pilot): ?StepView

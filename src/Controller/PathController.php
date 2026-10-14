@@ -8,6 +8,7 @@ use App\Entity\PathCompletion;
 use App\Entity\PathItem;
 use App\Entity\User;
 use App\Repository\PathCompletionRepository;
+use App\Training\ExerciseResult;
 use App\Training\ItemView;
 use App\Training\PathItemType;
 use App\Training\PilotPath;
@@ -125,7 +126,10 @@ final class PathController extends AbstractController
         ], new Response(status: $form->isSubmitted() && !$form->isValid() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
-    /** An exercise on a flight plan: the pilot's flights on it, their personal best and the ranking. */
+    /**
+     * An exercise on a flight plan: the pilot's flights on it checked against its criteria, their
+     * personal best and the ranking of the flights that passed it.
+     */
     #[Route('/exercice/{id<\d+>}', name: '_exercise', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function exercise(PathItem $item): Response
@@ -136,7 +140,7 @@ final class PathController extends AbstractController
         }
         $ranking = $this->path->ranking($item);
         $pilot = $this->user();
-        $rank = array_find_key($ranking, static fn ($flight): bool => $flight->getOwner() === $pilot);
+        $rank = array_find_key($ranking, static fn (ExerciseResult $result): bool => $result->flight->getOwner() === $pilot);
 
         return $this->render('path/exercise.html.twig', [
             'step' => $step,
@@ -144,7 +148,7 @@ final class PathController extends AbstractController
             'ranking' => \count($ranking) >= $item->getRankingFrom() ? \array_slice($ranking, 0, self::RANKING_SIZE) : [],
             'pilots' => \count($ranking),
             'rank' => null !== $rank ? $rank + 1 : null,
-            'leader' => $ranking[0] ?? null,
+            'leader' => $ranking[0]->flight ?? null,
         ]);
     }
 

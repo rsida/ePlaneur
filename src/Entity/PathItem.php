@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Training\CriterionRow;
+use App\Training\ExerciseCriterion;
 use App\Training\PathItemType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -64,7 +66,24 @@ class PathItem
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Quiz $quiz = null;
 
-    /** Pilots who must have finished an exercise before its ranking shows. */
+    /**
+     * What the analysis checks on a flight of an exercise (ExerciseCheck); none: a finished task.
+     *
+     * @var list<array{criterion: string, value: ?float}>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    private array $criteria = [];
+
+    /** Glider the exercise is flown with, as Condor names it (ASK21); null: any. */
+    #[ORM\Column(length: 60, nullable: true)]
+    #[Assert\Length(max: 60)]
+    private ?string $glider = null;
+
+    /** What ranks the flights that pass the exercise. */
+    #[ORM\Column(length: 30, enumType: ExerciseCriterion::class)]
+    private ExerciseCriterion $rankBy = ExerciseCriterion::TaskSpeed;
+
+    /** Pilots who must have passed an exercise before its ranking shows. */
     #[ORM\Column(type: Types::SMALLINT)]
     #[Assert\Range(min: 1, max: 100)]
     private int $rankingFrom = self::RANKING_FROM;
@@ -182,6 +201,75 @@ class PathItem
         return $this;
     }
 
+    /**
+     * The criteria of an exercise, a finished task when none is set.
+     *
+     * @return list<array{criterion: ExerciseCriterion, value: ?float}>
+     */
+    public function getCriteria(): array
+    {
+        $criteria = array_values(array_filter(array_map(
+            static fn (array $stored): ?array => null !== ($criterion = ExerciseCriterion::tryFrom($stored['criterion'])) ? ['criterion' => $criterion, 'value' => $stored['value']] : null,
+            $this->criteria,
+        )));
+
+        return [] !== $criteria ? $criteria : [['criterion' => ExerciseCriterion::TaskFinished, 'value' => null]];
+    }
+
+    /**
+     * The criteria as the back-office edits them (none: a finished task).
+     *
+     * @return list<CriterionRow>
+     */
+    public function getCriteriaSet(): array
+    {
+        return [] !== $this->criteria ? array_map(static fn (array $row): CriterionRow => new CriterionRow($row['criterion'], $row['value']), $this->getCriteria()) : [];
+    }
+
+    /**
+     * @param iterable<CriterionRow|array{criterion?: ExerciseCriterion|string|null, value?: int|float|string|null}> $criteria
+     */
+    public function setCriteriaSet(iterable $criteria): static
+    {
+        $this->criteria = [];
+        foreach ($criteria as $row) {
+            $row = $row instanceof CriterionRow ? ['criterion' => $row->criterion, 'value' => $row->value] : $row;
+            $criterion = $row['criterion'] ?? null;
+            $criterion = \is_string($criterion) ? ExerciseCriterion::tryFrom($criterion) : $criterion;
+            if (null === $criterion) {
+                continue;
+            }
+            $value = $row['value'] ?? null;
+            $this->criteria[] = ['criterion' => $criterion->value, 'value' => $criterion->isNumeric() && null !== $value && '' !== $value ? (float) $value : null];
+        }
+
+        return $this;
+    }
+
+    public function getGlider(): ?string
+    {
+        return $this->glider;
+    }
+
+    public function setGlider(?string $glider): static
+    {
+        $this->glider = null !== $glider && '' !== trim($glider) ? trim($glider) : null;
+
+        return $this;
+    }
+
+    public function getRankBy(): ExerciseCriterion
+    {
+        return $this->rankBy;
+    }
+
+    public function setRankBy(?ExerciseCriterion $rankBy): static
+    {
+        $this->rankBy = null !== $rankBy && $rankBy->isNumeric() ? $rankBy : ExerciseCriterion::TaskSpeed;
+
+        return $this;
+    }
+
     /** Done by the pilot's own word: a reading, or an exercise without flight plan. */
     public function isDeclared(): bool
     {
@@ -191,6 +279,11 @@ class PathItem
     #[Assert\Callback]
     public function validateQuiz(ExecutionContextInterface $context): void
     {
+        foreach ($this->getCriteria() as ['criterion' => $criterion, 'value' => $value]) {
+            if ($criterion->isNumeric() && null === $value && [] !== $this->criteria) {
+                $context->buildViolation('Donnez la valeur du critère « {{ label }} ».')->setParameter('{{ label }}', $criterion->label())->atPath('criteriaSet')->addViolation();
+            }
+        }
         if (PathItemType::Quiz === $this->type && null === $this->quiz) {
             $context->buildViolation('Choisissez le quiz.')->atPath('quiz')->addViolation();
         }

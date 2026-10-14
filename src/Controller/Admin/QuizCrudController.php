@@ -47,6 +47,7 @@ final class QuizCrudController extends AbstractCrudController
         yield IntegerField::new('questionCount', 'Questions')->onlyOnIndex()->setSortable(false);
         yield CollectionField::new('questions', 'Questions')->onlyOnForms()
             ->setEntryType(QuizQuestionFormType::class)
+            ->setEntryToStringMethod(static fn (?array $question): string => '' !== ($question['question'] ?? '') ? $question['question'] : 'Nouvelle question')
             ->allowAdd()
             ->allowDelete()
             ->setEntryIsComplex();

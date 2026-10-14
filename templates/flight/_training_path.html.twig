@@ -12,6 +12,7 @@
             {%- if path.current %} · {{ own ? 'votre' : 'son' }} étape en cours : {{ path.current.title }}{% endif %}
         </p>
     </div>
+    {% set pilot_steps = pilot is defined ? pilot_path(pilot) : [] %}
     <ol class="p-training__steps">
         {% for item in path.steps %}
             {% set progress = item.progress %}
@@ -29,6 +30,12 @@
                     </p>
                     {% if progress.note %}<p class="p-training__note">{{ progress.note|nl2br }}</p>{% endif %}
                     {% if progress.flight %}<twig:Ui:Link href="{{ path('app_flight_show', {id: progress.flight.id}) }}">Vol de référence du {{ progress.flight.date|format_date('medium', locale: 'fr') }}</twig:Ui:Link>{% endif %}
+                {% endif %}
+                {% set mine = pilot_steps[item.step.value] ?? null %}
+                {% if mine and mine.items is not empty and mine.state.value != 'closed' %}
+                    <p class="u-note">Mon parcours : {{ mine.doneCount }} élément{{ mine.doneCount > 1 ? 's' : '' }} fait{{ mine.doneCount > 1 ? 's' : '' }} sur {{ mine.items|length }}
+                        {%- for view in mine.items|filter(v => v.best) %}{{ loop.first ? ' · exercices réussis : ' : ', ' }}<a href="{{ path('app_flight_show', {id: view.best.flight.id}) }}">{{ view.item.title }}</a>{% endfor %}
+                    </p>
                 {% endif %}
                 {% if training_forms[item.step.value] is defined %}
                     <details class="p-training__edit">

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Training;
 
-use App\Entity\Flight;
 use App\Entity\PathCompletion;
 use App\Entity\PathItem;
 
@@ -14,19 +13,25 @@ use App\Entity\PathItem;
 final readonly class ItemView
 {
     /**
-     * @param list<Flight> $flights the pilot's finished tasks on the flight plan of an exercise, the fastest first
+     * @param list<ExerciseResult> $results the pilot's flights on the flight plan of an exercise, checked, the latest first
      */
     public function __construct(
         public PathItem $item,
         public bool $done,
         public ?PathCompletion $completion = null,
-        public array $flights = [],
+        public array $results = [],
     ) {
     }
 
-    /** The pilot's best flight on the exercise: their personal best. */
-    public function best(): ?Flight
+    /** The pilot's best flight that passed the exercise: their personal best. */
+    public function best(): ?ExerciseResult
     {
-        return $this->flights[0] ?? null;
+        return ExerciseRanking::best(array_filter($this->results, static fn (ExerciseResult $result): bool => $result->passed()), $this->item->getRankBy());
+    }
+
+    /** @return list<ExerciseResult> */
+    public function passed(): array
+    {
+        return array_values(array_filter($this->results, static fn (ExerciseResult $result): bool => $result->passed()));
     }
 }

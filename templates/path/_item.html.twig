@@ -15,8 +15,8 @@
 
             {% if type == 'quiz' and view.completion %}
                 <p class="u-note">Meilleur score : {{ view.completion.score }} % (réussi à {{ item.quiz.passMark }} %) · {{ view.completion.attempts }} essai{{ view.completion.attempts > 1 ? 's' : '' }}</p>
-            {% elseif type == 'exercise' and view.best %}
-                <p class="u-note">Record personnel : {{ view.best.taskSpeed|number_format(1, ',', ' ') }} km/h · {{ view.flights|length }} circuit{{ view.flights|length > 1 ? 's' : '' }} terminé{{ view.flights|length > 1 ? 's' : '' }}</p>
+            {% elseif type == 'exercise' and item.flightPlan and view.results is not empty %}
+                <p class="u-note">{{ view.passed|length }} vol{{ view.passed|length > 1 ? 's' : '' }} réussi{{ view.passed|length > 1 ? 's' : '' }} sur {{ view.results|length }}{% if not view.done %} · le dernier : {{ (view.results|first).metCount }} critère{{ (view.results|first).metCount > 1 ? 's' : '' }} sur {{ (view.results|first).lines|length }}{% endif %}</p>
             {% elseif type == 'validation' %}
                 <p class="u-note">{{ view.done ? 'Étape validée par un formateur.' : 'Un formateur valide l’étape quand les autres éléments sont faits : il regarde vos vols dans votre carnet.' }}</p>
             {% endif %}

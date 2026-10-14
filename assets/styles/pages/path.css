@@ -202,3 +202,45 @@
     grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
     gap: var(--space-4);
 }
+
+/* Criteria of an exercise and the pilot's attempts */
+.p-path-check__list,
+.p-path-attempt__lines {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.p-path-check__list li::before {
+    content: '· ';
+}
+
+.p-path__attempts {
+    padding: 0;
+    list-style: none;
+}
+
+.p-path-attempt {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+}
+
+.p-path-attempt--passed {
+    border-inline-start: 4px solid var(--color-success);
+}
+
+.p-path-attempt__line {
+    display: flex;
+    gap: var(--space-2);
+    align-items: baseline;
+}
+
+.p-path-attempt__line--met svg {
+    color: var(--color-success);
+}
+
+.p-path-attempt__line--missed svg {
+    color: var(--color-danger);
+}

@@ -8,6 +8,7 @@ use App\Controller\Admin\DashboardController;
 use App\Controller\Admin\PathStepCrudController;
 use App\Entity\PathStep;
 use App\Entity\Quiz;
+use App\Training\ExerciseCriterion;
 use App\Training\PathItemType;
 use App\Training\TrainingStep;
 use EasyCorp\Bundle\EasyAdminBundle\Test\AbstractCrudTestCase;
@@ -57,15 +58,20 @@ final class PathStepCrudControllerTest extends AbstractCrudTestCase
         $values['PathStep']['open'] = '1';
         $values['PathStep']['intro'] = 'Voler seul un circuit court.';
         $values['PathStep']['items'] = [
-            ['position' => '2', 'type' => 'quiz', 'title' => 'Quiz du circuit', 'quiz' => (string) $quiz->getId(), 'rankingFrom' => '5'],
-            ['position' => '1', 'type' => 'exercise', 'title' => 'Issoire – Brioude', 'flightPlan' => 'c2-D015', 'rankingFrom' => '3'],
-            ['position' => '3', 'type' => 'quiz', 'title' => 'Sans quiz', 'rankingFrom' => '5'],
+            ['position' => '2', 'type' => 'quiz', 'title' => 'Quiz du circuit', 'quiz' => (string) $quiz->getId(), 'rankBy' => 'task_speed', 'rankingFrom' => '5'],
+            ['position' => '1', 'type' => 'exercise', 'title' => 'Issoire – Brioude', 'flightPlan' => 'c2-D015', 'glider' => ' ASK21 ', 'rankBy' => 'penalties', 'rankingFrom' => '3', 'criteriaSet' => [
+                ['criterion' => 'landed_on_airfield', 'value' => ''],
+                ['criterion' => 'turn_balance', 'value' => ''],
+            ]],
+            ['position' => '3', 'type' => 'quiz', 'title' => 'Sans quiz', 'rankBy' => 'task_speed', 'rankingFrom' => '5'],
         ];
         $this->client->request('POST', (string) $form->getUri(), $values);
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('body', 'Choisissez le quiz.');
+        self::assertSelectorTextContains('body', 'Donnez la valeur du critère « Spirales du côté le moins pratiqué ».');
 
         unset($values['PathStep']['items'][2]);
+        $values['PathStep']['items'][1]['criteriaSet'][1]['value'] = '30';
         $this->client->request('POST', (string) $form->getUri(), $values);
         self::assertResponseRedirects();
 
@@ -77,5 +83,9 @@ final class PathStepCrudControllerTest extends AbstractCrudTestCase
         self::assertSame([PathItemType::Exercise, PathItemType::Quiz], array_map(static fn ($item) => $item->getType(), $items), 'Items in their order');
         self::assertSame('C2-d015', $items[0]->getFlightPlan());
         self::assertSame(3, $items[0]->getRankingFrom());
+        self::assertSame('ASK21', $items[0]->getGlider());
+        self::assertSame([[ExerciseCriterion::LandedOnAirfield, null], [ExerciseCriterion::TurnBalance, 30.0]], array_map(static fn (array $row): array => [$row['criterion'], $row['value']], $items[0]->getCriteria()));
+        self::assertSame(ExerciseCriterion::Penalties, $items[0]->getRankBy(), 'Fewest penalties first');
+        self::assertSame([[ExerciseCriterion::TaskFinished, null]], array_map(static fn (array $row): array => [$row['criterion'], $row['value']], $items[1]->getCriteria()), 'Without criteria, a finished task');
     }
 }

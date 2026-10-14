@@ -3,9 +3,9 @@
 {% set item = view.item %}
 {% set number = step.step.number %}
 {% set best = view.best %}
+{% set measure = item.rankBy %}
 
 {% block title %}{{ item.title }} · Étape {{ number }}{% endblock %}
-
 
 {% block body %}
     <twig:Layout:Section theme="light" class="p-path">
@@ -20,53 +20,82 @@
                     <twig:Ui:Button href="{{ path('app_flight_index') }}" size="sm" icon="upload">Déposer un vol</twig:Ui:Button>
                     {% if item.url %}<twig:Ui:Link href="{{ item.url }}" icon="arrow-up-right">Voir la ressource</twig:Ui:Link>{% endif %}
                 </div>
-                <p class="u-note">Volez le plan de vol {{ item.flightPlan }} dans Condor, puis déposez votre trace : un circuit terminé valide l’exercice. Refaites-le autant que vous voulez pour battre votre record.</p>
             </div>
+
+            <section class="c-card t-paper p-path-check" aria-labelledby="criteria-title">
+                <div class="c-card__body l-stack l-stack--xs">
+                    <twig:Ui:Heading level="2" size="h4" id="criteria-title">Pour réussir</twig:Ui:Heading>
+                    <p class="u-note">Volez le plan de vol {{ item.flightPlan }} dans Condor{{ item.glider ? ' avec le ' ~ item.glider : '' }}, puis déposez votre trace : l’analyse du vol vérifie chaque point.</p>
+                    <ul class="p-path-check__list" role="list">
+                        {% if item.glider %}<li>Planeur : {{ item.glider }}</li>{% endif %}
+                        {% for row in item.criteria %}<li>{{ row.criterion.describe(row.value) }}</li>{% endfor %}
+                    </ul>
+                    <p class="u-note">Les vols réussis sont classés par {{ measure.label|lower }} ({{ measure.higherIsBetter ? 'le plus haut' : 'le plus bas' }} d’abord). Refaites l’exercice autant que vous voulez pour progresser.</p>
+                </div>
+            </section>
 
             <section class="l-stack l-stack--sm" aria-labelledby="mine-title">
                 <twig:Ui:Heading level="2" size="h4" id="mine-title">Mes vols</twig:Ui:Heading>
                 {% if best %}
                     <div class="p-path__records">
-                        <twig:Ui:Stat label="Record personnel" value="{{ best.taskSpeed|number_format(1, ',', ' ') }} km/h" />
-                        <twig:Ui:Stat label="Circuits terminés" value="{{ view.flights|length }}" />
+                        <twig:Ui:Stat label="Record personnel · {{ measure.label|lower }}" value="{{ best.measure is not null ? best.measure|number_format(measure.unit == 'm/s' ? 1 : (measure.unit in ['km/h', 'km'] ? 1 : 0), ',', ' ') ~ ' ' ~ measure.unit : '—' }}" />
+                        <twig:Ui:Stat label="Vols réussis" value="{{ view.passed|length }} sur {{ view.results|length }}" />
                         {% if rank %}<twig:Ui:Stat label="Classement" value="{{ rank }}{{ rank == 1 ? 'er' : 'e' }} sur {{ pilots }}" />{% endif %}
                     </div>
-                    <ul class="l-stack l-stack--xs" role="list">
-                        {% for flight in view.flights %}
-                            <li><a href="{{ path('app_flight_show', {id: flight.id}) }}">{{ flight.date|format_date('medium', locale: 'fr') }} · {{ flight.taskSpeed|number_format(1, ',', ' ') }} km/h</a>{% if loop.first %} <twig:Ui:Tag variant="soft">Record</twig:Ui:Tag>{% endif %}</li>
-                        {% endfor %}
-                    </ul>
-                    {% if leader and leader.id != best.id %}
-                        <twig:Ui:Link href="{{ path('app_flight_compare', {id: best.id, other: leader.id}) }}">Comparer mon record au meilleur vol, tronçon par tronçon</twig:Ui:Link>
+                    {% if leader and leader.id != best.flight.id %}
+                        <twig:Ui:Link href="{{ path('app_flight_compare', {id: best.flight.id, other: leader.id}) }}">Comparer mon record au meilleur vol, tronçon par tronçon</twig:Ui:Link>
                     {% endif %}
+                {% endif %}
+                {% if view.results is empty %}
+                    <p class="u-note">Pas encore de vol sur ce plan de vol.</p>
                 {% else %}
-                    <p class="u-note">Pas encore de circuit terminé sur ce plan de vol.</p>
+                    <ol class="l-stack l-stack--sm p-path__attempts" role="list">
+                        {% for result in view.results %}
+                            <li class="c-card t-paper p-path-attempt p-path-attempt--{{ result.passed ? 'passed' : 'missed' }}">
+                                <div class="c-card__body l-stack l-stack--xs">
+                                    <div class="p-path__card-head">
+                                        <a href="{{ path('app_flight_show', {id: result.flight.id}) }}"><strong>Vol du {{ result.flight.date|format_date('medium', locale: 'fr') }}</strong></a>
+                                        <twig:Ui:Tag variant="{{ result.passed ? 'soft' : 'muted' }}">{{ result.passed ? 'Réussi' : result.metCount ~ ' sur ' ~ result.lines|length }}</twig:Ui:Tag>
+                                        {% if best and result.flight == best.flight %}<twig:Ui:Tag>Record</twig:Ui:Tag>{% endif %}
+                                    </div>
+                                    <ul class="p-path-attempt__lines" role="list">
+                                        {% for line in result.lines %}
+                                            <li class="p-path-attempt__line p-path-attempt__line--{{ line.met ? 'met' : 'missed' }}">
+                                                <twig:ux:icon name="{{ line.met ? 'check' : 'x' }}" aria-hidden="true" />
+                                                <span>{{ line.asked }}{% if line.measured is not null and line.measured != 'oui' %} · <strong>{{ line.measured }}</strong>{% elseif line.measured is null %} · <span class="u-note">non mesuré</span>{% endif %}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ol>
                 {% endif %}
             </section>
 
             <section class="l-stack l-stack--sm" aria-labelledby="ranking-title">
                 <twig:Ui:Heading level="2" size="h4" id="ranking-title">Les meilleurs</twig:Ui:Heading>
                 {% if ranking is empty %}
-                    <p class="u-note">{{ pilots }} pilote{{ pilots > 1 ? 's ont' : ' a' }} terminé cet exercice. Le classement s’affiche à partir de {{ item.rankingFrom }} pilotes.</p>
+                    <p class="u-note">{{ pilots }} pilote{{ pilots > 1 ? 's ont' : ' a' }} réussi cet exercice. Le classement s’affiche à partir de {{ item.rankingFrom }} pilotes.</p>
                 {% else %}
                     <figure class="c-data-table">
                         <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Classement de l’exercice">
-                        <table>
-                            <thead><tr><th scope="col">Rang</th><th scope="col">Pilote</th><th scope="col">Vitesse</th><th scope="col">Date</th></tr></thead>
-                            <tbody>
-                                {% for flight in ranking %}
-                                    <tr{% if flight.owner == app.user %} aria-current="true"{% endif %}>
-                                        <td>{{ loop.index }}</td>
-                                        <td>{{ flight.owner.displayName }}</td>
-                                        <td><a href="{{ path('app_flight_show', {id: flight.id}) }}">{{ flight.taskSpeed|number_format(1, ',', ' ') }} km/h</a></td>
-                                        <td>{{ flight.date|format_date('medium', locale: 'fr') }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                            <table>
+                                <thead><tr><th scope="col">Rang</th><th scope="col">Pilote</th><th scope="col">{{ measure.label }}</th><th scope="col">Date</th></tr></thead>
+                                <tbody>
+                                    {% for result in ranking %}
+                                        <tr{% if result.flight.owner == app.user %} aria-current="true"{% endif %}>
+                                            <td>{{ loop.index }}</td>
+                                            <td>{{ result.flight.owner.displayName }}</td>
+                                            <td><a href="{{ path('app_flight_show', {id: result.flight.id}) }}">{{ result.measure is not null ? result.measure|number_format(measure.unit in ['m/s', 'km/h', 'km'] ? 1 : 0, ',', ' ') ~ ' ' ~ measure.unit : '—' }}</a></td>
+                                            <td>{{ result.flight.date|format_date('medium', locale: 'fr') }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </figure>
-                    <p class="u-note">La meilleure vitesse de chaque pilote sur un circuit terminé. Vous n’y apparaissez pas ? Vérifiez vos réglages de confidentialité.</p>
+                    <p class="u-note">Le meilleur vol réussi de chaque pilote : tous les critères sont remplis. Vous n’y apparaissez pas ? Vérifiez vos réglages de confidentialité.</p>
                 {% endif %}
             </section>
         </div>

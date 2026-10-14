@@ -26,6 +26,7 @@ final readonly class PilotPath
         private PathCompletionRepository $completions,
         private StepProgressRepository $progress,
         private FlightRepository $flights,
+        private ExerciseCheck $check,
     ) {
     }
 
@@ -38,7 +39,7 @@ final readonly class PilotPath
     {
         $completions = null !== $pilot ? $this->completions->findByPilot($pilot) : [];
         $progress = null !== $pilot ? $this->progress->findByPilot($pilot) : [];
-        $finished = null !== $pilot ? $this->finishedTasks($pilot) : [];
+        $flights = null !== $pilot ? $this->flightsByPlan($pilot) : [];
 
         $views = [];
         $before = true; // every step before is done
@@ -47,7 +48,7 @@ final readonly class PilotPath
             $mark = $progress[$step->getNumber()] ?? null;
             $items = [];
             foreach ($step->getItems() as $item) {
-                $items[] = $this->item($item, $completions[(int) $item->getId()] ?? null, $finished, null !== $mark && $mark->isValidated());
+                $items[] = $this->item($item, $completions[(int) $item->getId()] ?? null, $flights, null !== $mark && $mark->isValidated());
             }
             $complete = (null !== $mark && $mark->isValidated())
                 || ([] !== $items && array_all($items, static fn (ItemView $view): bool => $view->done));
@@ -66,61 +67,60 @@ final readonly class PilotPath
     }
 
     /**
-     * The best pilots of an exercise on a flight plan: the fastest finished task of each pilot who
-     * accepts to appear in rankings, the fastest first.
+     * The best pilots of an exercise on a flight plan: the best flight that passed it of each pilot
+     * who accepts to appear in rankings, by the ranking measure of the exercise.
      *
-     * @return list<Flight>
+     * @return list<ExerciseResult>
      */
     public function ranking(PathItem $item): array
     {
         if (null === $item->getFlightPlan()) {
             return [];
         }
-        $best = [];
+        $byPilot = [];
         foreach ($this->flights->findOnFlightPlan($item->getFlightPlan()) as $flight) {
             $owner = $flight->getOwner();
-            if (null === $owner || null === $flight->getTaskSpeed() || !$owner->isInRanking()) {
-                continue;
-            }
-            $id = (int) $owner->getId();
-            if (!isset($best[$id]) || $flight->getTaskSpeed() > $best[$id]->getTaskSpeed()) {
-                $best[$id] = $flight;
+            if (null !== $owner && $owner->isInRanking()) {
+                $result = $this->check->check($item, $flight);
+                if ($result->passed()) {
+                    $byPilot[(int) $owner->getId()][] = $result;
+                }
             }
         }
-        $ranking = array_values($best);
-        usort($ranking, static fn (Flight $a, Flight $b): int => $b->getTaskSpeed() <=> $a->getTaskSpeed());
 
-        return $ranking;
+        return ExerciseRanking::sort(array_map(static fn (array $results): ExerciseResult => ExerciseRanking::best($results, $item->getRankBy()) ?? $results[0], $byPilot), $item->getRankBy());
     }
 
     /**
-     * @param array<string, list<Flight>> $finished
+     * @param array<string, list<Flight>> $flights
      */
-    private function item(PathItem $item, ?PathCompletion $completion, array $finished, bool $validated): ItemView
+    private function item(PathItem $item, ?PathCompletion $completion, array $flights, bool $validated): ItemView
     {
-        return match (true) {
-            PathItemType::Validation === $item->getType() => new ItemView($item, $validated),
-            null !== $item->getFlightPlan() && PathItemType::Exercise === $item->getType() => new ItemView($item, [] !== ($finished[$item->getFlightPlan()] ?? []), null, $finished[$item->getFlightPlan()] ?? []),
-            default => new ItemView($item, null !== $completion && $completion->isDone(), $completion),
-        };
+        if (PathItemType::Validation === $item->getType()) {
+            return new ItemView($item, $validated);
+        }
+        if (PathItemType::Exercise === $item->getType() && null !== $item->getFlightPlan()) {
+            $results = array_map(fn (Flight $flight): ExerciseResult => $this->check->check($item, $flight), $flights[$item->getFlightPlan()] ?? []);
+
+            return new ItemView($item, array_any($results, static fn (ExerciseResult $result): bool => $result->passed()), null, $results);
+        }
+
+        return new ItemView($item, null !== $completion && $completion->isDone(), $completion);
     }
 
     /**
-     * The pilot's finished tasks by flight plan code, the fastest first.
+     * The pilot's flights by flight plan code, the latest first.
      *
      * @return array<string, list<Flight>>
      */
-    private function finishedTasks(User $pilot): array
+    private function flightsByPlan(User $pilot): array
     {
         $byPlan = [];
-        foreach ($this->flights->findLogbook($pilot) as $flight) {
+        foreach (array_reverse($this->flights->findLogbook($pilot)) as $flight) {
             $code = FlightPlan::codeIn($flight->getFlightPlan());
-            if (null !== $code && null !== $flight->getTaskSpeed()) {
+            if (null !== $code) {
                 $byPlan[$code][] = $flight;
             }
-        }
-        foreach ($byPlan as &$flights) {
-            usort($flights, static fn (Flight $a, Flight $b): int => $b->getTaskSpeed() <=> $a->getTaskSpeed());
         }
 
         return $byPlan;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use App\Entity\Airfield;
 use App\Entity\Flight;
 use App\Entity\PathCompletion;
 use App\Entity\PathItem;
@@ -17,6 +18,7 @@ use App\Flight\Track;
 use App\Flight\Turnpoint;
 use App\Repository\PathStepRepository;
 use App\Tests\Unit\Flight\FlightSamples;
+use App\Training\ExerciseCriterion;
 use App\Training\PathItemType;
 use App\Training\ProgressStatus;
 use App\Training\TrainingStep;
@@ -95,11 +97,11 @@ final class PathTest extends WebTestCase
 
         // Exercise: a finished task on its flight plan
         $this->client->request('GET', '/parcours/exercice/'.$exercise->getId());
-        self::assertSelectorTextContains('main', 'Pas encore de circuit terminé');
+        self::assertSelectorTextContains('main', 'Pas encore de vol sur ce plan de vol');
         $this->flight($pilot, 'C2-d015_Issoire-Brioude_ASK21_FrSW ePlaneur');
         $this->client->request('GET', '/parcours/exercice/'.$exercise->getId());
         self::assertSelectorTextContains('.p-path__records', 'Record personnel');
-        self::assertSelectorTextContains('main', '1 pilote a terminé cet exercice. Le classement s’affiche à partir de 2 pilotes.');
+        self::assertSelectorTextContains('main', '1 pilote a réussi cet exercice. Le classement s’affiche à partir de 2 pilotes.');
 
         // The trainer's validation completes the step and opens the next one
         $this->client->request('GET', '/parcours');
@@ -130,6 +132,50 @@ final class PathTest extends WebTestCase
         self::assertSelectorExists('a[href^="/vols/"][href*="/comparer/"]', 'Compare one’s best with the best flight');
     }
 
+    public function testExercisesAreCheckedByTheAnalysisOfTheFlight(): void
+    {
+        $steps = static::getContainer()->get(PathStepRepository::class)->findPath();
+        $exercise = (new PathItem())->setType(PathItemType::Exercise)->setTitle('Circuit propre')->setFlightPlan('C2-d015')->setGlider('ASK21')
+            ->setCriteriaSet([
+                ['criterion' => ExerciseCriterion::TaskFinished],
+                ['criterion' => ExerciseCriterion::LandedOnAirfield, 'value' => 12],
+                ['criterion' => 'task_speed', 'value' => '55'],
+            ])
+            ->setRankBy(ExerciseCriterion::Duration);
+        $steps[0]->addItem($exercise);
+        [$latitude, $longitude] = array_values(FlightSamples::toLatLon(7000, 0));
+        $this->entityManager->persist(new Airfield('AA2', 'Brioude', $latitude, $longitude, 430.0, 800));
+        $this->entityManager->flush();
+        self::assertNull($exercise->getCriteriaSet()[1]->value, 'A fact has no value');
+
+        $pilot = $this->user('lea@example.org');
+        $this->flight($pilot, 'C2-d015 ePlaneur', slower: 1.2, glider: 'ASK21', landed: true);
+        $this->flight($pilot, 'C2-d015 ePlaneur', glider: 'Discus2b', landed: true);
+        $this->flight($pilot, 'C2-d015 ePlaneur', glider: 'ASK21');
+        $this->client->loginUser($pilot);
+
+        $this->client->request('GET', '/parcours/exercice/'.$exercise->getId());
+        self::assertSelectorTextContains('.p-path-check', 'Planeur : ASK21');
+        self::assertSelectorTextContains('.p-path-check', 'Vitesse circuit : au moins 55 km/h');
+        self::assertSelectorTextContains('.p-path-check', 'classés par durée de vol');
+        self::assertSelectorCount(3, '.p-path-attempt--missed');
+        self::assertSelectorTextContains('.p-path-attempt:nth-child(3)', '3 sur 4');
+        self::assertSelectorTextContains('.p-path-attempt:nth-child(3) .p-path-attempt__line--missed', 'Vitesse circuit : au moins 55 km/h · 51,1 km/h');
+        self::assertSelectorTextContains('.p-path-attempt:nth-child(2) .p-path-attempt__line--missed', 'Planeur : ASK21 · Discus2b');
+        self::assertSelectorTextContains('.p-path-attempt:nth-child(1) .p-path-attempt__line--missed', 'Posé sur un terrain');
+        $this->client->request('GET', '/parcours/etape/1');
+        self::assertSelectorNotExists('#element-'.$exercise->getId().'.p-path-item--done');
+
+        $this->flight($pilot, 'C2-d015 ePlaneur', glider: 'ask21', landed: true);
+        $this->client->request('GET', '/parcours/exercice/'.$exercise->getId());
+        self::assertSelectorCount(1, '.p-path-attempt--passed');
+        self::assertSelectorTextContains('.p-path__records', 'Record personnel · durée de vol');
+        $this->client->request('GET', '/parcours/etape/1');
+        self::assertSelectorExists('#element-'.$exercise->getId().'.p-path-item--done');
+        $this->client->request('GET', '/mon-compte/carnet');
+        self::assertSelectorTextContains('.p-training', 'exercices réussis : Circuit propre', 'Trainers see the passed exercises with the logbook');
+    }
+
     /**
      * Steps 1 and 2 open; step 1 with a reading, a quiz, an exercise and the trainer's validation.
      *
@@ -153,11 +199,19 @@ final class PathTest extends WebTestCase
         return [$reading, $quizItem, $exercise];
     }
 
-    private function flight(User $owner, string $plan, float $slower = 1.0): Flight
+    private function flight(User $owner, string $plan, float $slower = 1.0, ?string $glider = null, bool $landed = false): Flight
     {
         $fixes = array_map(static fn (Fix $fix): Fix => new Fix($fix->time * $slower, $fix->latitude, $fix->longitude, $fix->altitude), FlightSamples::glideThermalGlide());
+        if ($landed) {
+            // Rolls to a stop at the finish
+            $last = end($fixes);
+            [$latitude, $longitude] = array_values(FlightSamples::toLatLon(7000, 0));
+            for ($t = 1; $t <= 30; ++$t) {
+                $fixes[] = new Fix($last->time + $t, $latitude, $longitude, $last->altitude);
+            }
+        }
         $point = static fn (string $name, float $x, float $radius): Turnpoint => new Turnpoint($name, ...FlightSamples::toLatLon($x, 0), altitude: 0.0, radius: $radius);
-        $track = new Track('igc', 'Condor 2', 'Pilote', null, null, null, null, $plan, [$point('Terrain', 0, 3000), $point('Départ', 0, 500), $point('Arrivée', 7000, 500)], $fixes, true, new \DateTimeImmutable('2026-03-01'));
+        $track = new Track('igc', 'Condor 2', 'Pilote', null, $glider, 'AA2', null, $plan, [$point('Terrain', 0, 3000), $point('Départ', 0, 500), $point('Arrivée', 7000, 500)], $fixes, true, new \DateTimeImmutable('2026-03-01'));
         $owner = $this->entityManager->getReference(User::class, $owner->getId());
         $flight = new Flight((new FlightAnalyzer())->analyze($track), 'file.igc', 'file.igc', $owner, new \DateTimeImmutable('2026-03-01'));
         $this->entityManager->persist($flight);
