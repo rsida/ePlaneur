@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% set mine = app.user is not null %}
+
+{% block title %}Mon premier vol{% endblock %}
+{% block description %}De la découverte du club à votre premier vol en réseau sur le simulateur Condor : les six étapes pour bien démarrer avec le Club ePlaneur.{% endblock %}
+
+{% block body %}
+    <twig:Layout:Section theme="light" class="p-path">
+        <div class="l-stack l-stack--lg p-path__narrow">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Eyebrow>Bienvenue au Club ePlaneur</twig:Ui:Eyebrow>
+                <twig:Ui:Heading level="1" size="h1">Mon premier vol</twig:Ui:Heading>
+                <p class="u-lead">De la découverte du club à votre premier vol en réseau avec un formateur : six étapes, dans l’ordre. Prenez votre temps, chacun son rythme.</p>
+                {% if mine %}
+                    <twig:Ui:Meter label="{{ count }} étape{{ count > 1 ? 's' : '' }} faite{{ count > 1 ? 's' : '' }} sur {{ steps|length }}" :percent="(100 * count / steps|length)|round(0, 'floor')" :highlight="next is null" />
+                    {% if next is null %}<p><strong>Bravo, vous êtes lancé !</strong> La suite se passe dans <a href="{{ path('app_path') }}">Mon parcours</a>.</p>{% endif %}
+                {% endif %}
+            </div>
+
+            <ol class="l-stack p-path__items p-first-flight" role="list">
+                {% for step in steps %}
+                    {% set ok = done[step.value] %}
+                    <li class="p-path-item c-card t-paper{{ ok ? ' p-path-item--done' }}{{ next == step ? ' p-first-flight__step--next' }}" id="{{ step.value }}">
+                        <div class="c-card__body p-path-item__body">
+                            <span class="p-path-item__icon" aria-hidden="true">{% if ok %}<twig:ux:icon name="check" />{% else %}{{ loop.index }}{% endif %}</span>
+                            <div class="l-stack l-stack--xs">
+                                <span class="u-note">Étape {{ loop.index }}{% if ok %} · faite{% elseif next == step and mine %} · à faire maintenant{% endif %}</span>
+                                <strong>{{ step.label }}</strong>
+                                <p>{{ step.text }}</p>
+                                {% if step.value == 'network_flight' %}
+                                    {% if initiation %}
+                                        <p class="u-note">Prochain vol d’initiation : <a href="{{ path('app_session_show', {id: initiation.id}) }}">{{ initiation.date|format_date('full', locale: 'fr') }}{% if initiation.startTime %} à {{ initiation.startTime|date('H\\hi') }}{% endif %}</a>.</p>
+                                    {% else %}
+                                        <p class="u-note">Pas de vol d’initiation annoncé pour l’instant : surveillez <a href="{{ path('app_session_index') }}">les sessions</a>.</p>
+                                    {% endif %}
+                                {% endif %}
+                                <div class="l-cluster">
+                                    {% if step.value == 'account' and not mine %}
+                                        <twig:Ui:Button href="{{ path('app_register') }}" size="sm">Créer mon compte gratuit</twig:Ui:Button>
+                                        <twig:Ui:Link href="{{ path('app_login', {_target_path: path('app_first_flight')}) }}">J’ai déjà un compte</twig:Ui:Link>
+                                    {% elseif step.value == 'condor' %}
+                                        <twig:Ui:Link href="/formation/bien-demarrer/installer-condor">Installer Condor</twig:Ui:Link>
+                                        <twig:Ui:Link href="/voler/vols-reseau/prerequis">Les versions à avoir</twig:Ui:Link>
+                                        {% if mine and not ok %}<twig:Ui:Button href="{{ path('app_account_profile') }}#condor" size="sm" variant="outline">Indiquer ma version</twig:Ui:Button>{% endif %}
+                                    {% elseif step.value == 'discord' %}
+                                        <twig:Ui:Link href="/voler/vols-reseau/participer">Participer à un vol en réseau</twig:Ui:Link>
+                                        {% if mine %}
+                                            <form method="post" action="{{ path('app_first_flight_declare', {step: step.value}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('first-flight-' ~ step.value) }}">
+                                                <input type="hidden" name="done" value="{{ ok ? '0' : '1' }}">
+                                                {% if ok %}
+                                                    <button type="submit" class="p-first-flight__undo">Je ne l’ai pas encore fait</button>
+                                                {% else %}
+                                                    <twig:Ui:Button type="submit" size="sm" icon="check">C’est fait</twig:Ui:Button>
+                                                {% endif %}
+                                            </form>
+                                        {% endif %}
+                                    {% elseif step.value == 'solo_flight' %}
+                                        <twig:Ui:Link href="{{ path('app_path_step', {number: 1}) }}">Les exercices de l’étape 1</twig:Ui:Link>
+                                        {% if mine %}<twig:Ui:Button href="{{ path('app_flight_index') }}" size="sm" variant="{{ ok ? 'outline' : 'primary' }}" icon="upload">Déposer une trace</twig:Ui:Button>{% endif %}
+                                    {% elseif step.value == 'network_flight' %}
+                                        <twig:Ui:Link href="/voler/vols-reseau/regles">Les règles des vols</twig:Ui:Link>
+                                        {% if initiation %}<twig:Ui:Button href="{{ path('app_session_show', {id: initiation.id}) }}" size="sm" variant="outline">Voir la session</twig:Ui:Button>{% endif %}
+                                    {% elseif step.value == 'first_step' %}
+                                        <twig:Ui:Button href="{{ path('app_path_step', {number: 1}) }}" size="sm" variant="{{ ok ? 'outline' : 'primary' }}">Ouvrir Mon parcours</twig:Ui:Button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+
+            <p class="u-note">Une question ? <a href="{{ path('app_contact') }}">Écrivez au club</a> : un formateur vous répond.</p>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

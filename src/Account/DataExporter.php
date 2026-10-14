@@ -13,6 +13,7 @@ use App\Entity\User;
 use App\Flight\FlightImporter;
 use App\Repository\FlightRepository;
 use App\Repository\MembershipRepository;
+use App\Training\FirstFlightStep;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Clock\ClockInterface;
 
@@ -51,6 +52,7 @@ final readonly class DataExporter
             'cn_condor' => $user->getCondorCn(),
             'nom_pilote_condor' => $user->getCondorPilotName(),
             'versions_condor' => $user->getCondorVersions(),
+            'mon_premier_vol_etapes_declarees' => array_values(array_map(static fn (FirstFlightStep $step): string => $step->label(), array_filter(FirstFlightStep::cases(), $user->hasDeclared(...)))),
             'e_mails_acceptes' => array_map(static fn ($notification): string => $notification->label(), $user->getNotifications()),
             'vols_publics_par_defaut' => $user->isFlightsPublicByDefault(),
             'dans_le_classement' => $user->isInRanking(),

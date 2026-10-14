@@ -38,6 +38,7 @@ final readonly class Sitemap
             $this->entry('app_post_index', [], [] !== $posts ? $posts[0]->getUpdatedAt() : null),
             $this->entry('app_membership'),
             $this->entry('app_contact'),
+            $this->entry('app_first_flight'),
             $this->entry('app_glider_index'),
         ];
         foreach ($this->pages() as ['page' => $page]) {

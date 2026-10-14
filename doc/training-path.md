@@ -14,9 +14,12 @@ pilots and to stir up the competition that drives progression, while rewarding g
 | `/parcours/etape/{1-8}` | `app_path_step` | everyone; actions for logged-in users | Introduction, trainer's note, the items with their state and actions, previous and next step |
 | `/parcours/element/{id}/fait` | `app_path_done` | logged-in, step reached | POST: a reading, or an exercise without flight plan, said done by the pilot (CSRF `path-done-{id}`) |
 | `/parcours/quiz/{id}` | `app_path_quiz` | logged-in, step reached | The questions; once sent, the result (`?resultat=1`, reached by a redirect, as Turbo ignores a form answered without one; the answers wait in the session): the score, each question right or wrong with every choice marked (the pilot's answer, the right one) and its explanation; the pilot can try again, the best score is kept |
+| `/premier-vol` | `app_first_flight` | everyone, indexed | [Mon premier vol](#mon-premier-vol): the six steps of a newcomer, ticked for a logged-in pilot |
+| `/premier-vol/{step}` | `app_first_flight_declare` | logged-in | POST: a step the site cannot see said done, or not done any more (`done`, CSRF `first-flight-{step}`) |
 | `/parcours/exercice/{id}` | `app_path_exercise` | logged-in | An exercise on a flight plan: the pilot's finished tasks on it (personal best, rank), the comparison of their best with the best flight, the ranking of the best pilots |
 
-The member dashboard (`/mon-compte`) shows the current step with its progress, and the training path
+The member dashboard (`/mon-compte`) shows the steps of "Mon premier vol" done until they all are,
+the current step with its progress, and the training path
 of the logbook links to `/parcours`. The pages are `noindex` like every page outside
 `SearchEngines::INDEXABLE` ([SEO](seo.md)).
 
@@ -94,6 +97,26 @@ Every check is computed when a page is shown. The measures that load the analysi
 (altitude gain, recoveries, penalties, landed on an airfield) are cached for a day
 (`ExerciseCheck::cached()`), by flight, statistics, session and flight plan: a new analysis or a
 flight linked to a session is checked again at once, new airfields or task settings within a day.
+
+## Mon premier vol
+
+`/premier-vol` (roadmap 11a) gathers what a newcomer does before and around their first network flight,
+spread over a dozen pages before: six steps in order (`App\Training\FirstFlightStep`), each with its
+explanation and links, the step to do now put forward. `FirstFlight` ticks most of them from what the
+site already knows; the pilot ticks the others (stored in `User::$firstFlightSteps`, exported with the
+account data).
+
+| Step | Done when |
+|---|---|
+| Créer mon compte gratuit | The visitor is logged in |
+| Installer Condor 2 | A version of Condor in the profile, or a flight |
+| Rejoindre le Discord du club | Said done by the pilot ("C'est fait", undone by "Je ne l'ai pas encore fait") |
+| Voler seul et déposer ma trace | A flight in the logbook |
+| Participer à un vol d'initiation | A flight of a network session; the next session of the initiation library (`d` in the code) is shown, Wednesday 16:30 |
+| Terminer l'étape 1 de Mon parcours | Step 1 of "Mon parcours" done |
+
+Linked from the "Votre premier vol ?" section of the home page, from `/parcours` for visitors and
+from the dashboard. The page is indexed and in the sitemap ([SEO](seo.md)).
 
 ## Badges
 

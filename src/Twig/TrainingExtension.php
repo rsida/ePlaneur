@@ -6,6 +6,7 @@ namespace App\Twig;
 
 use App\Entity\User;
 use App\Training\BadgeView;
+use App\Training\FirstFlight;
 use App\Training\PathBadges;
 use App\Training\PilotPath;
 use App\Training\StepState;
@@ -17,7 +18,7 @@ use Twig\Attribute\AsTwigFunction;
 /**
  * The training path of a pilot in templates (dashboard of the member space): the trainers' marks
  * (`training_path()`), the step of "Mon parcours" to work on (`path_current_step()`) and its badges
- * (`path_badges()`).
+ * (`path_badges()`), and the steps of "Mon premier vol" done (`first_flight()`).
  */
 final readonly class TrainingExtension
 {
@@ -25,6 +26,7 @@ final readonly class TrainingExtension
         private TrainingPath $path,
         private PilotPath $pilotPath,
         private PathBadges $badges,
+        private FirstFlight $firstFlight,
     ) {
     }
 
@@ -69,5 +71,16 @@ final readonly class TrainingExtension
     public function badges(User $pilot): array
     {
         return $this->badges->of($pilot);
+    }
+
+    /**
+     * The steps of "Mon premier vol" done or not.
+     *
+     * @return array<string, bool>
+     */
+    #[AsTwigFunction('first_flight')]
+    public function firstFlight(User $pilot): array
+    {
+        return $this->firstFlight->of($pilot);
     }
 }

@@ -49,6 +49,19 @@
         {% endif %}
     </section>
 
+    {# Mon premier vol: until every step is done #}
+    {% set firstFlight = first_flight(app.user) %}
+    {% set firstDone = firstFlight|filter(d => d)|length %}
+    {% if firstDone < firstFlight|length %}
+        <section class="p-account__panel p-account__panel--tint" aria-labelledby="first-flight-title">
+            <div class="p-account__panel-head">
+                <twig:Ui:Heading level="2" size="h4" id="first-flight-title">Mon premier vol</twig:Ui:Heading>
+                <twig:Ui:Link href="{{ path('app_first_flight') }}">Voir les étapes</twig:Ui:Link>
+            </div>
+            <twig:Ui:Meter label="{{ firstDone }} étape{{ firstDone > 1 ? 's' : '' }} faite{{ firstDone > 1 ? 's' : '' }} sur {{ firstFlight|length }}" :percent="(100 * firstDone / firstFlight|length)|round(0, 'floor')" />
+        </section>
+    {% endif %}
+
     {# Mon parcours: the step to work on #}
     {% set step = path_current_step(app.user) %}
     <section class="p-account__panel p-account__panel--tint" aria-labelledby="path-title">

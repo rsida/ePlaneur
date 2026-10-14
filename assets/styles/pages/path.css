@@ -440,3 +440,31 @@
     flex: none;
     white-space: nowrap;
 }
+
+/* ---------- Mon premier vol: the step to do now stands out ---------- */
+.p-first-flight,
+.p-first-flight > li {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.p-first-flight .p-path-item__icon {
+    font-family: var(--font-heading);
+    font-weight: 700;
+}
+
+.p-first-flight__step--next {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-tint-cool);
+}
+
+.p-first-flight__undo {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-decoration: underline;
+    cursor: pointer;
+}

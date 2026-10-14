@@ -21,6 +21,7 @@ final readonly class SearchEngines
         'app_post_index',
         'app_post_show',
         'app_contact',
+        'app_first_flight',
         'app_membership',
         'app_glider_index',
         'app_glider_show',

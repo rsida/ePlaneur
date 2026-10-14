@@ -3,13 +3,16 @@
         <twig:Layout:SectionHeader eyebrow="03 / Du sol au ciel" title="Votre premier vol ? On y va pas à pas."
             lead="Pas besoin de tout maîtriser pour commencer. Juste d’avoir envie." />
         <div class="l-grid l-grid--3 l-grid--loose u-full">
-            <twig:Card:Step number="01" title="Préparer le cockpit" linkLabel="Installer Condor"
+            <twig:Card:Step number="01" title="Préparer le cockpit" linkLabel="Installer Condor" href="/formation/bien-demarrer/installer-condor"
                 text="Installez Condor 2 ou 3, réglez vos commandes et vérifiez les prérequis. On vous explique tout." />
-            <twig:Card:Step number="02" title="Prendre confiance" linkLabel="Suivre le parcours guidé"
+            <twig:Card:Step number="02" title="Prendre confiance" linkLabel="Suivre le parcours guidé" href="{{ path('app_path') }}"
                 text="Un parcours guidé et des vidéos pédagogiques pour apprendre les bases à votre rythme, sans pression." />
-            <twig:Card:Step number="03" title="Voler ensemble" linkLabel="Participer à un vol"
+            <twig:Card:Step number="03" title="Voler ensemble" linkLabel="Participer à un vol" href="/voler/vols-reseau/participer"
                 text="Choisissez une session compatible, préparez votre connexion et partagez votre premier vol avec le club." />
         </div>
-        <p class="u-strong">Une question à une étape ? Le club est là pour vous aider.</p>
+        <div class="l-cluster">
+            <twig:Ui:Button href="{{ path('app_first_flight') }}">Suivre Mon premier vol, étape par étape</twig:Ui:Button>
+            <p class="u-strong">Une question à une étape ? Le club est là pour vous aider.</p>
+        </div>
     </div>
 </twig:Layout:Section>

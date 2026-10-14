@@ -5,7 +5,7 @@ Copilot, Google AI Overviews), and what editors can set. Built on 2026-10-13 (ro
 
 ## Principles
 
-- **Only the public showcase is indexed**: home, pages, news, membership, contact and the gliders of
+- **Only the public showcase is indexed**: home, pages, news, membership, contact, "Mon premier vol" and the gliders of
   Condor. Flights, logbooks, sessions, flight plans, account and back-office pages carry
   `noindex`: they hold the names of pilots (decision of 2026-10-13).
 - **Every crawler is welcome**, AI ones included (training and search), for the widest reach
@@ -64,7 +64,7 @@ To check a page: https://search.google.com/test/rich-results and https://validat
 | Address | Content |
 |---|---|
 | `/robots.txt` | Every crawler allowed; `/admin`, `/mon-compte`, login, registration, password, membership payment and `/_toolkit` closed; address of the sitemap |
-| `/sitemap.xml` | Home, news, membership, contact, gliders, indexable pages and posts with their date of change (`App\Seo\Sitemap`) |
+| `/sitemap.xml` | Home, news, membership, contact, "Mon premier vol" (`/premier-vol`), gliders, indexable pages and posts with their date of change (`App\Seo\Sitemap`) |
 | `/llms.txt` | Summary of the club in Markdown, the indexable pages as a tree with their lead, the 20 latest posts ([llmstxt.org](https://llmstxt.org); no major engine has committed to reading it) |
 
 The addresses are absolute, built from the request: behind a proxy, `TRUSTED_PROXIES` must be set

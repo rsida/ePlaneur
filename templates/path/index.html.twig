@@ -22,6 +22,7 @@
                     </p>
                 {% else %}
                     <p class="u-lead">Du premier virage au vol en réseau : huit étapes, chacune faite de lectures, d’exercices en vol, de quiz et de validations par les formateurs du club. Terminez une étape pour débloquer la suivante.</p>
+                    <p>Vous débutez ? Commencez par <a href="{{ path('app_first_flight') }}">Mon premier vol</a> : installer Condor, voler seul, puis rejoindre un vol d’initiation.</p>
                     <div class="l-cluster">
                         <twig:Ui:Button href="{{ path('app_register') }}">Créer mon compte gratuit</twig:Ui:Button>
                         <twig:Ui:Button href="{{ path('app_login', {_target_path: path('app_path')}) }}" variant="outline" icon="">Me connecter</twig:Ui:Button>

@@ -7,6 +7,7 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use App\Security\Permission;
 use App\Security\UserNotification;
+use App\Training\FirstFlightStep;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -76,6 +77,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /** @var list<int> versions of Condor the pilot flies (2, 3) */
     #[ORM\Column(type: 'json', options: ['default' => '[]'])]
     private array $condorVersions = [];
+
+    /** @var list<string> steps of "Mon premier vol" the pilot said done (FirstFlightStep values) */
+    #[ORM\Column(type: 'json', options: ['default' => '[]'])]
+    private array $firstFlightSteps = [];
 
     /** @var list<string> e-mails the account accepts (UserNotification values) */
     #[ORM\Column(type: 'json', options: ['default' => '["flight_comment","message","renewal"]'])]
@@ -166,6 +171,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $list = array_values(array_unique(array_map(intval(...), [...$versions])));
         sort($list);
         $this->condorVersions = $list;
+
+        return $this;
+    }
+
+    /** Whether the pilot said a step of "Mon premier vol" done. */
+    public function hasDeclared(FirstFlightStep $step): bool
+    {
+        return \in_array($step->value, $this->firstFlightSteps, true);
+    }
+
+    public function declare(FirstFlightStep $step, bool $done): static
+    {
+        $steps = array_diff($this->firstFlightSteps, [$step->value]);
+        $this->firstFlightSteps = array_values($done ? [...$steps, $step->value] : $steps);
 
         return $this;
     }
