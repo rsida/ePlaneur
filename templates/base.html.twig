@@ -26,6 +26,10 @@
 
         <meta name="theme-color" content="#192630">
         <link rel="icon" href="{{ asset('icons/glider.svg') }}" type="image/svg+xml">
+        {# Installable site (doc/installable-site.md) #}
+        <link rel="manifest" href="{{ path('app_manifest') }}">
+        <link rel="apple-touch-icon" href="{{ asset('images/brand/apple-touch-icon.png') }}">
+        <meta name="apple-mobile-web-app-title" content="ePlaneur">
 
         {{ include('_fonts.html.twig') }}
 

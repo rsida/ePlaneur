@@ -525,6 +525,22 @@
     flex: 1 1 100%;
 }
 
+/* "Installer l'application": shown by assets/controllers/install_controller.js when possible */
+.c-footer__install[hidden],
+.c-footer__install [hidden] {
+    display: none;
+}
+
+.c-footer__install-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--on-surface);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 @media (width >= 64em) {
     .c-footer__top {
         grid-template-columns: 20rem 1fr;

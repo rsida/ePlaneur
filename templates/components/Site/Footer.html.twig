@@ -26,6 +26,10 @@
         </div>
         <div class="c-footer__legal">
             <p class="c-footer__copyright">© {{ 'now'|date('Y') }} ePlaneur · Le ciel se partage.</p>
+            <span class="c-footer__install" data-controller="install" hidden>
+                <button type="button" class="c-footer__install-button" data-install-target="button" data-action="install#install" hidden>Installer l’application</button>
+                <span data-install-target="ios" hidden>Sur iPhone : Partager, puis « Sur l’écran d’accueil »</span>
+            </span>
             <a href="{{ path('app_page_show', {path: 'mentions-legales'}) }}">Mentions légales</a>
             <a href="{{ path('app_page_show', {path: 'confidentialite'}) }}">Confidentialité</a>
         </div>

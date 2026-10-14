@@ -11,6 +11,7 @@
 | [Flight viewer](flights.md) | `/vols`: Condor `.ftr` and IGC tracks, landscape projections, analysis, 2D/3D viewer |
 | [Condor 3 integration study](condor-integration.md) | What Condor 3 writes and outputs (IGC export, race results, UDP, `cndr3:` links) and what the site could do with it |
 | [Mon parcours](training-path.md) | `/parcours`: the training path as a path of progression, steps and items, quizzes, exercises and their rankings, back-office |
+| [Installable site](installable-site.md) | Manifest, icons, service worker, offline page and install button |
 | [Activity of the club](activity.md) | `/activite`: the activity month by month for the committee, its charts and CSV export |
 | [Network sessions](sessions.md) | `/sessions`: coming sessions, history and results, flight plans, tracks joined by race id, import from eplaneur.fr |
 | [Membership](membership.md) | `/mon-compte/adhesion`: seasons and fees, requests, validation, certificate, end of membership, reminders |
