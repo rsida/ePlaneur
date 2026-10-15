@@ -47,6 +47,8 @@ final readonly class DataExporter
         $zip->addFromString('compte.json', $json([
             'email' => $user->getEmail(),
             'nom_affiche' => $user->getDisplayName(),
+            'nom_montre_aux_autres' => $user->getNameShown()->label(),
+            'pseudonyme' => $user->getPseudonym(),
             'cree_le' => $date($user->getCreatedAt()),
             'groupes' => $user->getGroups()->map(static fn ($group): string => $group->getName())->getValues(),
             'cn_condor' => $user->getCondorCn(),
@@ -54,6 +56,7 @@ final readonly class DataExporter
             'versions_condor' => $user->getCondorVersions(),
             'mon_premier_vol_etapes_declarees' => array_values(array_map(static fn (FirstFlightStep $step): string => $step->label(), array_filter(FirstFlightStep::cases(), $user->hasDeclared(...)))),
             'e_mails_acceptes' => array_map(static fn ($notification): string => $notification->label(), $user->getNotifications()),
+            'notifications_des_appareils' => array_map(static fn ($notification): string => $notification->pushLabel(), $user->getPushNotifications()),
             'vols_publics_par_defaut' => $user->isFlightsPublicByDefault(),
             'dans_le_classement' => $user->isInRanking(),
         ]));

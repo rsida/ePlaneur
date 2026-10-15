@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Form\Account;
 
+use App\Account\NameShown;
 use App\Form\NewPasswordType;
 use App\Security\UserNotification;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -41,8 +42,21 @@ final readonly class ProfileForms
         return $this->factory->createNamedBuilder('display_name', FormType::class, $data)
             ->add('displayName', TextType::class, [
                 'label' => 'Nom affiché',
-                'help' => 'Utilisé dans vos échanges et, si vous l’autorisez, dans le classement de saison.',
+                'help' => 'Utilisé dans vos échanges avec les membres et les formateurs.',
                 'constraints' => [new Assert\NotBlank(message: 'Indiquez le nom à afficher.'), new Assert\Length(min: 2, max: 50)],
+            ])
+            ->add('nameShown', EnumType::class, [
+                'class' => NameShown::class,
+                'label' => 'Dans les classements, les records, les vols et les sessions, afficher',
+                'choice_label' => static fn (NameShown $nameShown): string => $nameShown->label(),
+                'expanded' => true,
+                'help' => 'Le prénom est le premier mot de votre nom affiché. Conseillé aux pilotes mineurs.',
+            ])
+            ->add('pseudonym', TextType::class, [
+                'label' => 'Pseudonyme',
+                'required' => false,
+                'help' => 'Choisissez aussi ce pseudonyme comme nom de pilote dans Condor : c’est le nom que le serveur écrit dans les résultats.',
+                'constraints' => [new Assert\Length(min: 2, max: 30), new Assert\Regex(pattern: '/^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u', message: 'Lettres, chiffres, espaces, points, tirets et soulignés seulement.')],
             ])
             ->getForm();
     }

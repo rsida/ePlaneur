@@ -6,6 +6,7 @@ namespace App\Twig;
 
 use App\Entity\NetworkSession;
 use App\Repository\NetworkSessionRepository;
+use App\Session\ResultNames;
 use App\Session\SessionResults;
 use Symfony\Component\Clock\ClockInterface;
 use Twig\Attribute\AsTwigFilter;
@@ -13,14 +14,26 @@ use Twig\Attribute\AsTwigFunction;
 
 /**
  * Network sessions in templates: the coming sessions (dashboard, home) and the status of a pilot in
- * the results of the server.
+ * the results of the server, those results with the names the pilots chose.
  */
 final readonly class SessionExtension
 {
     public function __construct(
         private NetworkSessionRepository $sessions,
         private ClockInterface $clock,
+        private ResultNames $names,
     ) {
+    }
+
+    /**
+     * The results of the server with the names the pilots chose.
+     *
+     * @return list<array{rank: int, status: string, player: string, competitionId: ?string, registration: ?string, glider: ?string, distance: ?int, time: ?int, speed: ?float, penalty: ?float, score: ?float}>
+     */
+    #[AsTwigFunction('session_results')]
+    public function results(NetworkSession $session): array
+    {
+        return $this->names->of($session);
     }
 
     /** @return list<NetworkSession> */

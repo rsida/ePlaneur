@@ -12,7 +12,7 @@
         </p>
         <twig:Ui:Heading level="3" size="h4"><a href="{{ path('app_session_show', {id: session.id}) }}">{{ plan.code }}</a></twig:Ui:Heading>
         {% if plan.title %}<p class="p-session-card__route">{{ plan.title }}</p>{% endif %}
-        <p class="u-note">{{ [plan.gliders, plan.landscape]|filter(v => v)|join(' · ') }}{% if session.organiser %}{{ plan.gliders or plan.landscape ? ' · ' : '' }}Organisée par {{ session.organiser.displayName }}{% endif %}</p>
+        <p class="u-note">{{ [plan.gliders, plan.landscape]|filter(v => v)|join(' · ') }}{% if session.organiser %}{{ plan.gliders or plan.landscape ? ' · ' : '' }}Organisée par {{ session.organiser.publicName }}{% endif %}</p>
         <twig:Ui:Link href="{{ path('app_session_show', {id: session.id}) }}">Préparer la session</twig:Ui:Link>
     </div>
 </article>

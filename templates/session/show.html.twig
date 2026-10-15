@@ -21,7 +21,7 @@
                     <time datetime="{{ session.startsAt|date('c') }}">{{ day|capitalize }}{% if session.startTime %} · briefing à {{ session.startTime|date('H\\hi') }} (heure de Paris){% endif %}</time>
                     {%- if not past and session.startTime %} <span data-session-time-target="local" hidden></span>{% endif %}
                     {%- if plan.gliders or plan.landscape %} · {{ [plan.gliders, plan.landscape]|filter(v => v)|join(' · ') }}{% endif %}
-                    {%- if session.organiser %} · organisée par {{ session.organiser.displayName }}{% endif %}
+                    {%- if session.organiser %} · organisée par {{ session.organiser.publicName }}{% endif %}
                 </p>
                 <div class="l-cluster">
                     {% if not past %}<twig:Ui:Button href="{{ path('app_session_ics', {id: session.id}) }}" size="sm" icon="calendar">Ajouter à mon agenda</twig:Ui:Button>{% endif %}
@@ -67,7 +67,7 @@
                             <table>
                                 <thead><tr><th scope="col">#</th><th scope="col">Pilote</th><th scope="col">CN</th><th scope="col">Planeur</th><th scope="col">Statut</th><th scope="col">Distance</th><th scope="col">Temps</th><th scope="col">Vitesse</th><th scope="col">Pénalité</th><th scope="col">Points</th><th scope="col">Trace</th></tr></thead>
                                 <tbody>
-                                    {% for row in session.results %}
+                                    {% for row in session_results(session) %}
                                         {% set track = row.competitionId ? tracks[row.competitionId|lower]|default(null) : null %}
                                         <tr{% if track and track.owner and track.owner == app.user %} aria-current="true"{% endif %}>
                                             <td>{{ row.rank }}</td>

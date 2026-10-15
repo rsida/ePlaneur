@@ -30,7 +30,7 @@
                             <thead><tr><th scope="col">Date</th><th scope="col">Session</th><th scope="col">Pilotes</th><th scope="col">Vainqueur</th><th scope="col"><span class="u-visually-hidden">Détails</span></th></tr></thead>
                             <tbody>
                                 {% for session in sessions %}
-                                    {% set winner = session.results|first %}
+                                    {% set winner = session.results is empty ? null : session_results(session)|first %}
                                     <tr>
                                         <td><time datetime="{{ session.date|date('Y-m-d') }}">{{ session.date|format_date('short', locale: 'fr') }}</time></td>
                                         <td>{{ session.dedicatedTo ? 'Dédiée · ' ~ session.dedicatedTo : 'Ouverte' }}</td>

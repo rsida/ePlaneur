@@ -36,7 +36,7 @@
                                     {% for row in ranking %}
                                         <tr{% if row.pilot == app.user %} aria-current="true"{% endif %}>
                                             <td>{{ loop.index }}</td>
-                                            <td>{% if is_granted('LOGBOOK_VIEW', row.pilot) %}<a href="{{ row.pilot == app.user ? path('app_flight_logbook') : path('app_flight_logbook_pilot', {id: row.pilot.id}) }}">{{ row.pilot.displayName }}</a>{% else %}{{ row.pilot.displayName }}{% endif %}</td>
+                                            <td>{% if is_granted('LOGBOOK_VIEW', row.pilot) %}<a href="{{ row.pilot == app.user ? path('app_flight_logbook') : path('app_flight_logbook_pilot', {id: row.pilot.id}) }}">{{ row.pilot.publicName }}</a>{% else %}{{ row.pilot.publicName }}{% endif %}</td>
                                             <td>{{ row.kilometres|number_format(1, ',', ' ') }} km</td>
                                             <td>{{ row.tasks }}</td>
                                             <td>{{ row.flights }}</td>

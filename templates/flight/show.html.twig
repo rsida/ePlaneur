@@ -77,7 +77,7 @@
              data-flight-viewer-label-value="{{ flight.competitionId ?: flight.pilot }}"
              data-flight-viewer-advice-value="{{ advice|map(a => a.toArray)|json_encode }}"
              {#- Comments at a moment, on the timeline and the track: only for those who see the comments #}
-             data-flight-viewer-comments-value="{{ (app.user ? flight.comments|filter(c => c.at is not null)|map(c => {at: c.at, author: c.author ? c.author.displayName : 'Compte supprimé', text: c.body|u.truncate(140, '…')}) : [])|json_encode }}">
+             data-flight-viewer-comments-value="{{ (app.user ? flight.comments|filter(c => c.at is not null)|map(c => {at: c.at, author: c.author ? c.author.publicName : 'Compte supprimé', text: c.body|u.truncate(140, '…')}) : [])|json_encode }}">
         <div class="l-container p-flight__head">
             <div class="l-stack l-stack--sm">
                 {% if app.user %}<twig:Ui:Link href="{{ path('app_flight_index') }}">Tous les vols</twig:Ui:Link>{% endif %}
@@ -818,7 +818,7 @@
                     {% for comment in flight.comments %}
                         <li class="p-flight__comment">
                             <div class="p-flight__comment-head">
-                                <strong>{{ comment.author ? comment.author.displayName : 'Compte supprimé' }}</strong>
+                                <strong>{{ comment.author ? comment.author.publicName : 'Compte supprimé' }}</strong>
                                 <span class="u-note">{{ comment.createdAt|format_datetime('medium', 'short', locale: 'fr') }}</span>
                                 {% if comment.at is not null %}
                                     <button type="button" class="p-flight__comment-at" data-action="flight-viewer#goTo" data-flight-viewer-at-param="{{ comment.at }}">

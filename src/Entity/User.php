@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Account\NameShown;
 use App\Repository\UserRepository;
 use App\Security\Permission;
 use App\Security\UserNotification;
@@ -23,6 +24,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'app_user')]
 #[UniqueEntity(fields: ['email'], message: 'Un compte existe déjà avec cette adresse e-mail.')]
+#[UniqueEntity(fields: ['pseudonym'], message: 'Ce pseudonyme est déjà pris.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -40,6 +42,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank]
     #[Assert\Length(min: 2, max: 50)]
     private string $displayName = '';
+
+    /** How the others see the member in rankings, records, flights and sessions. */
+    #[ORM\Column(length: 20, enumType: NameShown::class, options: ['default' => 'name'])]
+    private NameShown $nameShown = NameShown::Name;
+
+    #[ORM\Column(length: 30, unique: true, nullable: true)]
+    private ?string $pseudonym = null;
 
     /** Hashed password. */
     #[ORM\Column]
@@ -271,6 +280,52 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->displayName = trim($displayName);
 
         return $this;
+    }
+
+    public function getNameShown(): NameShown
+    {
+        return $this->nameShown;
+    }
+
+    public function setNameShown(NameShown $nameShown): static
+    {
+        $this->nameShown = $nameShown;
+
+        return $this;
+    }
+
+    public function getPseudonym(): ?string
+    {
+        return $this->pseudonym;
+    }
+
+    public function setPseudonym(?string $pseudonym): static
+    {
+        $pseudonym = null !== $pseudonym ? trim($pseudonym) : null;
+        $this->pseudonym = '' !== $pseudonym ? $pseudonym : null;
+
+        return $this;
+    }
+
+    /** True when the others must not see the name of the member (NameShown). */
+    public function hidesName(): bool
+    {
+        return NameShown::Name !== $this->nameShown;
+    }
+
+    /**
+     * The name the others see in rankings, records, flights and sessions: the display name, its first
+     * word, or the pseudonym (the first name while none is chosen).
+     */
+    public function getPublicName(): string
+    {
+        $firstName = explode(' ', $this->displayName)[0];
+
+        return match ($this->nameShown) {
+            NameShown::Name => $this->displayName,
+            NameShown::FirstName => $firstName,
+            NameShown::Pseudonym => $this->pseudonym ?? $firstName,
+        };
     }
 
     /**

@@ -15,6 +15,9 @@
         </div>
         {{ form_start(forms.display_name, {attr: {class: 'c-form'}}) }}
             {{ form_row(forms.display_name.displayName) }}
+            {{ form_row(forms.display_name.nameShown) }}
+            {{ form_row(forms.display_name.pseudonym) }}
+            <p class="u-note">Vos messages privés et la gestion des comptes par le comité gardent votre nom affiché.</p>
             <div><twig:Ui:Button type="submit" size="sm" icon="">Enregistrer le nom affiché</twig:Ui:Button></div>
         {{ form_end(forms.display_name) }}
     </section>

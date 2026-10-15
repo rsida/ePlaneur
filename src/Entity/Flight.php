@@ -160,7 +160,17 @@ class Flight
         return $this->owner;
     }
 
+    /**
+     * The pilot as the others see them: the name chosen by the owner when they hide theirs
+     * (User::getPublicName()), else the name recorded in the file.
+     */
     public function getPilot(): string
+    {
+        return true === $this->owner?->hidesName() ? $this->owner->getPublicName() : $this->pilot;
+    }
+
+    /** The pilot name recorded in the file, whatever the owner chose. */
+    public function getRecordedPilot(): string
     {
         return $this->pilot;
     }

@@ -67,7 +67,7 @@
                 </div>
                 <figcaption class="p-home-replay__caption">
                     <span class="l-stack l-stack--xs">
-                        <strong>En l’air avec {{ replay.owner ? replay.owner.displayName : replay.pilot }}</strong>
+                        <strong>En l’air avec {{ replay.owner ? replay.owner.publicName : replay.pilot }}</strong>
                         <span class="u-note">{{ replay.flightPlan ?? replay.glider }} · {{ replay.distance|flight_distance }} · {{ replay.duration|flight_duration }}{% if replay.taskSpeed %} · {{ replay.taskSpeed|number_format(1, ',', ' ') }} km/h{% endif %} · rejoué 60 fois plus vite</span>
                     </span>
                     <span class="l-cluster">

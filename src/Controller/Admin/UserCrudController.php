@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Account\NameShown;
 use App\Entity\User;
 use App\Security\Permission;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,6 +16,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
@@ -69,6 +71,11 @@ final class UserCrudController extends AbstractCrudController
             ->setFormTypeOptions(['by_reference' => false, 'expanded' => true])
             ->setHelp('Ajoutez « Membre » une fois l’adhésion payée sur Yapla et validée.');
         yield DateTimeField::new('createdAt', 'Inscription')->hideOnForm();
+        yield ChoiceField::new('nameShown', 'Nom montré aux autres')
+            ->setChoices(array_combine(array_map(static fn (NameShown $nameShown): string => $nameShown->label(), NameShown::cases()), NameShown::cases()))
+            ->setHelp('Dans les classements, les records, les vols et les sessions. Pour un pilote mineur, à la demande d’un parent.')
+            ->hideOnIndex();
+        yield TextField::new('pseudonym', 'Pseudonyme')->hideOnIndex();
 
         yield FormField::addFieldset('Profil d’auteur', 'pencil');
         yield TextField::new('jobTitle', 'Fonction')->hideOnIndex();

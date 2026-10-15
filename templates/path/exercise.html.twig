@@ -103,7 +103,7 @@
                                     {% for result in ranking %}
                                         <tr{% if result.flight.owner == app.user %} aria-current="true"{% endif %}>
                                             <td>{{ loop.index }}</td>
-                                            <td>{{ result.flight.owner.displayName }}</td>
+                                            <td>{{ result.flight.owner.publicName }}</td>
                                             <td><a href="{{ path('app_flight_show', {id: result.flight.id}) }}">{{ result.measure is not null ? result.measure|number_format(measure.unit in ['m/s', 'km/h', 'km'] ? 1 : 0, ',', ' ') ~ ' ' ~ measure.unit : '—' }}</a></td>
                                             <td>{{ result.flight.date|format_date('medium', locale: 'fr') }}</td>
                                         </tr>

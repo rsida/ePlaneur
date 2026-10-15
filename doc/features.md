@@ -29,7 +29,7 @@ each one. The domain reference (the club, the training, the network flights) is 
 | Logbook: totals, flight badges, skills and their trend, the training path marked by the trainers | `/mon-compte/carnet` | [flights](flights.md#progression) |
 | Mon parcours: readings, quizzes with their correction, exercises checked by the analysis of the flight, personal bests, rankings by season and level, badges | `/parcours` | [Mon parcours](training-path.md) |
 | Records of the club and ranking of the season | `/vols/records` | [flights](flights.md#club-life) |
-| Profile, e-mail preferences (comments, messages, renewal, the monthly digest, session reminders and results), privacy, export and deletion of the data | `/mon-compte/profil`, `/mon-compte/confidentialite` | [member space](member-space.md), [monthly digest](monthly-digest.md) |
+| Profile, name shown to the others (name, first name or pseudonym), e-mail preferences (comments, messages, renewal, the monthly digest, session reminders and results), privacy, export and deletion of the data | `/mon-compte/profil`, `/mon-compte/confidentialite` | [member space](member-space.md), [name shown](accounts.md#name-shown), [monthly digest](monthly-digest.md) |
 
 ## Members
 

@@ -21,7 +21,7 @@
         <ul style="margin:0;padding-left:20px;">
             {% for record in records %}
                 {% set flight = record.flight %}
-                <li>{% if record.code %}<a href="{{ url('app_flight_plan_show', {code: record.code}) }}" style="color:#3e5d83;">{{ record.code }}</a>{% else %}{{ record.plan }}{% endif %} : {{ flight.owner.displayName }}, {{ flight.taskSpeed|number_format(1, ',', ' ') }} km/h</li>
+                <li>{% if record.code %}<a href="{{ url('app_flight_plan_show', {code: record.code}) }}" style="color:#3e5d83;">{{ record.code }}</a>{% else %}{{ record.plan }}{% endif %} : {{ flight.owner.publicName }}, {{ flight.taskSpeed|number_format(1, ',', ' ') }} km/h</li>
             {% endfor %}
         </ul>
     {% endif %}

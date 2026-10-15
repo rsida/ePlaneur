@@ -83,7 +83,7 @@ user cannot perform with `is_granted()` in templates as well.
 | `/inscription/renvoyer-confirmation` | `app_register_resend` | New confirmation link (3 requests per 15 min per IP) |
 | `/connexion`, `/deconnexion` | `app_login`, `app_logout` | Login (with "stay logged in" for 30 days), logout |
 | `/mot-de-passe-oublie` | `app_forgot_password_request` | Reset link by e-mail (valid 1 h, one request per 15 min) |
-| `/mon-compte/...` | `app_account`... | Member space: dashboard, flights, logbook, membership, profile (name, e-mail, password, Condor, e-mail preferences), privacy, data export and account deletion (see [member space](member-space.md)) |
+| `/mon-compte/...` | `app_account`... | Member space: dashboard, flights, logbook, membership, profile (name and [name shown](#name-shown), e-mail, password, Condor, e-mail preferences, notifications), privacy, data export and account deletion (see [member space](member-space.md)) |
 
 Rules:
 
@@ -98,6 +98,28 @@ Rules:
 
 E-mails use the sender `MAILER_FROM` (see [configuration](configuration.md)); their templates are in
 `templates/email/`.
+
+## Name shown
+
+What the others see of a member in rankings, records, flights, sessions and the e-mails about them
+(roadmap 11, pseudonyms for minors). The member chooses in "Mon profil", panel "Votre compte"
+(`User::$nameShown`, `App\Account\NameShown`): their display name (default), their first name only
+(first word of the display name) or a pseudonym (`User::$pseudonym`, unique whatever the case, 2 to
+30 letters, digits, spaces, `.`, `_` and `-`). An administrator can set it in "Comptes", for a minor
+at the request of a parent.
+
+- `User::getPublicName()` gives that name; `User::hidesName()` tells whether it differs from the
+  display name.
+- `Flight::getPilot()` gives the public name of the owner who hides theirs, else the pilot name of the
+  file (`Flight::getRecordedPilot()`); every page, JSON of the viewers and IGC export goes through it.
+- The results written by the Condor server carry the name set in Condor: `App\Session\ResultNames`
+  (Twig `session_results(session)`) renames a row that is the track of such a member (same competition
+  id or pilot name) or that carries the competition id or the Condor pilot name of their profile.
+  The profile advises to use the pseudonym as pilot name in Condor too.
+- Private messages, the comments' e-mails to the pilot and the back-office keep the display name.
+
+To decide with the committee: whether minors must choose a first name or a pseudonym, the consent of
+a parent, and whether adults may write to minors in private messages.
 
 ## Console commands
 

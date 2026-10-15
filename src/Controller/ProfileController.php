@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Account\NameShown;
 use App\Entity\User;
 use App\Form\Account\ProfileForms;
 use App\Push\PushNotifier;
@@ -35,7 +36,7 @@ final class ProfileController extends AbstractController
         $user = $this->getUser();
         \assert($user instanceof User);
         $panels = [
-            'display_name' => $forms->displayName(['displayName' => $user->getDisplayName()]),
+            'display_name' => $forms->displayName(['displayName' => $user->getDisplayName(), 'nameShown' => $user->getNameShown(), 'pseudonym' => $user->getPseudonym()]),
             'email_change' => $forms->email(),
             'password_change' => $forms->password(),
             'condor' => $forms->condor(['condorCn' => $user->getCondorCn(), 'condorPilotName' => $user->getCondorPilotName(), 'condorVersions' => $user->getCondorVersions()]),
@@ -93,7 +94,19 @@ final class ProfileController extends AbstractController
         $data = $form->getData();
         switch ($name) {
             case 'display_name':
-                $user->setDisplayName((string) $data['displayName']);
+                $pseudonym = trim((string) $data['pseudonym']);
+                if (NameShown::Pseudonym === $data['nameShown'] && '' === $pseudonym) {
+                    $form->get('pseudonym')->addError(new FormError('Choisissez votre pseudonyme.'));
+
+                    return false;
+                }
+                $other = '' !== $pseudonym ? $users->findOneBy(['pseudonym' => $pseudonym]) : null;
+                if (null !== $other && $other !== $user || 0 === strcasecmp($pseudonym, $user->getDisplayName()) && NameShown::Pseudonym === $data['nameShown']) {
+                    $form->get('pseudonym')->addError(new FormError(null !== $other && $other !== $user ? 'Ce pseudonyme est déjà pris.' : 'Choisissez un pseudonyme différent de votre nom.'));
+
+                    return false;
+                }
+                $user->setDisplayName((string) $data['displayName'])->setNameShown($data['nameShown'])->setPseudonym($pseudonym);
                 $this->addFlash('success', 'Votre nom affiché est enregistré.');
                 break;
             case 'email_change':

@@ -26,7 +26,7 @@
                 {% if progress %}
                     <p class="u-note">
                         {%- if progress.validated and progress.validatedOn %}Validée le {{ progress.validatedOn|format_date('long', locale: 'fr') }}{% if item.step.qualification %} · {{ item.step.qualification }}{% endif %}{% endif -%}
-                        {%- if progress.updatedBy %}{{ progress.validated and progress.validatedOn ? ' · ' : '' }}par {{ progress.updatedBy.displayName }}{% endif -%}
+                        {%- if progress.updatedBy %}{{ progress.validated and progress.validatedOn ? ' · ' : '' }}par {{ progress.updatedBy.publicName }}{% endif -%}
                     </p>
                     {% if progress.note %}<p class="p-training__note">{{ progress.note|nl2br }}</p>{% endif %}
                     {% if progress.flight %}<twig:Ui:Link href="{{ path('app_flight_show', {id: progress.flight.id}) }}">Vol de référence du {{ progress.flight.date|format_date('medium', locale: 'fr') }}</twig:Ui:Link>{% endif %}

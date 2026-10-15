@@ -139,8 +139,10 @@ single flight (100 km, 5 h...) stay in the logbook ([flights](flights.md#club-li
 Shown on `/parcours` (`#badges`): to visitors with their tiers, to pilots with their count and the
 way to the next tier; the dashboard of the member space lists the badges earned (`path_badges()`).
 
-Not built yet (roadmap 11): pseudonyms for minors (a decision of the committee: GDPR, consent of a
-parent), the moment of the flight that misses a criterion.
+Rankings and badges name the pilots as they chose (name, first name or pseudonym, see
+[name shown](accounts.md#name-shown)); the rule for minors is for the committee.
+
+Not built yet (roadmap 11): the moment of the flight that misses a criterion.
 
 ## Back-office
 

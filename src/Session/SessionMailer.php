@@ -42,6 +42,7 @@ final readonly class SessionMailer
         private ClockInterface $clock,
         private PushNotifier $notifier,
         private UrlGeneratorInterface $urls,
+        private ResultNames $names,
     ) {
     }
 
@@ -84,12 +85,12 @@ final readonly class SessionMailer
     public function results(bool $dryRun = false): array
     {
         $now = $this->clock->now();
-        $sessions = array_values(array_filter($this->sessions->findResultsToSend($now, self::RESULTS_WAIT), static fn (NetworkSession $session): bool => [] !== self::podium($session)));
+        $sessions = array_values(array_filter($this->sessions->findResultsToSend($now, self::RESULTS_WAIT), fn (NetworkSession $session): bool => [] !== $this->podium($session)));
         $readers = [] !== $sessions ? $this->readers() : [];
         $devices = [] !== $sessions ? $this->notifier->devices(null, UserNotification::Sessions) : [];
         if (!$dryRun) {
             foreach ($sessions as $session) {
-                $podium = self::podium($session);
+                $podium = $this->podium($session);
                 foreach ($readers as $reader) {
                     $this->send($reader, \sprintf('Résultats : %s', self::title($session)), 'email/session_results.html.twig', ['session' => $session, 'podium' => $podium]);
                 }
@@ -108,13 +109,14 @@ final readonly class SessionMailer
     }
 
     /**
-     * The first pilots who finished: from the results of the server, else from the tracks.
+     * The first pilots who finished, by the names they chose: from the results of the server, else
+     * from the tracks.
      *
      * @return list<array{rank: int, pilot: string, speed: ?float}>
      */
-    public static function podium(NetworkSession $session): array
+    public function podium(NetworkSession $session): array
     {
-        $finished = array_values(array_filter($session->getResults(), static fn (array $result): bool => null !== $result['speed'] && $result['speed'] > 0));
+        $finished = array_values(array_filter($this->names->of($session), static fn (array $result): bool => null !== $result['speed'] && $result['speed'] > 0));
         if ([] !== $finished) {
             usort($finished, static fn (array $a, array $b): int => $a['rank'] <=> $b['rank']);
 
@@ -123,7 +125,7 @@ final readonly class SessionMailer
         $flights = array_values(array_filter($session->getFlights()->toArray(), static fn (Flight $flight): bool => null !== $flight->getTaskSpeed()));
         usort($flights, static fn (Flight $a, Flight $b): int => $b->getTaskSpeed() <=> $a->getTaskSpeed());
 
-        return array_map(static fn (Flight $flight, int $i): array => ['rank' => $i + 1, 'pilot' => $flight->getOwner()?->getDisplayName() ?? $flight->getPilot(), 'speed' => $flight->getTaskSpeed()], \array_slice($flights, 0, self::PODIUM), array_keys(\array_slice($flights, 0, self::PODIUM)));
+        return array_map(static fn (Flight $flight, int $i): array => ['rank' => $i + 1, 'pilot' => $flight->getPilot(), 'speed' => $flight->getTaskSpeed()], \array_slice($flights, 0, self::PODIUM), array_keys(\array_slice($flights, 0, self::PODIUM)));
     }
 
     /** @return list<User> */
