@@ -148,7 +148,7 @@ the trainers.
 | 11i | Activity dashboard | Members, flights, flight hours, sessions and validated steps per month, exportable for the general meeting: to show the committee what the site brings | Done (2026-10-14), see [activity](activity.md): `/activite` for the committee (`ACTIVITY_VIEW`), last twelve months or a year, key figures, charts, table by month and CSV export; read from the dates already stored |
 | 11j | Flight plan written by the workshop | The workshop (7n4) writes the `.fpl` itself instead of the instructions for Claude | Waiting for a flight plan with windows saved by Condor |
 | 11k | Live session | Positions of the pilots during a session, from the UDP output of Condor | Waiting for the UDP tests (E4, E5) |
-| 11l | Installable site | Progressive web app on mobile, with notifications | Installation done (2026-10-14), see [installable site](installable-site.md): manifest, icons, service worker with an offline page, "Installer l'application" in the footer. Notifications to do: Web Push (VAPID keys, worker of production), to decide with 11g and 11h |
+| 11l | Installable site | Progressive web app on mobile, with notifications | Installation done (2026-10-14), see [installable site](installable-site.md): manifest, icons, service worker with an offline page, "Installer l'application" in the footer. Notifications done (2026-10-15), see [notifications](installable-site.md#notifications): turned on per device in "Mon profil", the session reminder and results of 11g, `app:push:keys`; other notifications (comments, messages) to decide |
 
 ## Audit follow-ups (2026-10-07)
 

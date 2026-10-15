@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AppController extends AbstractController
 {
     /** Name of the cache of the service worker: raise it when the service worker changes. */
-    public const string CACHE = 'eplaneur-v1';
+    public const string CACHE = 'eplaneur-v2';
 
     #[Route('/manifest.webmanifest', name: 'app_manifest', methods: ['GET'])]
     public function manifest(Packages $assets): JsonResponse

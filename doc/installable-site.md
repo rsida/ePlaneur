@@ -20,9 +20,32 @@ the application.
 A service worker needs a secure origin: the browser must trust the certificate of
 `https://eplaneur.local` (mkcert), else the registration fails with a `SecurityError` and the rest of
 the site works as before. Chrome DevTools, Application tab: manifest, service worker, cache
-`eplaneur-v1`, and "Offline" to see the offline page.
+`eplaneur-v2`, and "Offline" to see the offline page.
+
+## Notifications
+
+A member turns the notifications on for each device in "Mon profil", panel "Notifications sur cet
+appareil" (`#appareil`): the reminder the day before a network session, then its results, the same
+as the e-mails of [reminders and results](sessions.md#reminders-and-results) but separate from them
+(a member may want one, the other or both). The panel is shown only when the site has its keys.
+
+| Piece | Where | Content |
+|---|---|---|
+| Keys | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` ([configuration](configuration.md#mail-and-messages)), made with `make console c="app:push:keys"` | Sign every notification (VAPID, subject `mailto:` + `CONTACT_EMAIL`). New keys end every subscription: the members turn the notifications on again |
+| Panel | `templates/account/profile.html.twig`, `assets/controllers/push_controller.js` | Asks the browser for the permission, subscribes with the public key and gives the subscription to the site; "Envoyer un essai", "Désactiver sur cet appareil". Says when the permission is blocked, and on iPhone and iPad that the site must first be installed on the home screen (iOS 16.4 or later) |
+| Subscriptions | `PushSubscription` (address and keys of the browser, the account), `PushController` (`/notifications/appareils`, `/retrait`, `/essai`, JSON with the token `push` in `X-CSRF-Token`) | One row per device; the same browser subscribing again for another account moves to it. Deleted with the account |
+| Sending | `App\Push\PushNotifier` (library `minishlink/web-push`), called by `SessionMailer` | Payload `{title, body, url, tag}`, kept one day by the push service for a device that is off. The addresses come from the browsers, so requests to private networks are refused (`NoPrivateNetworkHttpClient`). A device whose push service answers 404 or 410 is forgotten |
+| Display | `templates/app/service_worker.js.twig` | Shows the notification with the icon of the site; a click opens its page, or brings forward a window already on it. The tag `session-{id}` makes the results replace the reminder |
+
+The PHP image has the `gmp` extension, which the library uses for its calculations (without it, they
+are slower and a warning is logged).
+
+Testing: notifications need the same trusted certificate as the service worker, and a real browser:
+the Chromium of Playwright refuses the permission. `PushTest` and `SessionMailTest` check the
+subscriptions and the requests sent to a fake push service.
 
 ## Not done
 
-Notifications (Web Push: a session tomorrow, a comment of a trainer) need VAPID keys, a library to
-send them and the messenger worker of production; to decide with the e-mails of 11g and 11h.
+Other notifications (a comment of a trainer, a new message) can reuse `PushNotifier`; the
+subscription renewed by the browser (`pushsubscriptionchange`) is not handled: the member turns the
+notifications on again.

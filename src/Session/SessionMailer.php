@@ -6,8 +6,12 @@ namespace App\Session;
 
 use App\Entity\Flight;
 use App\Entity\NetworkSession;
+use App\Entity\PushSubscription;
 use App\Entity\User;
+use App\Push\PushMessage;
+use App\Push\PushNotifier;
 use App\Repository\NetworkSessionRepository;
+use App\Repository\PushSubscriptionRepository;
 use App\Repository\UserRepository;
 use App\Security\UserNotification;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,11 +19,13 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * Session reminders and results by e-mail (roadmap 11g, doc/sessions.md#reminders-and-results), to
- * the accounts that asked for them (UserNotification::Sessions): the day before a session, a
- * reminder; once its results are known, the podium. Each is sent once per session.
+ * Session reminders and results (roadmap 11g, doc/sessions.md#reminders-and-results): by e-mail to
+ * the accounts that asked for them (UserNotification::Sessions), and as a notification to the devices
+ * that turned them on (doc/installable-site.md#notifications). The day before a session, a reminder;
+ * once its results are known, the podium. Each is sent once per session.
  */
 final readonly class SessionMailer
 {
@@ -35,54 +41,72 @@ final readonly class SessionMailer
         private MailerInterface $mailer,
         private EntityManagerInterface $entityManager,
         private ClockInterface $clock,
+        private PushNotifier $notifier,
+        private PushSubscriptionRepository $subscriptions,
+        private UrlGeneratorInterface $urls,
     ) {
     }
 
     /**
      * Reminds the sessions of tomorrow.
      *
-     * @return array{sessions: list<NetworkSession>, readers: list<User>}
+     * @return array{sessions: list<NetworkSession>, readers: list<User>, devices: list<PushSubscription>}
      */
     public function remind(bool $dryRun = false): array
     {
         $now = $this->clock->now();
         $sessions = $this->sessions->findToRemind($now->modify('+1 day'));
         $readers = [] !== $sessions ? $this->readers() : [];
+        $devices = [] !== $sessions ? $this->devices() : [];
         if (!$dryRun) {
             foreach ($sessions as $session) {
                 foreach ($readers as $reader) {
                     $this->send($reader, \sprintf('Demain : %s', self::title($session)), 'email/session_reminder.html.twig', ['session' => $session]);
                 }
+                $this->notifier->send($devices, new PushMessage(
+                    \sprintf('Vol en réseau demain à %s', $session->getStartsAt()->setTimezone(new \DateTimeZone('Europe/Paris'))->format('H\hi')),
+                    self::title($session),
+                    $this->urls->generate('app_session_show', ['id' => $session->getId()]),
+                    'session-'.$session->getId(),
+                ));
                 $session->markReminderSent($now);
             }
             $this->entityManager->flush();
         }
 
-        return ['sessions' => $sessions, 'readers' => $readers];
+        return ['sessions' => $sessions, 'readers' => $readers, 'devices' => $devices];
     }
 
     /**
      * Sends the results of the last sessions that have some: the results of the server, else the
      * tracks uploaded for them.
      *
-     * @return array{sessions: list<NetworkSession>, readers: list<User>}
+     * @return array{sessions: list<NetworkSession>, readers: list<User>, devices: list<PushSubscription>}
      */
     public function results(bool $dryRun = false): array
     {
         $now = $this->clock->now();
         $sessions = array_values(array_filter($this->sessions->findResultsToSend($now, self::RESULTS_WAIT), static fn (NetworkSession $session): bool => [] !== self::podium($session)));
         $readers = [] !== $sessions ? $this->readers() : [];
+        $devices = [] !== $sessions ? $this->devices() : [];
         if (!$dryRun) {
             foreach ($sessions as $session) {
+                $podium = self::podium($session);
                 foreach ($readers as $reader) {
-                    $this->send($reader, \sprintf('Résultats : %s', self::title($session)), 'email/session_results.html.twig', ['session' => $session, 'podium' => self::podium($session)]);
+                    $this->send($reader, \sprintf('Résultats : %s', self::title($session)), 'email/session_results.html.twig', ['session' => $session, 'podium' => $podium]);
                 }
+                $this->notifier->send($devices, new PushMessage(
+                    'Résultats du vol en réseau',
+                    \sprintf('%s : %s', self::title($session), implode(', ', array_map(static fn (array $place): string => $place['rank'].'. '.$place['pilot'], $podium))),
+                    $this->urls->generate('app_session_show', ['id' => $session->getId()]),
+                    'session-'.$session->getId(),
+                ));
                 $session->markResultsSent($now);
             }
             $this->entityManager->flush();
         }
 
-        return ['sessions' => $sessions, 'readers' => $readers];
+        return ['sessions' => $sessions, 'readers' => $readers, 'devices' => $devices];
     }
 
     /**
@@ -108,6 +132,16 @@ final readonly class SessionMailer
     private function readers(): array
     {
         return array_values(array_filter($this->users->findBy(['verified' => true]), static fn (User $user): bool => $user->wants(UserNotification::Sessions)));
+    }
+
+    /**
+     * The devices that turned the notifications on, of verified accounts.
+     *
+     * @return list<PushSubscription>
+     */
+    private function devices(): array
+    {
+        return array_values(array_filter($this->subscriptions->findOfUsers(), static fn (PushSubscription $device): bool => $device->getUser()->isVerified()));
     }
 
     /**

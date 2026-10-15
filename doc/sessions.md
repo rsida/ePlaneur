@@ -84,6 +84,9 @@ They do not replace the WhatsApp groups of the flights: they reach those who are
   in the results of the server, else the fastest tracks uploaded; the number of pilots; a link to the
   results and the replay (`templates/email/session_results.html.twig`).
 
+The same reminder and results go as notifications to the devices that turned them on in "Mon
+profil" ([installable site](installable-site.md#notifications)), whatever the e-mail preference.
+
 `App\Session\SessionMailer`, run by `make console c="app:sessions:mail"` (`--dry-run` lists what
 would be sent) every evening after the import of the sessions. Each session records when its
 reminder and its results were sent (`reminderSentAt`, `resultsSentAt`): a second run sends nothing.

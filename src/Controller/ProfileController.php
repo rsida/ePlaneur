@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\Account\ProfileForms;
+use App\Push\PushNotifier;
 use App\Repository\UserRepository;
 use App\Security\AccountMailer;
 use App\Security\AccountManager;
@@ -29,7 +30,7 @@ use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 final class ProfileController extends AbstractController
 {
     #[Route('/mon-compte/profil', name: 'app_account_profile', methods: ['GET', 'POST'])]
-    public function profile(Request $request, ProfileForms $forms, EntityManagerInterface $entityManager, AccountManager $accountManager, AccountMailer $mailer, UserRepository $users, RateLimiterFactoryInterface $accountEmailLimiter): Response
+    public function profile(Request $request, ProfileForms $forms, EntityManagerInterface $entityManager, AccountManager $accountManager, AccountMailer $mailer, UserRepository $users, RateLimiterFactoryInterface $accountEmailLimiter, PushNotifier $notifier): Response
     {
         $user = $this->getUser();
         \assert($user instanceof User);
@@ -55,6 +56,7 @@ final class ProfileController extends AbstractController
         return $this->render('account/profile.html.twig', [
             'section' => 'profile',
             'forms' => array_map(static fn (FormInterface $form) => $form->createView(), $panels),
+            'push_key' => $notifier->isEnabled() ? $notifier->getPublicKey() : null,
         ], new Response(status: null !== $submitted ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 

@@ -59,5 +59,24 @@
         {{ form_end(forms.notifications) }}
     </section>
 
+    {% if push_key %}
+        <section class="p-account__panel" id="appareil" aria-labelledby="push-title"
+            data-controller="push"
+            data-push-key-value="{{ push_key }}"
+            data-push-token-value="{{ csrf_token(constant('App\\Controller\\PushController::CSRF')) }}"
+            data-push-subscribe-url-value="{{ path('app_push_subscribe') }}"
+            data-push-unsubscribe-url-value="{{ path('app_push_unsubscribe') }}"
+            data-push-try-url-value="{{ path('app_push_try') }}">
+            <twig:Ui:Heading level="2" size="h4" id="push-title">Notifications sur cet appareil</twig:Ui:Heading>
+            <p class="u-note">Le rappel la veille d’un vol en réseau, puis ses résultats, directement sur votre téléphone ou votre ordinateur. À activer sur chaque appareil, indépendamment des e-mails.</p>
+            <p data-push-target="state" role="status">Vérification de cet appareil…</p>
+            <div class="l-cluster">
+                <twig:Ui:Button size="sm" icon="" data-push-target="on" data-action="push#subscribe" hidden>Activer les notifications</twig:Ui:Button>
+                <twig:Ui:Button size="sm" icon="" variant="outline" data-push-target="try" data-action="push#try" hidden>Envoyer un essai</twig:Ui:Button>
+                <twig:Ui:Button size="sm" icon="" variant="outline" data-push-target="off" data-action="push#unsubscribe" hidden>Désactiver sur cet appareil</twig:Ui:Button>
+            </div>
+        </section>
+    {% endif %}
+
     <twig:Ui:Link href="{{ path('app_account_privacy') }}">Gérer ma confidentialité et mes données</twig:Ui:Link>
 {% endblock %}

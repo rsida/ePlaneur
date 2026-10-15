@@ -17,7 +17,7 @@ each one. The domain reference (the club, the training, the network flights) is 
 | Gliders of Condor with their polar | `/planeurs` | [flights](flights.md#gliders-and-polars) |
 | Free account, membership request and online payment, contact form | `/inscription`, `/adhesion`, `/contact` | [accounts](accounts.md), [membership](membership.md), [member space](member-space.md) |
 | Search engines and AI answer engines: structured data, sitemap, `llms.txt` | | [SEO and GEO](seo.md) |
-| Installable on a phone or a computer, offline page | Footer, "Installer l'application" | [installable site](installable-site.md) |
+| Installable on a phone or a computer, offline page; notifications of the network sessions, per device | Footer, "Installer l'application"; `/mon-compte/profil#appareil` | [installable site](installable-site.md) |
 
 ## Pilots (free account)
 

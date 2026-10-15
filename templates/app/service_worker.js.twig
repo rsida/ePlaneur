@@ -2,10 +2,12 @@
  * Service worker of the Club ePlaneur (src/Controller/AppController.php, doc/installable-site.md).
  * Pages always come from the network: they hold personal data and must be fresh; without network,
  * the page "Hors ligne" kept at installation. The files of /assets/ carry their version in their
- * name: kept once loaded, served from the cache. Nothing else is cached.
+ * name: kept once loaded, served from the cache. Nothing else is cached. Notifications sent by
+ * src/Push/PushNotifier.php are shown here and open their page when clicked.
  */
 const CACHE = {{ cache|json_encode|raw }};
 const OFFLINE = {{ path('app_offline')|json_encode(constant('JSON_UNESCAPED_SLASHES'))|raw }};
+const ICON = {{ asset('images/brand/icon-192.png')|json_encode(constant('JSON_UNESCAPED_SLASHES'))|raw }};
 
 self.addEventListener('install', (event) => {
     event.waitUntil(caches.open(CACHE).then((cache) => cache.add(new Request(OFFLINE, { cache: 'reload' }))).then(() => self.skipWaiting()));
@@ -35,4 +37,25 @@ self.addEventListener('fetch', (event) => {
             return response;
         }))));
     }
+});
+
+self.addEventListener('push', (event) => {
+    const message = event.data?.json() ?? {};
+    event.waitUntil(self.registration.showNotification(message.title ?? 'Club ePlaneur', {
+        body: message.body ?? '',
+        icon: ICON,
+        lang: 'fr',
+        tag: message.tag ?? undefined,
+        data: { url: message.url ?? '/' },
+    }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const url = new URL(event.notification.data?.url ?? '/', self.location.origin).href;
+    event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+        const open = windows.find((client) => client.url === url);
+
+        return open ? open.focus() : self.clients.openWindow(url);
+    }));
 });

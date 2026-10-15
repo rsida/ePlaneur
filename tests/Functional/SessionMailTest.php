@@ -15,12 +15,13 @@ use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * Session reminders and results by e-mail: the day before, then once the results are known, to the
- * accounts that asked for them, once each.
+ * Session reminders and results: the day before, then once the results are known, by e-mail to the
+ * accounts that asked for them and as a notification to the devices that turned them on, once each.
  */
 final class SessionMailTest extends KernelTestCase
 {
     use ClockSensitiveTrait;
+    use PushDevicesTrait;
 
     private EntityManagerInterface $entityManager;
 
@@ -29,12 +30,14 @@ final class SessionMailTest extends KernelTestCase
         static::mockTime('2026-10-13 18:00');
         self::bootKernel();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $this->mockPushService();
     }
 
     public function testTheReminderAndTheResultsAreSentOnce(): void
     {
         $this->user('lea@example.org', [UserNotification::Sessions]);
-        $this->user('max@example.org', []);
+        $max = $this->user('max@example.org', []);
+        $this->device($max, self::PUSH_SERVICE.'max-phone');
         $this->session('2026-10-14', '16:30');
         $this->session('2026-10-12', '16:30', [
             $this->place(2, 'Max Martin', 118.2),
@@ -47,11 +50,12 @@ final class SessionMailTest extends KernelTestCase
 
         $command = $this->command();
         $command->execute(['--dry-run' => true]);
-        self::assertStringContainsString('Reminder of the session of 2026-10-14 (C2-d015): 1 reader(s), not sent', $command->getDisplay());
-        self::assertStringContainsString('Results of the session of 2026-10-12 (C2-d015): 1 reader(s), not sent', $command->getDisplay());
+        self::assertStringContainsString('Reminder of the session of 2026-10-14 (C2-d015): 1 reader(s), 1 device(s), not sent', $command->getDisplay());
+        self::assertStringContainsString('Results of the session of 2026-10-12 (C2-d015): 1 reader(s), 1 device(s), not sent', $command->getDisplay());
         self::assertStringNotContainsString('2026-10-11', $command->getDisplay(), 'No results yet');
         self::assertStringNotContainsString('2026-10-01', $command->getDisplay(), 'Too old');
         self::assertQueuedEmailCount(0);
+        self::assertSame([], $this->pushed);
 
         $command->execute([]);
         self::assertQueuedEmailCount(2, message: 'Max did not ask for them');
@@ -69,9 +73,11 @@ final class SessionMailTest extends KernelTestCase
         self::assertEmailHtmlBodyContains($results, '121,4 km/h');
         self::assertEmailHtmlBodyContains($results, 'Léa Petit');
         self::assertEmailHtmlBodyNotContains($results, 'Paul Durand', 'Did not finish: not on the podium');
+        self::assertSame([self::PUSH_SERVICE.'max-phone', self::PUSH_SERVICE.'max-phone'], array_column($this->pushed, 'url'), 'The reminder and the results on the phone of Max, who turned the notifications on');
 
         $command->execute([]);
         self::assertQueuedEmailCount(2, message: 'Nothing sent twice');
+        self::assertCount(2, $this->pushed);
         self::assertStringNotContainsString('Reminder of', $command->getDisplay());
     }
 
@@ -83,10 +89,13 @@ final class SessionMailTest extends KernelTestCase
     /**
      * @param list<UserNotification> $notifications
      */
-    private function user(string $email, array $notifications): void
+    private function user(string $email, array $notifications): User
     {
-        $this->entityManager->persist((new User())->setEmail($email)->setDisplayName($email)->setVerified(true)->setPassword('x')->setNotifications($notifications));
+        $user = (new User())->setEmail($email)->setDisplayName($email)->setVerified(true)->setPassword('x')->setNotifications($notifications);
+        $this->entityManager->persist($user);
         $this->entityManager->flush();
+
+        return $user;
     }
 
     /**

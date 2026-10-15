@@ -33,6 +33,10 @@ ACME_EMAIL=admin@example.com
 
 MAILER_DSN=smtp://user:password@smtp.example.com:587
 
+# make console c="app:push:keys" (notifications of the installable site; optional)
+VAPID_PUBLIC_KEY=<public key>
+VAPID_PRIVATE_KEY=<private key>
+
 MARIADB_PASSWORD=<strong password>
 MARIADB_ROOT_PASSWORD=<another strong password>
 ```

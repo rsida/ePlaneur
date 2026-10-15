@@ -80,6 +80,8 @@ Credentials are applied when the volume is created only (see [installation](inst
 | `MAILER_DSN` | `null://null`, dev: `smtp://mailer:1025` | Prod: real provider, e.g. `smtp://user:pass@smtp.example.com:587` |
 | `MAILER_FROM` | `"Club ePlaneur <no-reply@club.eplaneur.fr>"` | Sender of every e-mail; use an address the provider is allowed to send from |
 | `CONTACT_EMAIL` | `club-eplaneur@outlook.fr` | Receives the messages of the contact form (see [member space](member-space.md#contact-form)) |
+| `VAPID_PUBLIC_KEY` | (empty), test: fixed keys | Public key of the notifications of the installable site, made with `app:push:keys`; empty: no notifications (see [installable site](installable-site.md#notifications)) |
+| `VAPID_PRIVATE_KEY` | (empty) | Its private key: `.env.local` or `secrets:set`, never `.env` |
 | `MESSENGER_TRANSPORT_DSN` | `doctrine://default?auto_setup=0`, dev: `sync://`, test: `in-memory://` | Async transport, consumed by the `worker` service in prod |
 
 ### Online payment of memberships (HelloAsso)

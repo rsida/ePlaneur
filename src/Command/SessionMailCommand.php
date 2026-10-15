@@ -26,9 +26,9 @@ final readonly class SessionMailCommand
         SymfonyStyle $io,
         #[Option(description: 'List what would be sent without sending')] bool $dryRun = false,
     ): int {
-        foreach (['Reminder' => $this->mailer->remind($dryRun), 'Results' => $this->mailer->results($dryRun)] as $what => ['sessions' => $sessions, 'readers' => $readers]) {
+        foreach (['Reminder' => $this->mailer->remind($dryRun), 'Results' => $this->mailer->results($dryRun)] as $what => ['sessions' => $sessions, 'readers' => $readers, 'devices' => $devices]) {
             foreach ($sessions as $session) {
-                $io->writeln(\sprintf('%s of the session of %s (%s): %d reader(s)%s', $what, $session->getDate()->format('Y-m-d'), $session->getFlightPlan()->getCode(), \count($readers), $dryRun ? ', not sent' : ''));
+                $io->writeln(\sprintf('%s of the session of %s (%s): %d reader(s), %d device(s)%s', $what, $session->getDate()->format('Y-m-d'), $session->getFlightPlan()->getCode(), \count($readers), \count($devices), $dryRun ? ', not sent' : ''));
             }
         }
         $io->success($dryRun ? 'Nothing sent (dry run).' : 'Done.');

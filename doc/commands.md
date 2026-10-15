@@ -7,6 +7,7 @@ The commands of the project, run in the `php` container through the Makefile:
 
 | Command | What it does | Document |
 |---|---|---|
+| `app:push:keys` | Prints a pair of VAPID keys for the notifications, to put in `.env.local` | [installable site](installable-site.md#notifications) |
 | `app:user:create <email> <name> [--group=]` | Creates a verified account; asks its password (without terminal, none: "Mot de passe oublié") | [accounts](accounts.md) |
 | `app:user:groups <email> [--add=] [--remove=]` | Shows, adds or removes the groups of an account | [accounts](accounts.md) |
 | `app:group:list` | Lists the groups, their permissions and member count | [accounts](accounts.md) |
@@ -21,7 +22,7 @@ Run by cron in production ([production](production.md)).
 | `app:membership:expire` | Daily | Removes the "Membre" group from the accounts whose membership ended (after the grace month) | [membership](membership.md) |
 | `app:membership:remind` | Daily | E-mails the renewal reminder, once, when the next season is open | [membership](membership.md) |
 | `app:sessions:import [--since=]` | Daily, while eplaneur.fr publishes sessions | Imports the network sessions and their results from eplaneur.fr | [sessions](sessions.md) |
-| `app:sessions:mail [--dry-run]` | Daily, in the evening | E-mails the reminders of tomorrow's sessions and the results of the last ones, once each | [sessions](sessions.md#reminders-and-results) |
+| `app:sessions:mail [--dry-run]` | Daily, in the evening | Sends the reminders of tomorrow's sessions and the results of the last ones, once each, by e-mail and as notifications | [sessions](sessions.md#reminders-and-results) |
 | `app:digest:send [--month=] [--dry-run]` | The first day of the month | Sends the monthly digest of the last month; a second run sends it again | [monthly digest](monthly-digest.md) |
 
 ## Imports and data
