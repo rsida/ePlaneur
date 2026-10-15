@@ -66,7 +66,12 @@ its flight plan (`ExerciseCriterion`):
 
 Without criteria, a finished task passes the exercise. A criterion that cannot be measured is not
 met. The exercise page lists every flight of the pilot on the flight plan with each criterion met
-or missed and the value flown, so that the pilot knows what to work on. The settings Condor does not
+or missed and the value flown, so that the pilot knows what to work on. A missed criterion that
+happens at one moment links to it in the viewer of the flight ("Voir le moment", `#t=` second;
+`ExerciseCheck::moment()`, cached like the measures): the highest speed, the lowest point, the first
+height recovery, the first penalty the track shows, the end of a flight that did not finish its task
+or land on an airfield. Criteria of the whole flight (duration, distance, thermals, speed of the
+task...) have no moment. The settings Condor does not
 write in the track (weather, realism) are not checked: the flight plan of the exercise sets them.
 
 In the trainer's view of a logbook (training path), each step says how many items of "Mon parcours"
@@ -141,8 +146,6 @@ way to the next tier; the dashboard of the member space lists the badges earned 
 
 Rankings and badges name the pilots as they chose (name, first name or pseudonym, see
 [name shown](accounts.md#name-shown)); the rule for minors is for the committee.
-
-Not built yet (roadmap 11): the moment of the flight that misses a criterion.
 
 ## Back-office
 

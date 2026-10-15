@@ -13,7 +13,7 @@ use App\Entity\Flight;
 final readonly class ExerciseResult
 {
     /**
-     * @param list<array{label: string, asked: string, measured: ?string, met: bool}> $lines
+     * @param list<array{label: string, asked: string, measured: ?string, met: bool, at: ?int}> $lines the criteria, with the second of the flight that shows a missed one
      */
     public function __construct(
         public Flight $flight,

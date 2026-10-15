@@ -18,6 +18,7 @@ use App\Flight\Track;
 use App\Flight\Turnpoint;
 use App\Repository\PathStepRepository;
 use App\Tests\Unit\Flight\FlightSamples;
+use App\Training\ExerciseCheck;
 use App\Training\ExerciseCriterion;
 use App\Training\PathItemType;
 use App\Training\ProgressStatus;
@@ -209,6 +210,14 @@ final class PathTest extends WebTestCase
         self::assertSelectorTextContains('.p-path-attempt:nth-child(3) .p-path-attempt__line--missed', 'Vitesse circuit : au moins 55 km/h · 51,1 km/h');
         self::assertSelectorTextContains('.p-path-attempt:nth-child(2) .p-path-attempt__line--missed', 'Planeur : ASK21 · Discus2b');
         self::assertSelectorTextContains('.p-path-attempt:nth-child(1) .p-path-attempt__line--missed', 'Posé sur un terrain');
+        $moment = $this->client->getCrawler()->filter('.p-path-attempt:nth-child(1) .p-path-attempt__line--missed a');
+        self::assertStringStartsWith('Voir le moment', $moment->text());
+        self::assertMatchesRegularExpression('#^/vols/\d+\#t=\d+$#', (string) $moment->attr('href'), 'Where the flight ended, out of the field');
+        self::assertSelectorNotExists('.p-path-attempt:nth-child(3) .p-path-attempt__line--missed a', 'The speed of a task has no moment');
+        $flight = $this->entityManager->getRepository(Flight::class)->findOneBy(['glider' => 'Discus2b']) ?? throw new \LogicException();
+        $speed = $flight->getAnalysis()['series']['speed'];
+        $check = static::getContainer()->get(ExerciseCheck::class);
+        self::assertSame(array_search(max($speed), $speed, true), $check->moment(ExerciseCriterion::SpeedMax, $flight), 'The highest speed');
         $this->client->request('GET', '/parcours/etape/1');
         self::assertSelectorNotExists('#element-'.$exercise->getId().'.p-path-item--done');
 

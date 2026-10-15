@@ -62,7 +62,7 @@
                                         {% for line in result.lines %}
                                             <li class="p-path-attempt__line p-path-attempt__line--{{ line.met ? 'met' : 'missed' }}">
                                                 <twig:ux:icon name="{{ line.met ? 'check' : 'x' }}" aria-hidden="true" />
-                                                <span>{{ line.asked }}{% if line.measured is not null and line.measured != 'oui' %} · <strong>{{ line.measured }}</strong>{% elseif line.measured is null %} · <span class="u-note">non mesuré</span>{% endif %}</span>
+                                                <span>{{ line.asked }}{% if line.measured is not null and line.measured != 'oui' %} · <strong>{{ line.measured }}</strong>{% elseif line.measured is null %} · <span class="u-note">non mesuré</span>{% endif %}{% if line.at is not null %} · <a href="{{ path('app_flight_show', {id: result.flight.id}) }}#t={{ line.at }}">Voir le moment<span class="u-visually-hidden"> : {{ line.label }}, vol du {{ result.flight.date|format_date('medium', locale: 'fr') }}</span></a>{% endif %}</span>
                                             </li>
                                         {% endfor %}
                                     </ul>

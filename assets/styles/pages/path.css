@@ -337,6 +337,13 @@
     color: var(--color-danger);
 }
 
+/* "Voir le moment": the second of the flight that shows the missed criterion */
+.p-path-attempt__line a {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
 /* ---------- Badges: a medal per badge, coloured by the tier reached ---------- */
 .p-path__badges {
     display: grid;

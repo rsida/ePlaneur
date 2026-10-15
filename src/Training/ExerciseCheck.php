@@ -50,10 +50,12 @@ final class ExerciseCheck
                 'asked' => 'Planeur : '.$item->getGlider(),
                 'measured' => $flight->getGlider(),
                 'met' => null !== $flight->getGlider() && 0 === strcasecmp(trim($flight->getGlider()), $item->getGlider()),
+                'at' => null,
             ];
         }
         foreach ($item->getCriteria() as ['criterion' => $criterion, 'value' => $value]) {
             $measured = $this->measure($criterion, $flight);
+            $met = $criterion->isMet($measured, $value);
             $lines[] = [
                 'label' => $criterion->label(),
                 'asked' => $criterion->describe($value),
@@ -62,7 +64,8 @@ final class ExerciseCheck
                     \is_bool($measured) => $measured ? 'oui' : 'non',
                     default => ExerciseCriterion::format($measured, $criterion->unit()),
                 },
-                'met' => $criterion->isMet($measured, $value),
+                'met' => $met,
+                'at' => $met || null === $measured ? null : $this->moment($criterion, $flight),
             ];
         }
         $rankBy = $item->getRankBy();
@@ -98,17 +101,60 @@ final class ExerciseCheck
     }
 
     /**
+     * The second of the flight that shows a missed criterion: the highest speed, the lowest point, the
+     * first height recovery or penalty, the end of a flight that did not finish or land on an airfield;
+     * null for a criterion of the whole flight (duration, thermals...).
+     */
+    public function moment(ExerciseCriterion $criterion, Flight $flight): ?int
+    {
+        $statistics = $flight->getStatistics();
+        $flying = static function (string $name, callable $pick) use ($flight, $statistics): ?int {
+            $series = $flight->getAnalysis()['series'][$name] ?? [];
+            $from = (int) ($statistics['takeoff'] ?? 0);
+            $part = \array_slice($series, $from, (int) ($statistics['landing'] ?? \count($series) - 1) - $from + 1, true);
+
+            return [] !== $part ? (int) array_search($pick($part), $part, true) : null;
+        };
+        $moment = match ($criterion) {
+            ExerciseCriterion::SpeedMax => static fn (): ?int => $flying('speed', max(...)),
+            ExerciseCriterion::AltitudeMin => static fn (): ?int => $flying('altitude', min(...)),
+            ExerciseCriterion::Recoveries => static fn (): ?int => $flight->getAnalysis()['recoveries'][0]['at'] ?? null,
+            ExerciseCriterion::Penalties => fn (): ?int => $this->penaltyMoment($flight),
+            ExerciseCriterion::TaskFinished, ExerciseCriterion::LandedOnAirfield => static fn (): ?int => isset($statistics['landing']) ? (int) $statistics['landing'] : null,
+            default => null,
+        };
+        if (null === $moment) {
+            return null;
+        }
+        $at = $this->cached($criterion, $flight, static fn (): ?float => null !== ($second = $moment()) ? (float) $second : null, 'moment');
+
+        return \is_float($at) ? (int) $at : null;
+    }
+
+    /** The first penalty the track shows. */
+    private function penaltyMoment(Flight $flight): ?int
+    {
+        $settings = FlightClouds::settingsOf($flight);
+        if (null === $settings) {
+            return null;
+        }
+        $moments = array_filter(array_column(Penalties::of($flight->getAnalysis(), $settings)['rules'], 'at'), is_int(...));
+
+        return [] !== $moments ? min($moments) : null;
+    }
+
+    /**
      * A measure read from the analysis, cached by flight, its statistics (a new analysis changes them;
      * getAnalysisVersion() would load the analysis) and what the task settings come from.
      *
      * @param callable(): (float|bool|null) $measure
      */
-    private function cached(ExerciseCriterion $criterion, Flight $flight, callable $measure): float|bool|null
+    private function cached(ExerciseCriterion $criterion, Flight $flight, callable $measure, string $what = 'measure'): float|bool|null
     {
         if (null === $flight->getId()) {
             return $measure();
         }
-        $key = 'exercise-check.'.md5(implode('|', [$criterion->value, $flight->getId(), serialize($flight->getStatistics()), $flight->getSession()?->getId(), $flight->getFlightPlan()]));
+        $key = 'exercise-check.'.md5(implode('|', [$what, $criterion->value, $flight->getId(), serialize($flight->getStatistics()), $flight->getSession()?->getId(), $flight->getFlightPlan()]));
 
         return $this->cache->get($key, static function (ItemInterface $item) use ($measure): float|bool|null {
             $item->expiresAfter(self::CACHE_TTL);
