@@ -1,0 +1,352 @@
+# Draft theory quizzes of "Mon parcours" (roadmap 11c), one per step, to be reviewed by the
+# trainers before use: `make console c="app:quiz:import config/training/quiz_drafts.yaml"` creates
+# them in the back-office ("Quiz"), placed in no step, so no pilot sees them until a trainer adds
+# them to a step. See doc/training-path.md#theory-quizzes.
+#
+# Each question: `answer` is the number of the right choice, from 1 (as in the back-office).
+# `review` lists what a trainer should check first (facts of the club or of Condor that may change).
+
+quizzes:
+  - step: 1
+    title: "Étape 1 · Les commandes et les instruments"
+    intro: "Les axes, les gouvernes, la symétrie du vol et les instruments de base. Une explication suit chaque réponse."
+    passMark: 80
+    review: "Vocabulaire de l'étape 1 (doc/project/training.md). Vérifier la règle du fil de laine et de la bille telle que les formateurs l'enseignent."
+    questions:
+      - question: "Le manche poussé vers l'avant fait tourner le planeur autour de quel axe ?"
+        choices: ["L'axe de roulis", "L'axe de tangage", "L'axe de lacet"]
+        answer: 2
+        explanation: "La profondeur agit sur le tangage : manche avant, le nez descend (le planeur pique) ; manche arrière, il cabre."
+      - question: "Quelle gouverne commande le roulis ?"
+        choices: ["Les ailerons", "La gouverne de direction", "La gouverne de profondeur"]
+        answer: 1
+        explanation: "Les ailerons braquent en sens opposés : une aile porte davantage, l'autre moins, et le planeur s'incline."
+      - question: "En planeur, quelle commande règle principalement la vitesse ?"
+        choices: ["Le palonnier", "Les aérofreins", "Le manche en profondeur, par l'assiette"]
+        answer: 3
+        explanation: "Sans moteur, la vitesse se règle par l'assiette : on pique pour accélérer, on cabre pour ralentir. Les aérofreins règlent la pente, pas la vitesse."
+      - question: "Pour mettre le planeur en virage à droite, on incline avec le manche. Que fait le nez au même moment, sans action au palonnier ?"
+        choices: ["Il part vers la droite plus vite que l'inclinaison", "Il part vers la gauche : c'est le lacet inverse", "Il ne bouge pas"]
+        answer: 2
+        explanation: "L'aileron baissé, sur l'aile qui monte, crée plus de traînée : le nez part du côté opposé au virage. Le palonnier, du côté du virage, le compense."
+      - question: "Le fil de laine part vers la droite de la verrière. Que faut-il faire ?"
+        choices: ["Mettre du pied à droite", "Rien, le vol est symétrique", "Mettre du pied à gauche"]
+        answer: 3
+        explanation: "On met du pied du côté opposé au fil, jusqu'à ce qu'il revienne au milieu : le vol est alors symétrique."
+      - question: "Que mesure le variomètre ?"
+        choices: ["La vitesse verticale : on monte ou on descend, et à quel taux", "La vitesse par rapport à l'air", "L'altitude"]
+        answer: 1
+        explanation: "Le variomètre indique la vitesse verticale en m/s : c'est l'instrument qui montre une ascendance."
+      - question: "Que mesure l'anémomètre (le badin) ?"
+        choices: ["La vitesse par rapport au sol", "La vitesse par rapport à l'air", "La vitesse du vent"]
+        answer: 2
+        explanation: "L'anémomètre mesure la vitesse dans la masse d'air, celle qui compte pour le pilotage et le décrochage. La vitesse sol dépend en plus du vent."
+      - question: "En virage, pour garder la même vitesse, que faut-il faire avec le manche par rapport au vol en ligne droite ?"
+        choices: ["Le pousser un peu", "Ne rien changer", "Le tirer un peu"]
+        answer: 3
+        explanation: "En virage, la portance s'incline : il en faut davantage pour tenir le planeur, donc un peu plus de manche arrière, et une vitesse un peu plus élevée en virage serré."
+      - question: "Qu'est-ce qui fait décrocher une aile ?"
+        choices: ["Un angle d'incidence trop grand", "Une vitesse trop élevée", "Un vol trop haut"]
+        answer: 1
+        explanation: "Le décrochage vient d'une incidence trop grande : l'air ne suit plus l'extrados. Il arrive le plus souvent à basse vitesse, mais aussi en virage serré ou en ressource brutale."
+      - question: "Comment sortir d'un début de décrochage ?"
+        choices: ["Tirer le manche pour remonter le nez", "Sortir les aérofreins", "Rendre la main (manche vers l'avant) et garder les ailes à plat au palonnier"]
+        answer: 3
+        explanation: "On diminue l'incidence en rendant la main : la vitesse revient. Tirer aggrave le décrochage ; les aérofreins ne servent à rien ici."
+
+  - step: 2
+    title: "Étape 2 · Voler seul sur un circuit"
+    intro: "Préparer un circuit, rester en local, revenir et se poser. Une explication suit chaque réponse."
+    passMark: 80
+    review: "Vérifier les noms des branches du tour de piste et la marge de sécurité enseignées au club."
+    questions:
+      - question: "Un planeur a une finesse de 30. Combien de kilomètres peut-il parcourir en air calme depuis 1 000 m ?"
+        choices: ["3 km", "30 km", "300 km"]
+        answer: 2
+        explanation: "La finesse est le rapport distance parcourue sur hauteur perdue : 30 × 1 km = 30 km, sans vent ni descendance, et sans marge."
+      - question: "Pourquoi ne compte-t-on jamais sur la finesse maximale pour rejoindre un terrain ?"
+        choices: ["Parce que le vent de face, les descendances et le tour de piste coûtent de la hauteur", "Parce que Condor ne la respecte pas", "Parce qu'elle n'existe qu'en virage"]
+        answer: 1
+        explanation: "La finesse annoncée est celle de l'air calme à la meilleure vitesse. Vent de face, descendances et approche réduisent la distance réelle : on garde une marge."
+      - question: "Dans quel sens se pose-t-on, de préférence ?"
+        choices: ["Vent dans le dos", "Face au vent", "Vent de travers"]
+        answer: 2
+        explanation: "Face au vent, la vitesse par rapport au sol est la plus faible : l'approche est plus pentue et le roulage plus court."
+      - question: "Dans quel ordre se suivent les branches d'un tour de piste ?"
+        choices: ["Vent arrière, base, finale", "Finale, base, vent arrière", "Base, vent arrière, finale"]
+        answer: 1
+        explanation: "On longe la piste en vent arrière, on tourne en étape de base, puis on s'aligne en finale face au vent."
+      - question: "En finale, on est trop haut. Que faire ?"
+        choices: ["Piquer pour descendre plus vite", "Faire un virage serré près du sol", "Sortir davantage les aérofreins"]
+        answer: 3
+        explanation: "Les aérofreins règlent la pente d'approche sans prendre de vitesse. Piquer ferait arriver trop vite ; un virage près du sol est dangereux."
+      - question: "Pourquoi augmente-t-on un peu la vitesse en approche par vent fort ?"
+        choices: ["Pour arriver plus tôt", "À cause du gradient de vent : le vent faiblit près du sol et la vitesse peut chuter", "Pour économiser les aérofreins"]
+        answer: 2
+        explanation: "Près du sol, le vent ralentit (gradient). En descendant, le planeur perd de la vitesse air : une marge de vitesse évite le décrochage en finale."
+      - question: "Qu'est-ce qu'une zone d'observation d'un point de virage ?"
+        choices: ["Un espace interdit autour du point", "La zone d'atterrissage du point", "La zone où il faut passer pour que le point soit validé"]
+        answer: 3
+        explanation: "Le circuit n'est validé que si la trace passe dans la zone de chaque point (secteur ou cylindre selon le plan de vol)."
+      - question: "Pour centrer un thermique, quand le variomètre monte d'un côté du cercle, que fait-on ?"
+        choices: ["On décale son cercle vers ce côté", "On s'en éloigne", "On accélère"]
+        answer: 1
+        explanation: "On décale le cercle vers la partie où ça monte le plus, par exemple en ouvrant un peu le virage quelques secondes, jusqu'à monter de façon régulière."
+      - question: "Quelle règle de sécurité suit-on pendant tout le vol ?"
+        choices: ["Monter le plus haut possible", "Rester toujours en local d'un terrain ou d'un champ posable", "Suivre les autres planeurs"]
+        answer: 2
+        explanation: "Un planeur doit toujours pouvoir rejoindre un terrain ou un champ où se poser. C'est aussi une règle des vols en réseau du club."
+      - question: "Le circuit n'est pas terminé et vous êtes bas, loin du terrain. Que faites-vous ?"
+        choices: ["Je continue en espérant un thermique", "Je demande une récupération d'altitude", "Je choisis tôt un champ ou un terrain à portée et je prépare l'atterrissage"]
+        answer: 3
+        explanation: "La décision se prend tôt, avec de la hauteur pour préparer le tour de piste. Un bon pilote préfère un atterrissage en campagne réussi à un circuit forcé."
+
+  - step: 3
+    title: "Étape 3 · Voler en réseau avec le club"
+    intro: "Se préparer à un vol en réseau et en connaître les règles. Une explication suit chaque réponse."
+    passMark: 80
+    review: "Règles du club (doc/project/flights.md) : à mettre à jour si elles changent (vitesse de départ, pénalités, horaires du briefing)."
+    questions:
+      - question: "Quand a lieu le briefing d'un vol en réseau sur Discord ?"
+        choices: ["15 minutes avant le vol", "Après le vol", "Il n'y en a pas"]
+        answer: 1
+        explanation: "L'organisateur fait le briefing sur Discord 15 minutes avant le vol : plan de vol, consignes, questions."
+      - question: "Pourquoi le serveur peut-il refuser votre connexion ?"
+        choices: ["Votre manche est mal réglé", "Vous n'avez pas de compte Condor Club", "Votre version de Condor, de la scène ou du hangar n'est pas exactement celle du serveur"]
+        answer: 3
+        explanation: "Les versions doivent être identiques à celles du serveur. Vérifiez-les sur la page des prérequis avant chaque vol."
+      - question: "Que signifie le « Stop Join » ?"
+        choices: ["L'ouverture de la ligne de départ", "L'heure après laquelle on ne peut plus rejoindre la session", "La fin du vol"]
+        answer: 2
+        explanation: "Pendant la fenêtre de connexion, on peut rejoindre ou se reconnecter. Après le Stop Join, ce n'est plus possible."
+      - question: "Avant le départ et pendant les 10 premiers kilomètres du circuit, dans quel sens spirale-t-on ?"
+        choices: ["À gauche seulement", "À droite seulement", "Dans le sens de son choix"]
+        answer: 1
+        explanation: "Règle du club : spirales à gauche seulement, du décollage jusqu'au départ et pendant les 10 premiers kilomètres, pour que tout le monde tourne dans le même sens près des autres."
+      - question: "À quelle vitesse maximale passe-t-on la ligne de départ ?"
+        choices: ["250 km/h", "170 km/h par rapport au sol", "Il n'y a pas de limite"]
+        answer: 2
+        explanation: "Au-delà de 170 km/h sol, une pénalité s'applique (3 secondes par km/h en trop sur Condor 2)."
+      - question: "Un thermique est déjà occupé par un planeur qui spirale. Que faites-vous ?"
+        choices: ["Je spirale dans le même sens que lui", "Je spirale dans le sens contraire pour le voir", "Je passe au milieu du thermique"]
+        answer: 1
+        explanation: "On s'intègre dans le sens du premier planeur, comme en vol réel. Spiraler en sens contraire, c'est risquer la collision."
+      - question: "Deux planeurs se rapprochent de face. Que font-ils ?"
+        choices: ["Chacun s'écarte vers sa gauche", "Le plus haut monte encore", "Chacun s'écarte vers sa droite"]
+        answer: 3
+        explanation: "Les règles de priorité du vol réel s'appliquent : face à face, chacun s'écarte vers la droite."
+      - question: "Que coûte une récupération d'altitude demandée à Condor pendant une course du club ?"
+        choices: ["Rien", "Une pénalité : 200 points sur les courses du club", "La disqualification immédiate"]
+        answer: 2
+        explanation: "Condor remonte le planeur d'environ 500 m, mais la course est pénalisée. Mieux vaut se poser en campagne et en tirer les leçons."
+      - question: "Après le vol, que faut-il garder pour enregistrer sa performance ?"
+        choices: ["Une capture d'écran", "Rien, le serveur s'en charge", "Le fichier de trace (FTR ou IGC) du vol"]
+        answer: 3
+        explanation: "La trace est la preuve du vol : on la dépose sur le circuit Condor Club et sur le site du club, qui l'analyse et la range dans la session."
+      - question: "Pendant le vol, à quoi sert le canal Discord ?"
+        choices: ["À se coordonner, s'entraider et suivre les consignes de l'organisateur", "À rien, on vole sans parler", "Seulement à annoncer qu'on a fini"]
+        answer: 1
+        explanation: "Le vol en réseau est un vol ensemble : on s'annonce, on partage les thermiques et on écoute l'organisateur."
+
+  - step: 4
+    title: "Étape 4 · Les volets et l'insigne d'argent"
+    intro: "Utiliser les volets et le ballast, et connaître les épreuves de l'insigne d'argent Condor Club. Une explication suit chaque réponse."
+    passMark: 80
+    review: "Vérifier les épreuves de l'insigne d'argent Condor Club et la pénalité de ballast (doc/project/glossary.md, flights.md)."
+    questions:
+      - question: "Que change un braquage positif des volets ?"
+        choices: ["Il réduit la traînée à grande vitesse", "Il augmente la courbure de l'aile : le planeur vole plus lentement, utile en spirale", "Il remplace les aérofreins"]
+        answer: 2
+        explanation: "Les volets positifs augmentent la courbure et la portance à basse vitesse : on spirale plus lentement et plus serré."
+      - question: "Quand utilise-t-on des volets négatifs ?"
+        choices: ["En spirale", "À l'atterrissage", "En transition rapide, à grande vitesse"]
+        answer: 3
+        explanation: "À grande vitesse, les volets négatifs réduisent la courbure et la traînée : le planeur va plus vite pour la même perte de hauteur."
+      - question: "Que se passe-t-il si l'on vole vite avec les volets positifs ?"
+        choices: ["La traînée augmente : on perd de la finesse, et on peut dépasser la vitesse limite des volets", "Rien de particulier", "Le planeur monte"]
+        answer: 1
+        explanation: "Chaque position de volets a sa plage de vitesses. En dehors, on perd des performances, et chaque planeur a une vitesse à ne pas dépasser volets sortis."
+      - question: "À quoi sert le ballast d'eau ?"
+        choices: ["À monter plus vite en thermique faible", "À se poser plus court", "À voler plus vite à la même finesse par bonnes conditions"]
+        answer: 3
+        explanation: "Le ballast augmente la charge alaire : la polaire se décale vers les grandes vitesses. C'est intéressant en conditions fortes, pénalisant en thermiques faibles."
+      - question: "Pourquoi faut-il respecter la limite de ballast d'un vol du club ?"
+        choices: ["Parce que le planeur ne décolle pas", "Parce qu'un excès est pénalisé (sur Condor 2, 2 minutes par kilo en trop sur Condor Club)", "Ce n'est pas utile"]
+        answer: 2
+        explanation: "La limite rend la course équitable. Le dépassement est pénalisé au classement."
+      - question: "Quelles sont les trois épreuves de l'insigne d'argent Condor Club ?"
+        choices: ["1 h de vol, 1 000 m de gain d'altitude, 50 km de distance", "5 h de vol, 3 000 m de gain, 300 km", "30 min de vol et un atterrissage"]
+        answer: 1
+        explanation: "C'est la référence de l'étape 4 : une heure de vol, un gain de 1 000 m depuis un point bas et 50 km de distance."
+      - question: "Le gain d'altitude de l'insigne se mesure…"
+        choices: ["Depuis l'altitude du terrain de départ", "Depuis un point bas du vol jusqu'au point haut qui suit", "Depuis le niveau de la mer"]
+        answer: 2
+        explanation: "On compte le gain depuis un point bas jusqu'à l'altitude atteinte ensuite. Le site affiche ce gain dans l'analyse de chaque vol."
+      - question: "Pourquoi sortir les volets en position atterrissage en finale, quand le planeur en a ?"
+        choices: ["Pour se poser plus lentement et plus court", "Pour aller plus vite", "Pour monter"]
+        answer: 1
+        explanation: "La position atterrissage abaisse la vitesse de décrochage : l'approche est plus lente et l'atterrissage plus court."
+
+  - step: 5
+    title: "Étape 5 · Voler à la vitesse MacCready"
+    intro: "La polaire, le calage MacCready et la vitesse de transition. Une explication suit chaque réponse."
+    passMark: 80
+    review: "Vérifier le vocabulaire utilisé dans les documents MacCready du club (eplaneur.fr)."
+    questions:
+      - question: "Que représente la polaire des vitesses d'un planeur ?"
+        choices: ["Sa vitesse en fonction de l'altitude", "Sa trajectoire en virage", "Son taux de chute en fonction de sa vitesse"]
+        answer: 3
+        explanation: "La polaire donne la vitesse de chute pour chaque vitesse de vol, en air calme. On y lit la finesse max et la vitesse de chute mini."
+      - question: "Comment trouve-t-on la vitesse de finesse maximale sur la polaire ?"
+        choices: ["Au point le plus haut de la polaire", "Par la tangente à la polaire menée depuis l'origine", "À la vitesse maximale"]
+        answer: 2
+        explanation: "La finesse est le rapport vitesse sur chute : elle est maximale au point de contact de la tangente issue de l'origine."
+      - question: "Laquelle est la plus faible ?"
+        choices: ["La vitesse de finesse maximale", "Elles sont égales", "La vitesse de chute minimale"]
+        answer: 3
+        explanation: "La chute minimale se trouve à une vitesse plus faible que la finesse maximale. On spirale près de la chute mini, on transite plus vite."
+      - question: "Que règle-t-on avec le calage MacCready ?"
+        choices: ["Le taux de montée moyen attendu dans le prochain thermique", "La pression atmosphérique", "La masse du planeur"]
+        answer: 1
+        explanation: "Le calage MacCready est la vitesse de montée moyenne qu'on pense obtenir au prochain thermique. Il donne la vitesse de transition optimale."
+      - question: "Que donne un calage MacCready à zéro ?"
+        choices: ["La vitesse maximale du planeur", "La vitesse de finesse maximale en air calme", "La vitesse de décrochage"]
+        answer: 2
+        explanation: "À MacCready 0, on vole pour aller le plus loin possible, pas le plus vite : c'est la vitesse de finesse max."
+      - question: "Quand on augmente le calage MacCready, la vitesse de transition…"
+        choices: ["Diminue", "Ne change pas", "Augmente"]
+        answer: 3
+        explanation: "Plus les thermiques attendus sont forts, plus on peut transiter vite : on regagnera vite la hauteur perdue."
+      - question: "En transition, vous traversez une forte descendance. Selon MacCready, il faut…"
+        choices: ["Accélérer pour en sortir vite", "Ralentir", "Spiraler"]
+        answer: 1
+        explanation: "On accélère dans la descendance et on ralentit dans l'ascendance : on passe moins de temps dans l'air qui descend."
+      - question: "Vous êtes bas et loin du terrain. Que faire du calage MacCready ?"
+        choices: ["L'augmenter pour rentrer plus vite", "Le laisser tel quel", "Le baisser : on vole plus prudemment, pour aller plus loin"]
+        answer: 3
+        explanation: "Bas, la priorité est de rester en l'air et en local : un calage plus bas rapproche de la finesse max et de la sécurité."
+      - question: "À quoi sert le calage MacCready en plané final ?"
+        choices: ["À rien", "À calculer la hauteur nécessaire pour rejoindre l'arrivée à la bonne vitesse", "À choisir le thermique suivant"]
+        answer: 2
+        explanation: "Le calculateur indique la hauteur à avoir pour rejoindre l'arrivée avec ce calage. Avec plus de hauteur, on peut monter le calage et rentrer plus vite."
+
+  - step: 6
+    title: "Étape 6 · Le calculateur XCSoar"
+    intro: "Coupler un calculateur externe à Condor et s'en servir en vol. Une explication suit chaque réponse."
+    passMark: 80
+    review: "À relire par celui qui anime l'atelier XCSoar : le mode de liaison Condor → XCSoar (sortie NMEA, port COM) et les noms des pages d'XCSoar."
+    questions:
+      - question: "Comment XCSoar connaît-il la position du planeur dans Condor ?"
+        choices: ["Condor lui envoie ses données de vol par une sortie NMEA", "XCSoar lit l'écran de Condor", "Par le serveur du club"]
+        answer: 1
+        explanation: "Condor peut envoyer position, altitude et vitesse au format NMEA, comme un GPS : XCSoar les lit en temps réel."
+      - question: "Quel fichier de circuit XCSoar utilise-t-il ?"
+        choices: ["Le fichier .fpl de Condor directement", "Un fichier .tsk", "Une image du circuit"]
+        answer: 2
+        explanation: "XCSoar lit des circuits .tsk. La fiche du plan de vol sur eplaneur.fr le propose, et CoTaCo convertit un .fpl en .tsk."
+      - question: "Que montre le plané final dans XCSoar ?"
+        choices: ["La hauteur en trop ou en moins pour rejoindre l'arrivée avec le calage MacCready choisi", "La vitesse du vent", "Le temps de vol restant"]
+        answer: 1
+        explanation: "Le calculateur compare votre hauteur à celle qu'il faut pour rejoindre l'arrivée : une marge positive permet de partir en plané final."
+      - question: "Pourquoi régler correctement le calage MacCready et le ballast dans XCSoar ?"
+        choices: ["Ce n'est pas utile", "Pour l'enregistrement de la trace", "Parce que ses calculs de vitesse et de plané final en dépendent"]
+        answer: 3
+        explanation: "XCSoar calcule avec la polaire, la masse et le calage : s'ils sont faux, ses conseils de vitesse et de hauteur le sont aussi."
+      - question: "Quel est l'intérêt de la liste des terrains atteignables ?"
+        choices: ["Choisir le thermique suivant", "Savoir à tout moment où se poser", "Connaître le classement"]
+        answer: 2
+        explanation: "XCSoar indique les terrains à portée de plané, avec une marge : c'est la règle de sécurité « rester en local » rendue visible."
+      - question: "L'assistant thermique d'XCSoar sert à…"
+        choices: ["Monter automatiquement", "Trouver les thermiques à distance", "Voir où le planeur a le mieux monté sur le cercle, pour recentrer"]
+        answer: 3
+        explanation: "Il affiche la montée mesurée autour du cercle : on décale le cercle vers la partie la plus forte."
+      - question: "Le calculateur dit que vous pouvez rentrer, mais le ciel devant est sans nuages et sous le vent d'un relief. Que faites-vous ?"
+        choices: ["Je garde une marge supplémentaire : le calculateur ne connaît pas les descendances à venir", "Je fais confiance au calculateur", "J'accélère au maximum"]
+        answer: 1
+        explanation: "Le calculateur suppose une masse d'air moyenne. Le pilote reste responsable : il ajoute une marge quand l'air risque de descendre."
+
+  - step: 7
+    title: "Étape 7 · Passer à Condor 3"
+    intro: "Ce qui change avec Condor 3 et comment s'y préparer. Une explication suit chaque réponse."
+    passMark: 80
+    review: "À relire par un formateur Condor 3 : espaces aériens, calculateur LX intégré, conversion des plans de vol (outils et versions changent)."
+    questions:
+      - question: "Pourquoi le club commence-t-il la formation sur Condor 2 ?"
+        choices: ["Condor 3 est interdit aux débutants", "Il tourne sur des PC modestes, sa météo et son calculateur sont plus simples, et le club peut prêter des licences", "Condor 2 est plus réaliste"]
+        answer: 2
+        explanation: "Condor 2 permet d'apprendre les bases sans la complexité de Condor 3. On passe à Condor 3 à l'étape 7, avec ces bases."
+      - question: "Avant un vol en réseau sur Condor 3, que vérifie-t-on ?"
+        choices: ["Que Condor 2 est désinstallé", "Rien de plus qu'en Condor 2", "Que les versions de Condor 3, du hangar et de la scène sont celles du serveur"]
+        answer: 3
+        explanation: "Comme en Condor 2, des versions différentes empêchent la connexion. La page des prérequis donne les versions attendues."
+      - question: "Un plan de vol Condor 2 fonctionne-t-il tel quel dans Condor 3 ?"
+        choices: ["Non, il faut le convertir (par exemple avec FPL2V3) ou utiliser la version Condor 3 du plan", "Oui, toujours", "Seulement sans vent"]
+        answer: 1
+        explanation: "Les formats et les scènes diffèrent. La bibliothèque de plans de vol propose des versions Condor 3, et FPL2V3 convertit un plan de Condor 2."
+      - question: "Quel calculateur de vol est intégré à Condor 3 ?"
+        choices: ["XCSoar", "Aucun", "Un calculateur LX"]
+        answer: 3
+        explanation: "Condor 3 intègre un calculateur LX ; XCSoar reste utilisable en externe, comme sur Condor 2."
+      - question: "Qu'est-ce que Condor 3 ajoute par rapport à Condor 2 pour la navigation ?"
+        choices: ["Le vol de nuit", "Les espaces aériens, à respecter comme en vol réel", "Le pilotage automatique"]
+        answer: 2
+        explanation: "Condor 2 ne gère pas la réglementation de l'espace aérien ; avec Condor 3, il faut préparer le vol en tenant compte des espaces."
+      - question: "Pourquoi garder la même méthode de vol en passant à Condor 3 ?"
+        choices: ["Parce que les bases (symétrie, centrage, MacCready, sécurité) restent les mêmes ; seul l'environnement change", "Parce que Condor 3 la fait à votre place", "Ce n'est pas nécessaire"]
+        answer: 1
+        explanation: "Le simulateur change, le pilotage non. On refait quelques vols simples pour prendre ses repères avant les circuits exigeants."
+
+  - step: 8
+    title: "Étape 8 · Théorie du vol à voile"
+    intro: "Des questions dans l'esprit du BIA : aérodynamique, météo, navigation, réglementation et facteurs humains. Une explication suit chaque réponse."
+    passMark: 75
+    review: "Niveau BIA ; à comparer avec le programme théorique que le club présentera à la FFVP (Brevet ePlaneur, doc/project/training.md)."
+    questions:
+      - question: "Si la vitesse double, la portance (à incidence constante)…"
+        choices: ["Double", "Est multipliée par quatre", "Ne change pas"]
+        answer: 2
+        explanation: "La portance est proportionnelle au carré de la vitesse : Rz = ½ ρ S V² Cz."
+      - question: "En virage à 60° d'inclinaison, le facteur de charge vaut…"
+        choices: ["1", "2", "4"]
+        answer: 2
+        explanation: "n = 1 / cos(60°) = 2. La vitesse de décrochage est alors multipliée par √2, soit environ 1,4."
+      - question: "Dans l'atmosphère standard, quelle est la température au niveau de la mer ?"
+        choices: ["0 °C", "15 °C", "20 °C"]
+        answer: 2
+        explanation: "L'atmosphère standard : 15 °C et 1 013,25 hPa au niveau de la mer, et une température qui baisse de 6,5 °C par 1 000 m."
+      - question: "Avec l'altimètre calé au QFE, que lit-on au sol, sur le terrain ?"
+        choices: ["L'altitude du terrain", "Zéro", "Le niveau de vol"]
+        answer: 2
+        explanation: "Au QFE, l'altimètre indique la hauteur au-dessus du terrain. Au QNH, il indique l'altitude au-dessus du niveau de la mer."
+      - question: "Qu'est-ce qui forme un thermique ?"
+        choices: ["Le vent qui rencontre un relief", "La pluie", "Le sol chauffé par le soleil réchauffe l'air au-dessus, qui devient plus léger et monte"]
+        answer: 3
+        explanation: "Un sol qui chauffe vite (rocher, champ sec, pente au soleil) réchauffe une bulle d'air qui s'élève. Le vent sur un relief crée, lui, une ascendance dynamique."
+      - question: "Température 25 °C, point de rosée 13 °C au sol. Où se trouve environ la base des cumulus ?"
+        choices: ["Vers 500 m", "Vers 1 500 m au-dessus du sol", "Vers 4 000 m"]
+        answer: 2
+        explanation: "Base ≈ 125 m × (température − point de rosée) = 125 × 12 = 1 500 m au-dessus du sol."
+      - question: "Quelle est la règle de priorité entre deux aéronefs dont les routes se croisent à la même altitude ?"
+        choices: ["Le plus rapide passe", "Celui qui voit l'autre à sa droite lui laisse le passage", "Celui qui est à gauche a la priorité"]
+        answer: 2
+        explanation: "On cède le passage à l'aéronef qui vient de droite (entre aéronefs de même catégorie)."
+      - question: "Un planeur peut-il voler en VFR dans un espace aérien de classe A ?"
+        choices: ["Oui, sans contact radio", "Oui, au-dessus de 3 000 m", "Non, le vol VFR y est interdit"]
+        answer: 3
+        explanation: "En classe A, seul le vol IFR est autorisé : un planeur n'y entre pas."
+      - question: "Quand règle-t-on l'altimètre sur 1013 hPa ?"
+        choices: ["Pour voler en niveaux de vol (FL)", "Pour l'atterrissage", "Jamais"]
+        answer: 1
+        explanation: "Au-dessus de l'altitude de transition, tous les aéronefs calent 1013 hPa et volent en niveaux de vol : ils ont tous la même référence."
+      - question: "Pourquoi augmente-t-on la vitesse d'approche par vent fort et turbulent ?"
+        choices: ["Pour se poser plus loin", "Pour gagner du temps", "Pour garder une marge contre le gradient de vent et les rafales"]
+        answer: 3
+        explanation: "Le vent faiblit près du sol et les rafales font varier la vitesse air : une marge de vitesse protège du décrochage en finale."
+      - question: "Quel facteur humain fait prendre de mauvaises décisions en fin de longue course ?"
+        choices: ["Un calage MacCready trop bas", "La fatigue et la déshydratation", "Le soleil dans le dos"]
+        answer: 2
+        explanation: "Fatigue, faim et déshydratation réduisent la vigilance. On boit, on mange et on décide tôt, en vol réel comme devant l'écran."
+      - question: "Une ascendance dynamique se trouve…"
+        choices: ["Sur la pente au vent d'un relief", "Sous le vent d'un relief", "Au-dessus d'un lac"]
+        answer: 1
+        explanation: "Le vent qui rencontre une pente est dévié vers le haut côté au vent. Sous le vent, l'air descend et peut être turbulent."

@@ -77,6 +77,20 @@ write in the track (weather, realism) are not checked: the flight plan of the ex
 In the trainer's view of a logbook (training path), each step says how many items of "Mon parcours"
 the pilot did and links to the best flight of each exercise passed: the proof to validate the step.
 
+## Theory quizzes
+
+Roadmap 11c: a quiz per step in the manner of the BIA, marked by the site and tied to the step like
+any item. A first draft of 72 questions (8 quizzes, from the controls of step 1 to the theory of
+step 8) is in `config/training/quiz_drafts.yaml`, **to be reviewed by the trainers** before any pilot
+sees it: facts of the club (rules of the network flights, penalties) and of Condor (Condor 3, the
+coupling with XCSoar) change, and each quiz says what to check first (`review`).
+
+`make console c="app:quiz:import config/training/quiz_drafts.yaml"` (`--dry-run` checks the file)
+creates them in the back-office ("Quiz") titled "[Brouillon] Étape N · …" and placed in no step: a
+trainer reads one, corrects it, removes "[Brouillon]" from its title and adds it to its step (an item
+"Quiz" of the step form). A quiz whose title exists is kept as the trainer left it; `--replace`
+overwrites it from the file. In the file, `answer` counts the choices from 1, as the back-office does.
+
 ## Rankings
 
 The ranking of an exercise lists the best flight **that passed it** (every criterion met) of each

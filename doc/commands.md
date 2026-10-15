@@ -29,6 +29,7 @@ Run by cron in production ([production](production.md)).
 
 | Command | What it does | Document |
 |---|---|---|
+| `app:quiz:import <file> [--replace] [--dry-run]` | Creates the draft quizzes of a YAML file in the back-office, placed in no step | [Mon parcours](training-path.md#theory-quizzes) |
 | `app:import-wordpress` | Imports the pages, posts and files of club.eplaneur.fr, with redirects of the old addresses | [WordPress import](wordpress-import.md) |
 | `app:flight:analyse` | Analyses every stored flight again from its file, after the analysis changed | [flights](flights.md#analysis) |
 | `app:gliders:import <Planes folder>` | Imports the gliders (sheet and polar) of a Condor 3 installation | [flights](flights.md#gliders-and-polars), [development](development.md) |
