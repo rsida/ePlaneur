@@ -1,0 +1,18 @@
+{% extends 'email/_layout.html.twig' %}
+
+{# The reminder of a network session, the day before (App\Session\SessionMailer). #}
+{% block content %}
+    {% set plan = session.flightPlan %}
+    {% set button = 'display:inline-block;padding:12px 18px;border-radius:4px;background:#3e5d83;color:#ffffff;font-weight:700;text-decoration:none;' %}
+    <p>Bonjour {{ reader.displayName }},</p>
+    <p>Demain, {{ session.date|format_date(pattern: 'EEEE d MMMM', locale: 'fr') }}{% if session.startTime %} à <strong>{{ session.startTime|date('H\\hi') }}</strong> (heure de Paris){% endif %}, on vole ensemble :</p>
+    <p style="margin:16px 0;padding:16px;background:#f7f5ef;border-radius:4px;">
+        <strong>{{ plan.title ?? plan.code }}</strong><br>
+        {{ plan.category }} · Condor {{ plan.condorVersion }}{% if plan.landscape %} · scène {{ plan.landscape }}{% endif %}{% if plan.gliders %} · planeurs {{ plan.gliders }}{% endif %}<br>
+        Plan de vol {{ plan.code }}{% if session.dedicatedTo %} · session dédiée : {{ session.dedicatedTo }}{% endif %}
+    </p>
+    <p>Briefing sur Discord 15 minutes avant, puis connexion au serveur. Vérifiez vos versions de Condor, de la scène et du hangar : elles doivent être celles du serveur.</p>
+    <p style="margin:24px 0;"><a href="{{ url('app_session_show', {id: session.id}) }}" style="{{ button }}">Voir la session</a></p>
+    <p style="font-size:13px;"><a href="{{ url('app_session_ics', {id: session.id}) }}" style="color:#3e5d83;">Ajouter à mon agenda</a> · <a href="{{ url('app_page_show', {path: 'voler/vols-reseau/prerequis'}) }}" style="color:#3e5d83;">Les prérequis</a> · <a href="{{ url('app_page_show', {path: 'voler/vols-reseau/participer'}) }}" style="color:#3e5d83;">Participer à un vol</a></p>
+    <p style="font-size:13px;color:#586772;">Vous recevez ce rappel parce que vous avez choisi « Les vols en réseau » dans <a href="{{ url('app_account_profile') }}#notifications" style="color:#586772;">Mon profil</a>. Vous pouvez le désactiver à tout moment.</p>
+{% endblock %}

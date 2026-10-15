@@ -14,6 +14,7 @@ enum UserNotification: string
     case Message = 'message';
     case Renewal = 'renewal';
     case News = 'news';
+    case Sessions = 'sessions';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum UserNotification: string
             self::Message => 'Un nouveau message',
             self::Renewal => 'Un rappel de renouvellement de mon adhésion',
             self::News => 'La lettre mensuelle du club : vols, records, prochaines sessions et actualités',
+            self::Sessions => 'Les vols en réseau : un rappel la veille, puis les résultats',
         };
     }
 }

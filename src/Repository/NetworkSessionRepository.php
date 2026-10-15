@@ -42,6 +42,42 @@ class NetworkSessionRepository extends ServiceEntityRepository
     }
 
     /**
+     * Sessions of a day whose reminder was not e-mailed yet.
+     *
+     * @return list<NetworkSession>
+     */
+    public function findToRemind(\DateTimeImmutable $day): array
+    {
+        /* @var list<NetworkSession> */
+        return $this->withPlan()
+            ->where('s.date = :day')->setParameter('day', $day->setTime(0, 0))
+            ->andWhere('s.reminderSentAt IS NULL')
+            ->orderBy('s.startTime', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Sessions of the last days before a day whose results were not e-mailed yet.
+     *
+     * @return list<NetworkSession>
+     */
+    public function findResultsToSend(\DateTimeImmutable $before, int $days): array
+    {
+        $day = $before->setTime(0, 0);
+
+        /* @var list<NetworkSession> */
+        return $this->withPlan()
+            ->where('s.date < :day AND s.date >= :from')
+            ->setParameter('day', $day)
+            ->setParameter('from', $day->modify(\sprintf('-%d days', $days)))
+            ->andWhere('s.resultsSentAt IS NULL')
+            ->orderBy('s.date', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Sessions from a day on, the nearest first: the calendar of the sessions.
      *
      * @return list<NetworkSession>

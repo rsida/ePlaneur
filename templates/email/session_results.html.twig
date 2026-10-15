@@ -1,0 +1,22 @@
+{% extends 'email/_layout.html.twig' %}
+
+{# The results of a network session, once known (App\Session\SessionMailer). #}
+{% block content %}
+    {% set plan = session.flightPlan %}
+    {% set button = 'display:inline-block;padding:12px 18px;border-radius:4px;background:#3e5d83;color:#ffffff;font-weight:700;text-decoration:none;' %}
+    {% set count = session.participantCount %}
+    <p>Bonjour {{ reader.displayName }},</p>
+    <p>Les résultats du vol du {{ session.date|format_date(pattern: 'EEEE d MMMM', locale: 'fr') }} sont là : <strong>{{ plan.title ?? plan.code }}</strong> ({{ plan.category }}), {{ count }} pilote{{ count > 1 ? 's' : '' }}.</p>
+    <table role="presentation" style="margin:16px 0;border-collapse:collapse;width:100%;">
+        {% for place in podium %}
+            <tr>
+                <td style="padding:8px 12px;background:#f7f5ef;font-weight:700;width:2.5em;">{{ place.rank }}{{ place.rank == 1 ? 'er' : 'e' }}</td>
+                <td style="padding:8px 12px;background:#f7f5ef;">{{ place.pilot }}</td>
+                <td style="padding:8px 12px;background:#f7f5ef;text-align:right;">{{ place.speed is not null ? place.speed|number_format(1, ',', ' ') ~ ' km/h' : '' }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <p>Bravo à tous ! Déposez votre trace si ce n’est pas encore fait : l’analyse compare votre vol à celui des autres et la rejoue en 3D.</p>
+    <p style="margin:24px 0;"><a href="{{ url('app_session_show', {id: session.id}) }}" style="{{ button }}">Voir les résultats et rejouer la session</a></p>
+    <p style="font-size:13px;color:#586772;">Vous recevez ces résultats parce que vous avez choisi « Les vols en réseau » dans <a href="{{ url('app_account_profile') }}#notifications" style="color:#586772;">Mon profil</a>. Vous pouvez le désactiver à tout moment.</p>
+{% endblock %}

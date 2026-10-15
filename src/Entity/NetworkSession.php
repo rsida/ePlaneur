@@ -94,6 +94,14 @@ class NetworkSession
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /** When the reminder of the day before was e-mailed (SessionMailer), null before. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $reminderSentAt = null;
+
+    /** When the results were e-mailed (SessionMailer), null before. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $resultsSentAt = null;
+
     /** @var Collection<int, Flight> */
     #[ORM\OneToMany(targetEntity: Flight::class, mappedBy: 'session')]
     private Collection $flights;
@@ -280,6 +288,26 @@ class NetworkSession
     public function getParticipantCount(): int
     {
         return [] !== $this->results ? \count($this->results) : $this->flights->count();
+    }
+
+    public function getReminderSentAt(): ?\DateTimeImmutable
+    {
+        return $this->reminderSentAt;
+    }
+
+    public function markReminderSent(\DateTimeImmutable $at): void
+    {
+        $this->reminderSentAt = $at;
+    }
+
+    public function getResultsSentAt(): ?\DateTimeImmutable
+    {
+        return $this->resultsSentAt;
+    }
+
+    public function markResultsSent(\DateTimeImmutable $at): void
+    {
+        $this->resultsSentAt = $at;
     }
 
     public function isPast(\DateTimeImmutable $now): bool

@@ -123,12 +123,14 @@ Backups, the membership tasks and the import of the sessions are not scheduled a
 instance with cron (end of memberships after the grace month, renewal reminders when the next season
 is open, see [membership](membership.md); new sessions of eplaneur.fr while they are published there,
 see [sessions](sessions.md); the monthly digest on the first day of the month, see
-[monthly digest](monthly-digest.md)):
+[monthly digest](monthly-digest.md); session reminders and results every evening, see
+[sessions](sessions.md#reminders-and-results)):
 
 ```cron
 30 6 * * * cd /path/to/ePlaneur && make console c="app:membership:expire" >/dev/null 2>&1 && make console c="app:membership:remind" >/dev/null 2>&1
 0 7 * * * cd /path/to/ePlaneur && make console c="app:sessions:import --since=$(date -d '-14 days' +\%F)" >/dev/null 2>&1
 0 9 1 * * cd /path/to/ePlaneur && make console c="app:digest:send" >/dev/null 2>&1
+0 18 * * * cd /path/to/ePlaneur && make console c="app:sessions:mail" >/dev/null 2>&1
 0 3 * * * cd /path/to/ePlaneur && make db-dump media-dump >/dev/null 2>&1 && find backups \( -name '*.sql.gz' -o -name '*.tar.gz' \) -mtime +14 -delete
 ```
 

@@ -71,6 +71,23 @@ Stimulus controller: a countdown ("Dans 2 j 6 h", "En cours" during 2 h 30) and,
 not in the time zone of Paris, the time at home ("soit 18h30 chez vous"). Without JavaScript, the
 time of Paris stays.
 
+### Reminders and results
+
+Roadmap 11g: e-mails to the accounts that asked for them, the preference "Les vols en réseau : un
+rappel la veille, puis les résultats" of "Mon profil" (`UserNotification::Sessions`, off by default).
+They do not replace the WhatsApp groups of the flights: they reach those who are not in them.
+
+- **Reminder**, the day before (time of Paris): date and time, flight plan, level, version of Condor,
+  landscape and gliders, the Discord briefing 15 minutes before, links to the session, its calendar
+  file, the prerequisites and how to take part (`templates/email/session_reminder.html.twig`).
+- **Results**, once known, within `SessionMailer::RESULTS_WAIT` (3) days: the first three who finished
+  in the results of the server, else the fastest tracks uploaded; the number of pilots; a link to the
+  results and the replay (`templates/email/session_results.html.twig`).
+
+`App\Session\SessionMailer`, run by `make console c="app:sessions:mail"` (`--dry-run` lists what
+would be sent) every evening after the import of the sessions. Each session records when its
+reminder and its results were sent (`reminderSentAt`, `resultsSentAt`): a second run sends nothing.
+
 ### Session form
 
 The flight plan is one text field with suggestions (Stimulus `flight-plan-field`, a `<datalist>` fed
