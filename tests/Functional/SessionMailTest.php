@@ -38,6 +38,7 @@ final class SessionMailTest extends KernelTestCase
         $this->user('lea@example.org', [UserNotification::Sessions]);
         $max = $this->user('max@example.org', []);
         $this->device($max, self::PUSH_SERVICE.'max-phone');
+        $this->device($this->user('paul@example.org', [])->setPushNotifications([UserNotification::Message]), self::PUSH_SERVICE.'paul-phone');
         $this->session('2026-10-14', '16:30');
         $this->session('2026-10-12', '16:30', [
             $this->place(2, 'Max Martin', 118.2),

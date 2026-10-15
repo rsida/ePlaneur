@@ -64,8 +64,9 @@ their flights (`FlightMailer`), a new message (`MessageMailer`), the renewal rem
 [reminders and results](sessions.md#reminders-and-results)). Security and confirmation e-mails are always sent. New accounts
 get everything but the monthly digest and the session e-mails.
 
-The notifications on a phone or a computer are turned on per device, in the panel "Notifications sur
-cet appareil" of the profile (see [installable site](installable-site.md#notifications)).
+The notifications on a phone or a computer (network sessions, new messages, comments on a flight)
+are turned on per device and chosen apart from the e-mails, in the panel "Notifications sur cet
+appareil" of the profile (see [installable site](installable-site.md#notifications)).
 
 ## Account deletion (GDPR)
 

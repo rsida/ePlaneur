@@ -130,6 +130,28 @@ final readonly class ProfileForms
     }
 
     /**
+     * What the devices of the account receive (panel "Notifications sur cet appareil").
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return FormInterface<array<string, mixed>>
+     */
+    public function push(array $data): FormInterface
+    {
+        return $this->factory->createNamedBuilder('push', FormType::class, $data)
+            ->add('pushNotifications', EnumType::class, [
+                'class' => UserNotification::class,
+                'choices' => UserNotification::PUSH,
+                'label' => 'Mes appareils reçoivent une notification pour',
+                'choice_label' => static fn (UserNotification $notification): string => $notification->pushLabel(),
+                'multiple' => true,
+                'expanded' => true,
+                'required' => false,
+            ])
+            ->getForm();
+    }
+
+    /**
      * @param array<string, mixed> $data
      *
      * @return FormInterface<array<string, mixed>>

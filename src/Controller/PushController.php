@@ -84,7 +84,7 @@ final class PushController extends AbstractController
         $reached = $notifier->send([$device], new PushMessage(
             'Club ePlaneur',
             'Les notifications fonctionnent sur cet appareil. À bientôt en vol !',
-            $this->generateUrl('app_account_profile', ['_fragment' => 'notifications']),
+            $this->generateUrl('app_account_profile', ['_fragment' => 'push']),
             'essai',
         ));
 

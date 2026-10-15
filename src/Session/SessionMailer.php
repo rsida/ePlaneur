@@ -11,7 +11,6 @@ use App\Entity\User;
 use App\Push\PushMessage;
 use App\Push\PushNotifier;
 use App\Repository\NetworkSessionRepository;
-use App\Repository\PushSubscriptionRepository;
 use App\Repository\UserRepository;
 use App\Security\UserNotification;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,7 +23,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 /**
  * Session reminders and results (roadmap 11g, doc/sessions.md#reminders-and-results): by e-mail to
  * the accounts that asked for them (UserNotification::Sessions), and as a notification to the devices
- * that turned them on (doc/installable-site.md#notifications). The day before a session, a reminder;
+ * that turned them on and want them (doc/installable-site.md#notifications). The day before a session, a reminder;
  * once its results are known, the podium. Each is sent once per session.
  */
 final readonly class SessionMailer
@@ -42,7 +41,6 @@ final readonly class SessionMailer
         private EntityManagerInterface $entityManager,
         private ClockInterface $clock,
         private PushNotifier $notifier,
-        private PushSubscriptionRepository $subscriptions,
         private UrlGeneratorInterface $urls,
     ) {
     }
@@ -57,7 +55,7 @@ final readonly class SessionMailer
         $now = $this->clock->now();
         $sessions = $this->sessions->findToRemind($now->modify('+1 day'));
         $readers = [] !== $sessions ? $this->readers() : [];
-        $devices = [] !== $sessions ? $this->devices() : [];
+        $devices = [] !== $sessions ? $this->notifier->devices(null, UserNotification::Sessions) : [];
         if (!$dryRun) {
             foreach ($sessions as $session) {
                 foreach ($readers as $reader) {
@@ -88,7 +86,7 @@ final readonly class SessionMailer
         $now = $this->clock->now();
         $sessions = array_values(array_filter($this->sessions->findResultsToSend($now, self::RESULTS_WAIT), static fn (NetworkSession $session): bool => [] !== self::podium($session)));
         $readers = [] !== $sessions ? $this->readers() : [];
-        $devices = [] !== $sessions ? $this->devices() : [];
+        $devices = [] !== $sessions ? $this->notifier->devices(null, UserNotification::Sessions) : [];
         if (!$dryRun) {
             foreach ($sessions as $session) {
                 $podium = self::podium($session);
@@ -132,16 +130,6 @@ final readonly class SessionMailer
     private function readers(): array
     {
         return array_values(array_filter($this->users->findBy(['verified' => true]), static fn (User $user): bool => $user->wants(UserNotification::Sessions)));
-    }
-
-    /**
-     * The devices that turned the notifications on, of verified accounts.
-     *
-     * @return list<PushSubscription>
-     */
-    private function devices(): array
-    {
-        return array_values(array_filter($this->subscriptions->findOfUsers(), static fn (PushSubscription $device): bool => $device->getUser()->isVerified()));
     }
 
     /**

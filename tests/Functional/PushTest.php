@@ -4,15 +4,30 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use App\Entity\Flight;
+use App\Entity\FlightComment;
 use App\Entity\PushSubscription;
+use App\Entity\User;
+use App\Flight\Analysis\FlightAnalyzer;
+use App\Flight\FlightMailer;
+use App\Flight\Track;
+use App\Flight\Turnpoint;
+use App\Messaging\Conversations;
+use App\Push\PushNotification;
+use App\Push\PushNotificationHandler;
+use App\Security\UserNotification;
 use App\Tests\Functional\Admin\AdminUsers;
+use App\Tests\Unit\Flight\FlightSamples;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Field\ChoiceFormField;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
 /**
  * Notifications of the installable site: a device of the member turns them on, tries them and turns
- * them off; nobody else can touch it.
+ * them off; nobody else can touch it; the member chooses what their devices receive; a new message
+ * and a comment on a flight are sent later, by the worker.
  */
 final class PushTest extends WebTestCase
 {
@@ -89,6 +104,60 @@ final class PushTest extends WebTestCase
         $this->post('/notifications/appareils/essai', ['endpoint' => self::PUSH_SERVICE.'expired'], $this->profileToken());
         self::assertResponseStatusCodeSame(502);
         self::assertSame([], $this->devices());
+    }
+
+    public function testTheMemberChoosesWhatTheirDevicesReceive(): void
+    {
+        $lea = $this->userIn($this->entityManager, 'lea@example.org');
+        $this->client->loginUser($lea);
+        $crawler = $this->client->request('GET', '/mon-compte/profil');
+        $form = $crawler->selectButton('Enregistrer mes notifications')->form();
+        /** @var list<ChoiceFormField> $boxes */
+        $boxes = $form['push[pushNotifications]'];
+        self::assertSame(['sessions', 'message', 'flight_comment'], array_map(static fn (ChoiceFormField $box): string => $box->availableOptionValues()[0], $boxes));
+        self::assertTrue($boxes[0]->hasValue(), 'Everything by default');
+        $boxes[0]->untick();
+        $boxes[2]->untick();
+
+        $this->client->submit($form);
+        self::assertResponseRedirects('/mon-compte/profil#push');
+        $this->entityManager->clear();
+        $lea = $this->entityManager->getRepository(User::class)->findOneBy(['email' => 'lea@example.org']);
+        self::assertSame([UserNotification::Message], $lea?->getPushNotifications());
+    }
+
+    public function testANewMessageAndACommentReachTheDevicesThatWantThem(): void
+    {
+        $lea = $this->userIn($this->entityManager, 'lea@example.org');
+        $max = $this->userIn($this->entityManager, 'max@example.org');
+        $max->setPushNotifications([UserNotification::FlightComment]);
+        $this->device($lea, self::PUSH_SERVICE.'lea-phone');
+        $this->device($max, self::PUSH_SERVICE.'max-phone');
+        $container = static::getContainer();
+
+        $container->get(Conversations::class)->start($max, $lea, 'Vol de mercredi', 'On se retrouve sur Discord ?');
+        $container->get(Conversations::class)->start($lea, $max, 'Merci', 'Merci pour le vol !');
+        $point = static fn (string $name, float $x, float $radius): Turnpoint => new Turnpoint($name, ...FlightSamples::toLatLon($x, 0), altitude: 0.0, radius: $radius);
+        $track = new Track('igc', 'Condor 2', 'Max', null, 'ASK21', 'AA2', null, 'C2-d015 ePlaneur', [$point('Terrain', 0, 3000), $point('Départ', 0, 500), $point('Arrivée', 7000, 500)], FlightSamples::glideThermalGlide(), true, new \DateTimeImmutable('2026-10-14'));
+        $flight = new Flight((new FlightAnalyzer())->analyze($track), 'file.igc', 'file.igc', $max, new \DateTimeImmutable('2026-10-14'));
+        $comment = (new FlightComment($flight, $lea, new \DateTimeImmutable()))->setBody('Belle spirale !');
+        $this->entityManager->persist($flight);
+        $this->entityManager->persist($comment);
+        $this->entityManager->flush();
+        $container->get(FlightMailer::class)->sendComment($comment);
+
+        /** @var InMemoryTransport $transport */
+        $transport = $container->get('messenger.transport.async');
+        $queued = array_values(array_filter(array_map(static fn ($envelope): object => $envelope->getMessage(), $transport->getSent()), static fn (object $message): bool => $message instanceof PushNotification));
+        self::assertCount(2, $queued, 'Léa gets the message; Max wants only the comments');
+        self::assertSame('Message de Test max@example.org', $queued[0]->message->title);
+        self::assertSame('Test lea@example.org a commenté votre vol', $queued[1]->message->title, 'Comment of Léa');
+        self::assertSame([], $this->pushed, 'Sent later, by the worker');
+
+        foreach ($queued as $notification) {
+            $container->get(PushNotificationHandler::class)($notification);
+        }
+        self::assertSame([self::PUSH_SERVICE.'lea-phone', self::PUSH_SERVICE.'max-phone'], array_column($this->pushed, 'url'));
     }
 
     private function profileToken(): string

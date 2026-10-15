@@ -41,6 +41,9 @@ final class ProfileController extends AbstractController
             'condor' => $forms->condor(['condorCn' => $user->getCondorCn(), 'condorPilotName' => $user->getCondorPilotName(), 'condorVersions' => $user->getCondorVersions()]),
             'notifications' => $forms->notifications(['notifications' => $user->getNotifications()]),
         ];
+        if ($notifier->isEnabled()) {
+            $panels['push'] = $forms->push(['pushNotifications' => $user->getPushNotifications()]);
+        }
         $submitted = null;
         foreach ($panels as $name => $form) {
             $form->handleRequest($request);
@@ -126,6 +129,10 @@ final class ProfileController extends AbstractController
             case 'notifications':
                 $user->setNotifications($data['notifications'] ?? []);
                 $this->addFlash('success', 'Vos préférences e-mail sont enregistrées.');
+                break;
+            case 'push':
+                $user->setPushNotifications($data['pushNotifications'] ?? []);
+                $this->addFlash('success', 'Vos préférences de notifications sont enregistrées.');
                 break;
         }
         $entityManager->flush();

@@ -86,6 +86,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'json', options: ['default' => '["flight_comment","message","renewal"]'])]
     private array $notifications = [UserNotification::FlightComment->value, UserNotification::Message->value, UserNotification::Renewal->value];
 
+    /** @var list<string> notifications the devices of the account receive (UserNotification::PUSH values) */
+    #[ORM\Column(type: 'json', options: ['default' => '["sessions","message","flight_comment"]'])]
+    private array $pushNotifications = [UserNotification::Sessions->value, UserNotification::Message->value, UserNotification::FlightComment->value];
+
     /** New flights are public (shown to visitors) unless the pilot changes them. */
     #[ORM\Column(options: ['default' => false])]
     private bool $flightsPublicByDefault = false;
@@ -210,6 +214,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function wants(UserNotification $notification): bool
     {
         return \in_array($notification->value, $this->notifications, true);
+    }
+
+    /** @return list<UserNotification> */
+    public function getPushNotifications(): array
+    {
+        return array_values(array_filter(array_map(UserNotification::tryFrom(...), $this->pushNotifications)));
+    }
+
+    /**
+     * @param iterable<UserNotification> $notifications
+     */
+    public function setPushNotifications(iterable $notifications): static
+    {
+        $this->pushNotifications = array_values(array_unique(array_map(static fn (UserNotification $notification): string => $notification->value, [...$notifications])));
+
+        return $this;
+    }
+
+    public function wantsPush(UserNotification $notification): bool
+    {
+        return \in_array($notification->value, $this->pushNotifications, true);
     }
 
     public function isFlightsPublicByDefault(): bool

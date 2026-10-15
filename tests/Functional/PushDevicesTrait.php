@@ -7,10 +7,12 @@ namespace App\Tests\Functional;
 use App\Entity\PushSubscription;
 use App\Entity\User;
 use App\Push\PushNotifier;
+use App\Repository\PushSubscriptionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Devices that receive notifications, and a push service that records what it is sent: 201, or 410
@@ -33,8 +35,10 @@ trait PushDevicesTrait
         });
         $container = static::getContainer();
         $container->set(PushNotifier::class, new PushNotifier(
+            $container->get(PushSubscriptionRepository::class),
             $container->get(EntityManagerInterface::class),
             $http,
+            $container->get(MessageBusInterface::class),
             new NullLogger(),
             (string) $_SERVER['VAPID_PUBLIC_KEY'],
             (string) $_SERVER['VAPID_PRIVATE_KEY'],
