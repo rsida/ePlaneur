@@ -10,7 +10,7 @@ yet validated step by step by the project owner.
 |---|---|
 | Symfony 8.1 project, Docker dev/prod environment | See [installation](installation.md), [production](production.md) |
 | Functional reference of the club and current site | [project/](project/README.md) |
-| Design system and home page from the Figma mock-up | [design-system.md](design-system.md), `/_toolkit`, home page with placeholder content |
+| Design system and home page from the Figma mock-up | [design-system.md](design-system.md), `/_toolkit`, home page (real data and links since 2026-10-16; what is left in [design system](design-system.md#home-page-status)) |
 | Step 1: accounts, groups and permissions | [accounts.md](accounts.md): registration with e-mail confirmation, login, password reset, groups and permissions in database, `CONTENT_VIEW` voter, console commands |
 | Step 2a: posts and content blocks | [content.md](content.md): `Post`, `Category`, `Media`, 22 block types, article page `/actualites/{slug}`, demo article in fixtures |
 | Step 2b: pages, menus, documents | [content.md](content.md#pages-menus-and-restricted-content): page tree, menus filtered by rights (mega-menu, mobile full-screen menu), official documents (list and cards), "Contenu réservé" page, layouts from the Figma mock-up |

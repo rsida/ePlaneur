@@ -1,3 +1,14 @@
+{#
+    "Ce vol mérite une petite trace": the latest public flight that finished its task (`replay`), replayed
+    in 3D with its figures and its place in the results of its session, then the latest public flights.
+    A logged-in reader drops a track here as on /vols; a visitor is invited to create an account.
+#}
+{% set flight = replay %}
+{% set results = flight and flight.session ? session_results(flight.session) : [] %}
+{% set own = flight and flight.competitionId ? results|filter(r => r.competitionId and r.competitionId|lower == flight.competitionId|lower)|first : null %}
+{% set ranked = results|slice(0, 3)|merge(own and own.rank > 3 ? [own] : []) %}
+{% set by_speed = results is not empty and results[0].speed %}
+{% set best = by_speed ? results[0].speed : max([1]|merge(results|map(r => r.distance ?? 0))) %}
 <twig:Layout:Section theme="primary" id="carnet">
     <div class="l-stack l-stack--lg">
         <twig:Layout:SectionHeader eyebrow="05 / L’aventure continue au sol" title="Ce vol mérite une petite trace."
@@ -8,56 +19,75 @@
         <article class="c-card c-card--raised t-paper p-logbook__panel u-full">
             <div class="p-logbook__head">
                 <div class="c-card__group">
-                    <twig:Ui:Eyebrow>Mon carnet / Exemple de vol</twig:Ui:Eyebrow>
-                    <twig:Ui:Heading level="3" size="h2" class="p-logbook__title">Mon vol au-dessus des Alpes</twig:Ui:Heading>
-                    <p class="u-note">Condor 3 · 10 octobre 2026 · Exemple de vol</p>
+                    {% if flight %}
+                        <twig:Ui:Eyebrow>Mon carnet / Un vol du club</twig:Ui:Eyebrow>
+                        <twig:Ui:Heading level="3" size="h2" class="p-logbook__title">{{ flight.session ? (flight.session.flightPlan.title ?? flight.session.flightPlan.code) : (flight.flightPlan ?? flight.landscape ?? 'Un vol en planeur') }}</twig:Ui:Heading>
+                        <p class="u-note">{{ flight.simulator }} · {{ flight.date|format_date('long', locale: 'fr') }} · {{ flight.owner ? flight.owner.publicName : flight.pilot }}{{ flight.glider ? ' · ' ~ flight.glider : '' }}</p>
+                    {% else %}
+                        <twig:Ui:Eyebrow>Mon carnet</twig:Ui:Eyebrow>
+                        <twig:Ui:Heading level="3" size="h2" class="p-logbook__title">Votre carnet de vol</twig:Ui:Heading>
+                    {% endif %}
                 </div>
                 <twig:Ui:Button href="{{ path('app_flight_index') }}">Déposer une trace</twig:Ui:Button>
             </div>
 
-            <twig:Ui:Dropzone name="trace" title="Glissez votre fichier de trace ici, ou choisissez un fichier"
-                hint="Retrouvez votre parcours après l’atterrissage." />
+            {% if is_granted('ROLE_USER') %}
+                <form method="post" action="{{ path('app_flight_index') }}" enctype="multipart/form-data" data-controller="autosubmit">
+                    <twig:Ui:Dropzone name="trace" accept=".ftr,.igc" title="Glissez votre fichier de trace ici, ou choisissez un fichier"
+                        hint="Condor 3 : le fichier .ftr de Documents › Condor3 › FlightTracks. Condor 2 : un fichier IGC. Le vol s’ouvre analysé."
+                        data-action="change->autosubmit#submit" />
+                    <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Controller\\FlightController::UPLOAD_TOKEN')) }}">
+                    <twig:Ui:Button type="submit" size="sm" data-autosubmit-target="button">Analyser le vol</twig:Ui:Button>
+                </form>
+            {% else %}
+                <div class="c-callout">
+                    <p class="u-note">Créez votre compte gratuit pour déposer vos traces Condor : chaque vol est analysé, rejoué en 3D et rangé dans votre carnet.</p>
+                    <twig:Ui:Link href="{{ path('app_register') }}">Créer mon compte</twig:Ui:Link>
+                </div>
+            {% endif %}
 
-            <div class="p-logbook__analysis">
-                <div>
-                    <div class="p-logbook__map">
-                        <img class="p-logbook__relief" src="{{ asset('images/home/logbook/relief.svg') }}" alt="">
-                        <img class="p-logbook__trace" src="{{ asset('images/home/logbook/trace-compared.png') }}" alt="">
-                        <img class="p-logbook__trace" src="{{ asset('images/home/logbook/trace-own.svg') }}" alt="Tracé illustratif du vol">
-                        <span class="p-logbook__map-label">Parcours illustratif · Alpes</span>
-                        <span class="p-logbook__map-start">Départ / arrivée</span>
+            {% if flight %}
+                <div class="p-logbook__analysis">
+                    <div>
+                        {{ include('flight/_replay_teaser.html.twig', {flight: flight}) }}
+                        <div class="l-grid p-logbook__stats">
+                            <twig:Ui:Stat label="Distance" value="{{ (flight.distance / 1000)|number_format(1, ',', ' ') }}" unit="km" />
+                            <twig:Ui:Stat label="Durée" value="{{ flight.duration|flight_duration }}" unit="en vol" />
+                            {% if flight.statistics.altitudeMax is defined %}
+                                <twig:Ui:Stat label="Altitude max." value="{{ flight.statistics.altitudeMax|number_format(0, ',', ' ') }}" unit="m" />
+                            {% endif %}
+                        </div>
                     </div>
-                    <p class="p-logbook__legend">
-                        <span class="p-logbook__legend-own">— Votre vol</span>
-                        <span class="u-muted">– – Membre A</span>
-                    </p>
-                    <div class="l-grid p-logbook__stats">
-                        <twig:Ui:Stat label="Distance" value="145,8" unit="km" />
-                        <twig:Ui:Stat label="Durée" value="2 h 18" unit="en vol" />
-                        <twig:Ui:Stat label="Altitude max." value="2 480" unit="m" />
+
+                    <div class="l-stack p-logbook__compare">
+                        <twig:Ui:Heading level="4" size="h2" class="p-logbook__compare-title">Même ciel, plusieurs parcours.</twig:Ui:Heading>
+                        {% if ranked is not empty %}
+                            <p class="u-note">Le même circuit, la même météo : les premiers de la session{{ own ? ' et ' ~ own.player : '' }}.</p>
+                            <twig:Ui:Tag variant="soft">{{ by_speed ? 'Vitesse sur le circuit' : 'Distance parcourue' }}</twig:Ui:Tag>
+                            {% for row in ranked %}
+                                {% set value = by_speed ? row.speed : row.distance %}
+                                <twig:Ui:Meter label="{{ row.rank }}. {{ row.player }}"
+                                    value="{{ value is null ? '—' : (by_speed ? value|number_format(1, ',', ' ') ~ ' km/h' : value|flight_distance) }}"
+                                    :percent="value is null ? 0 : 100 * value / best" :highlight="row is same as(own)" />
+                            {% endfor %}
+                            <twig:Ui:Link href="{{ path('app_session_show', {id: flight.session.id}) }}">Tous les résultats de la session</twig:Ui:Link>
+                        {% else %}
+                            <p class="u-note">Comparez votre trace avec celle d’un autre pilote du même circuit : les deux vols rejoués côte à côte, et où l’écart s’est creusé.</p>
+                        {% endif %}
+                        <twig:Ui:Link href="{{ path('app_flight_compare_pick', {id: flight.id}) }}">Comparer avec les membres</twig:Ui:Link>
                     </div>
                 </div>
-
-                <div class="l-stack p-logbook__compare">
-                    <twig:Ui:Heading level="4" size="h2" class="p-logbook__compare-title">Même ciel, plusieurs parcours.</twig:Ui:Heading>
-                    <p class="u-note">Comparez les distances et échangez sur vos choix de vol. Exemples fictifs.</p>
-                    <twig:Ui:Tag variant="soft">Distance parcourue</twig:Ui:Tag>
-                    <twig:Ui:Meter label="Votre vol" value="145,8 km" :percent="95.7" highlight />
-                    <twig:Ui:Meter label="Membre A" value="152,4 km" :percent="100" />
-                    <twig:Ui:Meter label="Membre B" value="138,2 km" :percent="90.7" />
-                    <twig:Ui:Link href="#">Comparer avec les membres</twig:Ui:Link>
-                </div>
-            </div>
+            {% endif %}
 
             <div class="p-logbook__help">
-                <twig:Ui:Link href="#">Comprendre ma trace</twig:Ui:Link>
-                <twig:Ui:Link href="#">Créer mon carnet de vol</twig:Ui:Link>
+                {% if flight %}
+                    <twig:Ui:Link href="{{ path('app_flight_show', {id: flight.id, _fragment: 'conseils'}) }}">Comprendre ce vol</twig:Ui:Link>
+                {% else %}
+                    <twig:Ui:Link href="{{ path('app_page_show', {path: 'voler/enregistrer-vol'}) }}">Enregistrer un vol</twig:Ui:Link>
+                {% endif %}
+                <twig:Ui:Link href="{{ path('app_flight_logbook') }}">Créer mon carnet de vol</twig:Ui:Link>
             </div>
         </article>
-
-        <p class="u-note">Trajet, statistiques et comparaisons fictifs, non issus des vols des membres. Proposition visuelle, sans dépôt de fichier actif.</p>
-
-        {% if replay %}{{ include('flight/_replay_teaser.html.twig', {flight: replay}) }}{% endif %}
 
         {% if public_flights is not empty %}
             <section class="l-stack l-stack--sm u-full" aria-labelledby="public-flights-title">

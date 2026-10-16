@@ -203,7 +203,23 @@ the back-office icons (`admin:` prefix, see [admin](admin.md#theme)).
 
 ## Home page status
 
-`templates/home/index.html.twig` implements the Figma home page with **placeholder content**
-(sessions, news, logbook figures are hard-coded examples). Sections live in
-`templates/home/sections/`. The hero background video is planned: replace the `<img>` in
-`_hero.html.twig` with a `<video>` when available. Links point to `#` until the target pages exist.
+`templates/home/index.html.twig` implements the Figma home page. Sections live in
+`templates/home/sections/`. Real data: the next session and the coming or latest sessions, the
+posts, and the logbook section (the showcase flight replayed in 3D with its figures and the head of
+its session results, the upload form for logged-in readers, the latest public flights). Every link
+leads to a route or to a page of the tree (`path('app_page_show', {path: ...})`, some with the anchor
+of a section of the page); a test checks that no link of the page points to `#`.
+
+Still placeholder (2026-10-16):
+
+- Images: the hero, the cockpit and the community pictures are illustrations ("Image d’ambiance ·
+  Pas une capture de Condor"). The hero background video is planned: replace the `<img>` in
+  `_hero.html.twig` with a `<video>` when available.
+- Guides: the club has no guide per version of Condor. Both cards of "La technique, en clair" link
+  their chapters to the shared pages (installation, prerequisites per version, connection to the
+  server) and their button to "Bien démarrer"; the joystick and display settings of the mock-up have
+  no page yet.
+- Texts: the slogans and the three profiles ("Je découvre", "Je progresse", "Je partage") are the copy
+  of the mock-up, to review by the committee.
+- Page anchors (`#voler-avec-condor-2`, `#connexion-au-serveur-condor`) come from section titles: if an
+  editor renames a section, the link opens the top of the page.

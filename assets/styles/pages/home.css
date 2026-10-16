@@ -207,52 +207,12 @@
     }
 }
 
-.p-logbook__map {
-    position: relative;
-    aspect-ratio: 868 / 285;
-    min-height: 12rem;
-    overflow: hidden;
-    border-radius: var(--radius-sm);
-    background-color: var(--color-tint-cool);
-    color: var(--color-on-dark-muted);
+/* The replay of the home page inside the card: no second shadow */
+.p-logbook__analysis .p-home-replay {
+    box-shadow: none;
+    outline: 1px solid var(--color-line);
+    outline-offset: -1px;
 }
-
-.p-logbook__map > img {
-    position: absolute;
-}
-
-.p-logbook__relief { inset: 0; width: 100%; height: 100%; }
-.p-logbook__trace { left: 8%; right: 8%; top: 26%; width: 84%; height: 60%; }
-
-.p-logbook__map-label {
-    position: absolute;
-    top: var(--space-4);
-    left: var(--space-4);
-    color: var(--color-primary);
-    font-size: var(--text-eyebrow);
-    font-weight: 700;
-}
-
-.p-logbook__map-start {
-    position: absolute;
-    bottom: var(--space-3);
-    left: var(--space-4);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
-    background-color: var(--color-paper);
-    color: var(--on-surface);
-    font-size: 0.625rem; /* 10, map label of the Figma mock-up */
-}
-
-.p-logbook__legend {
-    display: flex;
-    gap: var(--space-4);
-    margin-top: var(--space-4);
-    font-size: var(--text-eyebrow);
-    line-height: normal;
-}
-
-.p-logbook__legend-own { color: var(--color-primary); font-weight: 600; }
 
 .p-logbook__stats {
     --grid-gap: var(--space-3);

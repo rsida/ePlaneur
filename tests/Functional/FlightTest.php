@@ -363,6 +363,9 @@ final class FlightTest extends WebTestCase
         $this->client->request('GET', '/');
         self::assertSelectorTextContains('.p-home-flights', 'Jeanne Pilote');
         self::assertSelectorExists('[data-controller="home-replay"][data-home-replay-url-value="/vols/'.$id.'/apercu.json"]', 'Replayed on the home page');
+        self::assertSelectorExists('.p-logbook__panel a[href="/vols/'.$id.'/comparer"]', 'The logbook card shows this flight');
+        self::assertSelectorNotExists('.p-logbook__panel form', 'Visitors are asked to create an account to upload');
+        self::assertSelectorExists('.p-logbook__panel a[href="/inscription"]');
         $this->client->request('GET', '/vols/'.$id.'/apercu.json');
         self::assertResponseIsSuccessful();
         $replay = json_decode((string) $this->client->getResponse()->getContent(), true);

@@ -64,7 +64,8 @@ final class FlightController extends AbstractController
     ) {
     }
 
-    private const string UPLOAD_TOKEN = 'flight_upload';
+    /** CSRF token of the track upload, also used by the form of the home page. */
+    public const string UPLOAD_TOKEN = 'flight_upload';
 
     /** Seconds between two points of the replay of the home page. */
     private const int REPLAY_STEP = 2;

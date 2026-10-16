@@ -4,8 +4,8 @@
 {% block structured_data %}{{ json_ld(seo_site()) }}{% endblock %}
 
 {#
-    Home page (Figma "Grand air adouci · Version 6"). Content is placeholder: every section will
-    later receive real data (sessions, news...) from the controller.
+    Home page (Figma "Grand air adouci · Version 6"). Sessions, news and flights come from the
+    database; the other links lead to the pages of the club (doc/home.md lists what is left).
 #}
 {% block body %}
     {{ include('home/sections/_hero.html.twig') }}

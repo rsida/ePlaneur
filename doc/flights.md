@@ -482,7 +482,9 @@ opens its tab):
 - Public flights (`Flight::$public`, "Rendre public" for the pilot, `FLIGHT_PUBLISH`): their page
   and its data are open to visitors (`FLIGHT_VIEW`); comments, sessions, comparisons and logbooks
   still need an account. The home page lists the latest three (`FlightRepository::findPublic()`) and
-  replays one in 3D in a loop (roadmap 11e): the latest public flight that finished its task
+  replays one in 3D in a loop (roadmap 11e) inside the logbook card, with its distance, duration and
+  highest altitude and the first three of its session results (its pilot added when further down,
+  their row highlighted): the latest public flight that finished its task
   (`FlightRepository::findShowcase()`), from `/vols/{id}/apercu.json` (`app_flight_replay`: the track
   from take-off to landing every 2 s and the task, nothing else), drawn by
   `assets/controllers/home_replay_controller.js` with the map and the glider of the viewer, the camera
