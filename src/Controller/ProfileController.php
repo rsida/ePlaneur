@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Account\NameShown;
+use App\Account\PublicNameCheck;
 use App\Entity\User;
 use App\Form\Account\ProfileForms;
 use App\Push\PushNotifier;
@@ -30,6 +30,11 @@ use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 #[IsGranted('ROLE_USER')]
 final class ProfileController extends AbstractController
 {
+    public function __construct(
+        private readonly PublicNameCheck $nameCheck,
+    ) {
+    }
+
     #[Route('/mon-compte/profil', name: 'app_account_profile', methods: ['GET', 'POST'])]
     public function profile(Request $request, ProfileForms $forms, EntityManagerInterface $entityManager, AccountManager $accountManager, AccountMailer $mailer, UserRepository $users, RateLimiterFactoryInterface $accountEmailLimiter, PushNotifier $notifier): Response
     {
@@ -95,15 +100,11 @@ final class ProfileController extends AbstractController
         switch ($name) {
             case 'display_name':
                 $pseudonym = trim((string) $data['pseudonym']);
-                if (NameShown::Pseudonym === $data['nameShown'] && '' === $pseudonym) {
-                    $form->get('pseudonym')->addError(new FormError('Choisissez votre pseudonyme.'));
-
-                    return false;
+                $errors = $this->nameCheck->errors($user, (string) $data['displayName'], $data['nameShown'], $pseudonym);
+                foreach ($errors as $field => $error) {
+                    $form->get($field)->addError(new FormError($error));
                 }
-                $other = '' !== $pseudonym ? $users->findOneBy(['pseudonym' => $pseudonym]) : null;
-                if (null !== $other && $other !== $user || 0 === strcasecmp($pseudonym, $user->getDisplayName()) && NameShown::Pseudonym === $data['nameShown']) {
-                    $form->get('pseudonym')->addError(new FormError(null !== $other && $other !== $user ? 'Ce pseudonyme est déjà pris.' : 'Choisissez un pseudonyme différent de votre nom.'));
-
+                if ([] !== $errors) {
                     return false;
                 }
                 $user->setDisplayName((string) $data['displayName'])->setNameShown($data['nameShown'])->setPseudonym($pseudonym);

@@ -15,8 +15,9 @@
         {key: 'messages', label: 'Mes messages', route: 'app_account_messages', count: unread_messages()},
         {key: 'membership', label: 'Mon adhésion', route: 'app_account_membership'},
         {key: 'profile', label: 'Mon profil', route: 'app_account_profile'},
+    ]|merge(is_granted('CLASS_TEACH') or account_in_class() ? [{key: 'classes', label: 'Mes classes', route: 'app_account_classes'}] : [])|merge([
         {key: 'privacy', label: 'Confidentialité et données', route: 'app_account_privacy'},
-    ] %}
+    ]) %}
     <section class="p-account t-light">
         <div class="l-container p-account__grid">
             <aside class="p-account__side" aria-label="Mon compte">

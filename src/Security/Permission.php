@@ -37,6 +37,7 @@ enum Permission: string implements TranslatableInterface
     case TrainingManage = 'TRAINING_MANAGE';
     case MessageSend = 'MESSAGE_SEND';
     case ActivityView = 'ACTIVITY_VIEW';
+    case ClassTeach = 'CLASS_TEACH';
 
     public function label(): string
     {
@@ -62,6 +63,7 @@ enum Permission: string implements TranslatableInterface
             self::TrainingManage => 'Configurer « Mon parcours » : étapes, exercices et quiz',
             self::MessageSend => 'Écrire aux membres, au comité et aux administrateurs (messagerie)',
             self::ActivityView => 'Voir l’activité du club mois par mois et l’exporter (assemblée générale)',
+            self::ClassTeach => 'Créer des classes et suivre la progression de ses élèves (enseignants)',
         };
     }
 

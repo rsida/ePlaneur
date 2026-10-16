@@ -13,6 +13,7 @@ use App\Entity\User;
 use App\Flight\FlightImporter;
 use App\Repository\FlightRepository;
 use App\Repository\MembershipRepository;
+use App\Repository\SchoolClassRepository;
 use App\Training\FirstFlightStep;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Clock\ClockInterface;
@@ -28,6 +29,7 @@ final readonly class DataExporter
         private EntityManagerInterface $entityManager,
         private FlightRepository $flights,
         private MembershipRepository $memberships,
+        private SchoolClassRepository $classes,
         private FlightImporter $importer,
         private ClockInterface $clock,
     ) {
@@ -59,6 +61,8 @@ final readonly class DataExporter
             'notifications_des_appareils' => array_map(static fn ($notification): string => $notification->pushLabel(), $user->getPushNotifications()),
             'vols_publics_par_defaut' => $user->isFlightsPublicByDefault(),
             'dans_le_classement' => $user->isInRanking(),
+            'classes_rejointes' => array_map(static fn ($class): array => ['classe' => $class->getName(), 'etablissement' => $class->getSchool(), 'enseignant' => $class->getTeacher()->getDisplayName()], $this->classes->findOfPupil($user)),
+            'classes_creees' => array_map(static fn ($class): array => ['classe' => $class->getName(), 'etablissement' => $class->getSchool(), 'eleves' => $class->getPupils()->count(), 'creee_le' => $date($class->getCreatedAt())], $this->classes->findOfTeacher($user)),
         ]));
 
         $zip->addFromString('adhesions.json', $json(array_map(static fn ($membership): array => [

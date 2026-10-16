@@ -26,7 +26,8 @@ Default groups, created by the first migration and by the dev fixtures (`App\Sec
 (`make console c="app:group:permissions formateur --grant=FLIGHT_REVIEW"` once the group exists).
 `FLIGHT_PLAN_PREPARE` (the flight plan workshop, see [sessions](sessions.md#flight-plan-workshop)) is
 held by no default group either: only administrators open the workshop for now. Nor is
-`TRAINING_MANAGE` (steps, items and quizzes of [Mon parcours](training-path.md)).
+`TRAINING_MANAGE` (steps, items and quizzes of [Mon parcours](training-path.md)), nor `CLASS_TEACH`
+(teachers: classes and the progression of their pupils, see [teacher space](teacher-space.md)).
 
 Administrators can create other groups (Rédacteur, Bienfaiteur, Bénévole...) and change which
 permissions each group holds. A registered user without any group is a free account ("inscrit").
@@ -83,7 +84,7 @@ user cannot perform with `is_granted()` in templates as well.
 | `/inscription/renvoyer-confirmation` | `app_register_resend` | New confirmation link (3 requests per 15 min per IP) |
 | `/connexion`, `/deconnexion` | `app_login`, `app_logout` | Login (with "stay logged in" for 30 days), logout |
 | `/mot-de-passe-oublie` | `app_forgot_password_request` | Reset link by e-mail (valid 1 h, one request per 15 min) |
-| `/mon-compte/...` | `app_account`... | Member space: dashboard, flights, logbook, membership, profile (name and [name shown](#name-shown), e-mail, password, Condor, e-mail preferences, notifications), privacy, data export and account deletion (see [member space](member-space.md)) |
+| `/mon-compte/...` | `app_account`... | Member space: dashboard, flights, logbook, membership, profile (name and [name shown](#name-shown), e-mail, password, Condor, e-mail preferences, notifications), classes ([teacher space](teacher-space.md)), privacy, data export and account deletion (see [member space](member-space.md)) |
 
 Rules:
 
@@ -117,6 +118,8 @@ at the request of a parent.
   id or pilot name) or that carries the competition id or the Condor pilot name of their profile.
   The profile advises to use the pseudonym as pilot name in Condor too.
 - Private messages, the comments' e-mails to the pilot and the back-office keep the display name.
+- A pupil in a class of a teacher cannot show their name: first name or pseudonym only (see
+  [teacher space](teacher-space.md#joining-a-class)).
 
 To decide with the committee: whether minors must choose a first name or a pseudonym, the consent of
 a parent, and whether adults may write to minors in private messages.

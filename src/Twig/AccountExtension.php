@@ -8,6 +8,7 @@ use App\Entity\Membership;
 use App\Entity\User;
 use App\Repository\ConversationRepository;
 use App\Repository\MembershipRepository;
+use App\Repository\SchoolClassRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Clock\ClockInterface;
 use Twig\Attribute\AsTwigFunction;
@@ -23,6 +24,7 @@ final readonly class AccountExtension
         private Security $security,
         private MembershipRepository $memberships,
         private ConversationRepository $conversations,
+        private SchoolClassRepository $classes,
         private ClockInterface $clock,
     ) {
     }
@@ -34,6 +36,15 @@ final readonly class AccountExtension
         $user = $this->security->getUser();
 
         return $user instanceof User ? $this->conversations->countUnread($user) : 0;
+    }
+
+    /** Whether the logged-in account joined a class (doc/teacher-space.md). */
+    #[AsTwigFunction('account_in_class')]
+    public function inClass(): bool
+    {
+        $user = $this->security->getUser();
+
+        return $user instanceof User && [] !== $this->classes->findOfPupil($user);
     }
 
     #[AsTwigFunction('account_membership')]

@@ -46,6 +46,13 @@ each one. The domain reference (the club, the training, the network flights) is 
 | Comment the flights of the pilots, at a moment of the flight | Flight page | [flights](flights.md#progression) |
 | Follow a pilot: logbook, steps marked or validated, what they did in Mon parcours | `/vols/carnet/{id}` | [flights](flights.md#training-path), [Mon parcours](training-path.md) |
 
+## Teachers (a group with `CLASS_TEACH`)
+
+| Feature | Where | Document |
+|---|---|---|
+| Create a class, give its link to the pupils, follow their eight steps, flights and logbook | `/mon-compte/classes` | [teacher space](teacher-space.md) |
+| Pupils join with the link, shown to the others by first name or pseudonym, and leave when they want | `/classe/{code}` | [teacher space](teacher-space.md#joining-a-class) |
+
 ## Committee
 
 | Feature | Where | Document |
@@ -59,7 +66,7 @@ each one. The domain reference (the club, the training, the network flights) is 
 
 | Feature | Where | Document |
 |---|---|---|
-| Accounts, groups and their permissions | `/admin` | [accounts](accounts.md) |
+| Accounts, groups and their permissions; classes of the teachers | `/admin` | [accounts](accounts.md), [teacher space](teacher-space.md) |
 | Mon parcours: open the steps, place readings, exercises (flight plan, glider, criteria, ranking), quizzes and validations; the quiz builder | `/admin/path-step`, `/admin/quiz` | [Mon parcours](training-path.md#back-office) |
 | Flight plan workshop: the instructions to have a Condor 3 flight plan written | `/plans-de-vol/atelier` | [sessions](sessions.md#flight-plan-workshop) |
 | Console commands: imports, scheduled tasks, accounts | | [console commands](commands.md) |

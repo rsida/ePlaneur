@@ -1,0 +1,87 @@
+{% extends 'account/_layout.html.twig' %}
+
+{# A class of a teacher (roadmap 11f, doc/teacher-space.md): the steps and flights of each pupil, the link to join, the settings. #}
+{% block title %}{{ class.name }}{% endblock %}
+{% block heading %}{{ class.name }}{% endblock %}
+{% block lead %}{{ class.school ? class.school ~ ' · ' : '' }}{{ pupils|length }} élève{{ pupils|length > 1 ? 's' : '' }}. Où en est chacun dans les huit étapes de « Mon parcours », et ses vols.{% endblock %}
+
+{% block content %}
+    <section class="p-account__panel" aria-labelledby="pupils-title">
+        <twig:Ui:Heading level="2" size="h4" id="pupils-title">Progression</twig:Ui:Heading>
+        {% if pupils is empty %}
+            <p>Aucun élève pour l’instant : donnez-leur le lien ci-dessous.</p>
+        {% else %}
+            <figure class="c-data-table">
+                <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Progression des élèves">
+                    <table class="p-class__table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Élève</th>
+                                {% for step in pupils[0].steps %}<th scope="col" class="p-class__step"><abbr title="{{ step.step.title }}">{{ step.step.number }}</abbr></th>{% endfor %}
+                                <th scope="col">Vols</th>
+                                <th scope="col">Heures</th>
+                                <th scope="col">Dernier vol</th>
+                                <th scope="col"><span class="u-visually-hidden">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in pupils %}
+                                <tr>
+                                    <th scope="row">
+                                        <a href="{{ path('app_flight_logbook_pilot', {id: row.pupil.id}) }}">{{ row.pupil.displayName }}</a>
+                                        {% if row.pupil.publicName != row.pupil.displayName %}<span class="u-note">vu comme {{ row.pupil.publicName }}</span>{% endif %}
+                                    </th>
+                                    {% for step in row.steps %}
+                                        <td class="p-class__step"><span class="p-class__state p-class__state--{{ step.state.value }}" title="{{ step.step.title }} : {{ step.state.label }}{{ step.state.value == 'current' ? ' (' ~ step.percent ~ ' %)' : '' }}">{{ step.state.value == 'done' ? '✓' : (step.state.value == 'current' ? step.percent ~ '%' : '·') }}</span><span class="u-visually-hidden">{{ step.state.label }}</span></td>
+                                    {% endfor %}
+                                    <td>{{ row.flights }}</td>
+                                    <td>{{ row.hours|number_format(1, ',', ' ') }}</td>
+                                    <td>{{ row.lastFlight ? row.lastFlight|format_date('short', locale: 'fr') : '—' }}</td>
+                                    <td>
+                                        <form method="post" action="{{ path('app_account_class_remove', {id: class.id, pupil: row.pupil.id}) }}" onsubmit="return confirm('Retirer cet élève de la classe ? Son compte reste.')">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('class-remove-' ~ class.id ~ '-' ~ row.pupil.id) }}">
+                                            <twig:Ui:Button type="submit" size="sm" variant="outline" icon="">Retirer</twig:Ui:Button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <figcaption class="u-note">✓ étape terminée, pourcentage : étape en cours (part de ses éléments faits), · étape pas encore atteinte ; le titre de l’étape s’affiche au survol. Le nom de l’élève ouvre son carnet de vol.</figcaption>
+            </figure>
+        {% endif %}
+    </section>
+
+    <section class="p-account__panel" id="lien" aria-labelledby="link-title">
+        <twig:Ui:Heading level="2" size="h4" id="link-title">Lien pour rejoindre la classe</twig:Ui:Heading>
+        {% if class.open %}
+            {% set link = url('app_class_join', {code: class.code}) %}
+            <p>Donnez ce lien à vos élèves. Ils créent leur compte s’ils n’en ont pas, puis rejoignent la classe.</p>
+            <p class="p-class__link"><a href="{{ link }}">{{ link }}</a></p>
+        {% else %}
+            <p>Le lien est fermé : personne ne peut plus rejoindre la classe.</p>
+        {% endif %}
+        <form method="post" action="{{ path('app_account_class_code', {id: class.id}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('class-code-' ~ class.id) }}">
+            <twig:Ui:Button type="submit" size="sm" variant="outline" icon="">{{ class.open ? 'Changer le lien' : 'Ouvrir un nouveau lien' }}</twig:Ui:Button>
+        </form>
+        <p class="u-note">Changez le lien s’il a circulé au-delà de la classe : l’ancien ne servira plus.</p>
+    </section>
+
+    <section class="p-account__panel" aria-labelledby="settings-title">
+        <twig:Ui:Heading level="2" size="h4" id="settings-title">Réglages</twig:Ui:Heading>
+        {{ form_start(form, {attr: {class: 'c-form'}}) }}
+            {{ form_row(form.name) }}
+            {{ form_row(form.school) }}
+            {{ form_row(form.open) }}
+            <div><twig:Ui:Button type="submit" size="sm" icon="">Enregistrer</twig:Ui:Button></div>
+        {{ form_end(form) }}
+        <form method="post" action="{{ path('app_account_class_delete', {id: class.id}) }}" onsubmit="return confirm('Supprimer cette classe ? Les comptes des élèves restent.')">
+            <input type="hidden" name="_token" value="{{ csrf_token('class-delete-' ~ class.id) }}">
+            <twig:Ui:Button type="submit" size="sm" variant="outline" icon="">Supprimer la classe</twig:Ui:Button>
+        </form>
+    </section>
+
+    <p><twig:Ui:Link href="{{ path('app_account_classes') }}">Toutes mes classes</twig:Ui:Link></p>
+{% endblock %}

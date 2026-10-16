@@ -1,0 +1,42 @@
+{% extends 'layout/form_page.html.twig' %}
+
+{# Joining a class with the link of its teacher (roadmap 11f, doc/teacher-space.md). #}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block eyebrow %}Classe{% endblock %}
+{% block title %}{{ class ? 'Rejoindre la classe ' ~ class.name : 'Lien de classe' }}{% endblock %}
+{% block heading %}{{ class ? 'Rejoindre la classe « ' ~ class.name ~ ' »' : 'Ce lien ne sert plus' }}{% endblock %}
+
+{% block content %}
+    {% if not class %}
+        <p>Ce lien de classe n’existe pas ou a été fermé par l’enseignant. Demandez-lui le nouveau lien.</p>
+    {% else %}
+        <p>{{ class.school ? class.school ~ ' · ' : '' }}Enseignant : <strong>{{ class.teacher.displayName }}</strong></p>
+        {% if not app.user %}
+            <p>Pour rejoindre la classe, il faut un compte sur le site du club. Il est gratuit.</p>
+            <p class="u-note">Après avoir confirmé votre adresse e-mail, connectez-vous puis rouvrez ce lien.</p>
+            <div class="l-cluster">
+                <twig:Ui:Button href="{{ path('app_class_join_login', {code: class.code}) }}" icon="">J’ai un compte, je me connecte</twig:Ui:Button>
+                <twig:Ui:Button href="{{ path('app_register') }}" variant="outline" icon="">Créer mon compte</twig:Ui:Button>
+            </div>
+        {% elseif class.teacher == app.user %}
+            <p>C’est votre classe : c’est ce lien que vos élèves ouvrent.</p>
+            <twig:Ui:Link href="{{ path('app_account_class', {id: class.id}) }}">Suivre la classe</twig:Ui:Link>
+        {% elseif class.hasPupil(app.user) %}
+            <p>Vous êtes déjà dans cette classe.</p>
+            <twig:Ui:Link href="{{ path('app_account_classes') }}">Mes classes</twig:Ui:Link>
+        {% else %}
+            <p>En rejoignant la classe :</p>
+            <ul>
+                <li>votre enseignant voit vos étapes de « Mon parcours », vos quiz et votre carnet de vol, sous votre nom affiché ({{ app.user.displayName }}) ;</li>
+                <li>les autres pilotes vous voient par votre prénom ou un pseudonyme, jamais par votre nom ;</li>
+                <li>vos prochains vols sont privés par défaut : vous choisissez vous-même ceux que vous rendez publics ;</li>
+                <li>vous quittez la classe quand vous voulez, depuis « Mes classes ».</li>
+            </ul>
+            {{ form_start(form, {attr: {class: 'c-form'}}) }}
+                {{ form_row(form.nameShown) }}
+                {{ form_row(form.pseudonym) }}
+                <div><twig:Ui:Button type="submit" icon="">Rejoindre la classe</twig:Ui:Button></div>
+            {{ form_end(form) }}
+        {% endif %}
+    {% endif %}
+{% endblock %}

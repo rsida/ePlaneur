@@ -18,6 +18,7 @@ header. Styles: `assets/styles/pages/member-space.css`.
 | `/mon-compte/messages`, `.../nouveau`, `.../{id}` | `app_account_messages`, `app_account_message_new`, `app_account_message_show` | Messages (below): the conversations, a new one, a conversation and its answer form |
 | `/mon-compte/adhesion` | `app_account_membership` | Membership request and its follow-up (see [membership](membership.md)) |
 | `/mon-compte/profil` | `app_account_profile` | One form per panel (`App\Form\Account\ProfileForms`): display name; e-mail (change confirmed by a signed link sent to the new address, `app_account_email_confirm`, throttled); password (current one required); Condor (CN, pilot name, versions); e-mail preferences (`UserNotification`) |
+| `/mon-compte/classes` | `app_account_classes` | Shown to teachers and to pupils in a class: the classes of the teacher and their progression, the classes joined and "Quitter la classe" (see [teacher space](teacher-space.md)) |
 | `/mon-compte/confidentialite` | `app_account_privacy` | New flights public by default or not, appear in the season ranking or not; export of the data; link to the deletion |
 | `/mon-compte/donnees` | `app_account_export` | POST: ZIP of the account's data (`App\Account\DataExporter`): account, memberships, flights and their track files, comments, messages to the club, messages to members, training path, what was done in "Mon parcours", a read-me |
 | `/mon-compte/suppression`, `.../confirmer` | `app_account_delete`, `app_account_delete_confirm` | Deletion in two steps (below) |

@@ -129,6 +129,8 @@ final class DashboardController extends AbstractDashboardController
             ->setBadge($unread > 0 ? $unread : false, 'warning');
         yield MenuItem::linkTo(UserCrudController::class, 'Comptes', 'users')
             ->setPermission(Permission::UserManage->value);
+        yield MenuItem::linkTo(SchoolClassCrudController::class, 'Classes', 'users')
+            ->setPermission(Permission::UserManage->value);
         yield MenuItem::linkTo(GroupCrudController::class, 'Groupes et droits', 'shield-check')
             ->setPermission(Permission::GroupManage->value);
 
@@ -159,6 +161,7 @@ final class DashboardController extends AbstractDashboardController
             ['label' => 'Activité du club', 'text' => 'Comptes, adhésions, vols, sessions et formation mois par mois, à exporter pour l’assemblée générale.', 'icon' => 'chart-line', 'route' => 'app_activity', 'permission' => Permission::ActivityView->value],
             ['label' => 'Messages de contact', 'text' => 'Lire les messages envoyés au club et noter la suite donnée.', 'icon' => 'inbox', 'route' => 'admin_contact_request_index', 'permission' => Permission::ContactManage->value],
             ['label' => 'Comptes', 'text' => 'Les comptes du site et leurs groupes.', 'icon' => 'users', 'route' => 'admin_user_index', 'permission' => Permission::UserManage->value],
+            ['label' => 'Classes', 'text' => 'Les classes des enseignants et leurs élèves.', 'icon' => 'users', 'route' => 'admin_school_class_index', 'permission' => Permission::UserManage->value],
             ['label' => 'Groupes et droits', 'text' => 'Choisir ce que chaque groupe peut faire.', 'icon' => 'shield-check', 'route' => 'admin_group_index', 'permission' => Permission::GroupManage->value],
         ];
     }

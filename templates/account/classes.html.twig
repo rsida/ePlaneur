@@ -1,0 +1,58 @@
+{% extends 'account/_layout.html.twig' %}
+
+{# "Mes classes" (roadmap 11f, doc/teacher-space.md): the classes of a teacher and a new one; the classes the account joined. #}
+{% block title %}Mes classes{% endblock %}
+{% block heading %}Mes classes{% endblock %}
+{% block lead %}{{ form ? 'Créez une classe, donnez son lien à vos élèves et suivez leur progression dans les huit étapes.' : 'Les classes que vous avez rejointes avec le lien de votre enseignant.' }}{% endblock %}
+
+{% block content %}
+    {% if form %}
+        <section class="p-account__panel" aria-labelledby="teaching-title">
+            <twig:Ui:Heading level="2" size="h4" id="teaching-title">Les classes que je suis</twig:Ui:Heading>
+            {% if teaching is empty %}
+                <p>Vous n’avez pas encore de classe.</p>
+            {% else %}
+                <ul class="p-classes__list" role="list">
+                    {% for class in teaching %}
+                        <li>
+                            <a href="{{ path('app_account_class', {id: class.id}) }}"><strong>{{ class.name }}</strong></a>
+                            <span class="u-note">{{ class.school ? class.school ~ ' · ' : '' }}{{ class.pupils|length }} élève{{ class.pupils|length > 1 ? 's' : '' }}{{ class.open ? '' : ' · lien fermé' }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <section class="p-account__panel" id="nouvelle" aria-labelledby="new-class-title">
+            <twig:Ui:Heading level="2" size="h4" id="new-class-title">Nouvelle classe</twig:Ui:Heading>
+            {{ form_start(form, {attr: {class: 'c-form'}}) }}
+                {{ form_row(form.name) }}
+                {{ form_row(form.school) }}
+                <div><twig:Ui:Button type="submit" size="sm" icon="">Créer la classe</twig:Ui:Button></div>
+            {{ form_end(form) }}
+        </section>
+    {% endif %}
+
+    {% if joined is not empty or not form %}
+        <section class="p-account__panel" aria-labelledby="joined-title">
+            <twig:Ui:Heading level="2" size="h4" id="joined-title">Les classes dont je fais partie</twig:Ui:Heading>
+            {% if joined is empty %}
+                <p>Vous n’êtes dans aucune classe. Votre enseignant vous donne le lien de la sienne.</p>
+            {% else %}
+                <p class="u-note">Votre enseignant voit vos étapes de « Mon parcours » et votre carnet de vol. Les autres pilotes vous voient par votre prénom ou votre pseudonyme tant que vous êtes dans une classe.</p>
+                <ul class="p-classes__list" role="list">
+                    {% for class in joined %}
+                        <li>
+                            <strong>{{ class.name }}</strong>
+                            <span class="u-note">{{ class.school ? class.school ~ ' · ' : '' }}enseignant : {{ class.teacher.displayName }}</span>
+                            <form method="post" action="{{ path('app_account_class_leave', {id: class.id}) }}" onsubmit="return confirm('Quitter cette classe ? Votre enseignant ne verra plus votre progression.')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('class-leave-' ~ class.id) }}">
+                                <twig:Ui:Button type="submit" size="sm" variant="outline" icon="">Quitter la classe</twig:Ui:Button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock %}

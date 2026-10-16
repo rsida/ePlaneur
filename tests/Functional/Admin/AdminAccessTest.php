@@ -69,6 +69,7 @@ final class AdminAccessTest extends WebTestCase
         self::assertContains('Membres', $shortcuts, 'MEMBERSHIP_MANAGE: the committee reads the records of the members');
         self::assertContains('Activité du club', $shortcuts, 'ACTIVITY_VIEW: the committee follows the activity of the club');
         self::assertNotContains('Comptes', $shortcuts, 'USER_MANAGE is not granted to the committee');
+        self::assertNotContains('Classes', $shortcuts, 'USER_MANAGE is not granted to the committee');
         self::assertNotContains('Menus', $shortcuts, 'MENU_MANAGE is not granted to the committee');
         self::assertNotContains('Mon parcours', $shortcuts, 'TRAINING_MANAGE is not granted to the committee');
 
@@ -86,7 +87,7 @@ final class AdminAccessTest extends WebTestCase
     {
         $this->client->loginUser($this->userIn($this->entityManager, 'admin@example.org', 'admin'));
 
-        foreach (['/admin', '/admin/post', '/admin/post/new', '/admin/page', '/admin/page/new', '/admin/user', '/admin/group', '/admin/category', '/admin/media', '/admin/media/upload', '/admin/document', '/admin/document/new', '/admin/document-category', '/admin/menu-item', '/admin/menu-item/new', '/admin/path-step', '/admin/quiz', '/admin/quiz/new'] as $url) {
+        foreach (['/admin', '/admin/post', '/admin/post/new', '/admin/page', '/admin/page/new', '/admin/user', '/admin/school-class', '/admin/group', '/admin/category', '/admin/media', '/admin/media/upload', '/admin/document', '/admin/document/new', '/admin/document-category', '/admin/menu-item', '/admin/menu-item/new', '/admin/path-step', '/admin/quiz', '/admin/quiz/new'] as $url) {
             $this->client->request('GET', $url);
             self::assertResponseIsSuccessful($url);
         }

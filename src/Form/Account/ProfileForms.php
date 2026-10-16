@@ -52,12 +52,29 @@ final readonly class ProfileForms
                 'expanded' => true,
                 'help' => 'Le prénom est le premier mot de votre nom affiché. Conseillé aux pilotes mineurs.',
             ])
-            ->add('pseudonym', TextType::class, [
-                'label' => 'Pseudonyme',
-                'required' => false,
-                'help' => 'Choisissez aussi ce pseudonyme comme nom de pilote dans Condor : c’est le nom que le serveur écrit dans les résultats.',
-                'constraints' => [new Assert\Length(min: 2, max: 30), new Assert\Regex(pattern: '/^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u', message: 'Lettres, chiffres, espaces, points, tirets et soulignés seulement.')],
+            ->add('pseudonym', TextType::class, self::pseudonym())
+            ->getForm();
+    }
+
+    /**
+     * Joining a class: the pupil chooses to be shown to the others by their first name or a pseudonym.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return FormInterface<array<string, mixed>>
+     */
+    public function classJoin(array $data): FormInterface
+    {
+        return $this->factory->createNamedBuilder('class_join', FormType::class, $data)
+            ->add('nameShown', EnumType::class, [
+                'class' => NameShown::class,
+                'choices' => [NameShown::FirstName, NameShown::Pseudonym],
+                'label' => 'Dans les classements, les records, les vols et les sessions, les autres pilotes verront',
+                'choice_label' => static fn (NameShown $nameShown): string => $nameShown->label(),
+                'expanded' => true,
+                'constraints' => [new Assert\NotNull(message: 'Choisissez comment les autres vous verront.')],
             ])
+            ->add('pseudonym', TextType::class, self::pseudonym())
             ->getForm();
     }
 
@@ -225,5 +242,20 @@ final readonly class ProfileForms
                 'constraints' => [new Assert\IsTrue(message: 'Cochez la case pour confirmer.')],
             ])
             ->getForm();
+    }
+
+    /**
+     * Options of the pseudonym field, in "Mon profil" and when joining a class.
+     *
+     * @return array<string, mixed>
+     */
+    private static function pseudonym(): array
+    {
+        return [
+            'label' => 'Pseudonyme',
+            'required' => false,
+            'help' => 'Choisissez aussi ce pseudonyme comme nom de pilote dans Condor : c’est le nom que le serveur écrit dans les résultats.',
+            'constraints' => [new Assert\Length(min: 2, max: 30), new Assert\Regex(pattern: '/^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u', message: 'Lettres, chiffres, espaces, points, tirets et soulignés seulement.')],
+        ];
     }
 }
