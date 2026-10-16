@@ -38,6 +38,7 @@ enum Permission: string implements TranslatableInterface
     case MessageSend = 'MESSAGE_SEND';
     case ActivityView = 'ACTIVITY_VIEW';
     case ClassTeach = 'CLASS_TEACH';
+    case SiteTour = 'SITE_TOUR';
 
     public function label(): string
     {
@@ -64,6 +65,7 @@ enum Permission: string implements TranslatableInterface
             self::MessageSend => 'Écrire aux membres, au comité et aux administrateurs (messagerie)',
             self::ActivityView => 'Voir l’activité du club mois par mois et l’exporter (assemblée générale)',
             self::ClassTeach => 'Créer des classes et suivre la progression de ses élèves (enseignants)',
+            self::SiteTour => 'Lire la présentation des fonctionnalités du site (comité)',
         };
     }
 

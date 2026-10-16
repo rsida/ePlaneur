@@ -57,26 +57,7 @@
 
         <p class="u-note">Trajet, statistiques et comparaisons fictifs, non issus des vols des membres. Proposition visuelle, sans dépôt de fichier actif.</p>
 
-        {% if replay %}
-            {% set pilot = replay.competitionId ?: replay.pilot %}
-            <figure class="p-home-replay t-paper u-full" data-controller="home-replay"
-                    data-home-replay-url-value="{{ path('app_flight_replay', {id: replay.id}) }}"
-                    data-home-replay-label-value="{{ pilot }}">
-                <div class="p-home-replay__map" data-home-replay-target="map" role="img" aria-label="Le vol de {{ pilot }} rejoué en 3D au-dessus du relief">
-                    <p class="p-home-replay__status" data-home-replay-target="status">Chargement du vol…</p>
-                </div>
-                <figcaption class="p-home-replay__caption">
-                    <span class="l-stack l-stack--xs">
-                        <strong>En l’air avec {{ replay.owner ? replay.owner.publicName : replay.pilot }}</strong>
-                        <span class="u-note">{{ replay.flightPlan ?? replay.glider }} · {{ replay.distance|flight_distance }} · {{ replay.duration|flight_duration }}{% if replay.taskSpeed %} · {{ replay.taskSpeed|number_format(1, ',', ' ') }} km/h{% endif %} · rejoué 60 fois plus vite</span>
-                    </span>
-                    <span class="l-cluster">
-                        <button type="button" class="c-button c-button--outline c-button--sm" data-home-replay-target="toggle" data-action="home-replay#toggle">Pause</button>
-                        <twig:Ui:Link href="{{ path('app_flight_show', {id: replay.id}) }}">Voir le vol en détail</twig:Ui:Link>
-                    </span>
-                </figcaption>
-            </figure>
-        {% endif %}
+        {% if replay %}{{ include('flight/_replay_teaser.html.twig', {flight: replay}) }}{% endif %}
 
         {% if public_flights is not empty %}
             <section class="l-stack l-stack--sm u-full" aria-labelledby="public-flights-title">

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Flight;
+use App\Entity\NetworkSession;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -152,6 +153,29 @@ class FlightRepository extends ServiceEntityRepository
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /** Flight time of every flight uploaded, in seconds. */
+    public function totalSeconds(): int
+    {
+        return (int) $this->createQueryBuilder('f')->select('SUM(f.duration)')->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * The network session with the most tracks uploaded, to show a whole session replayed.
+     */
+    public function findRichestSession(): ?NetworkSession
+    {
+        /** @var list<array{id: int}> $rows */
+        $rows = $this->createQueryBuilder('f')
+            ->select('IDENTITY(f.session) AS id', 'COUNT(f.id) AS HIDDEN n')
+            ->andWhere('f.session IS NOT NULL')
+            ->groupBy('f.session')
+            ->orderBy('n', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()->getArrayResult();
+
+        return [] === $rows ? null : $this->getEntityManager()->find(NetworkSession::class, $rows[0]['id']);
     }
 
     /**

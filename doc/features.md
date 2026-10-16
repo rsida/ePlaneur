@@ -61,6 +61,7 @@ each one. The domain reference (the club, the training, the network flights) is 
 | Memberships: seasons and fees, payments, validation, export, search of the members | `/admin` | [membership](membership.md), [back-office](admin.md) |
 | Sessions and flight plans, contact messages | `/admin` | [sessions](sessions.md), [member space](member-space.md) |
 | Activity of the club month by month, CSV export for the general meeting | `/activite` | [activity](activity.md) |
+| Presentation of the site: every feature, the striking ones first, live links, demo path, decisions to take | `/comite/le-site`, main menu "Le nouveau site" | [presentation for the committee](site-tour.md) |
 
 ## Administrators
 

@@ -149,6 +149,7 @@ the trainers.
 | 11j | Flight plan written by the workshop | The workshop (7n4) writes the `.fpl` itself instead of the instructions for Claude | Waiting for a flight plan with windows saved by Condor |
 | 11k | Live session | Positions of the pilots during a session, from the UDP output of Condor | Waiting for the UDP tests (E4, E5) |
 | 11l | Installable site | Progressive web app on mobile, with notifications | Installation done (2026-10-14), see [installable site](installable-site.md): manifest, icons, service worker with an offline page, "Installer l'application" in the footer. Notifications done (2026-10-15), see [notifications](installable-site.md#notifications): turned on per device in "Mon profil", the session reminder and results of 11g, a new message, a comment on a flight (chosen by the user), what to receive chosen apart from the e-mails, `app:push:keys` |
+| 11m | Presentation for the committee (asked on 2026-10-15) | A page reserved to the committee, in the main menu, that explains every feature of the site and puts forward the most striking ones | Done (2026-10-15), see [presentation for the committee](site-tour.md): `/comite/le-site`, `SITE_TOUR`, live links on the club's flights and sessions, demo path, decisions to take |
 
 ## Audit follow-ups (2026-10-07)
 

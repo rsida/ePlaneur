@@ -160,6 +160,8 @@ final class NavigationFixtures extends Fixture implements DependentFixtureInterf
         $this->link(MenuLocation::Main, 'Voler', '/#vols', null, $position++);
         $clubLink = $this->link(MenuLocation::Main, 'Le Club', null, null, $position++, $club, 'Le Club / Vie associative');
         $this->link(MenuLocation::Main, 'Actualités', '/actualites', null, $position++);
+        // Presentation of the site, for the committee (doc/site-tour.md)
+        $this->link(MenuLocation::Main, 'Le nouveau site', '/comite/le-site', null, $position++)->setVisibility(Visibility::Groups)->addAllowedGroup($committee);
 
         $mega = [
             'presentation' => [['Découvrir le club', '/le-club/presentation'], ['Vidéo de présentation', '/le-club/communication#video', 'Communication']],

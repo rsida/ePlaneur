@@ -1,0 +1,185 @@
+{% extends 'base.html.twig' %}
+
+{#
+    Presentation of the site for the committee (doc/site-tour.md): the striking features first, each
+    with a live link on the club's own flights, then everything the site does by audience, a demo
+    path and what waits for a decision of the committee.
+#}
+{% block title %}Le nouveau site du club{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% set flight_url = showcase ? path('app_flight_show', {id: showcase.id}) : path('app_flight_index') %}
+{% set session_url = session ? path('app_session_show', {id: session.id}) : path('app_session_index') %}
+{% set compare_url = showcase ? path('app_flight_compare_pick', {id: showcase.id}) : path('app_flight_index') %}
+
+{% set wows = [
+    {icon: 'mountain', title: 'Revivre un vol en 3D, au-dessus du vrai relief', text: 'La trace d’un vol Condor rejouée sur le relief, à sa vraie altitude. Le pilote choisit sa caméra : poursuite derrière le planeur, cockpit ou cinéma. Le planeur s’incline exactement comme dans l’enregistrement, les cumulus apparaissent à la base des nuages, des flèches montrent chaque thermique et un rideau coloré par le vario descend de la trace jusqu’au sol.', why: 'C’est l’image qui donne envie : un jeune qui voit son propre vol rejoué comme un film le montre à ses amis.', link: flight_url, cta: 'Voir un vol'},
+    {icon: 'users', title: 'Toute une session, tous les pilotes ensemble', text: 'Les traces d’une même course se regroupent toutes seules. On rejoue la session avec tous les planeurs en même temps, et le site raconte la course : qui menait, à quel moment le leader a changé, chaque chapitre ouvrant le replay au bon endroit. Le podium récompense aussi le meilleur grimpeur, la meilleure finesse et celui qui a le moins spiralé.', why: 'Le vol en réseau du mercredi devient un événement que l’on revit et dont on parle après.', link: session_url, cta: 'Voir une session'},
+    {icon: 'lightbulb', title: 'Un débrief comme avec un instructeur', text: 'Chaque vol reçoit trois conseils, dont un point fort, et chacun ouvre le moment exact du vol. Le « débrief guidé » raconte le vol chapitre par chapitre : départ, chaque branche, plané final. Un radar de centrage montre de quel côté décaler ses spirales. Le formateur commente à l’instant précis, sur la trace.', why: 'La formation continue entre deux sessions, sans mobiliser un formateur à chaque vol.', link: flight_url, cta: 'Voir le débrief'},
+    {icon: 'crosshair', title: 'Les thermiques que l’on a ratés', text: 'Condor n’enregistre pas l’air. Mais les pilotes d’une même course partagent le même ciel : le site reconstitue les ascendances qui existaient à partir de toutes les traces, et montre en jaune celles qu’un pilote a laissées passer. Une carte rassemble les thermiques de tous les vols du club, paysage par paysage.', why: 'Condor Club montre les thermiques d’une course ; le site va plus loin en montrant à chacun ceux qu’il a manqués. C’est le savoir collectif du club mis au service de chacun.', link: path('app_flight_lift_map'), cta: 'Voir la carte des ascendances'},
+    {icon: 'trophy', title: 'Face au vainqueur', text: 'Un clic compare un vol au meilleur de la course : le fantôme du vainqueur vole à côté avec l’écart en direct, et une cascade montre les minutes gagnées ou perdues branche par branche, en spirale ou en ligne droite.', why: 'On comprend tout de suite où se joue la différence, et ce qu’il faut travailler.', link: compare_url, cta: 'Comparer un vol'},
+    {icon: 'progress', title: '« Mon parcours » : progresser comme dans un jeu', text: 'Les huit étapes de la formation forment un chemin. Chaque étape a ses lectures, ses quiz corrigés et ses exercices, validés automatiquement par l’analyse du vol ; un critère manqué ouvre le moment du vol où il l’a été. Badges à trois paliers, records personnels, classements par saison et par niveau.', why: 'Le jeu attire les jeunes, le parcours les mène vers les formateurs et les sessions : un jeu au départ peut devenir une vocation.', link: path('app_path'), cta: 'Voir le parcours'},
+] %}
+
+{% set useful = [
+    {icon: 'message-circle', title: 'Sur le téléphone, avec notifications', text: 'Le site s’installe comme une application. Chacun choisit ses notifications : rappel la veille d’une session, résultats et podium le lendemain, nouveau message, commentaire d’un formateur.', link: path('app_account_profile', {_fragment: 'push'}), cta: 'Activer sur mon appareil', note: 'Nécessite des clés de notification sur le serveur.'},
+    {icon: 'file-text', title: 'L’assemblée générale en un clic', text: 'Comptes, adhésions, vols, heures de vol, sessions, étapes validées : mois par mois, en graphiques, exportables dans un tableur.', link: path('app_activity'), cta: 'Voir l’activité', note: null},
+    {icon: 'users', title: 'Ouvert aux classes du BIA', text: 'Un enseignant crée sa classe, donne un lien à ses élèves et suit leurs huit étapes et leurs vols. Les élèves n’apparaissent jamais sous leur nom aux autres pilotes.', link: path('app_account_classes'), cta: 'Voir l’espace enseignant', note: 'Le droit « enseignant » est à donner à un groupe.'},
+    {icon: 'shield-check', title: 'Adhésion et paiement en ligne', text: 'Demande d’adhésion en ligne, paiement par HelloAsso, groupe « Membre » donné à la validation, attestation, relances avant l’échéance, export pour le trésorier.', link: path('app_membership'), cta: 'Voir l’adhésion', note: 'Le paiement s’active avec les clés HelloAsso du club.'},
+] %}
+
+{% set demo = [
+    {title: 'Un vol en 3D', text: 'lancer le replay en caméra poursuite, puis passer en plein écran.', link: flight_url, cta: 'Ouvrir le vol'},
+    {title: 'Le débrief', text: 'sur le même vol, cliquer un des trois conseils pour aller au moment du vol, puis lancer le « Débrief guidé ».', link: flight_url ~ (showcase ? '#conseils' : ''), cta: 'Ouvrir les conseils du vol'},
+    {title: 'La session', text: 'rejouer tous les pilotes ensemble et lire l’histoire de la course.', link: session_url, cta: 'Ouvrir la session'},
+    {title: 'Face au vainqueur', text: 'comparer le vol au meilleur de la course et montrer la cascade du temps perdu.', link: compare_url, cta: 'Ouvrir la comparaison'},
+    {title: 'Les ascendances', text: 'montrer les thermiques de tous les vols du club, paysage par paysage.', link: path('app_flight_lift_map'), cta: 'Ouvrir la carte des ascendances'},
+    {title: '« Mon parcours »', text: 'parcourir les huit étapes, un quiz et un exercice avec ses critères.', link: path('app_path'), cta: 'Ouvrir le parcours'},
+    {title: 'L’assemblée générale', text: 'finir sur l’activité du club mois par mois et son export pour un tableur.', link: path('app_activity'), cta: 'Ouvrir l’activité du club'},
+] %}
+
+{% set catalogue = [
+    {who: 'Visiteurs', items: [
+        'Page d’accueil avec la prochaine session, son compte à rebours à l’heure du lecteur (La Réunion comprise) et un vol rejoué en 3D',
+        '« Mon premier vol » : six étapes, de l’installation de Condor au premier vol en réseau',
+        'Les sessions en réseau : à venir, historique depuis 2020 avec les résultats, agenda à ajouter à son calendrier',
+        'Les planeurs de Condor et leur polaire, les vols rendus publics par leurs pilotes',
+        'Pages et actualités reprises du site WordPress, avec les anciennes adresses redirigées',
+        'Référencement soigné pour Google et pour les assistants d’IA',
+    ]},
+    {who: 'Pilotes (compte gratuit)', items: [
+        'Dépôt d’une trace Condor 2, Condor 3 ou IGC et analyse complète : phases, thermiques, planés, conseils, pénalités et score officiel',
+        'Replay 2D et 3D, comparaison avec un autre pilote ou toute la session, carte des ascendances',
+        'Carnet de vol : totaux, badges, compétences et leur évolution, étapes marquées par les formateurs',
+        '« Mon parcours » : lectures, quiz, exercices, badges, classements, records du club',
+        'Tableau de bord, profil, nom montré aux autres (prénom ou pseudonyme possible), e-mails et notifications choisis',
+        'Données personnelles : export complet et suppression du compte (RGPD)',
+    ]},
+    {who: 'Membres', items: [
+        'Contenus réservés aux membres',
+        'Proposer une session en réseau',
+        'Messagerie entre membres, avec le comité ou les administrateurs, éventuellement à propos d’un moment de vol',
+    ]},
+    {who: 'Formateurs', items: [
+        'Commenter les vols à un instant précis, rattaché à une étape de la formation',
+        'Suivre chaque pilote : carnet, étapes en cours ou validées, ce qu’il a fait dans « Mon parcours »',
+        'Relire les quiz des huit étapes avant leur mise en ligne',
+    ]},
+    {who: 'Enseignants', items: [
+        'Classes, lien d’inscription, progression des élèves étape par étape et leurs vols',
+    ]},
+    {who: 'Comité', items: [
+        'Articles et pages dans un éditeur par blocs, médiathèque, documents officiels, menus',
+        'Contenus réservés au comité (comptes rendus), à certains groupes ou aux membres',
+        'Adhésions : saisons et tarifs, paiements, validation, export, fiche de chaque membre',
+        'Sessions, plans de vol et messages du formulaire de contact',
+        'Activité du club mois par mois pour l’assemblée générale',
+    ]},
+    {who: 'Administrateurs', items: [
+        'Comptes, groupes et droits, à la carte',
+        'Configuration de « Mon parcours » : étapes ouvertes, exercices et leurs critères, quiz',
+        'Atelier de plans de vol pour Condor 3',
+    ]},
+] %}
+
+{% block body %}
+    <section class="p-tour-hero t-dark" aria-labelledby="tour-title">
+        <div class="l-container l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Eyebrow>Réservé au comité directeur</twig:Ui:Eyebrow>
+                <h1 id="tour-title" class="c-display">Le nouveau site du club</h1>
+                <p class="u-lead p-tour-hero__lead">Ce que le site fait, et surtout ce qu’aucun site WordPress ne sait faire : chaque fonctionnalité se voit en direct, sur les vols et les sessions du club.</p>
+            </div>
+            <div class="p-tour-hero__figures">
+                <twig:Ui:Stat label="Vols analysés" value="{{ figures.flights }}" />
+                <twig:Ui:Stat label="Heures de vol" value="{{ figures.hours|number_format(0, ',', ' ') }}" />
+                <twig:Ui:Stat label="Sessions en mémoire" value="{{ figures.sessions }}" />
+                <twig:Ui:Stat label="Comptes" value="{{ figures.accounts }}" />
+            </div>
+            {% if showcase %}{{ include('flight/_replay_teaser.html.twig', {flight: showcase}) }}{% endif %}
+        </div>
+    </section>
+
+    <twig:Layout:Section theme="light" id="wahou">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="Les effets « wahou »" title="Ce qui fait la différence" lead="Six fonctionnalités à montrer en premier. Aucune n’est possible avec un site WordPress : elles lisent les traces de Condor." />
+            <ol class="p-tour-wows" role="list">
+                {% for wow in wows %}
+                    <li class="p-tour-wow">
+                        <span class="p-tour-wow__icon" aria-hidden="true"><twig:ux:icon name="{{ wow.icon }}" /></span>
+                        <div class="l-stack l-stack--sm">
+                            <twig:Ui:Heading level="3" size="h3">{{ wow.title }}</twig:Ui:Heading>
+                            <p>{{ wow.text }}</p>
+                            <p class="p-tour-wow__why"><strong>Pour le club :</strong> {{ wow.why }}</p>
+                            <div><twig:Ui:Button href="{{ wow.link }}" size="sm">{{ wow.cta }}</twig:Ui:Button></div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </twig:Layout:Section>
+
+    <twig:Layout:Section theme="paper" id="utile">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="Pour faire vivre le club" title="Utile au quotidien" />
+            <ul class="p-tour-cards" role="list">
+                {% for card in useful %}
+                    <li class="c-card c-card--outlined p-tour-card">
+                        <div class="c-card__body l-stack l-stack--sm">
+                            <span class="p-tour-wow__icon" aria-hidden="true"><twig:ux:icon name="{{ card.icon }}" /></span>
+                            <twig:Ui:Heading level="3" size="h4">{{ card.title }}</twig:Ui:Heading>
+                            <p>{{ card.text }}</p>
+                            {% if card.note %}<p class="u-note">{{ card.note }}</p>{% endif %}
+                            <twig:Ui:Link href="{{ card.link }}">{{ card.cta }}</twig:Ui:Link>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </twig:Layout:Section>
+
+    <twig:Layout:Section theme="light" id="demo">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="À présenter en dix minutes" title="Une démonstration" lead="Un fil à suivre pour montrer le site en réunion ou en visioconférence." />
+            <ol class="p-tour-demo">
+                {% for step in demo %}
+                    <li>
+                        <strong>{{ step.title }}</strong> : {{ step.text }}
+                        <twig:Ui:Link href="{{ step.link }}" class="p-tour-demo__link">{{ step.cta }}</twig:Ui:Link>
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </twig:Layout:Section>
+
+    <twig:Layout:Section theme="paper" id="tout">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="Le catalogue" title="Tout ce que fait le site" lead="Par public, du visiteur à l’administrateur." />
+            <div class="p-tour-catalogue">
+                {% for group in catalogue %}
+                    <section class="l-stack l-stack--sm" aria-labelledby="who-{{ loop.index }}">
+                        <twig:Ui:Heading level="3" size="h4" id="who-{{ loop.index }}">{{ group.who }}</twig:Ui:Heading>
+                        <ul class="p-tour-list">
+                            {% for item in group.items %}<li>{{ item }}</li>{% endfor %}
+                        </ul>
+                    </section>
+                {% endfor %}
+            </div>
+        </div>
+    </twig:Layout:Section>
+
+    <twig:Layout:Section theme="light" id="decisions">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="Pour le comité" title="Ce qui attend une décision" />
+            <ul class="p-tour-list p-tour-list--wide">
+                <li><strong>Le remplacement du site WordPress</strong> : le nouveau site n’est pas encore en ligne.</li>
+                <li><strong>Les pilotes mineurs</strong> : prénom ou pseudonyme obligatoire, accord d’un parent, messages des adultes aux mineurs.</li>
+                <li><strong>L’espace enseignant</strong> : qui peut être enseignant, faut-il être membre du club.</li>
+                <li><strong>Les résultats des sessions</strong> : publics, comme sur eplaneur.fr, ou réservés aux comptes connectés.</li>
+                <li><strong>Le paiement en ligne</strong> : ouvrir un compte HelloAsso pour le club et définir les besoins du trésorier.</li>
+                <li><strong>Condor Club</strong> : la demande d’accord pour échanger les traces et les circuits.</li>
+                <li><strong>Les quiz</strong> : relecture par les formateurs avant leur mise en ligne.</li>
+            </ul>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}
