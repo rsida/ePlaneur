@@ -42,6 +42,7 @@ Values must not contain `$` (Compose would interpolate it). Quotes are allowed.
 | `SERVER_NAME` | `eplaneur.local` | Host name of the site. Dev: mkcert certificate + nginx. Prod: Traefik rule and Let's Encrypt certificate |
 | `DEFAULT_URI` | `https://${SERVER_NAME}` | Base URL used to generate absolute URLs from the CLI |
 | `TRUSTED_PROXIES` | `127.0.0.1`, prod: `PRIVATE_SUBNETS` | Proxies allowed to send `X-Forwarded-*` headers |
+| `SEARCH_ENGINES_ALLOWED` | `1` | `0` on a staging copy: noindex on every response, robots.txt closes the site (see [SEO](seo.md)) |
 
 ### Docker
 
@@ -55,7 +56,9 @@ Values must not contain `$` (Compose would interpolate it). Quotes are allowed.
 | `NGINX_VERSION` | `1.28` | nginx image version |
 | `XDEBUG_MODE` | `off` | Xdebug mode at startup (see [development](development.md#xdebug)) |
 | `XDEBUG_CLIENT_HOST` | `host.docker.internal` | Host where the IDE listens |
-| `ACME_EMAIL` | prod: **required** | Let's Encrypt account e-mail |
+| `ACME_EMAIL` | prod: **required** with the bundled Traefik | Let's Encrypt account e-mail |
+| `TRAEFIK_NETWORK` | empty | Prod: Docker network of a Traefik already running on the server; the stack then starts none (see [production](production.md#staging-or-shared-server)) |
+| `TRAEFIK_ENTRYPOINT` / `TRAEFIK_CERTRESOLVER` | `websecure` / `letsencrypt` | Prod: entrypoint and certificate resolver of that Traefik |
 | `TRAEFIK_VERSION` | `v3.6` | Traefik image version (prod) |
 
 ### Database

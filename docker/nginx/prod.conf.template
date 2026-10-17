@@ -3,6 +3,9 @@ server {
     listen 80;
     server_name _;
 
+    # Network alias of the php service (compose.prod.yaml), unique to this copy of the site
+    set $php_upstream ${PHP_FPM_HOST}:9000;
+
     gzip on;
     gzip_types text/css application/javascript application/json image/svg+xml;
 

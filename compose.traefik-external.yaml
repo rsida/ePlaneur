@@ -1,0 +1,16 @@
+# The Traefik already running on the server routes the site (staging, or a server shared with other
+# sites). Used by the Makefile in production when TRAEFIK_NETWORK is set: nginx joins that network,
+# with the entrypoint and certificate resolver of that Traefik (TRAEFIK_ENTRYPOINT,
+# TRAEFIK_CERTRESOLVER). Give each copy of the site its own COMPOSE_PROJECT_NAME: it names the router.
+services:
+  nginx:
+    networks:
+      - default
+      - traefik
+    labels:
+      - traefik.docker.network=${TRAEFIK_NETWORK:?}
+
+networks:
+  traefik:
+    name: ${TRAEFIK_NETWORK:?}
+    external: true

@@ -1,5 +1,7 @@
-# Production environment: docker compose -f compose.yaml -f compose.prod.yaml
-# Use `make deploy-prod TAG=vX.Y.Z` rather than calling this file directly.
+# Production and staging: docker compose -f compose.yaml -f compose.prod.yaml, plus
+#  - compose.traefik.yaml: a Traefik of its own on ports 80/443 (default), or
+#  - compose.traefik-external.yaml: the Traefik already running on the server (TRAEFIK_NETWORK set).
+# Use `make deploy-prod TAG=vX.Y.Z` rather than calling these files directly.
 
 x-php-prod: &php-prod
   image: ${COMPOSE_PROJECT_NAME:-eplaneur}-php:${APP_VERSION:-latest}
@@ -11,6 +13,7 @@ x-php-prod: &php-prod
     MAILER_DSN: ${MAILER_DSN:?}
     MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?}
     TRUSTED_PROXIES: ${TRUSTED_PROXIES:?}
+    SEARCH_ENGINES_ALLOWED: ${SEARCH_ENGINES_ALLOWED:-1}
     DATABASE_HOST: database
     DATABASE_PORT: 3306
     MARIADB_VERSION: ${MARIADB_VERSION:?}
@@ -27,32 +30,15 @@ x-php-prod: &php-prod
       condition: service_healthy
 
 services:
-  traefik:
-    image: traefik:${TRAEFIK_VERSION:-v3.6}
-    restart: unless-stopped
-    command:
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL must be set in .env.local}
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
-      - --log.level=INFO
-      - --accesslog=true
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik_letsencrypt:/letsencrypt
-
   php:
     <<: *php-prod
     build:
       target: php_prod
+    networks:
+      default:
+        # Name nginx reaches PHP by: unique, as nginx may share a network with other projects
+        aliases:
+          - ${COMPOSE_PROJECT_NAME:-eplaneur}-php
 
   worker:
     <<: *php-prod
@@ -69,14 +55,16 @@ services:
       args:
         NGINX_VERSION: ${NGINX_VERSION:-1.28}
     image: ${COMPOSE_PROJECT_NAME:-eplaneur}-nginx:${APP_VERSION:-latest}
+    environment:
+      PHP_FPM_HOST: ${COMPOSE_PROJECT_NAME:-eplaneur}-php
     labels:
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.rule=Host(`${SERVER_NAME:?}`)
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.entrypoints=websecure
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.tls.certresolver=letsencrypt
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
       - traefik.http.services.${COMPOSE_PROJECT_NAME:-eplaneur}.loadbalancer.server.port=80
 
 volumes:
-  traefik_letsencrypt:
   uploads:
   flights:

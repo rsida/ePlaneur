@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Seo;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -11,6 +12,9 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * What search engines are told about the current page: whether they may index it, and its
  * canonical address. Only the public showcase of the club is indexed; flights, logbooks, sessions
  * and flight plans carry the names of pilots and stay out (decision of 2026-10-13, doc/seo.md).
+ *
+ * A staging copy of the site sets SEARCH_ENGINES_ALLOWED=0: no page is indexable, every response
+ * says noindex (SearchEnginesListener) and robots.txt closes the whole site.
  */
 final readonly class SearchEngines
 {
@@ -33,14 +37,22 @@ final readonly class SearchEngines
     public function __construct(
         private RequestStack $requests,
         private UrlGeneratorInterface $urls,
+        #[Autowire(env: 'bool:SEARCH_ENGINES_ALLOWED')]
+        private bool $allowed,
     ) {
+    }
+
+    /** False on a staging copy: search engines must stay out of the whole site. */
+    public function areAllowed(): bool
+    {
+        return $this->allowed;
     }
 
     public function isIndexable(): bool
     {
         $request = $this->requests->getMainRequest();
 
-        return null !== $request && \in_array($request->attributes->get('_route'), self::INDEXABLE, true);
+        return $this->allowed && null !== $request && \in_array($request->attributes->get('_route'), self::INDEXABLE, true);
     }
 
     /** Absolute address of the current page without its other query parameters, null outside a route. */

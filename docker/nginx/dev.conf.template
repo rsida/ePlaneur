@@ -14,5 +14,7 @@ server {
     ssl_certificate     /etc/nginx/certs/cert.pem;
     ssl_certificate_key /etc/nginx/certs/key.pem;
 
+    set $php_upstream php:9000;
+
     include /etc/nginx/symfony.conf;
 }

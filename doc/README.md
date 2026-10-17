@@ -47,7 +47,9 @@ Files:
 ```
 compose.yaml            services shared by every environment
 compose.override.yaml   dev only (loaded automatically by Docker Compose)
-compose.prod.yaml       prod only
+compose.prod.yaml       prod only (also staging)
+compose.traefik.yaml    prod: Traefik of the stack itself (ports 80/443)
+compose.traefik-external.yaml  prod: the server's Traefik instead (TRAEFIK_NETWORK set)
 docker/php/Dockerfile   multi-stage: php_dev, php_prod, nginx_prod
 docker/nginx/           nginx configs (shared Symfony rules + dev/prod server blocks)
 docker/mariadb/init/    SQL run once when the dev database volume is created

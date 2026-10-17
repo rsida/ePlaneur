@@ -8,7 +8,8 @@ ENV ?= $(or $(shell sed -n 's/^APP_ENV=//p' .env.local 2>/dev/null | tail -1 | t
 # Same load order as Symfony: .env < .env.local < .env.$(ENV) < .env.$(ENV).local
 env_files = $(foreach f,.env .env.local .env.$(1) .env.$(1).local,$(wildcard $(f)))
 compose_files_dev  = -f compose.yaml -f compose.override.yaml
-compose_files_prod = -f compose.yaml -f compose.prod.yaml
+# Production: a Traefik of its own, or the server's one when TRAEFIK_NETWORK is set (doc/production.md)
+compose_files_prod = -f compose.yaml -f compose.prod.yaml -f $(if $(call env_value,TRAEFIK_NETWORK),compose.traefik-external.yaml,compose.traefik.yaml)
 dc = docker compose $(compose_files_$(1)) $(addprefix --env-file ,$(call env_files,$(1)))
 # Value of a variable as resolved from the env files
 env_value = $(shell for f in $(call env_files,$(ENV)); do sed -n 's/^$(1)=//p' $$f; done | tail -1 | tr -d "\"'")
@@ -31,7 +32,7 @@ export APP_VERSION ?= $(shell cat .app-version 2>/dev/null || echo latest)
 .DEFAULT_GOAL := help
 .PHONY: help urls install deploy-dev certs build up down restart ps logs bash bash-root \
 	console sf composer cc db db-root sql db-create db-migrate migration db-reset fixtures \
-	db-dump db-restore media-dump assets assets-build importmap-require xdebug-on xdebug-off \
+	db-dump db-restore media-dump media-restore assets assets-build importmap-require xdebug-on xdebug-off \
 	test test-unit test-behat test-db cs cs-fix phpstan lint qa \
 	release deploy-prod prod-check
 
@@ -136,6 +137,10 @@ media-dump: ## Archive the uploaded media and flight tracks (var/uploads, var/fl
 db-restore: ## Restore a dump: make db-restore file=backups/xxx.sql.gz
 	@test -n "$(file)" || (echo "Usage: make db-restore file=backups/xxx.sql.gz" && exit 1)
 	gunzip -c $(file) | $(DC) exec -T database sh -c 'mariadb -u"$$MARIADB_USER" -p"$$MARIADB_PASSWORD" "$$MARIADB_DATABASE"'
+
+media-restore: ## Restore an archive of media-dump: make media-restore file=backups/xxx.tar.gz
+	@test -n "$(file)" || (echo "Usage: make media-restore file=backups/xxx-media-xxx.tar.gz" && exit 1)
+	$(DC) exec -T $(if $(filter prod,$(ENV)),--user www-data) php tar -xzf - -C var < $(file)
 
 ## Assets
 

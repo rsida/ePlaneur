@@ -175,6 +175,33 @@ final class SeoTest extends WebTestCase
         self::assertStringContainsString('Sitemap: http://localhost/sitemap.xml', $content);
     }
 
+    public function testAStagingCopyKeepsSearchEnginesOut(): void
+    {
+        $this->post('vol-du-mois');
+        $this->entityManager->flush();
+        $previous = [$_ENV['SEARCH_ENGINES_ALLOWED'] ?? null, $_SERVER['SEARCH_ENGINES_ALLOWED'] ?? null];
+        $_ENV['SEARCH_ENGINES_ALLOWED'] = $_SERVER['SEARCH_ENGINES_ALLOWED'] = '0';
+        try {
+            self::ensureKernelShutdown();
+            $client = static::createClient();
+
+            $client->request('GET', '/actualites/vol-du-mois');
+            self::assertResponseIsSuccessful();
+            self::assertResponseHeaderSame('X-Robots-Tag', 'noindex, nofollow');
+            self::assertSame('noindex, follow', $client->getCrawler()->filter('meta[name="robots"]')->attr('content'));
+
+            $client->request('GET', '/robots.txt');
+            self::assertSame("User-agent: *\nDisallow: /\n", (string) $client->getResponse()->getContent());
+
+            $client->request('GET', '/sitemap.xml');
+            self::assertResponseStatusCodeSame(404);
+            $client->request('GET', '/llms.txt');
+            self::assertResponseStatusCodeSame(404);
+        } finally {
+            [$_ENV['SEARCH_ENGINES_ALLOWED'], $_SERVER['SEARCH_ENGINES_ALLOWED']] = $previous;
+        }
+    }
+
     public function testTheSitemapListsOnlyWhatMayBeIndexed(): void
     {
         $club = $this->page('Le Club', 'le-club');

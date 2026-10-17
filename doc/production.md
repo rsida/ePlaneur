@@ -1,8 +1,10 @@
 # Production
 
-The production stack ships its **own Traefik** (`compose.prod.yaml`): it listens on ports 80/443,
-obtains Let's Encrypt certificates for `SERVER_NAME` and redirects HTTP to HTTPS. Images are built on
-the server from a git **tag** and named `eplaneur-php:<tag>` / `eplaneur-nginx:<tag>`.
+The production stack (`compose.prod.yaml`) ships its **own Traefik** (`compose.traefik.yaml`): it
+listens on ports 80/443, obtains Let's Encrypt certificates for `SERVER_NAME` and redirects HTTP to
+HTTPS. On a server that already runs a Traefik, the stack plugs into it instead (see
+[Staging or shared server](#staging-or-shared-server)). Images are built on the server from a git
+**tag** and named `<COMPOSE_PROJECT_NAME>-php:<tag>` / `<COMPOSE_PROJECT_NAME>-nginx:<tag>`.
 
 ```
 Internet ──▶ traefik :80/:443 ──▶ nginx :80 ──▶ php-fpm :9000 ──▶ database
@@ -13,7 +15,8 @@ Internet ──▶ traefik :80/:443 ──▶ nginx :80 ──▶ php-fpm :9000 
 
 - Linux with Docker Engine 24+, the Compose plugin 2.24+, GNU Make and Git.
 - A DNS `A` (and `AAAA` if IPv6) record of `SERVER_NAME` pointing to the server.
-- Ports 80 and 443 open and **free** (no other web server or Traefik).
+- Ports 80 and 443 open and **free** (no other web server or Traefik), unless the stack plugs into
+  the Traefik of the server.
 - Read access to the GitHub repository (deploy key or SSH key).
 
 ## 2. Configure
@@ -82,6 +85,63 @@ again: `make console c="app:flight:analyse"`. It downloads the relief tiles it n
 Tiles, outbound HTTPS) into `var/terrain`, a cache inside the container, downloaded again after a
 deploy when needed.
 
+## Staging or shared server
+
+A copy of the site for the committee to try out runs as a production stack with three differences,
+all in its `.env.local`:
+
+```dotenv
+APP_ENV=prod
+APP_SECRET=<openssl rand -hex 16>
+SERVER_NAME=staging.example.com
+# Containers, volumes, images and the Traefik router are named after it: one name per copy
+COMPOSE_PROJECT_NAME=eplaneur-staging
+
+# The Traefik of the server: its Docker network, entrypoint and certificate resolver
+TRAEFIK_NETWORK=traefik-net
+#TRAEFIK_ENTRYPOINT=websecure
+#TRAEFIK_CERTRESOLVER=letsencrypt
+
+# noindex everywhere, robots.txt closes the site, no sitemap.xml nor llms.txt (doc/seo.md)
+SEARCH_ENGINES_ALLOWED=0
+
+# null://null: no e-mail leaves (the data may hold real addresses); a real provider otherwise
+MAILER_DSN=null://null
+
+MARIADB_PASSWORD=<strong password>
+MARIADB_ROOT_PASSWORD=<another strong password>
+```
+
+With `TRAEFIK_NETWORK` set, the Makefile uses `compose.traefik-external.yaml` instead of
+`compose.traefik.yaml`: no Traefik is started, nginx joins that network (external, it must exist) and
+carries the router labels; `ACME_EMAIL` is not needed. The certificate comes from the resolver of the
+server's Traefik, so the DNS record of `SERVER_NAME` must point to the server first. Deploy with
+`make deploy-prod TAG=...` as above.
+
+nginx reaches PHP by a network alias unique to the copy (`<COMPOSE_PROJECT_NAME>-php`), never
+`php`: on the shared network, another project may have a container answering to that name.
+
+### Copy the data of another environment
+
+On the source (a dev machine, or the production server):
+
+```bash
+make db-dump media-dump    # backups/<env>-<date>.sql.gz and backups/<env>-media-<date>.tar.gz
+```
+
+Copy both files into `backups/` on the target (`scp`), deploy there once (the volumes and the schema
+exist), then:
+
+```bash
+make db-restore file=backups/dev-20261017-143931.sql.gz
+make media-restore file=backups/dev-media-20261017-143932.tar.gz
+make db-migrate            # when the deployed tag is newer than the dump
+```
+
+The dump replaces every table, accounts included: on a copy open to others, remove or change the
+password of test accounts made in dev. Relief tiles (`var/terrain`) are not copied, they are
+downloaded again when needed.
+
 ## Rollback
 
 Deploy the previous tag:
@@ -112,6 +172,7 @@ Every command below is run on the server, in the project directory.
 | `make db-dump` | Gzipped dump into `backups/prod-<date>.sql.gz` |
 | `make media-dump` | Archive of the uploaded media (Docker volume `uploads`, mounted on `var/uploads`) and of the flight tracks (volume `flights`, `var/flights`) into `backups/prod-media-<date>.tar.gz`. It includes the resized pictures of `var/uploads/cache/`, which are rebuilt on demand if missing |
 | `make db-restore file=...` | Restore a dump |
+| `make media-restore file=...` | Restore an archive of `media-dump` into the volumes |
 | `make console c="app:import-wordpress"` | Import or update the content of the WordPress site, with the redirects of its addresses (see [WordPress import](wordpress-import.md)) |
 | `make console c="app:sessions:import"` | Import the network sessions and their results from eplaneur.fr (see [sessions](sessions.md)) |
 | `make console c="app:gliders:import var/condor/Planes"` | Record or update the gliders (sheet and polar) from a copy of the `Condor3/Planes` folder: only its `<glider>/<glider>.txt` and `.pol` files are needed, copied into `var/condor/Planes/` on the server (see [flights](flights.md#gliders-and-polars)); again after each Condor update |

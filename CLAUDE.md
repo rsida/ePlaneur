@@ -61,7 +61,8 @@ make qa                           # lint + php-cs-fixer + phpstan + tests
 ## Architecture
 
 - **Docker**: `compose.yaml` (shared) + `compose.override.yaml` (dev, auto-loaded) or `compose.prod.yaml`
-  (prod, own Traefik + Let's Encrypt + messenger `worker`). One multi-stage Dockerfile
+  (prod, messenger `worker`) with `compose.traefik.yaml` (own Traefik + Let's Encrypt) or, when
+  `TRAEFIK_NETWORK` is set, `compose.traefik-external.yaml` (the server's Traefik, e.g. staging). One multi-stage Dockerfile
   (`docker/php/Dockerfile`: `php_dev`, `php_prod`, `nginx_prod`). Dev bind-mounts the project on `/app`
   and runs PHP as the host user. Standalone: does not use the shared Traefik of `../local-network-multisite`.
 - **Database**: MariaDB. Doctrine reads `DATABASE_HOST/PORT` and `MARIADB_*` (no `DATABASE_URL`), the same

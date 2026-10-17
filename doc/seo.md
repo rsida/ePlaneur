@@ -70,6 +70,13 @@ To check a page: https://search.google.com/test/rich-results and https://validat
 The addresses are absolute, built from the request: behind a proxy, `TRUSTED_PROXIES` must be set
 for them to start with `https://` (see [production](production.md)).
 
+## Staging copy
+
+`SEARCH_ENGINES_ALLOWED=0` (`App\Seo\SearchEngines::areAllowed()`) keeps search engines out of a copy
+of the site shown to the committee: no page is indexable, `SearchEnginesListener` adds
+`X-Robots-Tag: noindex, nofollow` to every response (media and documents included), `robots.txt` says
+`Disallow: /`, `sitemap.xml` and `llms.txt` answer 404.
+
 ## Old addresses
 
 The 301 redirects of the WordPress addresses (`redirect` table, `LegacyRedirectListener`) keep the
