@@ -21,6 +21,20 @@ final class HomeControllerTest extends WebTestCase
         self::assertSelectorNotExists('main a[href="#"]', 'Every link of the home page leads somewhere');
     }
 
+    public function testHeroVideoIsOnlyRequestedOnLargeScreens(): void
+    {
+        $client = static::createClient();
+        $crawler = $client->request('GET', '/');
+
+        $hero = $crawler->filter('.p-hero[data-controller="hero-video"]');
+        self::assertSame('(width >= 64em)', $hero->attr('data-hero-video-media-value'));
+        self::assertMatchesRegularExpression('#^/assets/videos/home/hero-[\w-]+\.mp4$#', (string) $hero->attr('data-hero-video-src-value'));
+        // No source in the markup: phones never download the file
+        self::assertNull($hero->filter('video')->attr('src'));
+        self::assertSelectorExists('.p-hero video[muted][preload="none"]');
+        self::assertSelectorExists('.p-hero button[data-action="hero-video#toggle"][hidden]');
+    }
+
     public function testLoggedInReaderUploadsATrackFromTheHomePage(): void
     {
         $client = static::createClient();

@@ -17,6 +17,7 @@
 
 .p-hero__media,
 .p-hero__media img,
+.p-hero__media video,
 .p-hero__veil {
     position: absolute;
     inset: 0;
@@ -29,6 +30,17 @@
 .p-hero__media video {
     object-fit: cover;
     object-position: 65% center;
+}
+
+/* Background video (large screens, hero-video controller): over the image, shown once it plays */
+.p-hero__media video {
+    object-position: center;
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+
+.p-hero__media.is-playing video {
+    opacity: 1;
 }
 
 /* Mobile: veil from the bottom; desktop: from the left (Figma) */
@@ -74,6 +86,33 @@
     flex-direction: column;
     gap: var(--space-2);
     max-width: 30rem;
+}
+
+.p-hero__credit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* Pause / play of the background video: pause icon while it plays, play icon once paused */
+.p-hero__toggle {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--space-7);
+    height: var(--space-7);
+    padding: 0;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--color-on-dark);
+    font-size: var(--icon-sm);
+}
+
+.p-hero__toggle[hidden],
+.p-hero__toggle[aria-pressed="true"] .p-hero__toggle-pause,
+.p-hero__toggle[aria-pressed="false"] .p-hero__toggle-play {
+    display: none;
 }
 
 /* Desktop: the legend sits in the bottom-right corner, level with the content (Figma) */

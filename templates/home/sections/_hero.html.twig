@@ -1,7 +1,10 @@
-<section class="p-hero t-dark" aria-labelledby="hero-title">
-    {# Background video planned: replace the <img> with a <video> once available. #}
-    <div class="p-hero__media">
+{# Background video on large screens only (hero-video controller): phones keep the image. #}
+<section class="p-hero t-dark" aria-labelledby="hero-title" data-controller="hero-video"
+    data-hero-video-src-value="{{ asset('videos/home/hero.mp4') }}" data-hero-video-media-value="(width >= 64em)"
+    data-hero-video-legend-value="Vidéo · Planeurs en vol sur Condor 3">
+    <div class="p-hero__media" data-hero-video-target="media">
         <img src="{{ asset('images/home/hero.jpg') }}" alt="" fetchpriority="high">
+        <video muted loop playsinline preload="none" aria-hidden="true" data-hero-video-target="video"></video>
     </div>
     <div class="p-hero__veil" aria-hidden="true"></div>
 
@@ -22,7 +25,15 @@
     <div class="l-container p-hero__foot">
         <div class="p-hero__legend">
             <p class="c-tagline c-tagline--plain">L’horizon n’attend que vous.</p>
-            <p class="u-note">Image d’ambiance · Pas une capture de Condor</p>
+            <div class="p-hero__credit">
+                <p class="u-note" data-hero-video-target="legend">Image d’ambiance · Pas une capture de Condor</p>
+                <button type="button" class="p-hero__toggle" aria-pressed="false" hidden
+                    data-hero-video-target="toggle" data-action="hero-video#toggle">
+                    <twig:ux:icon name="pause" class="p-hero__toggle-pause" />
+                    <twig:ux:icon name="play" class="p-hero__toggle-play" />
+                    <span class="u-visually-hidden">Mettre la vidéo en pause</span>
+                </button>
+            </div>
         </div>
     </div>
 </section>

@@ -213,8 +213,7 @@ of a section of the page); a test checks that no link of the page points to `#`.
 Still placeholder (2026-10-16):
 
 - Images: the hero, the cockpit and the community pictures are illustrations ("Image d’ambiance ·
-  Pas une capture de Condor"). The hero background video is planned: replace the `<img>` in
-  `_hero.html.twig` with a `<video>` when available.
+  Pas une capture de Condor").
 - Guides: the club has no guide per version of Condor. Both cards of "La technique, en clair" link
   their chapters to the shared pages (installation, prerequisites per version, connection to the
   server) and their button to "Bien démarrer"; the joystick and display settings of the mock-up have
@@ -223,3 +222,12 @@ Still placeholder (2026-10-16):
   of the mock-up, to review by the committee.
 - Page anchors (`#voler-avec-condor-2`, `#connexion-au-serveur-condor`) come from section titles: if an
   editor renames a section, the link opens the top of the page.
+
+Hero background video: on large screens (64em and more) the hero plays `assets/videos/home/hero.mp4`
+over its image, muted and in a loop (`hero_video` controller). It is the video of the home page of the
+current site (`planeurs-condor3.mp4`, Condor 3 footage) without its Condor 3 logos and the red name of
+each glider: only the shots 17.25–23.25 s, 28.5–40.25 s, 46.75–60.25 s, 86–104 s and 114.5–133 s are
+kept (1 min 08), re-encoded without sound at 24 fps (CRF 32, `+faststart`), 5.6 MB instead of 33. The
+file is requested only on large screens, never when the reader prefers reduced motion or saves data;
+it fades in once it plays, the legend then reads "Vidéo · Planeurs en vol sur Condor 3", and a round
+button pauses it.
