@@ -157,7 +157,18 @@ final class NavigationFixtures extends Fixture implements DependentFixtureInterf
         $position = 0;
         $this->link(MenuLocation::Main, 'Accueil', '/', null, $position++);
         $this->link(MenuLocation::Main, 'Formation', '/formation', null, $position++);
-        $this->link(MenuLocation::Main, 'Voler', '/voler', null, $position++);
+        // "Voler" mega-menu: the sessions of the club and the flights of the members
+        $flyLink = $this->link(MenuLocation::Main, 'Voler', '/voler', null, $position++, null, 'Voler / Vols en réseau');
+        $fly = [
+            ['Vols en réseau', '/voler/vols-reseau', [['Sessions : agenda et résultats', '/sessions', 'Prochains vols, résultats, rejeu'], ['Participer à un vol', '/voler/vols-reseau/participer'], ['Prérequis pour voler', '/voler/vols-reseau/prerequis']]],
+            ['Mes vols', '/vols', [['Déposer une trace', '/vols', 'Analyse, rejeu 3D, comparaison'], ['Mon carnet de vol', '/vols/carnet'], ['Ascendances du club', '/vols/ascendances', 'Les thermiques de tous les vols'], ['Records du club', '/vols/records']]],
+        ];
+        foreach ($fly as $columnIndex => [$label, $url, $links]) {
+            $columnLink = $this->link(MenuLocation::Main, $label, $url, $flyLink, $columnIndex);
+            foreach ($links as $linkIndex => $link) {
+                $this->link(MenuLocation::Main, $link[0], $link[1], $columnLink, $linkIndex, null, $link[2] ?? null);
+            }
+        }
         $clubLink = $this->link(MenuLocation::Main, 'Le Club', null, null, $position++, $club, 'Le Club / Vie associative');
         $this->link(MenuLocation::Main, 'Actualités', '/actualites', null, $position++);
         // Presentation of the site, for the committee (doc/site-tour.md)

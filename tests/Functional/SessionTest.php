@@ -207,9 +207,14 @@ final class SessionTest extends WebTestCase
         self::assertSame($session->getId(), $flight?->getSession()?->getId(), 'Same race id');
         self::assertSame('2026-02-19', $flight->getDate()->format('Y-m-d'), 'A .ftr file takes the day of its session');
 
+        // A reader who flew without dropping the track is invited to, to compare it with the others
+        $this->client->request('GET', '/sessions/'.$session->getId());
+        self::assertSelectorTextContains('.p-session__results .c-callout', 'Déposez votre trace');
+
         $this->client->loginUser($pilot);
         $this->client->request('GET', '/sessions/'.$session->getId());
         self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('.p-session__results .c-callout');
         self::assertSelectorTextContains('.p-session__results', 'Alice Martin');
         self::assertSelectorTextContains('.p-session__results', 'Arrivé');
         self::assertSelectorTextContains('.p-session-settings', 'Remorquage');

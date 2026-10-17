@@ -7,7 +7,9 @@ namespace App\Tests\Functional;
 use App\Entity\Airfield;
 use App\Entity\Flight;
 use App\Entity\FlightComment;
+use App\Entity\FlightPlan;
 use App\Entity\Group;
+use App\Entity\NetworkSession;
 use App\Entity\User;
 use App\Repository\GroupRepository;
 use App\Security\Permission;
@@ -228,6 +230,36 @@ final class FlightTest extends WebTestCase
         self::assertCount(2, $data['flights']);
         self::assertSame($data['flights'][0]['times'], $data['flights'][1]['times'], 'The same track');
         self::assertGreaterThan(20, \count($data['flights'][0]['times']), 'From the start to the finish, 250 m apart');
+    }
+
+    public function testThePilotComparesTheirFlightFromTheResultsOfTheSession(): void
+    {
+        // Two pilots of the same race, on a task from x = 0 (start) to x = 7,000 m
+        $igc = FlightSamples::igc(FlightSamples::glideThermalGlide(), extraHeaders: FlightSamples::igcTask('Tâche test', [0, 0, 7000]));
+        foreach (['JP1' => 'pilote@example.org', 'JP2' => 'autre@example.org'] as $cn => $email) {
+            $file = sys_get_temp_dir().'/task-'.$cn.'.igc';
+            file_put_contents($file, str_replace('HFCIDCOMPETITIONID:JP1', 'HFCIDCOMPETITIONID:'.$cn, $igc));
+            $this->client->loginUser($this->user($email));
+            $crawler = $this->client->request('GET', '/vols');
+            $this->client->request('POST', '/vols', ['_token' => $crawler->filter('input[name="_token"]')->attr('value')], ['trace' => $this->upload($file, 'task.igc')]);
+        }
+        $flights = $this->entityManager->getRepository(Flight::class)->findBy([], ['id' => 'ASC']);
+        $plan = new FlightPlan('C3-c999');
+        $session = (new NetworkSession($plan, new \DateTimeImmutable('2026-02-19'), new \DateTimeImmutable()))
+            ->setResults('resultats.csv', array_map(static fn (int $rank, string $cn): array => ['rank' => $rank, 'status' => 'Finished', 'player' => 'Pilote '.$cn, 'competitionId' => $cn, 'registration' => null, 'glider' => 'Duo Discus', 'distance' => 7000, 'time' => 600, 'speed' => 42.0, 'penalty' => 0.0, 'score' => 1000.0], [1, 2], ['JP1', 'JP2']));
+        $this->entityManager->persist($plan);
+        $this->entityManager->persist($session);
+        foreach ($flights as $flight) {
+            $flight->setSession($session);
+        }
+        $this->entityManager->flush();
+        $this->entityManager->clear();
+
+        // Logged in as the second pilot: a link to compare with the first, none to compare with oneself
+        $this->client->request('GET', '/sessions/'.$session->getId());
+        self::assertSelectorExists('.p-session__results a[href="/vols/'.$flights[1]->getId().'/comparer/'.$flights[0]->getId().'"]');
+        self::assertSelectorNotExists('.p-session__results a[href="/vols/'.$flights[1]->getId().'/comparer/'.$flights[1]->getId().'"]');
+        self::assertSelectorNotExists('.p-session__results .c-callout', 'The track is dropped');
     }
 
     public function testAFlightAloneHasNothingToCompare(): void

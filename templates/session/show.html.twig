@@ -62,6 +62,15 @@
                 {% elseif session.results is empty %}
                     <p class="u-note">Les résultats du serveur ne sont pas encore enregistrés{{ is_granted('SESSION_EDIT', session) ? ' : ajoutez-les en modifiant la session.' : '.' }}</p>
                 {% else %}
+                    {# The track of the reader in this session, to compare it with the others (both past the start line) #}
+                    {% set own = tracks|filter(t => t.owner and t.owner == app.user and (t.analysis.task.turnpoints[1].reached ?? null) is not null)|first %}
+                    {% set dropped = tracks|filter(t => t.owner and t.owner == app.user)|length > 0 %}
+                    {% if not dropped %}
+                        <div class="c-callout">
+                            <p>Vous avez volé ? Déposez votre trace : vous rejouerez la course avec les autres pilotes et pourrez vous comparer à chacun, point par point.</p>
+                            <twig:Ui:Link href="{{ path('app_flight_index') }}">Déposer ma trace</twig:Ui:Link>
+                        </div>
+                    {% endif %}
                     <figure class="c-data-table">
                         <div class="c-data-table__scroll" tabindex="0" role="region" aria-label="Résultats de la session">
                             <table>
@@ -80,7 +89,12 @@
                                             <td>{{ row.speed is not null ? row.speed|number_format(1, ',', ' ') ~ ' km/h' : '—' }}</td>
                                             <td>{{ row.penalty ? row.penalty|number_format(0, ',', ' ') ~ ' pts' : '—' }}</td>
                                             <td>{{ row.score is not null ? row.score|number_format(1, ',', ' ') : '—' }}</td>
-                                            <td>{% if track %}<a href="{{ path('app_flight_show', {id: track.id}) }}">Analyse<span class="u-visually-hidden"> du vol de {{ row.player }}</span></a>{% else %}—{% endif %}</td>
+                                            <td>
+                                                {% if track %}
+                                                    <a href="{{ path('app_flight_show', {id: track.id}) }}">Analyse<span class="u-visually-hidden"> du vol de {{ row.player }}</span></a>
+                                                    {% if own and track != own and (track.analysis.task.turnpoints[1].reached ?? null) is not null %}· <a href="{{ path('app_flight_compare', {id: own.id, other: track.id}) }}">Me comparer<span class="u-visually-hidden"> à {{ row.player }}</span></a>{% endif %}
+                                                {% else %}—{% endif %}
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

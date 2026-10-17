@@ -39,7 +39,7 @@ A `.ftr` track takes the date of its session (`Flight::getDate()`).
 | URL | Route | Access | Content |
 |---|---|---|---|
 | `/sessions` | `app_session_index` | everyone | The coming sessions (cards), then the past ones: filters by year, Condor version, category, open or dedicated; 20 per page |
-| `/sessions/{id}` | `app_session_show` | everyone; results and tracks for logged-in users | Flight plan, date, organiser, links to the FPL sheet and the Condor Club circuit, practical notes; once flown, the results of the server (with a link to the analysis of each pilot whose CN matches an uploaded track), then the replay, podium and ranking of the uploaded tracks |
+| `/sessions/{id}` | `app_session_show` | everyone; results and tracks for logged-in users | Flight plan, date, organiser, links to the FPL sheet and the Condor Club circuit, practical notes; once flown, the results of the server (with a link to the analysis of each pilot whose CN matches an uploaded track and, when the reader's own track of the race passed the start line, "Me comparer" to each other track that did; a reader without a track of the race is invited to drop it), then the replay, podium and ranking of the uploaded tracks |
 | `/sessions/{id}/agenda.ics` | `app_session_ics` | everyone | The session as an iCalendar event ("Ajouter à mon agenda", see [calendar](#calendar)) |
 | `/sessions/agenda.ics` | `app_session_calendar` | everyone | Every session of the last month and every coming one, to subscribe to (`webcal://` link on `/sessions`) |
 | `/sessions/nouvelle` | `app_session_new` | `SESSION_ORGANISE` (members) | Propose a session; the proposer becomes its organiser |
@@ -52,7 +52,10 @@ A `.ftr` track takes the date of its session (`Flight::getDate()`).
 `/vols/{id}/session` now redirects to the session of the flight, or to its flight plan page; flights
 whose task is not a flight plan of the library keep the former page (every flight on the same task).
 
-The dashboard of the member space shows the next two sessions ("On se retrouve en vol"); the home
+Ways in: "Voler" of the main menu is a mega-menu ("Vols en réseau" with "Sessions : agenda et
+résultats", "Mes vols" with the upload, the logbook, the lift map and the records) and the footer
+column "Voler" lists "Sessions et résultats" (migration `Version20261017140000`); each flight card of
+the member space links to its session. The dashboard of the member space shows the next two sessions ("On se retrouve en vol"); the home
 page shows the next one in its banner and the next six in "02 / Les prochains vols" (the latest
 three with their results when none is announced; `upcoming_sessions()` and `recent_sessions()` of
 `SessionExtension`).

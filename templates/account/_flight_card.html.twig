@@ -1,7 +1,7 @@
 {#
     A flight of the account (dashboard, "Mes vols"): launch and visibility tags, date, flight plan,
-    glider, figures, and either a link to its analysis or, with `actions`, the buttons to open it,
-    change its visibility and delete it.
+    glider, figures, its session (results, replay of the race, comparison with the others), and either
+    a link to its analysis or, with `actions`, the buttons to open it, change its visibility and delete it.
 #}
 <article class="p-account__panel p-account-flight">
     <div class="l-cluster">
@@ -16,6 +16,9 @@
         <twig:Ui:Stat label="Distance" value="{{ (flight.distance / 1000)|number_format(0, ',', ' ') }}" unit="km" />
     </div>
     <p class="p-account-flight__speed">Vitesse circuit : {{ flight.taskSpeed ? flight.taskSpeed|number_format(1, ',', ' ') ~ ' km/h' : '— circuit non terminé' }}</p>
+    {% if flight.session %}
+        <twig:Ui:Link href="{{ path('app_session_show', {id: flight.session.id}) }}">Session du {{ flight.session.date|format_date('long', locale: 'fr') }} : résultats et comparaison</twig:Ui:Link>
+    {% endif %}
     {% if actions|default(false) %}
         <div class="l-cluster">
             <twig:Ui:Button href="{{ path('app_flight_show', {id: flight.id}) }}" size="sm" icon="">Voir</twig:Ui:Button>
