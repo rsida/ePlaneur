@@ -23,7 +23,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class MediaController extends AbstractController
 {
     /** Types a browser may display inline; anything else is always downloaded. */
-    private const array INLINE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'application/pdf'];
+    private const array INLINE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'application/pdf', 'video/mp4', 'video/webm'];
 
     #[Route('/media/{id<\d+>}/{name}', name: 'app_media', methods: ['GET'])]
     public function show(#[MapEntity(id: 'id')] Media $media, Request $request, MediaStorage $storage): BinaryFileResponse

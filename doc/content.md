@@ -117,7 +117,7 @@ and selects three related posts the reader is allowed to see.
 | `image` | mediaId, caption | Credit comes from the media |
 | `image_grid` | images (mediaId, caption) | Pictures side by side |
 | `carousel` | title, slides (mediaId, label, caption) | Arrows, thumbnails, keyboard |
-| `video` | url, title, subtitle, posterId, caption | YouTube or Vimeo URL; the player loads on click (youtube-nocookie) |
+| `video` | url, mediaId, title, subtitle, posterId, caption | A video file of the media library (MP4, WebM) read by the player of the browser, with seeking (byte ranges served by `MediaController`) and a download link; or a YouTube or Vimeo URL whose player loads on click (youtube-nocookie). The file wins when both are set |
 | `quote` | text, attribution, reference | With a reference ("Statuts V23 / Article 2"): quotation of a reference text |
 | `excerpt` | title, text, reference | Passage of a reference text under a rule |
 | `list` | items (rich text), ordered | |

@@ -188,14 +188,26 @@ final class ConversionRun
         $this->download($url, null !== $link ? self::text($link) : basename($url));
     }
 
-    /** Uploaded video or audio file: offered for download (the site does not host players). */
+    /**
+     * Uploaded video file: a video block read by the player of the site. An audio file, or a video the
+     * site does not read (not MP4 or WebM), is offered for download.
+     */
     private function recording(\Dom\Element $element): void
     {
         $player = \in_array($element->localName, ['video', 'audio'], true) ? $element : $element->querySelector('video, audio');
         $source = (string) ($player?->getAttribute('src') ?: $player?->querySelector('source')?->getAttribute('src'));
         $caption = $element->querySelector('figcaption');
+        $title = null !== $caption ? self::text($caption) : null;
+        if ('video' === $player?->localName && 1 === preg_match('/\.(mp4|webm)$/i', (string) parse_url($source, \PHP_URL_PATH))) {
+            $mediaId = $this->context->media($source, null);
+            if (null !== $mediaId) {
+                $this->add(new B\VideoBlock(mediaId: $mediaId, caption: '' !== $title ? $title : null));
+
+                return;
+            }
+        }
         $kind = 'audio' === $player?->localName ? 'Enregistrement audio' : 'Vidéo';
-        $this->download($source, null !== $caption ? self::text($caption) : $kind.' : '.basename($source));
+        $this->download($source, $title ?? $kind.' : '.basename($source));
     }
 
     private function download(string $url, string $title): void

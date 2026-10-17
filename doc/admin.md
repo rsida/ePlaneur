@@ -22,7 +22,7 @@ Permissions and default groups are described in [accounts](accounts.md).
 | Articles | `/admin/post` | `POST_CREATE` or `POST_EDIT` | List with state badge (Brouillon, Programmé, Publié) and "À la une" column; "État" filter (`Filter\PublicationStateFilter`) and "À la une" filter; creating and editing open the [block editor](#block-editor). `POST_CREATE` edits one's own posts only, `POST_EDIT` every post (`PostVoter`, `POST_WRITE`); `POST_PUBLISH` sets the publication date; `POST_DELETE` deletes |
 | Pages | `/admin/page` | `PAGE_MANAGE` | The page tree (folding, search), not a paginated table; "Ajouter une sous-page" creates a page under another; creating and editing open the block editor. Saving sets the "Mis à jour le" date to today unless another date was chosen. A page with sub-pages cannot be deleted |
 | Catégories d'articles | `/admin/category` | `CATEGORY_MANAGE` | Name, slug (generated from the name), description |
-| Médiathèque | `/admin/media` | `MEDIA_MANAGE` | "Téléverser" adds several files at once (images, PDF, text, ZIP; 20 MB each) with their visibility; alt text and credit are edited afterwards. A file used by a document or as a post cover cannot be deleted |
+| Médiathèque | `/admin/media` | `MEDIA_MANAGE` | "Téléverser" adds several files at once (images, PDF, text, ZIP: 20 MB each; MP4 and WebM videos: 200 MB each) with their visibility; alt text and credit are edited afterwards. A file used by a document or as a post cover cannot be deleted |
 | Documents officiels | `/admin/document` | `DOCUMENT_MANAGE` | The file is chosen from the media library; dated mentions = one line each; the file takes the document's visibility |
 | Catégories de documents | `/admin/document-category` | `DOCUMENT_MANAGE` | Name, identifier, order |
 | Menus | `/admin/menu-item` | `MENU_MANAGE` | Header (3 levels) and footer links: page or address, note, order, visibility; the parent must be in the same menu |
@@ -88,7 +88,7 @@ How it works:
   médiathèque", "Téléverser") and the toolbar of a media block. "Médiathèque" tab: search on name,
   alt text and credit, type filter (forced by the field: images, PDF), 48 files per page, details of
   the selected file; alt text and credit are saved in the library as soon as they change.
-  "Téléverser" tab: drop zone or file choice, same formats and size as the media library (20 MB);
+  "Téléverser" tab: drop zone or file choice, same formats and sizes as the media library (20 MB, 200 MB for a video);
   uploaded files take the access of the edited content ("Comme ce contenu", default) or are open to
   everyone ("Tout le monde"); the choice is only offered when the content is restricted. Changing the library
   (upload, alt text, credit) needs `MEDIA_MANAGE`; without it the window only lets users choose.

@@ -69,17 +69,22 @@ final class HtmlConverterTest extends KernelTestCase
         self::assertSame('Communiquer avec Discord', $heading->text, 'A spoiler with headings or pictures is shown open');
     }
 
-    public function testUploadedRecordingsAreOfferedForDownload(): void
+    public function testUploadedVideosArePlayedAndRecordingsDownloaded(): void
     {
         $blocks = static::getContainer()->get(HtmlConverter::class)->convert(
             '<figure class="wp-block-audio"><audio controls src="https://club.eplaneur.fr/wp-content/uploads/reunion.mp3"></audio><figcaption>Enregistrement de la réunion</figcaption></figure>'
-            .'<figure class="wp-block-video"><video controls src="https://club.eplaneur.fr/wp-content/uploads/club.mp4"></video></figure>',
+            .'<figure class="wp-block-video"><video controls src="https://club.eplaneur.fr/wp-content/uploads/club.avi"></video></figure>'
+            .'<figure class="wp-block-video"><video controls src="https://club.eplaneur.fr/wp-content/uploads/club.mp4"></video><figcaption>Le club en deux minutes</figcaption></figure>',
             $this->context(),
         );
 
-        self::assertCount(1, $blocks);
+        self::assertCount(2, $blocks);
         self::assertInstanceOf(B\DownloadsBlock::class, $blocks[0]);
-        self::assertSame(['Enregistrement de la réunion', 'Vidéo : club.mp4'], array_map(static fn (B\DownloadItem $item): string => $item->title, $blocks[0]->files));
+        self::assertSame(['Enregistrement de la réunion', 'Vidéo : club.avi'], array_map(static fn (B\DownloadItem $item): string => $item->title, $blocks[0]->files), 'Audio and formats the player does not read are downloaded');
+        self::assertInstanceOf(B\VideoBlock::class, $blocks[1]);
+        self::assertNotNull($blocks[1]->mediaId, 'An MP4 is read by the player of the site');
+        self::assertNull($blocks[1]->url);
+        self::assertSame('Le club en deux minutes', $blocks[1]->caption);
     }
 
     private function context(): ConversionContext

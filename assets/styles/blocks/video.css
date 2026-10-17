@@ -1,5 +1,6 @@
 /*
- * YouTube or Vimeo video loaded on click (Block:Video).
+ * Video (Block:Video): a file of the media library in the player of the browser, or a YouTube or
+ * Vimeo video loaded on click.
  */
 
 .c-video {
@@ -17,6 +18,12 @@
     border-radius: var(--block-radius);
     background-color: var(--color-dark);
     color: var(--color-on-dark);
+}
+
+.c-video__file {
+    display: block;
+    width: 100%;
+    object-fit: contain;
 }
 
 .c-video__player > * {

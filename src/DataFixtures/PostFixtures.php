@@ -153,7 +153,7 @@ final class PostFixtures extends Fixture implements DependentFixtureInterface
             new B\SectionBlock('Observer d’abord. Essayer ensuite.', 'Premières ailes',
                 'Une image, une séquence, un détail : varier les supports aide à comprendre sans multiplier les consignes.', 'Voir le vol autrement'),
             new B\TextBlock('<p>Avant votre première séance, imaginez le déroulé du vol. Où porter le regard au décollage ? Quand consulter la vitesse ? Comment retrouver un terrain connu ? La vidéo ci-dessous montre la place qu’un tutoriel peut prendre dans un article.</p>'),
-            new B\VideoBlock('https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'Les premières minutes dans le cockpit', 'Du regard extérieur aux premiers virages', $this->id($poster),
+            new B\VideoBlock('https://www.youtube.com/watch?v=aqz-KE-bpKQ', null, 'Les premières minutes dans le cockpit', 'Du regard extérieur aux premiers virages', $this->id($poster),
                 'Vidéo d’exemple (Big Buck Bunny, Blender Foundation) en attendant un vrai tutoriel du club.'),
             new B\HeadingBlock('Le détail et la vue d’ensemble'),
             new B\TextBlock('<p>On apprend autant en regardant le cockpit qu’en observant ce qui l’entoure. Alternez ces deux échelles : les instruments racontent l’énergie du planeur ; le paysage raconte les possibilités du vol.</p>'),

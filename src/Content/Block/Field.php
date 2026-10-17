@@ -18,7 +18,7 @@ final readonly class Field
      * @param array<string, string> $choices value => label, for the "choice" widget
      * @param class-string|null     $item    item class of an "items" list
      * @param bool                  $inline  edited in place in the canvas, hidden from the settings panel
-     * @param string|null           $accept  media kind for the "media" widget: image, pdf or file
+     * @param string|null           $accept  media kind for the "media" widget: image, pdf, video or file
      */
     public function __construct(
         public string $label,

@@ -137,14 +137,14 @@ export class Canvas {
             );
         }
 
-        const noun = media.accept === 'image' ? 'une image' : (media.accept === 'pdf' ? 'un PDF' : 'un fichier');
+        const noun = { image: 'une image', pdf: 'un PDF', video: 'une vidéo' }[media.accept] ?? 'un fichier';
 
         return this.element('div', { class: 'ep-block__empty ep-block__empty--media' },
             this.icon(schema.icon),
             this.element('strong', {}, `Ajoutez ${noun} à votre contenu`),
             this.element('button', { type: 'button', class: 'ep-canvas-button ep-canvas-button--primary', 'data-ep-pick': 'library' }, this.icon('images'), this.element('span', {}, 'Choisir dans la médiathèque')),
             this.handlers.canUpload() ? this.element('button', { type: 'button', class: 'ep-canvas-button', 'data-ep-pick': 'upload' }, this.icon('upload'), this.element('span', {}, 'Téléverser')) : null,
-            this.element('span', { class: 'ep-block__empty-note' }, `${media.accept === 'image' ? 'JPG, PNG, WebP' : 'Images, PDF, texte ou ZIP'} · 20 Mo maximum · les autres réglages sont à droite`),
+            this.element('span', { class: 'ep-block__empty-note' }, `${{ image: 'JPG, PNG, WebP · 20 Mo maximum', video: 'MP4, WebM · 200 Mo maximum, ou une adresse YouTube' }[media.accept] ?? 'Images, PDF, texte ou ZIP · 20 Mo maximum'} · les autres réglages sont à droite`),
         );
     }
 

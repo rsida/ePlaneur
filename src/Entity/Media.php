@@ -109,6 +109,12 @@ class Media implements RestrictedContentInterface
         return str_starts_with($this->mimeType, 'image/');
     }
 
+    /** A video the player of the site reads (MP4 or WebM). */
+    public function isVideo(): bool
+    {
+        return \in_array($this->mimeType, ['video/mp4', 'video/webm'], true);
+    }
+
     public function isPdf(): bool
     {
         return 'application/pdf' === $this->mimeType;

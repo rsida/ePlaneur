@@ -76,7 +76,8 @@ Shortcodes Ultimate spoilers):
 | Table | Table, the first row as column titles |
 | File | Files to download, consecutive ones merged |
 | YouTube or Vimeo embed | Video |
-| Uploaded video or audio (MP4, MP3...) | Files to download (the site does not host players) |
+| Uploaded video (MP4, WebM) | Video, read by the player of the site, the caption kept |
+| Uploaded audio, or a video in another format (MP3, AVI...) | Files to download |
 | Spoiler, accordion, `details` | Questions (FAQ); a spoiler holding headings or pictures is shown open: its title as a sub-title, then its content |
 | Quote | Quote |
 | Buttons | Links |

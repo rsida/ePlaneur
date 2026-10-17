@@ -24,7 +24,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -63,7 +62,8 @@ final class EditorDataController extends AbstractController
         match ($request->query->getString('type')) {
             'image' => $qb->andWhere('media.mimeType LIKE :type')->setParameter('type', 'image/%'),
             'pdf' => $qb->andWhere('media.mimeType = :type')->setParameter('type', 'application/pdf'),
-            'other' => $qb->andWhere('media.mimeType NOT LIKE :image AND media.mimeType != :pdf')->setParameter('image', 'image/%')->setParameter('pdf', 'application/pdf'),
+            'video' => $qb->andWhere('media.mimeType LIKE :type')->setParameter('type', 'video/%'),
+            'other' => $qb->andWhere('media.mimeType NOT LIKE :image AND media.mimeType != :pdf AND media.mimeType NOT LIKE :video')->setParameter('image', 'image/%')->setParameter('pdf', 'application/pdf')->setParameter('video', 'video/%'),
             default => null,
         };
 
@@ -108,12 +108,12 @@ final class EditorDataController extends AbstractController
 
         $stored = [];
         $errors = [];
-        $constraint = new Assert\File(maxSize: '20M', mimeTypes: MediaUploadType::MIME_TYPES, mimeTypesMessage: 'Ce type de fichier n’est pas accepté.', maxSizeMessage: 'Le fichier dépasse 20 Mo.');
+        $constraints = MediaUploadType::fileConstraints();
         foreach ($request->files->all('files') as $file) {
             if (!$file instanceof UploadedFile) {
                 continue;
             }
-            $violations = $validator->validate($file, $constraint);
+            $violations = $validator->validate($file, $constraints);
             if (\count($violations) > 0) {
                 $errors[] = \sprintf('%s : %s', $file->getClientOriginalName(), $violations[0]->getMessage());
                 continue;
@@ -176,7 +176,12 @@ final class EditorDataController extends AbstractController
         return [
             'id' => $media->getId(),
             'name' => $media->getOriginalName(),
-            'type' => $media->isImage() ? 'image' : ($media->isPdf() ? 'pdf' : 'other'),
+            'type' => match (true) {
+                $media->isImage() => 'image',
+                $media->isPdf() => 'pdf',
+                $media->isVideo() => 'video',
+                default => 'other',
+            },
             'format' => $media->getFormat(),
             'size' => $this->mediaHelpers->fileSize($media->getSize()),
             'width' => $media->getWidth(),

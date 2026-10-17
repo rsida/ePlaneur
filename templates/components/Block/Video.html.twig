@@ -1,31 +1,51 @@
-{# YouTube/Vimeo video: poster first, the player (and its cookies) only after a click (`video` controller). #}
+{#
+    Video. A file of the media library is read by the player of the browser (the file is served with
+    its access rules, seeking included). YouTube/Vimeo: poster first, the player (and its cookies) only
+    after a click (`video` controller).
+#}
 {% props placed %}
 {% set data = placed.block %}
 {% set poster = media(data.posterId) %}
+{% set file = media(data.mediaId) %}
+{% set file = file and file.video ? file : null %}
 {% set embed = data.embedUrl %}
 <figure class="c-video">
-    <div class="c-video__player" data-controller="video" data-video-src-value="{{ embed }}" data-video-title-value="{{ data.title ?: 'Vidéo' }}">
-        {% if poster %}<img class="c-video__poster" src="{{ image_url(poster, 'content') }}" alt="" loading="lazy">{% endif %}
-        {% if embed %}
-            <button type="button" class="c-video__play" data-action="video#play">
-                <twig:ux:icon name="play" />
-                <span class="u-visually-hidden">Lire la vidéo{% if data.title %} « {{ data.title }} »{% endif %}{% if data.provider %} ({{ data.provider }}){% endif %}</span>
-            </button>
-        {% else %}
-            <a class="c-video__play" href="{{ data.url|safe_url }}" rel="noopener">
-                <twig:ux:icon name="play" />
-                <span class="u-visually-hidden">Voir la vidéo</span>
-            </a>
-        {% endif %}
-        {% if data.title or data.subtitle %}
-            <div class="c-video__info">
-                {% if data.title %}<p class="c-video__title">{{ data.title }}</p>{% endif %}
-                {% if data.subtitle %}<p class="c-video__subtitle">{{ data.subtitle }}</p>{% endif %}
-            </div>
-        {% endif %}
-    </div>
+    {% if file %}
+        <video class="c-video__player c-video__file" controls preload="metadata" playsinline
+            {% if poster %}poster="{{ image_url(poster, 'content') }}"{% endif %}
+            {% if data.title %}aria-label="{{ data.title }}"{% endif %}>
+            <source src="{{ media_url(file) }}" type="{{ file.mimeType }}">
+            <a href="{{ media_url(file, true) }}">Télécharger la vidéo</a>
+        </video>
+    {% else %}
+        <div class="c-video__player" data-controller="video" data-video-src-value="{{ embed }}" data-video-title-value="{{ data.title ?: 'Vidéo' }}">
+            {% if poster %}<img class="c-video__poster" src="{{ image_url(poster, 'content') }}" alt="" loading="lazy">{% endif %}
+            {% if embed %}
+                <button type="button" class="c-video__play" data-action="video#play">
+                    <twig:ux:icon name="play" />
+                    <span class="u-visually-hidden">Lire la vidéo{% if data.title %} « {{ data.title }} »{% endif %}{% if data.provider %} ({{ data.provider }}){% endif %}</span>
+                </button>
+            {% elseif data.url %}
+                <a class="c-video__play" href="{{ data.url|safe_url }}" rel="noopener">
+                    <twig:ux:icon name="play" />
+                    <span class="u-visually-hidden">Voir la vidéo</span>
+                </a>
+            {% endif %}
+            {% if data.title or data.subtitle %}
+                <div class="c-video__info">
+                    {% if data.title %}<p class="c-video__title">{{ data.title }}</p>{% endif %}
+                    {% if data.subtitle %}<p class="c-video__subtitle">{{ data.subtitle }}</p>{% endif %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
     <figcaption class="c-block-figure__caption">
+        {% if file and (data.title or data.subtitle) %}<span><strong>{{ data.title }}</strong>{{ data.title and data.subtitle ? ' · ' : '' }}{{ data.subtitle }}</span>{% endif %}
         {% if data.caption %}<span>{{ data.caption }}</span>{% endif %}
-        {% if data.provider %}<span>La vidéo est hébergée par {{ data.provider }} ; le lecteur se charge au clic.</span>{% endif %}
+        {% if file %}
+            <span><a href="{{ media_url(file, true) }}" download>Télécharger la vidéo</a> ({{ file.format }}, {{ file.size|file_size }})</span>
+        {% elseif data.provider %}
+            <span>La vidéo est hébergée par {{ data.provider }} ; le lecteur se charge au clic.</span>
+        {% endif %}
     </figcaption>
 </figure>

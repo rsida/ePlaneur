@@ -8,7 +8,13 @@
  * The markup is in templates/admin/editor/_media_dialog.html.twig; the data comes from
  * EditorDataController (/admin/editor/media...).
  */
-const TYPE_LABELS = { image: 'Images', pdf: 'PDF', other: 'Autres fichiers' };
+const TYPE_LABELS = { image: 'Images', pdf: 'PDF', video: 'Vidéos', other: 'Autres fichiers' };
+
+/** Formats accepted for upload, by kind of the field */
+const FORMATS = {
+    image: 'JPG, PNG, WebP, GIF, SVG · 20 Mo maximum par fichier',
+    video: 'MP4, WebM · 200 Mo maximum par vidéo',
+};
 
 export class MediaPicker {
     /**
@@ -74,7 +80,7 @@ export class MediaPicker {
     }
 
     /**
-     * @param {{accept?: string|null, tab?: string, current?: number|null}} options accept: image, pdf or file
+     * @param {{accept?: string|null, tab?: string, current?: number|null}} options accept: image, pdf, video or file
      * @returns {Promise<object|null>} the chosen media, or null
      */
     open({ accept = null, tab = 'library', current = null } = {}) {
@@ -85,7 +91,7 @@ export class MediaPicker {
         type.value = this.accept ?? '';
         type.disabled = this.accept !== null;
         this.part('search').value = '';
-        this.part('formats').textContent = this.accept === 'image' ? 'JPG, PNG, WebP, GIF, SVG · 20 Mo maximum par fichier' : 'Images, PDF, texte ou ZIP · 20 Mo maximum par fichier';
+        this.part('formats').textContent = FORMATS[this.accept] ?? 'Images, PDF, texte, ZIP ou vidéo · 20 Mo maximum par fichier, 200 Mo par vidéo';
         this.part('upload-messages').replaceChildren();
         this.showDetails(null);
         this.showTab(this.part('files') ? tab : 'library');

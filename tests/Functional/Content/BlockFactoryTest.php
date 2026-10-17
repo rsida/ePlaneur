@@ -70,6 +70,8 @@ final class BlockFactoryTest extends KernelTestCase
         self::assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0', (new VideoBlock('https://youtu.be/dQw4w9WgXcQ'))->embedUrl());
         self::assertSame('https://player.vimeo.com/video/76979871?autoplay=1&dnt=1', (new VideoBlock('https://vimeo.com/76979871'))->embedUrl());
         self::assertNull((new VideoBlock('https://example.org/video.mp4'))->embedUrl());
+        self::assertNull((new VideoBlock('https://youtu.be/dQw4w9WgXcQ', mediaId: 12))->embedUrl(), 'A file of the media library wins over the address');
+        self::assertSame([12, 3], (new VideoBlock(mediaId: 12, posterId: 3))->mediaIds());
     }
 
     public function testEveryBlockTypeHasAComponent(): void

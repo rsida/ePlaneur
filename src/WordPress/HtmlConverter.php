@@ -21,7 +21,8 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
  * | table | table |
  * | file | downloads (consecutive ones merged) |
  * | YouTube / Vimeo embed | video |
- * | uploaded video or audio (MP4, MP3...) | downloads (the site does not host players) |
+ * | uploaded video (MP4, WebM) | video (player of the site) |
+ * | uploaded audio, other video formats (MP3...) | downloads |
  * | spoiler, accordion, details | questions (FAQ); files and pictures inside follow it |
  * | quote | quote |
  * | buttons | links |

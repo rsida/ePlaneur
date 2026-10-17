@@ -101,6 +101,14 @@ Credentials are applied when the volume is created only (see [installation](inst
 | `WORDPRESS_USER` | empty | WordPress administrator login; set it in `.env.local` |
 | `WORDPRESS_APP_PASSWORD` | empty | Its application password (WordPress profile › Application passwords), in `.env.local` only. Without it, reserved content is not imported (see [WordPress import](wordpress-import.md)) |
 
+## Upload size
+
+The media library accepts files of 20 MB and videos (MP4, WebM) of 200 MB (`MediaUploadType`). PHP
+(`docker/php/conf.d/app.ini`: `upload_max_filesize = 200M`, `post_max_size = 210M`) and nginx
+(`docker/nginx/symfony.conf`: `client_max_body_size 210M`) let such a request through, in dev and in
+prod. Change the three together: in dev the nginx file is mounted (`docker compose restart nginx`)
+and the PHP one is copied into the image (`make build`, then `make up`).
+
 ## Examples
 
 Dev, another domain and no conflict with a stack already using 80/443:

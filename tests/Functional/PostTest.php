@@ -54,7 +54,7 @@ final class PostTest extends WebTestCase
             new B\TabsBlock([new B\Tab('Condor 3', 'Base Condor 3'), new B\Tab('Condor 2', 'Base Condor 2')]),
             new B\ChecklistBlock('Checklist', ['Un', 'Deux']),
             new B\SectionBlock('Deuxième partie'),
-            new B\VideoBlock('https://youtu.be/aqz-KE-bpKQ', 'Démo'),
+            new B\VideoBlock('https://youtu.be/aqz-KE-bpKQ', title: 'Démo'),
             new B\DownloadsBlock([new B\DownloadItem((int) $file->getId(), 'Ma checklist')]),
             new B\FaqBlock([new B\FaqItem('Question ?', '<p>Réponse.</p>')]),
         ], outro: [new B\TakeawaysBlock('À retenir', points: ['Point'], navTitle: 'L’essentiel')]);
@@ -80,6 +80,24 @@ final class PostTest extends WebTestCase
         self::assertSelectorTextContains('.c-download__meta', 'TXT');
         self::assertSelectorExists('details.c-faq__item[open]');
         self::assertSelectorTextContains('.c-takeaways', 'Point');
+    }
+
+    public function testVideoFileIsReadByThePlayerOfTheSite(): void
+    {
+        // Only the description of the file is needed to render the player
+        $video = new Media('2026/10/club.mp4', 'Club ePlaneur.mp4', 'video/mp4', 2_000_000);
+        $this->entityManager->persist($video);
+        $this->entityManager->flush();
+        $this->createPost('video-du-club', [
+            new B\VideoBlock('https://youtu.be/aqz-KE-bpKQ', mediaId: $video->getId(), title: 'Le club en vidéo'),
+        ]);
+
+        $this->client->request('GET', '/actualites/video-du-club');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('video[controls][aria-label="Le club en vidéo"] source[type="video/mp4"][src="/media/'.$video->getId().'/club-eplaneur.mp4"]');
+        self::assertSelectorNotExists('[data-controller="video"]', 'The file wins over the YouTube address');
+        self::assertSelectorExists('.c-video figcaption a[href="/media/'.$video->getId().'/club-eplaneur.mp4?download=1"]');
     }
 
     public function testBrokenBlocksAreSkippedWithoutBreakingThePage(): void
