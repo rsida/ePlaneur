@@ -162,69 +162,99 @@
         {% endif %}
 
         <div class="p-flight__viewer" data-flight-viewer-target="viewer">
-            {# What the symbols of the map (in 3D mostly) and of the timeline mean #}
+            {# What the drawings of the map (from above and in 3D), the instruments and the timeline mean #}
             <details class="p-flight__key">
                 <summary>
                     <twig:ux:icon name="info" class="p-flight__key-icon" />
-                    <span><strong>Légende</strong> : que veulent dire les cylindres, les flèches et les repères de la frise ?</span>
+                    <span><strong>Légende</strong> : ce que montrent la carte, la 3D, les instruments et la frise</span>
                     <twig:ux:icon name="chevron-down" class="p-flight__key-chevron" />
                 </summary>
                 <div class="p-flight__key-columns">
-                    <section>
-                        <h2 class="p-flight__key-title">Sur la carte en 3D</h2>
-                        <ul class="p-flight__key-list">
-                            <li><span class="p-flight__swatch p-flight__swatch--column" aria-hidden="true"><i style="--swatch: var(--color-climb-1)"></i><i style="--swatch: var(--color-climb-2)"></i><i style="--swatch: var(--color-climb-3)"></i><i style="--swatch: var(--color-climb-4)"></i></span>
-                                <span><strong>Vos thermiques</strong> : un cylindre fin à la position moyenne de vos spirales, de l’entrée à la sortie, plus foncé quand ça monte plus (moins de 1, 1 à 2, 2 à 3, plus de 3 m/s).</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--wide" aria-hidden="true"></span>
-                                <span><strong>Thermiques des autres pilotes de la course</strong> : un gros cylindre translucide là où ils ont spiralé, de leur entrée la plus basse à leur sortie la plus haute ; les petits sont les ascendances qu’ils ont traversées sans tourner.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--missed" aria-hidden="true"></span>
-                                <span><strong>Thermique manqué</strong> (jaune) : un thermique d’un autre pilote, passé à moins de 500 m de son centre, à une altitude où il marchait, sans y tourner.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--slope" aria-hidden="true"></span>
-                                <span><strong>Pente ou onde</strong> : bande orange sur la trace et flèches orange montant du côté du vent, là où vous avez monté en ligne droite.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--wave" aria-hidden="true"></span>
-                                <span><strong>Onde</strong> (violet) : montée en ligne droite loin au-dessus du relief, sans pente porteuse à côté.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--slopes" aria-hidden="true"></span>
-                                <span><strong>Pentes prévues</strong> (cases orange au sol, bouton « Pentes ») : faces tournées vers le vent de la tâche et assez raides pour porter, plus soutenues là où ça doit monter fort. Un modèle, pas ce que Condor a fait.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--crossing" aria-hidden="true"></span>
-                                <span><strong>Ascendance traversée sans spiraler</strong> : flèche claire montant jusqu’à la trace, aussi longue que la hauteur gagnée (vol en dauphin).</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--sink" aria-hidden="true"></span>
-                                <span><strong>Forte descendance</strong> : flèche bleue vers le bas, là où l’air descendait à plus de 2 m/s (netto).</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--wind" aria-hidden="true"></span>
-                                <span><strong>Manche à air</strong> : flèche blanche au sommet de chaque thermique, dans le sens où va le vent, plus longue quand il est fort (vitesse affichée de près).</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--fields" aria-hidden="true"></span>
-                                <span><strong>Terrains</strong> (bouton « Terrains ») : en vert ceux qu’on rejoint en plané à la finesse de sécurité (70 % de la finesse max du planeur, arrivée à 200 m au-dessus), en gris les autres ; le cercle vert autour du planeur est le rayon de plané au-dessus du sol. En ligne droite, sans le relief ni le vent.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--ghost" aria-hidden="true"></span>
-                                <span><strong>Fantôme</strong> (menu « Fantôme ») : le meilleur autre pilote de la course, ou votre meilleur vol sur la même tâche un autre jour, parti au même moment que vous, avec sa traîne ; l’écart le long du circuit est sur son drapeau et à côté de la carte.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--speed" aria-hidden="true"></span>
-                                <span><strong>Trace : vitesse / MacCready</strong> : chaque transition en bleu si elle était trop lente, en vert à la bonne vitesse, en orange trop rapide, pour la montée moyenne de vos thermiques (polaire du planeur, vent retiré).</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--curtain" aria-hidden="true"></span>
-                                <span><strong>Rideau et ombre</strong> : des traits vers le sol aux couleurs de la trace, pour lire la hauteur, et l’ombre de la trace sur le relief.</span></li>
-                        </ul>
-                    </section>
-                    <section>
-                        <h2 class="p-flight__key-title">Sous la barre de lecture</h2>
-                        <ul class="p-flight__key-list">
-                            <li><span class="p-flight__swatch p-flight__swatch--band" aria-hidden="true"></span>
-                                <span><strong>Thermique</strong> : bande de la couleur de sa montée ; hachurée pendant le centrage et en haut quand il monte moins que votre moyenne.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--lift" aria-hidden="true"></span>
-                                <span><strong>Pente</strong> (orange) ou <strong>onde</strong> (violet).</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--too-low" aria-hidden="true"></span>
-                                <span><strong>Trop bas</strong> : moins de 150 m au-dessus du sol, loin de toute pente prévue (le vol de pente se fait à cette hauteur), hors décollage et arrivée.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--tick" aria-hidden="true"></span>
-                                <span><strong>Ascendance traversée</strong> (trait en haut) et <strong>forte descendance</strong> (trait bleu en bas).</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--no-field" aria-hidden="true"></span>
-                                <span><strong>Aucun terrain à portée</strong> (trait gris foncé en haut) pendant 30 s ou plus.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--comment" aria-hidden="true"></span>
-                                <span><strong>Commentaire</strong> à un instant du vol (bulle bleue ; sur la trace, une étiquette « Commentaire ») : survolez la bulle pour le lire, cliquez pour y aller.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--low" aria-hidden="true"></span>
-                                <span><strong>Point bas</strong> : bien plus bas que vos entrées de thermique habituelles.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--missed-tick" aria-hidden="true"></span>
-                                <span><strong>Thermique de la course manqué</strong>, au moment où vous en étiez le plus près.</span></li>
-                            <li><span class="p-flight__swatch p-flight__swatch--final" aria-hidden="true"></span>
-                                <span><strong>Transition finale</strong>, et au-dessus de la barre les points de virage.</span></li>
-                        </ul>
-                        <p class="p-flight__key-hint">Survolez un repère pour ses valeurs, cliquez pour y aller.</p>
-                    </section>
+                    <div>
+                        <section>
+                            <h2 class="p-flight__key-title">Sur la carte, vue de dessus et en 3D</h2>
+                            <ul class="p-flight__key-list">
+                                <li><span class="p-flight__swatch p-flight__swatch--flag" aria-hidden="true">{{ (flight.competitionId ?: flight.pilot)|slice(0, 3) }}</span>
+                                    <span><strong>Le planeur et son étiquette</strong> : vitesse sol ; ↑ ou ↓ le vario du moment ; ø la montée moyenne des 30 dernières secondes ; l’altitude ; en 3D, la hauteur au-dessus du sol (« m sol »).</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--speed" aria-hidden="true"></span>
+                                    <span><strong>Couleur de la trace</strong> : au choix dans « Affichage » (vario, altitude, netto, vitesse / MacCready) ; l’échelle est en bas de la carte. <strong>Vitesse / MacCready</strong> : chaque transition en bleu si elle était trop lente, en vert à la bonne vitesse, en orange trop rapide, pour la montée moyenne de vos thermiques (polaire du planeur, vent retiré).</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--task" aria-hidden="true"></span>
+                                    <span><strong>Circuit</strong> : la ligne en pointillés relie les points de virage (ronds foncés) ; le cercle en pointillés autour d’un point est la zone à toucher ; un trait épais est une ligne de départ ou d’arrivée.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--reach" aria-hidden="true"></span>
+                                    <span><strong>Cercle vert autour du planeur : rayon de plané</strong>. Jusqu’où il peut aller en plané d’ici, à la finesse de sécurité (70 % de la finesse max du planeur) en gardant 200 m de marge au-dessus du sol. En ligne droite, sans le relief ni le vent : un ordre d’idée, pas une garantie.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--fields" aria-hidden="true"></span>
+                                    <span><strong>Terrains</strong> : en vert ceux qu’on rejoint en plané de là où est le planeur (arrivée à 200 m au-dessus), en gris les autres. Le cercle et les terrains se masquent avec le bouton des calques.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--slopes" aria-hidden="true"></span>
+                                    <span><strong>Pentes prévues</strong> (cases orange au sol) : faces tournées vers le vent de la tâche et assez raides pour porter, plus soutenues là où ça doit monter fort. Un modèle, pas ce que Condor a fait.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--wide" aria-hidden="true"></span>
+                                    <span><strong>Thermiques des autres pilotes de la course</strong> : un gros cylindre translucide là où ils ont spiralé, de leur entrée la plus basse à leur sortie la plus haute ; les petits sont les ascendances qu’ils ont traversées sans tourner.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--missed" aria-hidden="true"></span>
+                                    <span><strong>Thermique manqué</strong> (jaune) : un thermique d’un autre pilote, passé à moins de 500 m de son centre, à une altitude où il marchait, sans y tourner.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--ghost" aria-hidden="true"></span>
+                                    <span><strong>Fantôme</strong> (menu « Affichage ») : le meilleur autre pilote de la course, ou votre meilleur vol sur la même tâche un autre jour, parti au même moment que vous, avec sa traîne ; l’écart le long du circuit est sur son drapeau et à côté de la carte.</span></li>
+                            </ul>
+                            <p class="p-flight__key-hint">Le reste (routes, zones hachurées, réserves…) vient du fond de carte, pas de l’analyse.</p>
+                        </section>
+                        <section>
+                            <h2 class="p-flight__key-title">En 3D seulement</h2>
+                            <ul class="p-flight__key-list">
+                                <li><span class="p-flight__swatch p-flight__swatch--zone" aria-hidden="true"></span>
+                                    <span><strong>Circuit en 3D</strong> : un cylindre bleu clair translucide à chaque point de virage, du sol au plafond ; les lignes de départ et d’arrivée sont des murs bleu clair entre leurs altitudes mini et maxi (un départ trop haut ou une arrivée trop basse se voit) ; la ligne verte en hauteur relie les points.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--column" aria-hidden="true"><i style="--swatch: var(--color-climb-1)"></i><i style="--swatch: var(--color-climb-2)"></i><i style="--swatch: var(--color-climb-3)"></i><i style="--swatch: var(--color-climb-4)"></i></span>
+                                    <span><strong>Vos thermiques</strong> : un cylindre fin à la position moyenne de vos spirales, de l’entrée à la sortie, plus foncé quand ça monte plus (moins de 1, 1 à 2, 2 à 3, plus de 3 m/s).</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--slope" aria-hidden="true"></span>
+                                    <span><strong>Pente ou onde</strong> : bande orange sur la trace et flèches orange montant du côté du vent, là où vous avez monté en ligne droite.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--wave" aria-hidden="true"></span>
+                                    <span><strong>Onde</strong> (violet) : montée en ligne droite loin au-dessus du relief, sans pente porteuse à côté.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--crossing" aria-hidden="true"></span>
+                                    <span><strong>Ascendance traversée sans spiraler</strong> : flèche claire montant jusqu’à la trace, aussi longue que la hauteur gagnée (vol en dauphin).</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--sink" aria-hidden="true"></span>
+                                    <span><strong>Forte descendance</strong> : flèche bleue vers le bas, là où l’air descendait à plus de 2 m/s (netto).</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--arrow p-flight__swatch--wind" aria-hidden="true"></span>
+                                    <span><strong>Manche à air</strong> : flèche blanche au sommet de chaque thermique, dans le sens où va le vent, plus longue quand il est fort (vitesse affichée de près).</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--stem" aria-hidden="true"></span>
+                                    <span><strong>Trait sous le planeur</strong> : du planeur jusqu’au sol, pour voir sa hauteur.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--curtain" aria-hidden="true"></span>
+                                    <span><strong>Rideau et ombre</strong> : des traits vers le sol aux couleurs de la trace, pour lire la hauteur, et l’ombre de la trace sur le relief.</span></li>
+                            </ul>
+                        </section>
+                    </div>
+                    <div>
+                        <section>
+                            <h2 class="p-flight__key-title">Instruments <span class="u-note">(en bas à gauche de la carte)</span></h2>
+                            <ul class="p-flight__key-list">
+                                <li><span><strong>Horizon</strong> : l’inclinaison et l’assiette du planeur ; dessous, l’inclinaison en degrés, G à gauche, D à droite.</span></li>
+                                <li><span><strong>Variomètre</strong> (−5 à +5 m/s) : l’aiguille blanche est le vario du moment, l’aiguille verte la moyenne des 30 dernières secondes.</span></li>
+                                <li><span><strong>Vitesse sol</strong> ; en transition, comparée à la vitesse MacCready pour la montée moyenne de vos thermiques : « MC 181 ✓ » à 20 km/h près, sinon « ralentir » ou « accélérer » avec la vitesse visée.</span></li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h2 class="p-flight__key-title">Autour de la barre de lecture</h2>
+                            <ul class="p-flight__key-list">
+                                <li><span class="p-flight__swatch p-flight__swatch--mark" aria-hidden="true"></span>
+                                    <span><strong>Point de virage atteint</strong> (trait orange au-dessus de la barre) : départ, points, arrivée.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--band" aria-hidden="true"></span>
+                                    <span><strong>Thermique</strong> : bande de la couleur de sa montée ; hachurée pendant le centrage et en haut quand il monte moins que votre moyenne.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--lift" aria-hidden="true"></span>
+                                    <span><strong>Pente</strong> (orange) ou <strong>onde</strong> (violet).</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--too-low" aria-hidden="true"></span>
+                                    <span><strong>Trop bas</strong> : moins de 150 m au-dessus du sol, loin de toute pente prévue (le vol de pente se fait à cette hauteur), hors décollage et arrivée.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--tick" aria-hidden="true"></span>
+                                    <span><strong>Ascendance traversée</strong> (trait en haut) et <strong>forte descendance</strong> (trait bleu en bas).</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--band p-flight__swatch--no-field" aria-hidden="true"></span>
+                                    <span><strong>Aucun terrain à portée</strong> (trait gris foncé en haut) pendant 30 s ou plus.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--comment" aria-hidden="true"></span>
+                                    <span><strong>Commentaire</strong> à un instant du vol (bulle bleue ; sur la trace, une étiquette « Commentaire ») : survolez la bulle pour le lire, cliquez pour y aller.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--low" aria-hidden="true"></span>
+                                    <span><strong>Point bas</strong> : bien plus bas que vos entrées de thermique habituelles.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--triangle p-flight__swatch--missed-tick" aria-hidden="true"></span>
+                                    <span><strong>Thermique de la course manqué</strong>, au moment où vous en étiez le plus près.</span></li>
+                                <li><span class="p-flight__swatch p-flight__swatch--final" aria-hidden="true"></span>
+                                    <span><strong>Transition finale</strong>.</span></li>
+                            </ul>
+                            <p class="p-flight__key-hint">Survolez un repère pour ses valeurs, cliquez pour y aller.</p>
+                        </section>
+                    </div>
                 </div>
             </details>
             <div class="p-flight__map-wrap">
@@ -303,7 +333,7 @@
                     <canvas class="p-flight__instruments-canvas" data-flight-viewer-target="instrumentsCanvas" role="img" aria-label="Horizon artificiel, variomètre et vitesse au moment affiché"></canvas>
                 </div>
                 <div class="p-flight__legend" data-flight-viewer-target="legend" aria-hidden="true">
-                    <span data-legend="low"></span><span class="p-flight__legend-bar" data-legend="bar"></span><span data-legend="high"></span>
+                    <strong data-legend="title"></strong><span data-legend="low"></span><span class="p-flight__legend-bar" data-legend="bar"></span><span data-legend="high"></span>
                 </div>
                 <p class="p-flight__loading" data-flight-viewer-target="status" role="status">Chargement du vol…</p>
             </div>
@@ -378,6 +408,7 @@
                     <canvas class="p-flight__radar-canvas" width="200" height="200" data-flight-viewer-target="radarCanvas"
                             data-action="mousemove->flight-viewer#pointRadar mouseleave->flight-viewer#leaveRadar"
                             role="img" aria-label="Vario moyen de chaque côté des cercles"></canvas>
+                    <p class="u-note">Le vario moyen de chaque huitième des cercles, nord en haut : plus une part est longue et foncée, mieux ça montait de ce côté (bleu : ça descendait). Le côté long est celui où décaler les cercles.</p>
                     <p class="p-flight__radar-value" data-flight-viewer-target="radarValue"></p>
                     <p class="p-flight__radar-advice" data-flight-viewer-target="radarAdvice"></p>
                     <p class="p-flight__radar-advice" data-flight-viewer-target="radarTiming"></p>
@@ -432,14 +463,14 @@
                     {% if analysis.task %}<button type="button" class="p-flight__switch" aria-pressed="false" data-flight-viewer-target="chartPick" data-series="required" data-action="flight-viewer#pickChart">Finesse requise</button>{% endif %}
                     <button type="button" class="p-flight__switch" aria-pressed="false" data-flight-viewer-target="chartPick" data-series="all" data-action="flight-viewer#pickChart">Toutes les courbes</button>
                 </div>
-                <figure class="p-flight__chart"><figcaption>Altitude (m) — en vert les thermiques</figcaption><div data-flight-viewer-target="chart" data-series="altitude"></div></figure>
-                <figure class="p-flight__chart"><figcaption>Vario sur 4 s (m/s){% if performance %} — en pointillés le netto des transitions (l’air, polaire retirée){% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="vario"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Altitude (m) — bandes vertes : les thermiques</figcaption><div data-flight-viewer-target="chart" data-series="altitude"></div></figure>
+                <figure class="p-flight__chart"><figcaption>Vario sur 4 s (m/s), trait vert{% if performance %} — pointillés orange : le netto des transitions, ce que faisait l’air (la chute propre du planeur retirée){% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="vario"></div></figure>
                 <figure class="p-flight__chart"><figcaption>Vitesse sol (km/h)</figcaption><div data-flight-viewer-target="chart" data-series="speed"></div></figure>
                 {% if analysis.series.ground ?? null %}
-                    <figure class="p-flight__chart"><figcaption>Hauteur au-dessus du sol (m) — sous 300 m, prévoir où se poser ; sous 150 m, trop bas hors vol de pente</figcaption><div data-flight-viewer-target="chart" data-series="height"></div></figure>
+                    <figure class="p-flight__chart"><figcaption>Hauteur au-dessus du sol (m) — pointillés orange : 300 m, prévoir où se poser ; pointillés rouges : 150 m, trop bas hors vol de pente</figcaption><div data-flight-viewer-target="chart" data-series="height"></div></figure>
                 {% endif %}
                 {% if analysis.task %}
-                    <figure class="p-flight__chart"><figcaption>Finesse requise pour rejoindre l’arrivée (distance restante par les points ÷ hauteur au-dessus de l’arrivée), tracée quand elle est sous 100{% if stats.glideRatio %} — en pointillés votre finesse moyenne en transition{% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="required"></div></figure>
+                    <figure class="p-flight__chart"><figcaption>Finesse requise pour rejoindre l’arrivée (distance restante par les points ÷ hauteur au-dessus de l’arrivée), tracée quand elle est sous 100{% if stats.glideRatio %} — pointillés verts : votre finesse moyenne en transition ; sous cette ligne, l’arrivée est à portée{% endif %}</figcaption><div data-flight-viewer-target="chart" data-series="required"></div></figure>
                 {% endif %}
             </div>
         </div>

@@ -66,6 +66,10 @@ final class FlightTest extends WebTestCase
         self::assertSelectorTextContains('#tab-synthese[aria-selected="true"]', 'Synthèse');
         self::assertSelectorExists('#panel-phases .p-flight__phase-row');
         self::assertSelectorTextContains('.p-flight__menu', 'Export IGC');
+        // The key explains what the map draws from above too: the task and the ring of the glide range
+        self::assertSelectorTextContains('.p-flight__key', 'Circuit');
+        self::assertSelectorTextContains('.p-flight__key', 'rayon de plané');
+        self::assertSelectorTextContains('.p-flight__key', 'Instruments');
         // The guided debrief, from the start of the flight to the review
         self::assertSelectorExists('.p-flight__guide-toggle');
         $chapters = $this->client->getCrawler()->filter('.p-flight__chapter-title')->each(static fn ($title): string => $title->text());

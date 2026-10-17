@@ -269,6 +269,8 @@ export default class extends Controller {
         const colors = altitude ? ALTITUDE_COLORS : speed ? SPEED_CLASSES : VARIO_CLASSES.map((c) => c.color);
         const [low, high] = this.altitudeRange();
         this.legendTarget.querySelector('[data-legend="bar"]').style.background = `linear-gradient(to right, ${colors.map(rgb).join(', ')})`;
+        // What the colours of the track measure
+        this.legendTarget.querySelector('[data-legend="title"]').textContent = altitude ? 'Altitude' : speed ? 'Transitions' : netto ? 'Netto' : 'Vario';
         if (speed) {
             const { speed: best } = this.flight.speedToFly;
             this.legendTarget.querySelector('[data-legend="low"]').textContent = `Lent < ${best - SPEED_SLOW} km/h`;
@@ -276,7 +278,7 @@ export default class extends Controller {
 
             return;
         }
-        this.legendTarget.querySelector('[data-legend="low"]').textContent = altitude ? `${Math.round(low)} m` : `${netto ? 'Netto ' : ''}< −2 m/s`;
+        this.legendTarget.querySelector('[data-legend="low"]').textContent = altitude ? `${Math.round(low)} m` : '< −2 m/s';
         this.legendTarget.querySelector('[data-legend="high"]').textContent = altitude ? `${Math.round(high)} m` : '> +2 m/s';
     }
 

@@ -102,6 +102,10 @@
     --color-windsock: #f5f8fc;
     --color-final-glide: var(--palette-navy);
     --color-low-point: var(--palette-red);
+    /* The task: from above (map.js) and in 3D (scene.js) */
+    --color-task: var(--palette-ink);
+    --color-task-zone: #50dceb;
+    --color-task-line: #78e696;
 
     /* ---------- 2. Semantic: neutrals ---------- */
     /* Fixed colors, whatever the surface; inside a themed section prefer --on-surface and --rule */

@@ -443,8 +443,14 @@ opens its tab):
   side). Under it, how long the thermal took to centre and how long the glider stayed at its weak
   top; the phase table and the comparison of two thermals give the same figures.
 - Above the map, a tinted bar "Légende" (closed by default, opens on a click) draws and explains
-  every symbol of the 3D map and of the timeline. Its colours are tokens (`--color-climb-1` to `-4`,
-  `--color-slope-arrow`, `--color-windsock`...) that repeat the values of `scene.js`: change both.
+  every drawing of the map, by where it shows: from above and in 3D (glider and its flag, colours of
+  the track, task, ring of the glide range, airfields, expected slopes, lift of the other pilots,
+  ghost), in 3D only (task cylinders and gates, lift, windsocks, line to the ground, curtain), the
+  instruments, and the marks around the timeline. What it does not list comes from the basemap.
+  Its colours are tokens (`--color-climb-1` to `-4`, `--color-slope-arrow`, `--color-task`,
+  `--color-task-zone`...) that repeat the values of `scene.js`, `map.js` and the controller: change
+  both. The colour scale over the map names what it measures (Vario, Netto, Altitude, Transitions),
+  each chart caption names its line styles, and the centring radar says how to read its wedges.
 - Replay comfort (roadmap 7i5): "Spirales × 5" plays the thermals five times faster; while
   following in 3D, "Caméra : derrière" (the chase camera), "orbite" (turning around the glider at
   8° a second) or "cinéma" (a new shot every 12 s: behind, side, high, front, other side, the
