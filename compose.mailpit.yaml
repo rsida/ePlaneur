@@ -1,0 +1,31 @@
+# Mailpit of a staging copy: every e-mail of the site lands in it, none reaches the real addresses
+# of the copied data. Its web interface is routed by the server's Traefik on MAILPIT_HOST and
+# protected by MAILPIT_UI_AUTH ("user:password"): it shows the links of password resets.
+# Used by the Makefile in production when MAILPIT_HOST is set, together with
+# compose.traefik-external.yaml (it joins the same network). Set MAILER_DSN=smtp://mailer:1025.
+services:
+  mailer:
+    image: axllent/mailpit:${MAILPIT_VERSION:-v1.27}
+    restart: unless-stopped
+    environment:
+      MP_UI_AUTH: ${MAILPIT_UI_AUTH:?MAILPIT_UI_AUTH must be set in .env.local (user:password)}
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_DATABASE: /data/mailpit.db
+      MP_MAX_MESSAGES: 2000
+    volumes:
+      - mailpit:/data
+    networks:
+      - default
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:?}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}-mail.rule=Host(`${MAILPIT_HOST:?}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}-mail.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}-mail.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-eplaneur}-mail.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME:-eplaneur}-mail.loadbalancer.server.port=8025
+
+volumes:
+  mailpit:

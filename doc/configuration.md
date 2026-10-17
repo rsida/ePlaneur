@@ -58,6 +58,7 @@ Values must not contain `$` (Compose would interpolate it). Quotes are allowed.
 | `XDEBUG_CLIENT_HOST` | `host.docker.internal` | Host where the IDE listens |
 | `ACME_EMAIL` | prod: **required** with the bundled Traefik | Let's Encrypt account e-mail |
 | `TRAEFIK_NETWORK` | empty | Prod: Docker network of a Traefik already running on the server; the stack then starts none (see [production](production.md#staging-or-shared-server)) |
+| `MAILPIT_HOST` / `MAILPIT_UI_AUTH` | empty | Prod with `TRAEFIK_NETWORK` (staging): host name and `user:password` of a Mailpit of the stack that catches every e-mail (`MAILER_DSN=smtp://mailer:1025`) |
 | `TRAEFIK_ENTRYPOINT` / `TRAEFIK_CERTRESOLVER` | `websecure` / `letsencrypt` | Prod: entrypoint and certificate resolver of that Traefik |
 | `TRAEFIK_VERSION` | `v3.6` | Traefik image version (prod) |
 

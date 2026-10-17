@@ -105,8 +105,11 @@ TRAEFIK_NETWORK=traefik-net
 # noindex everywhere, robots.txt closes the site, no sitemap.xml nor llms.txt (doc/seo.md)
 SEARCH_ENGINES_ALLOWED=0
 
-# null://null: no e-mail leaves (the data may hold real addresses); a real provider otherwise
-MAILER_DSN=null://null
+# A Mailpit of its own (compose.mailpit.yaml): every e-mail lands there, none reaches the real
+# addresses of the copied data. Its web interface is on MAILPIT_HOST, behind a password
+MAILER_DSN=smtp://mailer:1025
+MAILPIT_HOST=mail.staging.example.com
+MAILPIT_UI_AUTH=<user>:<password>
 
 MARIADB_PASSWORD=<strong password>
 MARIADB_ROOT_PASSWORD=<another strong password>
@@ -117,6 +120,11 @@ With `TRAEFIK_NETWORK` set, the Makefile uses `compose.traefik-external.yaml` in
 carries the router labels; `ACME_EMAIL` is not needed. The certificate comes from the resolver of the
 server's Traefik, so the DNS record of `SERVER_NAME` must point to the server first. Deploy with
 `make deploy-prod TAG=...` as above.
+
+With `MAILPIT_HOST` set (and `TRAEFIK_NETWORK`), the Makefile adds `compose.mailpit.yaml`: a
+Mailpit routed by the server's Traefik, its messages kept in a volume (2,000 at most). Its DNS record
+must point to the server as well. Without it, `MAILER_DSN=null://null` sends nothing at all, password
+resets included.
 
 nginx reaches PHP by a network alias unique to the copy (`<COMPOSE_PROJECT_NAME>-php`), never
 `php`: on the shared network, another project may have a container answering to that name.

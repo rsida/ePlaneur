@@ -8,8 +8,10 @@ ENV ?= $(or $(shell sed -n 's/^APP_ENV=//p' .env.local 2>/dev/null | tail -1 | t
 # Same load order as Symfony: .env < .env.local < .env.$(ENV) < .env.$(ENV).local
 env_files = $(foreach f,.env .env.local .env.$(1) .env.$(1).local,$(wildcard $(f)))
 compose_files_dev  = -f compose.yaml -f compose.override.yaml
-# Production: a Traefik of its own, or the server's one when TRAEFIK_NETWORK is set (doc/production.md)
-compose_files_prod = -f compose.yaml -f compose.prod.yaml -f $(if $(call env_value,TRAEFIK_NETWORK),compose.traefik-external.yaml,compose.traefik.yaml)
+# Production: a Traefik of its own, or the server's one when TRAEFIK_NETWORK is set, and a
+# Mailpit when MAILPIT_HOST is set (staging, doc/production.md)
+compose_files_prod = -f compose.yaml -f compose.prod.yaml -f $(if $(call env_value,TRAEFIK_NETWORK),compose.traefik-external.yaml,compose.traefik.yaml) \
+	$(if $(call env_value,MAILPIT_HOST),-f compose.mailpit.yaml)
 dc = docker compose $(compose_files_$(1)) $(addprefix --env-file ,$(call env_files,$(1)))
 # Value of a variable as resolved from the env files
 env_value = $(shell for f in $(call env_files,$(ENV)); do sed -n 's/^$(1)=//p' $$f; done | tail -1 | tr -d "\"'")
