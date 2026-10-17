@@ -156,22 +156,22 @@ final class NavigationFixtures extends Fixture implements DependentFixtureInterf
         // ---------- Main menu: "Le Club" mega-menu (Figma "Menu Le Club ouvert") ----------
         $position = 0;
         $this->link(MenuLocation::Main, 'Accueil', '/', null, $position++);
-        $this->link(MenuLocation::Main, 'Formation', '/#formation', null, $position++);
-        $this->link(MenuLocation::Main, 'Voler', '/#vols', null, $position++);
+        $this->link(MenuLocation::Main, 'Formation', '/formation', null, $position++);
+        $this->link(MenuLocation::Main, 'Voler', '/voler', null, $position++);
         $clubLink = $this->link(MenuLocation::Main, 'Le Club', null, null, $position++, $club, 'Le Club / Vie associative');
         $this->link(MenuLocation::Main, 'Actualités', '/actualites', null, $position++);
         // Presentation of the site, for the committee (doc/site-tour.md)
         $this->link(MenuLocation::Main, 'Le nouveau site', '/comite/le-site', null, $position++)->setVisibility(Visibility::Groups)->addAllowedGroup($committee);
 
         $mega = [
-            'presentation' => [['Découvrir le club', '/le-club/presentation'], ['Vidéo de présentation', '/le-club/communication#video', 'Communication']],
-            'objectifs' => [['Brevet ePlaneur', '/le-club/objectifs#brevet', 'Un projet du club'], ['Objectifs du Club', '/le-club/textes-officiels/autres-documents', 'Document PDF']],
+            'presentation' => [['Découvrir le club', '/le-club/presentation'], ['Vidéo de présentation', '/le-club/communication/video-presentation', 'Communication']],
+            'objectifs' => [['Brevet ePlaneur', '/le-club/objectifs/brevet-eplaneur', 'Un projet du club'], ['Objectifs du Club', '/le-club/objectifs#les-cinq-objectifs-principaux-du-club-eplaneur', 'Les cinq objectifs principaux']],
             'textes-officiels' => null,
-            'communication' => [['Communication interne', '/le-club/communication#interne'], ['Vidéo de présentation', '/le-club/communication#video'], ['Lettre aux enseignants', '/le-club/communication#enseignants']],
+            'communication' => [['Communication interne', '/le-club/communication/communication-interne'], ['Vidéo de présentation', '/le-club/communication/video-presentation'], ['Lettre aux enseignants', '/le-club/communication/lettre-enseignants']],
             'adhesions' => null,
             'listes-des-membres' => null,
-            'activites' => [['Réunions', '/le-club/activites#reunions', 'Section de la page'], ['Suivi des actions', '/le-club/activites#actions', 'Section de la page'], ['Ateliers avec des établissements d’enseignement', '/le-club/activites#ateliers', 'Section de la page']],
-            'contact' => [['Écrire au Club', 'mailto:contact@club.eplaneur.fr', 'Formulaire et courriel'], ['Groupe Facebook ePlaneur', 'https://www.facebook.com/groups/eplaneur', 'Lien externe']],
+            'activites' => [['Réunions', '/le-club/activites#reunions-du-club', 'Section de la page'], ['Suivi des actions', '/le-club/activites#suivi-des-actions', 'Section de la page'], ['Ateliers avec des établissements d’enseignement', '/le-club/activites#ateliers-avec-des-etablissements-d-enseignement', 'Section de la page']],
+            'contact' => [['Écrire au Club', '/contact', 'Formulaire de contact'], ['Groupe Facebook ePlaneur', 'https://www.facebook.com/groups/eplaneur', 'Lien externe']],
         ];
         $index = 0;
         foreach ($club->getChildren() as $section) {
@@ -194,8 +194,8 @@ final class NavigationFixtures extends Fixture implements DependentFixtureInterf
         }
 
         $columns = [
-            'Formation' => ['Installer Condor 2' => '/#guides', 'Installer Condor 3' => '/#guides', 'Parcours guidé' => '/#formation', 'Vidéos pédagogiques' => '/#formation', 'Bonnes pratiques' => '/#guides'],
-            'Voler' => ['Vols en réseau' => '/#vols', 'Sessions et résultats' => '/sessions', 'Participer à un vol' => '/#vols', 'Prérequis pour voler' => '/#vols', 'Déposer une trace' => '/#carnet', 'Créer mon carnet' => '/#carnet'],
+            'Formation' => ['Installer Condor 2' => '/formation/bien-demarrer/installer-condor', 'Installer Condor 3' => '/formation/bien-demarrer/installer-condor', 'Parcours guidé' => '/parcours', 'Vidéos pédagogiques' => '/formation/videos-pedagogiques', 'Bonnes pratiques' => '/formation/bonnes-pratiques'],
+            'Voler' => ['Vols en réseau' => '/voler/vols-reseau', 'Sessions et résultats' => '/sessions', 'Participer à un vol' => '/voler/vols-reseau/participer', 'Prérequis pour voler' => '/voler/vols-reseau/prerequis', 'Déposer une trace' => '/vols', 'Créer mon carnet' => '/vols/carnet'],
             'Le Club' => ['Présentation du club' => $presentation, 'Textes officiels' => $texts, 'Actualités' => '/actualites', 'Adhésions' => $membership, 'Contacter le club' => '/contact'],
         ];
         $column = 0;
