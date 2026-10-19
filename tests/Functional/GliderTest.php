@@ -60,6 +60,7 @@ final class GliderTest extends WebTestCase
         $entityManager->flush();
         $this->client->loginUser($pilot);
         $crawler = $this->client->request('GET', '/vols');
+        self::assertSelectorExists('main a[href="/planeurs"]', 'The list of the gliders is reached from the flights');
         $copy = sys_get_temp_dir().'/'.uniqid('upload', true);
         copy(\dirname(__DIR__).'/fixtures/flights/aa3-laragne-start.ftr', $copy);
         $this->client->request('POST', '/vols', ['_token' => $crawler->filter('input[name="_token"]')->attr('value')], ['trace' => new UploadedFile($copy, 'C3-c060-1.ftr', 'application/octet-stream', null, true)]);

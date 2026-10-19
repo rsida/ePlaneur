@@ -39,12 +39,15 @@ final class SchoolClassTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('#nouvelle');
         self::assertSelectorTextContains('main', 'Vous n’êtes dans aucune classe');
+        self::assertSelectorTextContains('main', 'Vous êtes enseignant', 'How a teacher gets the space');
         $this->client->request('GET', '/mon-compte');
-        self::assertSelectorNotExists('a[href="/mon-compte/classes"]', 'No menu item for an account with no class');
+        self::assertSelectorNotExists('.p-account__nav a[href="/mon-compte/classes"]', 'No menu item for an account with no class');
+        self::assertSelectorTextContains('nav[aria-label="Raccourcis"] a[href="/mon-compte/classes"]', 'Classes du BIA', 'Still reached from the dashboard');
 
         $this->client->loginUser($this->teacher());
         $this->client->request('GET', '/mon-compte');
-        self::assertSelectorExists('a[href="/mon-compte/classes"]');
+        self::assertSelectorExists('.p-account__nav a[href="/mon-compte/classes"]');
+        self::assertSelectorTextContains('nav[aria-label="Raccourcis"] a[href="/mon-compte/classes"]', 'Mes classes');
         $this->client->request('GET', '/mon-compte/classes');
         $this->client->submitForm('Créer la classe', ['school_class[name]' => '', 'school_class[school]' => '']);
         self::assertResponseStatusCodeSame(422);

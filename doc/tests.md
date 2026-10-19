@@ -45,6 +45,11 @@ Back-office tests live in `tests/Functional/Admin/`: one EasyAdmin `AbstractCrud
 (`generateIndexUrl()`, `generateEditFormUrl($id)`...) plus `AdminAccessTest` for permissions. See
 [admin](admin.md#adding-a-screen).
 
+`EveryPageIsLinkedTest` fails when a page has no link leading to it: every GET route that is not
+data (`.json`, `.ics`...) must be named somewhere in `templates/`, `src/` or `assets/` besides its own
+`#[Route]` (a link, a menu, an e-mail, the redirect of a form). A page reached only by a menu item
+(data) goes in its `REACHED_OTHERWISE` list, with the reason.
+
 The configuration fails on deprecations, notices and warnings.
 
 ## Behat

@@ -190,6 +190,8 @@
             <twig:Ui:Link href="{{ path('app_session_index') }}">Sessions en réseau</twig:Ui:Link>
             <twig:Ui:Link href="{{ path('app_flight_records') }}">Records du club</twig:Ui:Link>
             <twig:Ui:Link href="{{ path('app_flight_index') }}">Analyse de vols</twig:Ui:Link>
+            <twig:Ui:Link href="{{ path('app_account_classes') }}">{{ is_granted('CLASS_TEACH') or account_in_class() ? 'Mes classes' : 'Classes du BIA' }}</twig:Ui:Link>
+            {% if is_granted('ACTIVITY_VIEW') %}<twig:Ui:Link href="{{ path('app_activity') }}">Activité du club</twig:Ui:Link>{% endif %}
             <twig:Ui:Link href="{{ path('app_account_contact') }}">Contacter le club</twig:Ui:Link>
         </div>
     </nav>

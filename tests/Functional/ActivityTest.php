@@ -49,11 +49,15 @@ final class ActivityTest extends WebTestCase
         $this->client->loginUser($this->userIn($this->entityManager, 'membre@example.org', 'member'));
         $this->client->request('GET', '/activite');
         self::assertResponseStatusCodeSame(403);
+        $this->client->request('GET', '/mon-compte');
+        self::assertSelectorNotExists('a[href="/activite"]');
         $this->client->loginUser($this->userIn($this->entityManager, 'comite@example.org', 'committee'));
         $this->client->request('GET', '/activite');
         self::assertResponseIsSuccessful();
         $this->client->request('GET', '/admin');
         self::assertSelectorExists('a[href="/activite"]');
+        $this->client->request('GET', '/mon-compte');
+        self::assertSelectorExists('.p-account__nav a[href="/activite"]', 'Also from the member space');
     }
 
     public function testTheActivityIsCountedMonthByMonth(): void

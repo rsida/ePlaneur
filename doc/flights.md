@@ -269,7 +269,9 @@ a Condor update: gliders are updated by name. The name is the one of the folder,
 - **Pages**: `/planeurs` (every glider: span, best glide, minimum sink, wing loading, water, handicap,
   tracks of the club) and `/planeurs/{name}` (the sheet, aspect ratio, best glide and minimum sink
   without water and full, the polar at both masses, MacCready speeds for 0.5 to 4 m/s), open to
-  everyone. Glider names in session results and rankings link to them (`glider_url()`).
+  everyone. Glider names in session results and rankings link to them (`glider_url()`); the list is
+  in the "Voler" mega-menu ("Mes vols" column), the "Formation" column of the footer and the links of
+  `/vols`.
 - **On the flight page** (`GliderPerformance`), when its glider is recorded: mass (reference plus
   the water of the `.ftr`, a litre per kilogram), wing loading, best glide and minimum sink at that
   mass, the MacCready speed for the average climb of the flight and the average speed it gives,

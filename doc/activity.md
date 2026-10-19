@@ -2,7 +2,8 @@
 
 `/activite` (roadmap 11i) shows what the members do on the site, month by month, to the committee and
 for the general meeting: what the site brings, in figures. Nothing new is recorded: the page reads the
-dates the site already stores (`App\Activity\ActivityReport`).
+dates the site already stores (`App\Activity\ActivityReport`). It is linked from the back-office
+menu and from the member space ("Activité du club"), for whoever holds `ACTIVITY_VIEW`.
 
 ## Access
 

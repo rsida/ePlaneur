@@ -161,7 +161,7 @@ final class NavigationFixtures extends Fixture implements DependentFixtureInterf
         $flyLink = $this->link(MenuLocation::Main, 'Voler', '/voler', null, $position++, null, 'Voler / Vols en réseau');
         $fly = [
             ['Vols en réseau', '/voler/vols-reseau', [['Sessions : agenda et résultats', '/sessions', 'Prochains vols, résultats, rejeu'], ['Participer à un vol', '/voler/vols-reseau/participer'], ['Prérequis pour voler', '/voler/vols-reseau/prerequis']]],
-            ['Mes vols', '/vols', [['Déposer une trace', '/vols', 'Analyse, rejeu 3D, comparaison'], ['Mon carnet de vol', '/vols/carnet'], ['Ascendances du club', '/vols/ascendances', 'Les thermiques de tous les vols'], ['Records du club', '/vols/records']]],
+            ['Mes vols', '/vols', [['Déposer une trace', '/vols', 'Analyse, rejeu 3D, comparaison'], ['Mon carnet de vol', '/vols/carnet'], ['Ascendances du club', '/vols/ascendances', 'Les thermiques de tous les vols'], ['Records du club', '/vols/records'], ['Planeurs de Condor', '/planeurs', 'Fiches et polaires']]],
         ];
         foreach ($fly as $columnIndex => [$label, $url, $links]) {
             $columnLink = $this->link(MenuLocation::Main, $label, $url, $flyLink, $columnIndex);
@@ -205,7 +205,7 @@ final class NavigationFixtures extends Fixture implements DependentFixtureInterf
         }
 
         $columns = [
-            'Formation' => ['Installer Condor 2' => '/formation/bien-demarrer/installer-condor', 'Installer Condor 3' => '/formation/bien-demarrer/installer-condor', 'Parcours guidé' => '/parcours', 'Vidéos pédagogiques' => '/formation/videos-pedagogiques', 'Bonnes pratiques' => '/formation/bonnes-pratiques'],
+            'Formation' => ['Installer Condor 2' => '/formation/bien-demarrer/installer-condor', 'Installer Condor 3' => '/formation/bien-demarrer/installer-condor', 'Parcours guidé' => '/parcours', 'Vidéos pédagogiques' => '/formation/videos-pedagogiques', 'Bonnes pratiques' => '/formation/bonnes-pratiques', 'Planeurs de Condor' => '/planeurs'],
             'Voler' => ['Vols en réseau' => '/voler/vols-reseau', 'Sessions et résultats' => '/sessions', 'Participer à un vol' => '/voler/vols-reseau/participer', 'Prérequis pour voler' => '/voler/vols-reseau/prerequis', 'Déposer une trace' => '/vols', 'Créer mon carnet' => '/vols/carnet'],
             'Le Club' => ['Présentation du club' => $presentation, 'Textes officiels' => $texts, 'Actualités' => '/actualites', 'Adhésions' => $membership, 'Contacter le club' => '/contact'],
         ];

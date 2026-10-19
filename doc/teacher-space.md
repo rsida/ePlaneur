@@ -24,8 +24,11 @@ trainer: they do not comment flights nor validate steps (`FLIGHT_REVIEW`).
 
 ## Classes
 
-"Mes classes" (`/mon-compte/classes`) appears in the member space for a teacher and for a pupil in a
-class (Twig `account_in_class()`).
+"Mes classes" (`/mon-compte/classes`) appears in the navigation of the member space for a teacher and
+for a pupil in a class (Twig `account_in_class()`). The shortcuts of the dashboard always link to it
+("Mes classes", or "Classes du BIA" for the others): an account in no class reads there that its
+teacher gives the link, and a teacher that the club grants the teacher space ("demandez-le au club",
+contact form).
 
 - **Teacher**: their classes and "Nouvelle classe" (name, school). The page of a class
   (`/mon-compte/classes/{id}`) shows:

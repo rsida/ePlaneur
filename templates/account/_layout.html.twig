@@ -37,6 +37,7 @@
                         {% endfor %}
                     </ul>
                     <twig:Ui:Link href="{{ path('app_account_contact') }}" class="p-account__contact" aria-current="{{ section|default('') == 'contact' ? 'page' : 'false' }}">Contacter le club</twig:Ui:Link>
+                    {% if is_granted('ACTIVITY_VIEW') %}<twig:Ui:Link href="{{ path('app_activity') }}">Activité du club</twig:Ui:Link>{% endif %}
                     {% if is_granted('ADMIN_ACCESS') %}<twig:Ui:Link href="{{ path('admin') }}">Administration du site</twig:Ui:Link>{% endif %}
                     <a class="p-account__logout" href="{{ path('app_logout') }}">Se déconnecter</a>
                 </nav>

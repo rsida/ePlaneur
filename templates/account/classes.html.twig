@@ -38,6 +38,7 @@
             <twig:Ui:Heading level="2" size="h4" id="joined-title">Les classes dont je fais partie</twig:Ui:Heading>
             {% if joined is empty %}
                 <p>Vous n’êtes dans aucune classe. Votre enseignant vous donne le lien de la sienne.</p>
+                {% if not form %}<p class="u-note">Vous êtes enseignant (BIA, collège, lycée) ? L’espace enseignant crée une classe, donne son lien aux élèves et suit leurs huit étapes et leurs vols : <a href="{{ path('app_account_contact') }}">demandez-le au club</a>.</p>{% endif %}
             {% else %}
                 <p class="u-note">Votre enseignant voit vos étapes de « Mon parcours » et votre carnet de vol. Les autres pilotes vous voient par votre prénom ou votre pseudonyme tant que vous êtes dans une classe.</p>
                 <ul class="p-classes__list" role="list">

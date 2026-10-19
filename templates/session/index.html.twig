@@ -12,9 +12,11 @@
                 <p class="u-lead">Chaque semaine, les pilotes du club volent le même circuit, dans la même météo, chacun depuis chez soi. Retrouvez les prochaines sessions et les résultats de toutes les autres.</p>
                 {% set feed = url('app_session_calendar') %}
                 <p class="u-note">Toutes les sessions dans votre agenda, à l’heure de chez vous : <a href="{{ feed|replace({'https://': 'webcal://', 'http://': 'webcal://'}) }}">s’abonner au calendrier des sessions</a> (ou copier l’adresse <a href="{{ feed }}">{{ feed }}</a> dans Google Agenda, « Ajouter un agenda à partir de l’URL »).</p>
-                {% if is_granted('SESSION_ORGANISE') %}
+                {% if is_granted('SESSION_ORGANISE') or is_granted('FLIGHT_PLAN_PREPARE') %}
                     <div class="l-cluster">
-                        <twig:Ui:Button href="{{ path('app_session_new') }}" icon="">Proposer une session</twig:Ui:Button>
+                        {% if is_granted('SESSION_ORGANISE') %}
+                            <twig:Ui:Button href="{{ path('app_session_new') }}" icon="">Proposer une session</twig:Ui:Button>
+                        {% endif %}
                         {% if is_granted('FLIGHT_PLAN_PREPARE') %}
                             <twig:Ui:Button href="{{ path('app_flight_plan_workshop') }}" variant="outline" icon="">Préparer un plan de vol</twig:Ui:Button>
                         {% endif %}
