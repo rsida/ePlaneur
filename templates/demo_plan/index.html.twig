@@ -1,0 +1,380 @@
+{% extends 'base.html.twig' %}
+
+{#
+    Script of an end-to-end demonstration of the site, for the administrators (doc/demo-plan.md): read
+    from top to bottom, it visits every feature in the order of a pilot's journey, each step with
+    where to click, what to show, what to say about its teaching purpose and a live link.
+#}
+{% block title %}Plan de la démonstration{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% set flight_url = showcase ? path('app_flight_show', {id: showcase.id}) : path('app_flight_index') %}
+{% set session_url = session ? path('app_session_show', {id: session.id}) : path('app_session_index') %}
+{% set session_compare_url = session ? path('app_session_compare', {id: session.id}) : path('app_session_index') %}
+{% set plan_url = session ? path('app_flight_plan_show', {code: session.flightPlan.code}) : path('app_session_index') %}
+{% set compare_url = showcase ? path('app_flight_compare_pick', {id: showcase.id}) : path('app_flight_index') %}
+{% set glider_url = showcase and showcase.glider ? path('app_glider_show', {name: showcase.glider}) : path('app_glider_index') %}
+{% set pilot_logbook_url = showcase and showcase.owner ? path('app_flight_logbook_pilot', {id: showcase.owner.id}) : path('app_account_logbook') %}
+{% set exercise_url = exercise ? path('app_path_exercise', {id: exercise.id}) : path('app_path') %}
+{% set quiz_url = quiz and quiz.step ? path('app_path_step', {number: quiz.step.number}) : path('app_path') %}
+
+{% set acts = [
+    {
+        id: 'visiteur', title: 'Le visiteur découvre le club', minutes: 7, account: 'Fenêtre de navigation privée, sans compte',
+        intro: 'On se met à la place d’un jeune qui a entendu parler du club. Le site doit lui montrer ce qu’il va apprendre, pas seulement qui nous sommes.',
+        steps: [
+            {title: 'La page d’accueil', minutes: 2, link: path('app_home'), cta: 'Ouvrir l’accueil',
+                show: [{what: 'La bannière : la prochaine session en réseau, son compte à rebours et l’heure chez le lecteur (« soit 18 h 30 chez vous » depuis La Réunion).', why: 'donner un rendez-vous concret dès l’arrivée : le visiteur sait quand le club vole, à son heure à lui, même à La Réunion.'}, {what: 'Le vol public rejoué en 3D en boucle, caméra derrière le planeur, avec le podium de sa session.', why: 'montrer en quelques secondes ce qu’est un vol de planeur sur Condor, avec un vrai vol du club plutôt qu’une image d’illustration.'}, {what: 'La section « Votre premier vol ? » et les dernières actualités.', why: 'orienter le débutant vers le bon point de départ, et montrer que le club est vivant (ses dernières nouvelles).'}],
+                say: 'La première chose que voit un visiteur, c’est un vrai vol d’un membre du club, rejoué sur le vrai relief. On ne lui promet pas une activité, on la lui montre : voilà ce que vous saurez faire.'},
+            {title: 'Mon premier vol', minutes: 1, link: path('app_first_flight'), cta: 'Ouvrir « Mon premier vol »',
+                show: [{what: 'Les six étapes, de la création du compte à l’étape 1 de « Mon parcours », celle à faire maintenant mise en avant.', why: 'éviter qu’un débutant se perde : une seule chose à faire à la fois, dans le bon ordre.'}, {what: 'Le prochain vol d’initiation (le mercredi à 16 h 30) proposé à l’étape « Participer à un vol d’initiation ».', why: 'faire passer le débutant du vol seul au vol en groupe, encadré, au créneau prévu pour lui.'}],
+                say: 'Avant, ces informations étaient réparties sur une douzaine de pages. Un débutant n’a qu’une seule question : « qu’est-ce que je fais maintenant ? ». La page y répond étape par étape et coche toute seule ce que le site sait déjà.'},
+            {title: 'La formation, visible avant l’inscription', minutes: 1, link: path('app_path'), cta: 'Ouvrir « Mon parcours »',
+                show: [{what: 'Les huit étapes en chemin, de « Découvrir Condor » au Brevet ePlaneur, avec les qualifications internes du club (Élève ePilote, ePilote Solo, ePilote, ePilote breveté Condor Club).', why: 'donner un objectif à long terme et situer chaque compétence dans une progression, comme en école de vol à voile.'}, {what: 'Les badges et leurs trois paliers (#badges), l’appel à créer un compte.', why: 'montrer qu’on est récompensé pour sa régularité et ses bonnes habitudes, et inviter à s’inscrire pour commencer.'}],
+                say: 'On sait où l’on va avant même de s’inscrire. La progression du vrai vol à voile (lâcher, autonomie, campagne, insigne d’argent) est rendue lisible et motivante.'},
+            {title: 'Les sessions en réseau et leur mémoire', minutes: 1, link: path('app_session_index'), cta: 'Ouvrir les sessions',
+                show: [{what: 'Les sessions à venir en cartes, puis l’historique depuis 2020 : filtres par année, version de Condor, niveau, session ouverte ou dédiée.', why: 'trouver la prochaine session à son niveau et retrouver n’importe quel vol passé du club.'}, {what: '« S’abonner à l’agenda » : toutes les sessions dans le calendrier du téléphone, à l’heure locale.', why: 'ne plus rater une session : elle s’affiche dans l’agenda du téléphone, à la bonne heure, et se met à jour toute seule.'}, {what: 'Une session : le plan de vol, le lien vers sa fiche sur eplaneur.fr et le circuit sur Condor Club.', why: 'préparer son vol avant de se connecter : le circuit, la fiche technique du plan de vol, le circuit officiel.'}],
+                say: 'Le vol du mercredi est le rendez-vous qui fait progresser : on y vole avec les autres. Le site rend ce rendez-vous régulier, facile à trouver et à mettre dans son agenda.'},
+            {title: 'Les planeurs et leur polaire', minutes: 1, link: glider_url, cta: 'Ouvrir une fiche de planeur',
+                show: [{what: 'La liste des planeurs de Condor (envergure, finesse, taux de chute, charge alaire, handicap).', why: 'choisir et comparer les planeurs, comprendre ce qui les distingue.'}, {what: 'La fiche : la polaire à vide et ballastée, la finesse max, les vitesses MacCready de 0,5 à 4 m/s.', why: 'relier la théorie (polaire, finesse, vitesse à adopter selon la force des thermiques) au planeur qu’on va voler.'}],
+                say: 'La polaire, c’est de la théorie du BIA et de l’étape 5. Ici, c’est celle du planeur qu’on vole ce soir : la théorie devient un outil.'},
+            {title: 'Adhérer, écrire, installer', minutes: 1, link: path('app_membership'), cta: 'Ouvrir l’adhésion',
+                show: [{what: 'Les tarifs de la saison (moins de 25 ans, adulte).', why: 'savoir ce que coûte l’adhésion avant de s’engager, avec un tarif réduit pour les jeunes.'}, {what: 'Le formulaire de contact.', why: 'poser une question au club sans connaître personne, la réponse arrivant à la bonne personne du comité.'}, {what: 'En bas de page, « Installer l’application » : le site s’installe sur le téléphone comme une application.', why: 'avoir le club dans sa poche : rappels et résultats en notification, accès en un geste.'}, {what: 'Les pages et actualités reprises du site WordPress, les anciennes adresses redirigées.', why: 'ne rien perdre de l’ancien site : les liens partagés depuis des années continuent de fonctionner.'}],
+                say: 'Tout ce qui sert à entrer dans le club est au même endroit, sans outil extérieur à apprendre.'},
+        ],
+    },
+    {
+        id: 'pilote', title: 'Le pilote arrive dans son espace', minutes: 5, account: 'Un compte de pilote qui a déjà déposé des vols',
+        intro: 'Le pilote vient de créer son compte gratuit. Son espace doit lui dire où il en est et quelle est la suite.',
+        steps: [
+            {title: 'L’inscription', minutes: 1, link: path('app_register'), cta: 'Ouvrir l’inscription',
+                show: [{what: 'Le formulaire (à montrer sans l’envoyer), la confirmation par e-mail.', why: 'entrer dans le club en une minute, avec une adresse e-mail vérifiée.'}, {what: 'Le compte est gratuit : on peut voler, déposer ses traces et suivre son parcours avant d’adhérer.', why: 'laisser essayer avant d’adhérer : on découvre la méthode du club gratuitement.'}],
+                say: 'On n’exige pas d’adhérer pour commencer à apprendre : l’adhésion vient quand on a goûté à l’activité.'},
+            {title: 'Le tableau de bord', minutes: 2, link: path('app_account'), cta: 'Ouvrir « Mon compte »',
+                show: [{what: 'L’état de l’adhésion et sa prochaine action.', why: 'savoir où l’on en est avec le club et ce qu’il reste à faire (payer, renouveler).'}, {what: 'Les trois derniers vols, la vitesse des derniers circuits, les derniers badges.', why: 'voir d’un coup d’œil ses derniers vols et sa progression récente.'}, {what: 'L’étape de « Mon parcours » à travailler, le dernier conseil reçu, les commentaires des formateurs.', why: 'reprendre l’entraînement là où on l’a laissé : l’objectif du moment et le dernier retour reçu.'}, {what: '« On se retrouve en vol » : les deux prochaines sessions. Les raccourcis (dont « Classes du BIA »).', why: 'garder le rendez-vous en tête et aller vite aux pages utiles.'}],
+                say: 'Le tableau de bord répond à la question de chaque séance : « sur quoi je travaille aujourd’hui ? ». Le dernier conseil et l’étape en cours sont là, sans chercher.'},
+            {title: 'Le profil et la vie privée', minutes: 2, link: path('app_account_profile'), cta: 'Ouvrir le profil',
+                show: [{what: 'Le nom montré aux autres : nom, prénom seul ou pseudonyme.', why: 'choisir comment on apparaît aux autres : indispensable pour un mineur ou un pilote discret.'}, {what: 'L’identité Condor (CN, nom de pilote, versions).', why: 'relier ses vols à son identité Condor, pour que le site reconnaisse ses traces et ses résultats.'}, {what: 'Les e-mails choisis un par un : commentaires, messages, rappels de session, lettre mensuelle.', why: 'ne recevoir que ce qui intéresse, sans être noyé de messages.'}, {what: '« Notifications sur cet appareil » (#push) : les activer, envoyer une notification d’essai sur le téléphone.', why: 'être prévenu sur son téléphone d’une session, d’un message ou du commentaire d’un formateur.'}, {what: 'Dans « Confidentialité » : vols publics ou non par défaut, apparaître ou non dans les classements, export de toutes ses données, suppression du compte.', why: 'garder la maîtrise de ses données : ce qui est visible, ce qui est classé, récupérer ou effacer ses données (RGPD).'}],
+                say: 'Le pilote garde la main sur ce qu’il montre. C’est indispensable pour accueillir des jeunes : on peut progresser au vu des formateurs sans s’exposer à tout le monde.',
+                tip: 'Préparer le téléphone avant la démo : la notification d’essai marque les esprits.'},
+        ],
+    },
+    {
+        id: 'vol', title: 'Comprendre son propre vol', minutes: 16, account: 'Le compte de pilote, puis le vol vitrine',
+        intro: 'C’est le cœur pédagogique du site. L’analyseur ne cherche pas à remplacer Condor Club : Condor Club reste le carnet officiel, les classements, les badges virtuels et les compétitions. L’analyseur du club sert à comprendre son vol pour s’améliorer : seul d’abord, puis avec un formateur, puis en débriefant la session avec les autres.',
+        steps: [
+            {title: 'Déposer une trace', minutes: 1, link: path('app_flight_index'), cta: 'Ouvrir « Analyse de vols »',
+                show: [{what: 'Glisser un fichier .ftr (Condor 3, dossier FlightTracks) ou un IGC (Condor 2 : « Analyser le vol », « Export IGC »).', why: 'rendre le débrief automatique après chaque vol, sans aucune saisie.'}, {what: 'Le vol est analysé en quelques secondes et rejoint tout seul sa session (même numéro de course que le serveur).', why: 'retrouver tout seul les autres pilotes de la même course, pour pouvoir se comparer.'}],
+                say: 'Aucune saisie : le pilote dépose son vol en sortant de Condor. Plus c’est simple, plus on le fait après chaque vol, et c’est la répétition du débrief qui fait progresser.',
+                tip: 'Avoir un fichier sur le bureau. Sinon, enchaîner directement sur le vol vitrine.'},
+            {title: 'Quelques repères : trois conseils, dont un point fort', minutes: 2, link: flight_url ~ (showcase ? '#conseils' : ''), cta: 'Ouvrir les conseils du vol',
+                show: [{what: 'Les chiffres clés du vol.', why: 'situer le vol en un coup d’œil : durée, distance, vitesse, montée moyenne.'}, {what: 'Les trois repères : un point à travailler, un point fort, et où en est le vol (marques de l’insigne d’argent).', why: 'savoir quoi travailler au prochain vol, sans se décourager : un point fort est toujours cité.'}, {what: 'Cliquer un conseil : le replay saute au moment exact du vol qui l’illustre.', why: 'voir le problème sur le vol lui-même plutôt que de le lire dans un tableau.'}, {what: 'Chaque conseil est rattaché à une étape de la formation (centrage, temps en spirale, vitesse en transition…).', why: 'relier l’erreur à la leçon : le pilote sait quelle étape de la formation retravailler.'}],
+                say: 'C’est la méthode d’un instructeur au débrief : commencer par ce qui va bien, puis donner un seul axe de travail, montré sur le vol. Les conseils disent où regarder ; ce n’est pas une note.'},
+            {title: 'Le débrief guidé', minutes: 2, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: '« Débrief guidé » dans la barre du replay : le vol raconté en chapitres (départ, chaque branche, plané final, bilan).', why: 'revivre le vol dans l’ordre, comme on le raconte au club, au lieu de sauter d’un chiffre à l’autre.'}, {what: 'Pour chaque branche : distance, temps, vitesse, thermiques et leur montée, part du temps en spirale, hauteur la plus basse.', why: 'repérer la branche où le vol s’est joué et comprendre pourquoi.'}, {what: '« Précédent / Suivant » cadre la carte sur le chapitre ; le replay s’arrête à la fin du chapitre.', why: 'avancer à son rythme, chapitre par chapitre, comme dans un débrief avec un instructeur.'}],
+                say: 'On revit le vol dans l’ordre, branche par branche, comme on le raconte au club après un vol réel. Le pilote apprend à structurer son propre débrief, et finira par le faire sans l’outil.'},
+            {title: 'Se voir de l’extérieur : le replay 2D et 3D', minutes: 2, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: '« 3D » puis « Suivre » : la caméra derrière le planeur, puis « orbite » et « cinéma » ; « Vue pilote » dans le cockpit ; « Plein écran ».', why: 'se voir de l’extérieur, ce que Condor ne permet pas pendant le vol : trajectoire, spirales, position par rapport au relief.'}, {what: '« Spirales × 5 » pour passer vite les thermiques.', why: 'gagner du temps au replay et se concentrer sur les transitions et les décisions.'}, {what: '« Instruments » : horizon artificiel (inclinaison enregistrée par Condor 3), vario avec sa moyenne sur 30 s, et en transition l’indication de ralentir ou d’accélérer pour la vitesse MacCready (« ✓ » quand elle est bonne).', why: 'apprendre à lire ses instruments et à voler à la bonne vitesse entre deux thermiques (étape 5).'}, {what: 'La trace colorée par le vario, l’altitude ou le netto ; le rideau jusqu’au sol ; les cumulus à la base des nuages.', why: 'voir d’un coup d’œil où l’air montait ou descendait, et à quelle hauteur on volait au-dessus du sol.'}],
+                say: 'Dans Condor on est dans le cockpit, on ne voit pas sa trajectoire. Ici on la voit de l’extérieur : on comprend tout de suite un thermique mal centré ou une transition trop lente. L’indication MacCready transforme l’étape 5 en réflexe.'},
+            {title: 'Lire la frise du vol', minutes: 1, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: 'Au-dessus de la barre : chaque balise franchie. En dessous : chaque thermique coloré par sa montée, les pentes en orange, le plané final.', why: 'voir le rythme du vol : où l’on a monté, où l’on a avancé, où l’on a perdu du temps.'}, {what: 'Les points bas en triangles rouges, les passages « Trop bas » (sous 150 m, loin d’une pente).', why: 'repérer les moments où le vol devenait risqué, pour apprendre à les éviter.'}, {what: 'Le centrage et le haut faible des thermiques hachurés, les ascendances traversées sans spiraler.', why: 'voir combien de temps on met à centrer un thermique et combien on y reste trop longtemps quand il faiblit.'}, {what: '« Légende » au-dessus de la carte : tout ce qui est dessiné, expliqué.', why: 'pouvoir tout lire sans formation préalable : chaque dessin de la carte est expliqué.'}],
+                say: 'D’un coup d’œil, on voit le rythme du vol et ses moments critiques. Les points trop bas, c’est la gestion du risque, la même culture de sécurité qu’en vol réel.'},
+            {title: 'Le radar de centrage', minutes: 2, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: 'À côté de la carte, pour le thermique affiché : les huit côtés du cercle, plus longs et plus foncés là où ça montait le mieux.', why: 'voir où, dans le cercle, le thermique était le plus fort.'}, {what: 'La phrase qui dit de quel côté décaler ses spirales, le temps mis à centrer, le temps resté dans le haut faible.', why: 'savoir exactement comment corriger son centrage au prochain thermique.'}, {what: '« Comparer » sur deux thermiques de la liste : durée, gain, montée, rayon, inclinaison, dérive.', why: 'comparer un bon et un mauvais thermique du même vol et comprendre la différence.'}],
+                say: 'Centrer un thermique est le geste de base du vol à voile, et le plus dur à expliquer en vol en réseau. Le radar le mesure et dit quoi corriger, cercle par cercle.'},
+            {title: 'La polaire appliquée à son vol', minutes: 1, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: 'Masse, charge alaire, finesse et taux de chute du planeur à cette masse (eau comprise).', why: 'comprendre que la masse et l’eau changent les performances du planeur.'}, {what: 'La polaire avec chaque transition du vol en point ; cliquer un point déplace le replay.', why: 'voir si chaque transition a été volée à la bonne vitesse, par rapport à ce que le planeur sait faire.'}, {what: 'Le netto (l’air traversé) et le MacCready effectif de chaque transition.', why: 'distinguer l’air traversé (montant ou descendant) de la façon de piloter, et savoir si l’on volait trop prudemment ou trop vite.'}],
+                say: 'La théorie de l’étape 5 et du BIA appliquée à son propre vol : « j’ai volé comme si j’attendais 1,5 m/s alors que je trouvais 2,5 m/s ». Les jeunes du BIA y voient leurs cours prendre vie.'},
+            {title: 'La sécurité : cône de plané, terrains, pentes, onde', minutes: 1, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: '« Terrains » : les terrains à portée en vert, l’anneau de portée autour du planeur, le terrain le plus proche à portée (« aucun » en rouge), les moments sans terrain sur la frise.', why: 'prendre l’habitude de toujours garder un terrain où se poser, comme en vrai.'}, {what: '« Pentes » : les faces au vent qui devraient porter ; l’onde en violet.', why: 'apprendre où le relief et le vent créent de l’ascendance.'}, {what: 'Le graphique de hauteur au-dessus du sol avec 300 m (choisir où se poser) et 150 m, la finesse nécessaire pour rejoindre l’arrivée.', why: 'savoir à quel moment il fallait choisir où se poser, et si l’arrivée était encore possible.'}],
+                say: 'On apprend à toujours avoir un terrain en local, comme en vrai. Un pilote qui s’habitue à le vérifier sur Condor le fera dans un vrai planeur.'},
+            {title: 'Score et pénalités', minutes: 1, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: 'Comme sur Condor Club : vitesse et hauteur au départ, altitude à l’arrivée, récupérations d’altitude, chacune avec ses points et un lien vers le moment.', why: 'comprendre chaque pénalité et le moment où elle a été prise, pour ne plus la refaire.'}, {what: 'Le total officiel du serveur à côté de l’estimation du site.', why: 'rappeler que le résultat officiel reste celui du serveur : le site explique, il ne juge pas.'}],
+                say: 'On ne se contente pas d’un total : le pilote voit à quel instant il a perdu des points et pourquoi. Le total du serveur reste celui qui compte.'},
+            {title: 'Les thermiques manqués et le fantôme', minutes: 2, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: 'Le bouton des couches, « Course : thermiques des autres / manqués » : les ascendances où les autres pilotes de la course ont monté, en jaune celles que ce vol a laissées passer (« Manqué à 129 m · +2,1 m/s »).', why: 'apprendre à repérer les thermiques que d’autres ont trouvés et que l’on a laissés passer.'}, {what: '« Fantôme » : le meilleur pilote de la course vole à côté, parti en même temps, avec l’écart en direct ; ou son propre meilleur vol sur ce plan de vol.', why: 'voir, en direct, où un meilleur pilote prend l’avantage, ou mesurer ses progrès contre son propre meilleur vol.'}],
+                say: 'Condor n’enregistre pas l’air ; les traces de tous les pilotes, si. Le savoir de chacun aide les autres : c’est l’esprit d’un club, mis au service de la progression.'},
+            {title: 'Partager un moment avec son formateur', minutes: 1, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: 'Le bouton de lien copie l’adresse du moment affiché (#t=…) : « regarde à 34 min, je ne comprends pas ».', why: 'poser une question précise à un formateur sur un instant précis du vol.'}, {what: '« Rendre public », le téléchargement du fichier d’origine et de l’export IGC.', why: 'montrer un beau vol, ou le garder pour soi, et le réutiliser dans d’autres outils.'}],
+                say: 'Le débrief continue après la session, en différé : le pilote envoie un moment précis, le formateur répond sur ce moment.'},
+        ],
+        outro: 'Ce que l’analyseur n’est pas : ni un carnet officiel, ni un classement officiel, ni un concurrent de Condor Club. C’est un miroir pour progresser, relié à la formation du club et à ses formateurs. Une demande d’accord à Condor Club est en cours pour échanger les traces et les circuits.',
+    },
+    {
+        id: 'session', title: 'Apprendre des autres : débriefer une session', minutes: 10, account: 'Le compte de pilote',
+        intro: 'Le vol en réseau du mercredi est le moment où l’on progresse ensemble. Le site en fait un débrief collectif, que l’on peut reprendre au briefing suivant.',
+        steps: [
+            {title: 'La page de la session', minutes: 1, link: session_url, cta: 'Ouvrir la session' ~ (session ? ' (' ~ session.participantCount ~ ' traces)' : ''),
+                show: [{what: 'Les résultats du serveur, avec un lien vers l’analyse de chaque pilote qui a déposé sa trace et « Me comparer ».', why: 'ouvrir le vol de n’importe quel pilote de la session et s’y comparer en un clic.'}, {what: '« Le circuit dans Condor », la météo, les pénalités et options de réalisme.', why: 'connaître les conditions exactes du vol : la météo et les règles qui s’appliquaient à tous.'}],
+                say: 'Tout le monde a volé dans le même ciel : c’est la meilleure base de comparaison possible.'},
+            {title: 'Rejouer toute la session', minutes: 2, link: session_url, cta: 'Ouvrir le replay de la session',
+                show: [{what: 'Tous les planeurs ensemble, chacun dans sa couleur, avec sa traînée et son étiquette.', why: 'revoir la course telle qu’elle s’est déroulée, avec tous les choix de chacun.'}, {what: '« Heure de course » (la course telle qu’elle s’est volée) ou « Départ du circuit ensemble ».', why: 'comparer des choix de trajectoire, même quand les pilotes ne sont pas partis au même moment.'}, {what: 'Cliquer un pilote pour le suivre, en 3D derrière lui ; les thermiques de tous, avec combien de pilotes y ont monté.', why: 'suivre le vol d’un meilleur pilote et voir quels thermiques le groupe a utilisés.'}, {what: 'Sous le replay, la carte des thermiques de la course, à faire défiler avec le curseur.', why: 'voir où se trouvaient les bonnes ascendances tout au long de la course.'}],
+                say: 'Au briefing, on peut montrer : « tout le monde a pris ce thermique, sauf deux pilotes, voilà ce qui leur est arrivé ».'},
+            {title: 'L’histoire de la course et le podium', minutes: 1, link: session_url, cta: 'Ouvrir la session',
+                show: [{what: 'L’histoire : qui menait, où le leader a changé ; chaque chapitre ouvre le replay au bon endroit.', why: 'comprendre les moments décisifs de la course, comme au débrief collectif du club.'}, {what: 'Le podium au-delà de la vitesse : meilleur grimpeur, meilleure finesse, le moins de temps en spirale.', why: 'valoriser d’autres qualités que la vitesse : un débutant peut briller en montée ou en finesse.'}],
+                say: 'On valorise d’autres qualités que la vitesse : un débutant peut être le meilleur grimpeur du soir. C’est motivant, et ça montre que chaque compétence compte.'},
+            {title: 'Comparer toute la session', minutes: 2, link: session_compare_url, cta: 'Ouvrir la comparaison de la session',
+                show: [{what: 'L’écart de chaque pilote au « leader virtuel » (le meilleur temps à chaque point du circuit) et son altitude.', why: 'voir où chacun a pris ou perdu du temps par rapport au meilleur possible.'}, {what: '« Isoler » un pilote ; le temps de chacun sur chaque branche, le meilleur en gras.', why: 'se concentrer sur un pilote et repérer la branche où il est le plus fort.'}, {what: 'Pour chaque pilote, les 10 km où il a perdu le plus, ce qu’il y a fait et ce qu’a fait le plus rapide.', why: 'donner à chaque pilote un endroit précis à retravailler, avec l’exemple de celui qui l’a mieux volé.'}],
+                say: 'Chacun repart avec un endroit précis à retravailler, et l’exemple de celui qui l’a mieux volé.'},
+            {title: 'Face au vainqueur', minutes: 2, link: compare_url, cta: 'Comparer le vol au meilleur de la course',
+                show: [{what: 'Les deux planeurs avancent ensemble le long du circuit, l’écart en direct.', why: 'voir en direct où se creuse l’écart avec le vainqueur.'}, {what: 'La cascade : les minutes gagnées ou perdues branche par branche, en spirale ou en ligne droite.', why: 'savoir si l’on perd du temps dans les thermiques ou dans les transitions.'}, {what: 'La phrase de synthèse : « perdu surtout en ligne droite » ou « surtout en spirale ».', why: 'retenir une seule chose à travailler.'}, {what: 'Les moments clés et les thermiques de chacun.', why: 'regarder précisément les passages qui ont fait la différence.'}],
+                say: 'La question n’est plus « suis-je bon ? » mais « que dois-je travailler ? » : le centrage ou les transitions. C’est exactement ce qu’un formateur cherche à faire comprendre.'},
+            {title: 'Le plan de vol, tous jours confondus', minutes: 1, link: plan_url, cta: 'Ouvrir la page du plan de vol',
+                show: [{what: 'Toutes les sessions du club sur ce plan de vol et leur vainqueur, toutes les traces rejouées depuis la ligne de départ.', why: 's’entraîner seul sur un circuit déjà volé et se mesurer aux meilleurs, quel que soit le jour.'}],
+                say: 'On peut refaire le circuit seul, un autre soir, et se mesurer aux meilleurs : l’entraînement entre deux sessions.'},
+            {title: 'La carte des ascendances du club', minutes: 1, link: path('app_flight_lift_map'), cta: 'Ouvrir la carte des ascendances',
+                show: [{what: 'Paysage par paysage : la carte de chaleur des thermiques de tous les vols du club, puis chaque thermique en zoomant.', why: 'préparer un vol en sachant où les pilotes du club trouvent l’ascendance.'}, {what: 'Les pentes en orange, filtrées par direction du vent : quelles pentes portent par quel vent.', why: 'savoir quelles pentes portent selon la direction du vent.'}],
+                say: 'La mémoire collective du club : on prépare son vol en regardant où les autres ont trouvé l’ascendance.'},
+            {title: 'Records et classement de la saison', minutes: 0, link: path('app_flight_records'), cta: 'Ouvrir les records',
+                show: [{what: 'Le meilleur temps par plan de vol, les records par paysage, le classement de la saison en kilomètres de circuits terminés.', why: 'donner des objectifs et une saine émulation, remise à zéro chaque saison.'}],
+                say: 'Une émulation modeste : une saison neuve chaque année, et chacun peut choisir de ne pas apparaître.'},
+        ],
+    },
+    {
+        id: 'formateur', title: 'Progresser avec un formateur', minutes: 7, account: 'Un compte de formateur, puis le compte de pilote',
+        intro: 'Le formateur n’a plus besoin d’être en ligne pendant le vol : il débriefe en différé, précisément, et suit la progression dans le temps.',
+        steps: [
+            {title: 'Commenter un moment du vol', minutes: 2, link: flight_url, cta: 'Ouvrir le vol',
+                show: [{what: 'Placer le replay sur un thermique, écrire un commentaire : il est rattaché à ce moment et, au choix, à une étape de la formation.', why: 'donner un retour précis, attaché à l’instant du vol et à la leçon concernée, sans être en ligne pendant le vol.'}, {what: 'La bulle bleue sur la frise et l’étiquette sur la trace ; cliquer ramène au moment.', why: 'permettre au pilote de retrouver le commentaire sur sa trace et de le relire autant qu’il le faut.'}, {what: 'Le pilote reçoit un e-mail ou une notification.', why: 'que le pilote ne rate pas le retour de son formateur.'}],
+                say: 'Le commentaire est attaché à l’instant du vol, comme un instructeur qui dit « là, tu aurais dû élargir ». Le pilote le relit sur sa trace autant de fois qu’il veut.'},
+            {title: 'Le carnet de vol du pilote', minutes: 2, link: path('app_account_logbook'), cta: 'Ouvrir mon carnet',
+                show: [{what: 'Les totaux, le conseil qui revient le plus souvent.', why: 'voir le chemin parcouru et l’erreur qui revient le plus souvent.'}, {what: 'Une courbe par valeur (vitesse, montée, finesse, temps en spirale), avec le détail de chaque vol sous le curseur.', why: 'mesurer sa progression dans le temps, vol après vol.'}, {what: 'Les compétences et leur tendance sur les trois derniers vols : centrage, montée, temps en spirale, sortie des thermiques, vol en dauphin, finesse.', why: 'savoir quelles compétences s’améliorent et lesquelles stagnent.'}, {what: 'Les badges de vol : premier circuit, 100, 300, 500 km, 3 h et 5 h, gain de 1 000 m, insigne d’argent.', why: 'marquer les grandes premières du pilote et l’encourager.'}],
+                say: 'On ne juge pas un vol mais une progression. « Ton centrage est passé de 50 à 25 secondes en trois vols » : c’est la preuve qui motive.'},
+            {title: 'La vue du formateur', minutes: 2, link: pilot_logbook_url, cta: 'Ouvrir le carnet du pilote du vol vitrine',
+                show: [{what: 'Le parcours de formation : chaque étape non commencée, en cours ou validée, avec la note du formateur et le vol de référence.', why: 'suivre la formation d’un pilote au même endroit, à la place des classeurs Excel.'}, {what: 'Ce que le pilote a fait dans « Mon parcours » et le meilleur vol de chaque exercice réussi : la preuve pour valider l’étape.', why: 'valider une étape sur des preuves : les exercices réussis et leurs vols.'}, {what: 'Sur le tableau de bord du formateur : les vols à commenter.', why: 'ne laisser aucun vol sans retour.'}],
+                say: 'Cela remplace les classeurs Excel du Drive : tout le suivi est au même endroit, à jour, visible par le pilote et par tous ses formateurs.',
+                tip: 'Le droit « formateur » n’est donné à aucun groupe par défaut : créer un groupe « Formateur » avant la démo (Acte 9).'},
+            {title: 'La messagerie', minutes: 1, link: path('app_account_messages'), cta: 'Ouvrir la messagerie',
+                show: [{what: '« Écrire au pilote » depuis la page d’un vol : le message porte sur ce vol.', why: 'poser une question sur un vol précis, directement au pilote concerné.'}, {what: 'Écrire au comité ou aux administrateurs ; les messages non lus dans le menu, l’e-mail de chaque nouveau message.', why: 'joindre le comité ou les administrateurs, sans perdre la question dans un groupe de discussion.'}],
+                say: 'La question d’un élève arrive à la bonne personne, avec le vol dont il parle.'},
+        ],
+    },
+    {
+        id: 'parcours', title: '« Mon parcours » : apprendre en jouant', minutes: 8, account: 'Le compte de pilote',
+        intro: 'Les jeunes viennent pour le jeu. « Mon parcours » utilise les codes du jeu (chemin, badges, classements) pour les mener vers la méthode, les formateurs et les sessions.',
+        steps: [
+            {title: 'Le chemin des huit étapes', minutes: 1, link: path('app_path'), cta: 'Ouvrir « Mon parcours »',
+                show: [{what: 'L’état de chaque étape : faite, en cours, à débloquer, bientôt ; les éléments faits ; la qualification atteinte.', why: 'voir où l’on en est dans la formation et ce qu’il reste à faire.'}, {what: 'Une étape s’ouvre quand la précédente est faite, ou validée par un formateur.', why: 'garantir qu’on ne saute pas d’étape, comme en école de vol à voile, tout en laissant un formateur débloquer la suite.'}],
+                say: 'On ne saute pas les étapes : comme en école de vol à voile, chaque compétence s’appuie sur la précédente.'},
+            {title: 'Une étape, ses lectures et ses vidéos', minutes: 1, link: path('app_path_step', {number: 1}), cta: 'Ouvrir l’étape 1',
+                show: [{what: 'L’introduction de l’étape, la note du formateur, les éléments dans l’ordre.', why: 'savoir ce qu’une étape attend de soi et dans quel ordre travailler.'}, {what: 'Une lecture ou une vidéo, puis « C’est fait ».', why: 'apprendre avec les ressources choisies par le club, et garder trace de ce qu’on a lu ou vu.'}],
+                say: 'Les ressources du club et de la FFVP sont rangées dans l’ordre où elles servent.'},
+            {title: 'Le quiz corrigé', minutes: 2, link: quiz_url, cta: 'Ouvrir l’étape d’un quiz',
+                show: [{what: 'Les questions à la manière du BIA.', why: 'réviser la théorie du BIA et du brevet de façon ludique.'}, {what: 'Le résultat : chaque question juste ou fausse, la bonne réponse et son explication ; on peut recommencer, le meilleur score est gardé.', why: 'apprendre de ses erreurs : l’explication de chaque réponse est la leçon.'}],
+                say: 'Le quiz n’est pas un examen : l’explication après chaque réponse est la leçon. On peut s’y reprendre autant de fois qu’il faut.',
+                tip: 'Les quiz sont des brouillons à relire par les formateurs avant leur mise en ligne.'},
+            {title: 'L’exercice corrigé par le vol lui-même', minutes: 2, link: exercise_url, cta: 'Ouvrir un exercice en vol',
+                show: [{what: 'Un plan de vol, un planeur et des critères : circuit terminé, posé sur un terrain, pas de pénalité, pas de récupération d’altitude, spirales du côté le moins pratiqué, altitude la plus basse…', why: 'donner un objectif de vol précis et mesurable, correspondant à l’étape.'}, {what: 'Chaque vol du pilote sur ce plan de vol, chaque critère réussi ou manqué avec la valeur volée.', why: 'savoir quel critère est réussi ou manqué, vol après vol, avec la valeur réellement volée.'}, {what: '« Voir le moment » : le critère manqué ouvre l’instant du vol où il l’a été.', why: 'voir l’erreur à l’instant où elle a eu lieu et savoir quoi refaire.'}],
+                say: 'C’est l’analyse du vol qui corrige l’exercice, objectivement, à toute heure. Le pilote sait exactement quoi refaire, et le formateur garde son temps pour ce qui demande un humain.'},
+            {title: 'Les classements par saison et par niveau', minutes: 1, link: exercise_url, cta: 'Ouvrir le classement d’un exercice',
+                show: [{what: 'Seuls les vols qui ont réussi tous les critères sont classés.', why: 'récompenser les vols propres : un vol pénalisé ne peut pas gagner.'}, {what: 'Le choix de la saison et du niveau : tout le monde, élèves, ePilotes.', why: 'que chacun se compare à des pilotes de son niveau et ait sa chance chaque saison.'}],
+                say: 'La qualité passe avant la vitesse : un vol pénalisé ne peut pas gagner. Et un élève ne court pas contre les meilleurs pilotes du club.'},
+            {title: 'Les badges de bonne pratique', minutes: 1, link: path('app_path', {_fragment: 'badges'}), cta: 'Ouvrir les badges',
+                show: [{what: 'Explorateur, Appliqué, Théoricien, Retour au terrain, Vol propre, Pilote du club, Régulier, Podium, chacun en bronze, argent et or.', why: 'encourager les bonnes habitudes : se poser sur un terrain, voler sans pénalité, venir régulièrement.'}],
+                say: 'Les badges récompensent les bonnes habitudes : se poser sur un terrain, voler sans pénalité, venir régulièrement. La vitesse a déjà ses classements.'},
+        ],
+        outro: 'Un jeu ? Oui, mais au service de la méthode : le jeu attire, le parcours mène vers les formateurs et les sessions. Un jeu au départ peut devenir une vocation, et un jour un vrai lâcher.',
+    },
+    {
+        id: 'ecole', title: 'L’école : les classes du BIA', minutes: 5, account: 'Un compte d’enseignant et un compte d’élève, dans deux fenêtres',
+        intro: 'Le club peut accompagner une classe de BIA, en particulier à La Réunion. L’enseignant suit ses élèves sans devenir formateur.',
+        steps: [
+            {title: 'L’enseignant crée sa classe', minutes: 1, link: path('app_account_classes'), cta: 'Ouvrir « Mes classes »',
+                show: [{what: '« Nouvelle classe » : nom et établissement.', why: 'créer un groupe d’élèves en une minute, sans saisir de liste.'}, {what: 'Le lien à donner aux élèves, « Changer le lien », fermer le lien quand tout le monde a rejoint.', why: 'inscrire les élèves sans collecter leurs adresses, en gardant le contrôle de qui rejoint la classe.'}],
+                say: 'Un lien suffit : pas de liste d’élèves à saisir, pas d’adresse e-mail à collecter.',
+                tip: 'Le droit « enseignant » n’est donné à aucun groupe par défaut : créer un groupe « Enseignant » avant la démo (Acte 9).'},
+            {title: 'L’élève rejoint la classe', minutes: 2, link: path('app_account_classes'), cta: 'Ouvrir « Mes classes » de l’élève',
+                show: [{what: 'Dans l’autre fenêtre, ouvrir le lien de la classe : ce que rejoindre veut dire.', why: 'informer l’élève avant qu’il ne s’engage.'}, {what: 'Choisir comment les autres le voient : prénom ou pseudonyme, jamais le nom.', why: 'protéger les mineurs : leur nom n’est jamais montré aux autres.'}, {what: 'Ses prochains vols deviennent privés par défaut ; « Quitter la classe » quand il veut.', why: 'que l’élève garde la main sur ce qu’il montre, et reste libre de partir.'}],
+                say: 'Les règles les plus protectrices pour les mineurs : un élève n’est jamais montré sous son nom, et rien ne devient public sans son propre choix.'},
+            {title: 'L’enseignant suit ses élèves', minutes: 2, link: path('app_account_classes'), cta: 'Ouvrir la classe',
+                show: [{what: 'Pour chaque élève : les huit étapes (faite, en cours avec son pourcentage, non atteinte), le nombre de vols, les heures, le dernier vol.', why: 'voir d’un coup d’œil qui avance et qui décroche, pour aider au bon moment.'}, {what: 'Le nom ouvre le carnet de vol de l’élève.', why: 'regarder le détail des vols d’un élève et relier le cours de BIA à ce qu’il a volé.'}],
+                say: 'L’enseignant voit d’un coup d’œil qui avance et qui décroche, et peut relier le cours de BIA (aérologie, mécanique du vol) aux vols de ses élèves.'},
+        ],
+    },
+    {
+        id: 'club', title: 'La vie du club', minutes: 4, account: 'Un compte de membre',
+        intro: 'Le site fait vivre le rendez-vous en réseau et garde le lien entre deux sessions.',
+        steps: [
+            {title: 'Proposer une session', minutes: 2, link: path('app_session_new'), cta: 'Ouvrir le formulaire de session',
+                show: [{what: 'Le plan de vol avec suggestions, la fiche eplaneur.fr remplie toute seule.', why: 'proposer une session en quelques clics, sans erreur sur le plan de vol.'}, {what: 'Le lien Condor Club du circuit : les réglages (météo, pénalités, départ) sont lus automatiquement.', why: 'éviter de saisir la météo et les règles à la main : elles sont reprises du circuit.'}, {what: 'Après le vol, le fichier de résultats du serveur : les traces s’y rattachent.', why: 'publier les résultats et rattacher automatiquement les vols de chacun à la session.'}],
+                say: 'Un membre peut organiser une session sans être administrateur : le club grandit par ses membres.'},
+            {title: 'Rappels, résultats et lettre mensuelle', minutes: 1, link: path('app_account_profile'), cta: 'Ouvrir les préférences',
+                show: [{what: 'Le rappel la veille de la session, puis les résultats et le podium, par e-mail et en notification.', why: 'faire venir et revenir les pilotes, y compris ceux qui ne sont pas sur WhatsApp ou Discord.'}, {what: 'La lettre mensuelle : le mois en chiffres, les records, les prochains vols, les actualités.', why: 'garder le lien avec les membres moins actifs et leur donner envie de revoler.'}],
+                say: 'Ils ne remplacent pas WhatsApp ni Discord : ils touchent ceux qui n’y sont pas, souvent les nouveaux.'},
+            {title: 'Les contenus réservés', minutes: 1, link: path('app_post_index'), cta: 'Ouvrir les actualités',
+                show: [{what: 'Une page ou une actualité réservée aux membres, au comité ou à un groupe ; les documents officiels.', why: 'montrer à chaque public ce qui le concerne : comptes rendus du comité, documents réservés aux membres.'}],
+                say: 'Chaque public voit ce qui le concerne, sans multiplier les outils.'},
+        ],
+    },
+    {
+        id: 'administration', title: 'Le comité et l’administration', minutes: 9, account: 'Votre compte d’administrateur',
+        intro: 'Tout ce qui précède se pilote sans développeur. Le comité et les formateurs construisent eux-mêmes le contenu et la pédagogie.',
+        steps: [
+            {title: 'Le tableau de bord de l’administration', minutes: 1, link: path('admin'), cta: 'Ouvrir l’administration',
+                show: [{what: 'Une carte par écran, selon les droits de chacun ; les adhésions et messages à traiter en badge dans le menu.', why: 'trouver en un coup d’œil ce qu’il y a à traiter, selon son rôle.'}],
+                say: 'Chacun ne voit que ce qu’il a le droit de faire.'},
+            {title: 'Écrire une actualité', minutes: 2, link: path('admin_post_index'), cta: 'Ouvrir les articles',
+                show: [{what: 'L’éditeur par blocs : le contenu avec les styles du site, la bibliothèque de blocs, « / » pour chercher un bloc.', why: 'publier une actualité ou une page sans compétence technique, en voyant le résultat final.'}, {what: '« Aperçu », la publication programmée, l’accès réservé.', why: 'relire avant de publier, programmer une annonce, réserver un contenu à un public.'}, {what: 'La médiathèque, les documents officiels et les menus.', why: 'gérer les images, les documents officiels (statuts, règlement) et la navigation du site.'}],
+                say: 'Un compte rendu ou une annonce se publie en quelques minutes, avec le rendu final sous les yeux.'},
+            {title: 'Les adhésions', minutes: 2, link: path('admin_membership_index'), cta: 'Ouvrir les adhésions',
+                show: [{what: 'Les saisons et tarifs ; une demande : « Paiement reçu », « Valider » (le groupe Membre et l’e-mail de bienvenue), l’attestation.', why: 'traiter les adhésions de bout en bout, de la demande à l’attestation.'}, {what: 'L’export de la saison pour le trésorier ; la fiche de chaque membre avec ses vols.', why: 'donner au trésorier ce dont il a besoin, et retrouver tout sur un membre.'}, {what: 'Le paiement en ligne HelloAsso, qui s’active avec les clés du club.', why: 'permettre de payer en ligne, sans virement à rapprocher à la main.'}],
+                say: 'L’adhésion sur le site du club relie le membre à sa progression : plus besoin de rapprocher deux outils.'},
+            {title: 'L’activité du club pour l’assemblée générale', minutes: 1, link: path('app_activity'), cta: 'Ouvrir l’activité du club',
+                show: [{what: 'Mois par mois : comptes, adhésions, vols, heures, pilotes actifs, sessions, étapes validées, éléments de « Mon parcours », commentaires des formateurs.', why: 'préparer le bilan de l’assemblée générale avec des chiffres sur la formation, pas seulement sur les adhésions.'}, {what: 'L’export pour un tableur.', why: 'reprendre les chiffres dans un tableur ou une présentation.'}],
+                say: 'On mesure enfin la formation, pas seulement les adhésions : combien d’étapes validées, combien de commentaires des formateurs.'},
+            {title: 'Les comptes, les groupes et les droits', minutes: 1, link: path('admin_group_index'), cta: 'Ouvrir les groupes et droits',
+                show: [{what: 'Les droits à la carte, par groupe ; un groupe peut en inclure d’autres.', why: 'décider qui peut faire quoi, sans toucher au code.'}, {what: 'Créer ici les groupes « Formateur » (commenter les vols) et « Enseignant » (créer des classes).', why: 'confier le suivi des pilotes aux formateurs et les classes aux enseignants.'}, {what: 'Les comptes et les classes.', why: 'gérer les comptes, et les classes des enseignants en cas de besoin.'}],
+                say: 'Le club décide qui fait quoi, sans toucher au code.'},
+            {title: 'Construire la pédagogie de « Mon parcours »', minutes: 1, link: path('admin_path_step_index'), cta: 'Ouvrir la configuration de « Mon parcours »',
+                show: [{what: 'Ouvrir une étape, placer ses lectures, ses exercices et leurs critères, ses quiz et la validation par un formateur.', why: 'construire la formation du club : quoi lire, quoi voler, comment c’est validé.'}, {what: 'L’éditeur de quiz : questions, réponses, explication, seuil de réussite.', why: 'écrire les quiz de théorie et leurs explications.'}],
+                say: 'Les formateurs écrivent eux-mêmes les exercices et leurs critères : la pédagogie appartient au club, pas au site.'},
+            {title: 'L’atelier de plans de vol', minutes: 1, link: path('app_flight_plan_workshop'), cta: 'Ouvrir l’atelier',
+                show: [{what: 'Le paysage, les terrains, la longueur, le niveau, l’étape et la compétence visées, la météo.', why: 'concevoir un circuit adapté à un niveau et à une compétence de la formation.'}, {what: 'La consigne prête à donner à Claude pour écrire un plan de vol Condor 3.', why: 'obtenir un plan de vol prêt à charger dans Condor 3 sans tout régler à la main.'}],
+                say: 'Un plan de vol pensé pour une compétence de la formation : un exercice de centrage, un exercice de transitions.'},
+        ],
+    },
+] %}
+
+{% set total = 0 %}
+{% for act in acts %}{% set total = total + act.minutes %}{% endfor %}
+
+{% set faq = [
+    {q: 'Pourquoi ne pas simplement utiliser Condor Club ?', a: 'Condor Club reste indispensable : le CN, le carnet officiel, les circuits, les challenges, les badges virtuels et les compétitions. Le site du club ne publie aucun classement officiel. Il explique les vols pour progresser et les relie à la formation du club et à ses formateurs. Une demande d’accord à Condor Club est en cours pour échanger les traces et les circuits.'},
+    {q: 'Et eplaneur.fr ?', a: 'eplaneur.fr reste la bibliothèque : documentation de Condor, paysages, base et fiches des plans de vol. Chaque session du site renvoie à la fiche de son plan de vol.'},
+    {q: 'WhatsApp et Discord vont-ils disparaître ?', a: 'Non. Discord reste la voix des briefings et du vol, WhatsApp l’annonce rapide. Le site garde la mémoire : sessions, résultats, vols, progression.'},
+    {q: 'Est-ce que ça ne transforme pas le club en jeu ?', a: 'Le jeu sert à attirer et à motiver. Les classements ne retiennent que les vols propres, les badges récompensent les bonnes habitudes, et le parcours mène vers les formateurs et les sessions.'},
+    {q: 'Que deviennent les données des jeunes ?', a: 'Prénom ou pseudonyme dans une classe, vols privés par défaut, choix de ne pas apparaître dans les classements, export et suppression du compte à tout moment. Le consentement d’un parent pour les moins de 15 ans reste à décider par le comité.'},
+    {q: 'Qui fera vivre le site ?', a: 'Le comité et les formateurs, depuis l’administration : articles, pages, adhésions, sessions, étapes, exercices et quiz. Aucun développeur n’est nécessaire au quotidien.'},
+] %}
+
+{% block body %}
+    <section class="p-demo-hero t-dark" aria-labelledby="demo-title">
+        <div class="l-container l-stack l-stack--lg">
+            <div class="l-stack l-stack--sm">
+                <twig:Ui:Eyebrow>Réservé aux administrateurs</twig:Ui:Eyebrow>
+                <h1 id="demo-title" class="c-display">Plan de la démonstration</h1>
+                <p class="u-lead p-demo-hero__lead">À lire de haut en bas : il parcourt tout le site dans l’ordre du parcours d’un pilote, du visiteur au comité. Chaque étape dit où cliquer, quoi montrer et quoi dire, et en particulier ce que la fonctionnalité apporte à l’apprentissage.</p>
+            </div>
+            <dl class="p-demo-hero__facts">
+                <div><dt>Durée</dt><dd>environ {{ total }} minutes</dd></div>
+                <div><dt>Actes</dt><dd>{{ acts|length }}</dd></div>
+                <div><dt>Vol vitrine</dt><dd>{% if showcase %}<a href="{{ flight_url }}">{{ showcase.pilot }}{{ showcase.flightPlan ? ' · ' ~ showcase.flightPlan|split('_')|first }}</a>{% else %}aucun vol public{% endif %}</dd></div>
+                <div><dt>Session vitrine</dt><dd>{% if session %}<a href="{{ session_url }}">{{ session.flightPlan.code }} · {{ session.date|date('d/m/Y') }}</a>{% else %}aucune session avec des traces{% endif %}</dd></div>
+            </dl>
+        </div>
+    </section>
+
+    <twig:Layout:Section theme="paper" id="preparer">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="La veille" title="Préparer la démonstration" />
+            <div class="p-demo-prep">
+                <section class="l-stack l-stack--sm" aria-labelledby="prep-accounts">
+                    <twig:Ui:Heading level="3" size="h4" id="prep-accounts">Les comptes, chacun dans sa fenêtre</twig:Ui:Heading>
+                    <ul class="p-demo-list">
+                        <li>Une fenêtre de navigation privée, sans compte (acte 1).</li>
+                        <li>Un pilote qui a déposé des vols et commencé « Mon parcours » (actes 2 à 6, 8).</li>
+                        <li>Un formateur : un groupe « Formateur » avec « Commenter les vols des pilotes » (acte 5).</li>
+                        <li>Un enseignant (groupe « Enseignant » avec « Créer des classes ») et un élève (acte 7).</li>
+                        <li>Votre compte d’administrateur (acte 9).</li>
+                    </ul>
+                    <p class="u-note">Ces deux droits ne sont donnés à aucun groupe par défaut : créez les groupes dans <a href="{{ path('admin_group_index') }}">Groupes et droits</a>.</p>
+                </section>
+                <section class="l-stack l-stack--sm" aria-labelledby="prep-data">
+                    <twig:Ui:Heading level="3" size="h4" id="prep-data">Les données à vérifier</twig:Ui:Heading>
+                    <ul class="p-demo-list">
+                        <li>Le vol vitrine : {% if showcase %}<a href="{{ flight_url }}">le dernier vol public au circuit terminé</a>{% else %}<strong>aucun vol public</strong> : rendez un vol public depuis sa page{% endif %}.</li>
+                        <li>La session vitrine : {% if session %}<a href="{{ session_url }}">celle qui a le plus de traces</a> ({{ session.participantCount }}){% else %}<strong>aucune</strong> : déposez les traces d’une même course{% endif %}.</li>
+                        <li>Un exercice en vol : {% if exercise %}<a href="{{ exercise_url }}">{{ exercise.title }}</a>{% else %}<strong>aucun</strong> : placez-en un dans une étape ouverte, <a href="{{ path('admin_path_step_index') }}">Mon parcours</a>{% endif %}.</li>
+                        <li>Un quiz : {% if quiz %}<a href="{{ quiz_url }}">{{ quiz.title }}</a>{% else %}<strong>aucun</strong> : importez les brouillons et placez-en un dans une étape{% endif %}.</li>
+                        <li>Une session à venir, pour le compte à rebours de l’accueil.</li>
+                        <li>Un fichier .ftr ou .igc sur le bureau, pour le dépôt en direct.</li>
+                    </ul>
+                </section>
+                <section class="l-stack l-stack--sm" aria-labelledby="prep-screen">
+                    <twig:Ui:Heading level="3" size="h4" id="prep-screen">L’écran et le téléphone</twig:Ui:Heading>
+                    <ul class="p-demo-list">
+                        <li>Ouvrir une fois le vol vitrine en 3D pour charger le relief.</li>
+                        <li>Le téléphone avec le site installé et les notifications activées.</li>
+                        <li>Une bonne connexion : la 3D charge le relief et les images satellite.</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </twig:Layout:Section>
+
+    <twig:Layout:Section theme="light" id="fil-rouge">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="Le message à faire passer" title="Le fil rouge : voler, comprendre, corriger, revoler" />
+            <ol class="p-demo-loop" role="list">
+                <li><strong>Voler</strong> seul ou en session, dans Condor.</li>
+                <li><strong>Comprendre</strong> son vol : le replay, les conseils, le débrief guidé.</li>
+                <li><strong>Corriger</strong> avec les autres et avec un formateur : la session, le vainqueur, les commentaires.</li>
+                <li><strong>Revoler</strong> avec un objectif : l’exercice de l’étape, vérifié par le vol suivant.</li>
+            </ol>
+            <div class="p-demo-roles">
+                <p><strong>Condor</strong> est le simulateur. <strong>Condor Club</strong> reste le carnet officiel, les classements et les compétitions. <strong>eplaneur.fr</strong> reste la bibliothèque. <strong>Discord et WhatsApp</strong> restent la voix et l’annonce.</p>
+                <p><strong>Le site du club</strong> est l’école : il relie chaque vol à la progression du pilote, à la formation du club et à ses formateurs.</p>
+            </div>
+            <nav class="p-demo-toc" aria-label="Les actes de la démonstration">
+                <ol role="list">
+                    {% for act in acts %}
+                        <li><a href="#{{ act.id }}"><span class="p-demo-toc__number">{{ loop.index }}</span> {{ act.title }}</a> <span class="p-demo-toc__time">{{ act.minutes }} min</span></li>
+                    {% endfor %}
+                    <li><a href="#questions"><span class="p-demo-toc__number">?</span> Les questions probables</a></li>
+                </ol>
+            </nav>
+        </div>
+    </twig:Layout:Section>
+
+    {% for act in acts %}
+        {% set number = loop.index %}
+        <twig:Layout:Section theme="{{ loop.index is odd ? 'paper' : 'light' }}" id="{{ act.id }}" class="p-demo-act">
+            <div class="l-stack l-stack--lg">
+                <header class="l-stack l-stack--sm">
+                    <twig:Ui:Eyebrow>Acte {{ number }} · {{ act.minutes }} minutes</twig:Ui:Eyebrow>
+                    <twig:Ui:Heading level="2" size="h2">{{ act.title }}</twig:Ui:Heading>
+                    <p class="u-lead">{{ act.intro }}</p>
+                    <p class="p-demo-act__account"><strong>Compte :</strong> {{ act.account }}</p>
+                </header>
+                <ol class="p-demo-steps" role="list">
+                    {% for step in act.steps %}
+                        <li class="p-demo-step">
+                            <div class="p-demo-step__head">
+                                <span class="p-demo-step__number">{{ number }}.{{ loop.index }}</span>
+                                <twig:Ui:Heading level="3" size="h4">{{ step.title }}</twig:Ui:Heading>
+                                {% if step.minutes > 0 %}<twig:Ui:Tag variant="muted">{{ step.minutes }} min</twig:Ui:Tag>{% endif %}
+                            </div>
+                            <div class="p-demo-step__body">
+                                <div class="l-stack l-stack--sm">
+                                    <twig:Ui:Eyebrow>À montrer</twig:Ui:Eyebrow>
+                                    <ul class="p-demo-list">
+                                        {% for item in step.show %}<li>{{ item.what }}<span class="p-demo-step__why"><strong>À quoi ça sert :</strong> {{ item.why }}</span></li>{% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="p-demo-step__say">
+                                    <twig:Ui:Eyebrow>À dire</twig:Ui:Eyebrow>
+                                    <p>{{ step.say }}</p>
+                                </div>
+                                {% if step.tip is defined %}<p class="u-note p-demo-step__tip"><strong>Attention :</strong> {{ step.tip }}</p>{% endif %}
+                            </div>
+                            <div><twig:Ui:Button href="{{ step.link }}" size="sm" variant="outline">{{ step.cta }}</twig:Ui:Button></div>
+                        </li>
+                    {% endfor %}
+                </ol>
+                {% if act.outro is defined %}<p class="p-demo-act__outro">{{ act.outro }}</p>{% endif %}
+            </div>
+        </twig:Layout:Section>
+    {% endfor %}
+
+    <twig:Layout:Section theme="{{ acts|length is odd ? 'light' : 'paper' }}" id="questions">
+        <div class="l-stack l-stack--lg">
+            <twig:Layout:SectionHeader eyebrow="Pour conclure" title="Les questions probables" lead="Finir en revenant au fil rouge : voler, comprendre, corriger, revoler. Puis laisser la place aux questions." />
+            <dl class="p-demo-faq">
+                {% for entry in faq %}
+                    <div><dt>{{ entry.q }}</dt><dd>{{ entry.a }}</dd></div>
+                {% endfor %}
+            </dl>
+            <p>Les décisions qui attendent le comité sont à la fin de <a href="{{ path('app_site_tour') }}#decisions">la présentation du site au comité</a>.</p>
+        </div>
+    </twig:Layout:Section>
+{% endblock %}

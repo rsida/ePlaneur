@@ -70,4 +70,5 @@ each one. The domain reference (the club, the training, the network flights) is 
 | Accounts, groups and their permissions; classes of the teachers | `/admin` | [accounts](accounts.md), [teacher space](teacher-space.md) |
 | Mon parcours: open the steps, place readings, exercises (flight plan, glider, criteria, ranking), quizzes and validations; the quiz builder | `/admin/path-step`, `/admin/quiz` | [Mon parcours](training-path.md#back-office) |
 | Flight plan workshop: the instructions to have a Condor 3 flight plan written | `/plans-de-vol/atelier` | [sessions](sessions.md#flight-plan-workshop) |
+| Script of an end-to-end demonstration: every feature in the order of a visit, what to show and what to say about its teaching purpose | `/plan-de-demo` | [script of the demonstration](demo-plan.md) |
 | Console commands: imports, scheduled tasks, accounts | | [console commands](commands.md) |

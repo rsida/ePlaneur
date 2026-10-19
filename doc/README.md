@@ -13,6 +13,7 @@
 | [Condor 3 integration study](condor-integration.md) | What Condor 3 writes and outputs (IGC export, race results, UDP, `cndr3:` links) and what the site could do with it |
 | [Mon parcours](training-path.md) | `/parcours`: the training path as a path of progression, steps and items, quizzes, exercises checked by the analysis, rankings by season and level, badges; `/premier-vol`; back-office |
 | [Presentation for the committee](site-tour.md) | `/comite/le-site`: every feature, the striking ones first, with live links; reserved to the committee |
+| [Script of the demonstration](demo-plan.md) | `/plan-de-demo`: an end-to-end demonstration act by act, with its teaching message; reserved to the administrators |
 | [Teacher space](teacher-space.md) | `/mon-compte/classes`: classes of the teachers, the link to join, the progression of the pupils, the rules for minors |
 | [Monthly digest](monthly-digest.md) | The e-mail of the month for the accounts that asked for it, and its command |
 | [Installable site](installable-site.md) | Manifest, icons, service worker, offline page and install button |

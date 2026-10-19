@@ -135,6 +135,8 @@ final class DashboardController extends AbstractDashboardController
             ->setPermission(Permission::GroupManage->value);
 
         yield MenuItem::section();
+        yield MenuItem::linkToUrl('Plan de la démonstration', 'list-ordered', $this->generateUrl('app_demo_plan'))
+            ->setPermission(Permission::DemoPlan->value);
         yield MenuItem::linkToRoute('Voir le site', 'external-link', 'app_home');
     }
 
@@ -163,6 +165,7 @@ final class DashboardController extends AbstractDashboardController
             ['label' => 'Comptes', 'text' => 'Les comptes du site et leurs groupes.', 'icon' => 'users', 'route' => 'admin_user_index', 'permission' => Permission::UserManage->value],
             ['label' => 'Classes', 'text' => 'Les classes des enseignants et leurs élèves.', 'icon' => 'users', 'route' => 'admin_school_class_index', 'permission' => Permission::UserManage->value],
             ['label' => 'Groupes et droits', 'text' => 'Choisir ce que chaque groupe peut faire.', 'icon' => 'shield-check', 'route' => 'admin_group_index', 'permission' => Permission::GroupManage->value],
+            ['label' => 'Plan de la démonstration', 'text' => 'Parcourir tout le site dans l’ordre d’une démonstration, avec ce que chaque fonctionnalité apporte à l’apprentissage.', 'icon' => 'list-ordered', 'route' => 'app_demo_plan', 'permission' => Permission::DemoPlan->value],
         ];
     }
 }

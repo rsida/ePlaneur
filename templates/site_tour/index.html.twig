@@ -149,6 +149,7 @@
                     </li>
                 {% endfor %}
             </ol>
+            {% if is_granted('DEMO_PLAN') %}<p><twig:Ui:Link href="{{ path('app_demo_plan') }}">Le plan détaillé de la démonstration complète, acte par acte</twig:Ui:Link></p>{% endif %}
         </div>
     </twig:Layout:Section>
 

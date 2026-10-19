@@ -39,6 +39,7 @@ enum Permission: string implements TranslatableInterface
     case ActivityView = 'ACTIVITY_VIEW';
     case ClassTeach = 'CLASS_TEACH';
     case SiteTour = 'SITE_TOUR';
+    case DemoPlan = 'DEMO_PLAN';
 
     public function label(): string
     {
@@ -66,6 +67,7 @@ enum Permission: string implements TranslatableInterface
             self::ActivityView => 'Voir l’activité du club mois par mois et l’exporter (assemblée générale)',
             self::ClassTeach => 'Créer des classes et suivre la progression de ses élèves (enseignants)',
             self::SiteTour => 'Lire la présentation des fonctionnalités du site (comité)',
+            self::DemoPlan => 'Lire le plan de la démonstration complète du site (administrateurs)',
         };
     }
 

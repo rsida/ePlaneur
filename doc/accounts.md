@@ -27,7 +27,8 @@ Default groups, created by the first migration and by the dev fixtures (`App\Sec
 `FLIGHT_PLAN_PREPARE` (the flight plan workshop, see [sessions](sessions.md#flight-plan-workshop)) is
 held by no default group either: only administrators open the workshop for now. Nor is
 `TRAINING_MANAGE` (steps, items and quizzes of [Mon parcours](training-path.md)), nor `CLASS_TEACH`
-(teachers: classes and the progression of their pupils, see [teacher space](teacher-space.md)).
+(teachers: classes and the progression of their pupils, see [teacher space](teacher-space.md)), nor
+`DEMO_PLAN` (the [script of the demonstration](demo-plan.md)).
 
 Administrators can create other groups (Rédacteur, Bienfaiteur, Bénévole...) and change which
 permissions each group holds. A registered user without any group is a free account ("inscrit").
