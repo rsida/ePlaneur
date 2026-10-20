@@ -54,6 +54,8 @@ final class DemoPlanTest extends WebTestCase
         $steps = $this->client->getCrawler()->filter('.p-demo-step');
         self::assertGreaterThan(40, $steps->count());
         self::assertSame($steps->count(), $this->client->getCrawler()->filter('.p-demo-step .c-button[href]')->count(), 'Every step opens its page');
+        self::assertSame($steps->count(), $this->client->getCrawler()->filter('.p-demo-step .c-button[target="_blank"][rel="noopener"]')->count(), 'In a new tab, so the plan keeps its place');
+        self::assertSelectorNotExists('.p-demo-toc a[target]', 'The contents stay in the plan');
         self::assertSame($this->client->getCrawler()->filter('.p-demo-step li')->count(), $this->client->getCrawler()->filter('.p-demo-step li .p-demo-step__why')->count(), 'Every point says what it is for');
         self::assertSelectorTextContains('#vol', 'ne cherche pas à remplacer Condor Club');
         self::assertSelectorExists('meta[name="robots"][content="noindex, nofollow"]');

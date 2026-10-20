@@ -258,8 +258,8 @@
             <dl class="p-demo-hero__facts">
                 <div><dt>Durée</dt><dd>environ {{ total }} minutes</dd></div>
                 <div><dt>Actes</dt><dd>{{ acts|length }}</dd></div>
-                <div><dt>Vol vitrine</dt><dd>{% if showcase %}<a href="{{ flight_url }}">{{ showcase.pilot }}{{ showcase.flightPlan ? ' · ' ~ showcase.flightPlan|split('_')|first }}</a>{% else %}aucun vol public{% endif %}</dd></div>
-                <div><dt>Session vitrine</dt><dd>{% if session %}<a href="{{ session_url }}">{{ session.flightPlan.code }} · {{ session.date|date('d/m/Y') }}</a>{% else %}aucune session avec des traces{% endif %}</dd></div>
+                <div><dt>Vol vitrine</dt><dd>{% if showcase %}<a href="{{ flight_url }}" target="_blank" rel="noopener">{{ showcase.pilot }}{{ showcase.flightPlan ? ' · ' ~ showcase.flightPlan|split('_')|first }}</a>{% else %}aucun vol public{% endif %}</dd></div>
+                <div><dt>Session vitrine</dt><dd>{% if session %}<a href="{{ session_url }}" target="_blank" rel="noopener">{{ session.flightPlan.code }} · {{ session.date|date('d/m/Y') }}</a>{% else %}aucune session avec des traces{% endif %}</dd></div>
             </dl>
         </div>
     </section>
@@ -277,15 +277,15 @@
                         <li>Un enseignant (groupe « Enseignant » avec « Créer des classes ») et un élève (acte 7).</li>
                         <li>Votre compte d’administrateur (acte 9).</li>
                     </ul>
-                    <p class="u-note">Ces deux droits ne sont donnés à aucun groupe par défaut : créez les groupes dans <a href="{{ path('admin_group_index') }}">Groupes et droits</a>.</p>
+                    <p class="u-note">Ces deux droits ne sont donnés à aucun groupe par défaut : créez les groupes dans <a href="{{ path('admin_group_index') }}" target="_blank" rel="noopener">Groupes et droits</a>.</p>
                 </section>
                 <section class="l-stack l-stack--sm" aria-labelledby="prep-data">
                     <twig:Ui:Heading level="3" size="h4" id="prep-data">Les données à vérifier</twig:Ui:Heading>
                     <ul class="p-demo-list">
-                        <li>Le vol vitrine : {% if showcase %}<a href="{{ flight_url }}">le dernier vol public au circuit terminé</a>{% else %}<strong>aucun vol public</strong> : rendez un vol public depuis sa page{% endif %}.</li>
-                        <li>La session vitrine : {% if session %}<a href="{{ session_url }}">celle qui a le plus de traces</a> ({{ session.participantCount }}){% else %}<strong>aucune</strong> : déposez les traces d’une même course{% endif %}.</li>
-                        <li>Un exercice en vol : {% if exercise %}<a href="{{ exercise_url }}">{{ exercise.title }}</a>{% else %}<strong>aucun</strong> : placez-en un dans une étape ouverte, <a href="{{ path('admin_path_step_index') }}">Mon parcours</a>{% endif %}.</li>
-                        <li>Un quiz : {% if quiz %}<a href="{{ quiz_url }}">{{ quiz.title }}</a>{% else %}<strong>aucun</strong> : importez les brouillons et placez-en un dans une étape{% endif %}.</li>
+                        <li>Le vol vitrine : {% if showcase %}<a href="{{ flight_url }}" target="_blank" rel="noopener">le dernier vol public au circuit terminé</a>{% else %}<strong>aucun vol public</strong> : rendez un vol public depuis sa page{% endif %}.</li>
+                        <li>La session vitrine : {% if session %}<a href="{{ session_url }}" target="_blank" rel="noopener">celle qui a le plus de traces</a> ({{ session.participantCount }}){% else %}<strong>aucune</strong> : déposez les traces d’une même course{% endif %}.</li>
+                        <li>Un exercice en vol : {% if exercise %}<a href="{{ exercise_url }}" target="_blank" rel="noopener">{{ exercise.title }}</a>{% else %}<strong>aucun</strong> : placez-en un dans une étape ouverte, <a href="{{ path('admin_path_step_index') }}" target="_blank" rel="noopener">Mon parcours</a>{% endif %}.</li>
+                        <li>Un quiz : {% if quiz %}<a href="{{ quiz_url }}" target="_blank" rel="noopener">{{ quiz.title }}</a>{% else %}<strong>aucun</strong> : importez les brouillons et placez-en un dans une étape{% endif %}.</li>
                         <li>Une session à venir, pour le compte à rebours de l’accueil.</li>
                         <li>Un fichier .ftr ou .igc sur le bureau, pour le dépôt en direct.</li>
                     </ul>
@@ -357,7 +357,7 @@
                                 </div>
                                 {% if step.tip is defined %}<p class="u-note p-demo-step__tip"><strong>Attention :</strong> {{ step.tip }}</p>{% endif %}
                             </div>
-                            <div><twig:Ui:Button href="{{ step.link }}" size="sm" variant="outline">{{ step.cta }}</twig:Ui:Button></div>
+                            <div><twig:Ui:Button href="{{ step.link }}" target="_blank" rel="noopener" size="sm" variant="outline">{{ step.cta }}</twig:Ui:Button></div>
                         </li>
                     {% endfor %}
                 </ol>
@@ -374,7 +374,7 @@
                     <div><dt>{{ entry.q }}</dt><dd>{{ entry.a }}</dd></div>
                 {% endfor %}
             </dl>
-            <p>Les décisions qui attendent le comité sont à la fin de <a href="{{ path('app_site_tour') }}#decisions">la présentation du site au comité</a>.</p>
+            <p>Les décisions qui attendent le comité sont à la fin de <a href="{{ path('app_site_tour') }}#decisions" target="_blank" rel="noopener">la présentation du site au comité</a>.</p>
         </div>
     </twig:Layout:Section>
 {% endblock %}
